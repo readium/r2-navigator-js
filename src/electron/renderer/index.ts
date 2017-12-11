@@ -3,13 +3,13 @@ import SystemFonts = require("system-font-families");
 import debounce = require("debounce");
 import URI = require("urijs");
 
+import { encodeURIComponent_RFC3986 } from "@r2-streamer-js/_utils/http/UrlUtils";
+import { initGlobals } from "@r2-streamer-js/init-globals";
+import { IStringMap } from "@r2-streamer-js/models/metadata-multilang";
+import { Publication } from "@r2-streamer-js/models/publication";
+import { Link } from "@r2-streamer-js/models/publication-link";
 import { shell } from "electron";
 import { ipcRenderer } from "electron";
-import { encodeURIComponent_RFC3986 } from "r2-streamer-js/dist/es6-es2015/src/_utils/http/UrlUtils";
-import { initGlobals } from "r2-streamer-js/dist/es6-es2015/src/init-globals";
-import { IStringMap } from "r2-streamer-js/dist/es6-es2015/src/models/metadata-multilang";
-import { Publication } from "r2-streamer-js/dist/es6-es2015/src/models/publication";
-import { Link } from "r2-streamer-js/dist/es6-es2015/src/models/publication-link";
 import { JSON as TAJSON } from "ta-json";
 
 import {
@@ -84,7 +84,7 @@ initGlobals();
 const queryParams = getURLQueryParams();
 
 // import * as path from "path";
-// import { setLcpNativePluginPath } from "r2-streamer-js/dist/es6-es2015/src/parser/epub/lcp";
+// import { setLcpNativePluginPath } from "@r2-streamer-js/parser/epub/lcp";
 // // tslint:disable-next-line:no-string-literal
 // const lcpPluginBase64 = queryParams["lcpPlugin"];
 // if (lcpPluginBase64) {

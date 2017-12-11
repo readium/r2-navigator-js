@@ -2,11 +2,11 @@ import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
 
+import { injectFileInZip } from "@r2-streamer-js/_utils/zip/zipInjector";
+import { Server } from "@r2-streamer-js/http/server";
+import { LCP } from "@r2-streamer-js/parser/epub/lcp";
 import * as debug_ from "debug";
 import { ipcMain } from "electron";
-import { injectFileInZip } from "r2-streamer-js/dist/es6-es2015/src/_utils/zip/zipInjector";
-import { Server } from "r2-streamer-js/dist/es6-es2015/src/http/server";
-import { LCP } from "r2-streamer-js/dist/es6-es2015/src/parser/epub/lcp";
 import * as request from "request";
 import * as requestPromise from "request-promise-native";
 import { JSON as TAJSON } from "ta-json";

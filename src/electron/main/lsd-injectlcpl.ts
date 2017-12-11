@@ -1,11 +1,11 @@
 import * as fs from "fs";
 
+import { streamToBufferPromise } from "@r2-streamer-js/_utils/stream/BufferUtils";
+import { injectBufferInZip } from "@r2-streamer-js/_utils/zip/zipInjector";
+import { Publication } from "@r2-streamer-js/models/publication";
+import { LCP } from "@r2-streamer-js/parser/epub/lcp";
 import * as debug_ from "debug";
 import * as moment from "moment";
-import { streamToBufferPromise } from "r2-streamer-js/dist/es6-es2015/src/_utils/stream/BufferUtils";
-import { injectBufferInZip } from "r2-streamer-js/dist/es6-es2015/src/_utils/zip/zipInjector";
-import { Publication } from "r2-streamer-js/dist/es6-es2015/src/models/publication";
-import { LCP } from "r2-streamer-js/dist/es6-es2015/src/parser/epub/lcp";
 import * as request from "request";
 import * as requestPromise from "request-promise-native";
 import { JSON as TAJSON } from "ta-json";

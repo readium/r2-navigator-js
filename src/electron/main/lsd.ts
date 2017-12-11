@@ -1,9 +1,9 @@
+import { streamToBufferPromise } from "@r2-streamer-js/_utils/stream/BufferUtils";
+import { Server } from "@r2-streamer-js/http/server";
+import { Publication } from "@r2-streamer-js/models/publication";
 import * as debug_ from "debug";
 import { ipcMain } from "electron";
 import * as moment from "moment";
-import { streamToBufferPromise } from "r2-streamer-js/dist/es6-es2015/src/_utils/stream/BufferUtils";
-import { Server } from "r2-streamer-js/dist/es6-es2015/src/http/server";
-import { Publication } from "r2-streamer-js/dist/es6-es2015/src/models/publication";
 import * as request from "request";
 import * as requestPromise from "request-promise-native";
 

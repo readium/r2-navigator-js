@@ -1,5 +1,5 @@
+import { Server } from "@r2-streamer-js/http/server";
 import * as express from "express";
-import { Server } from "r2-streamer-js/dist/es6-es2015/src/http/server";
 
 export function setupReadiumCSS(server: Server, folderPath: string) {
     // https://expressjs.com/en/4x/api.html#express.static

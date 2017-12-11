@@ -16,15 +16,15 @@
 import * as fs from "fs";
 import * as path from "path";
 
+import { encodeURIComponent_RFC3986 } from "@r2-streamer-js/_utils/http/UrlUtils";
+import { Server } from "@r2-streamer-js/http/server";
+import { initGlobals } from "@r2-streamer-js/init-globals";
+import { Publication } from "@r2-streamer-js/models/publication";
+import { setLcpNativePluginPath } from "@r2-streamer-js/parser/epub/lcp";
 import * as debug_ from "debug";
 import { BrowserWindow, Menu, app, dialog, ipcMain, webContents } from "electron";
 import * as filehound from "filehound";
 import * as portfinder from "portfinder";
-import { encodeURIComponent_RFC3986 } from "r2-streamer-js/dist/es6-es2015/src/_utils/http/UrlUtils";
-import { Server } from "r2-streamer-js/dist/es6-es2015/src/http/server";
-import { initGlobals } from "r2-streamer-js/dist/es6-es2015/src/init-globals";
-import { Publication } from "r2-streamer-js/dist/es6-es2015/src/models/publication";
-import { setLcpNativePluginPath } from "r2-streamer-js/dist/es6-es2015/src/parser/epub/lcp";
 
 import { R2_EVENT_DEVTOOLS } from "../common/events";
 import { trackBrowserWindow } from "./browser-window-tracker";
