@@ -17,6 +17,11 @@
       "../test/"
     ],
     "baseUrl": "..",
+    "paths": {
+      "@r2-navigator-js/*": [
+        "src/*"
+      ]
+    },
     "noImplicitAny": true,
     "noImplicitThis": true,
     "alwaysStrict": true,

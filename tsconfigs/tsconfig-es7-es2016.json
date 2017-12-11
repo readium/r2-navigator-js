@@ -9,6 +9,11 @@
       "dom",
       "es2015",
       "dom.iterable"
-    ]
+    ],
+    "paths": {
+      "@r2-streamer-js/*": [
+        "node_modules/r2-streamer-js/dist/es7-es2016/src/*"
+      ]
+    }
   }
 }
