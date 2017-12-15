@@ -662,15 +662,21 @@ window.addEventListener("DOMContentLoaded", () => {
             currElem = currElem.parentNode;
         }
         if (needsToCloseMenus) {
-            openedMenus.forEach((elem) => {
-                (elem as any).mdcSimpleMenu.open = false;
-                const ss = (elem.parentNode as HTMLElement).querySelector(".mdc-select__selected-text");
-                if (ss) {
-                    (ss as HTMLElement).style.transform = "initial";
-                    (ss as HTMLElement).style.opacity = "1";
-                    (ss as HTMLElement).focus();
-                }
-            });
+            // openedMenus.forEach((elem) => {
+            //     (elem as any).mdcSimpleMenu.open = false;
+            //     let ss = (elem.parentNode as HTMLElement).querySelector(".mdc-select__selected-text");
+            //     if (ss) {
+            //         (ss as HTMLElement).style.transform = "initial";
+            //         (ss as HTMLElement).style.opacity = "1";
+            //         (ss as HTMLElement).focus();
+            //     }
+            //     ss = (elem.parentNode as HTMLElement).querySelector(".mdc-select__label");
+            //     if (ss) {
+            //         (ss as HTMLElement).style.transform = "initial";
+            //         (ss as HTMLElement).style.opacity = "1";
+            //         (ss as HTMLElement).focus();
+            //     }
+            // });
         } else {
             // console.log("NOT CLOSING MENU");
         }

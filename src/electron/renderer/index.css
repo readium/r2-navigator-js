@@ -277,8 +277,8 @@ form {
 .mdc-select {
   background-position-x: 96%;
 }
-/* #nav-select-text */
-.mdc-select__selected-text {
+.mdc-select__selected-text,
+.mdc-select__label {
   padding-left: 1em;
 }
 #drawerNav {
@@ -383,10 +383,12 @@ form {
 #fontSizeSelector {
   margin-top: -22px;
 }
-#fontSelect .mdc-select__selected-text {
+#fontSelect .mdc-select__selected-text,
+#fontSelect .mdc-select__label {
   padding-left: 6px;
 }
-#fontSelect .mdc-select__selected-text::before {
+#fontSelect .mdc-select__selected-text::before,
+#fontSelect .mdc-select__label::before {
   font-family: 'Material Icons';
   font-weight: normal;
   font-style: normal;
