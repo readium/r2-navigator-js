@@ -1,7 +1,5 @@
   'cson2json': '
-    node node_modules/cson/bin/cson2json
-      package-scripts.cson &&
-    echo ""
+    json -I -f package.json -e "this.scripts=$(node node_modules/cson/bin/cson2json package-scripts.cson)"
   '
 
   'postinstallxx': '
@@ -560,6 +558,7 @@
   'gitdist': '
     cd ../r2-navigator-js-dist/ &&
     git checkout -B master &&
+    git pull &&
     (git status || echo status) &&
     ((rimraf "*" && echo rimrafOK) || echo rimrafNOK) &&
     cpy ../r2-navigator-js/package.json . &&
