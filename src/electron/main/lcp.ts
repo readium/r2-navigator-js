@@ -2,9 +2,9 @@ import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
 
-import { injectFileInZip } from "@r2-streamer-js/_utils/zip/zipInjector";
+import { LCP } from "@parser/epub/lcp";
 import { Server } from "@r2-streamer-js/http/server";
-import { LCP } from "@r2-streamer-js/parser/epub/lcp";
+import { injectFileInZip } from "@utils/zip/zipInjector";
 import * as debug_ from "debug";
 import { ipcMain } from "electron";
 import * as request from "request";

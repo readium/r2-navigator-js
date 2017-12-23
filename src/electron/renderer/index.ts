@@ -3,11 +3,11 @@ import SystemFonts = require("system-font-families");
 import debounce = require("debounce");
 import URI = require("urijs");
 
-import { encodeURIComponent_RFC3986 } from "@r2-streamer-js/_utils/http/UrlUtils";
-import { initGlobals } from "@r2-streamer-js/init-globals";
-import { IStringMap } from "@r2-streamer-js/models/metadata-multilang";
-import { Publication } from "@r2-streamer-js/models/publication";
-import { Link } from "@r2-streamer-js/models/publication-link";
+import { IStringMap } from "@models/metadata-multilang";
+import { Publication } from "@models/publication";
+import { Link } from "@models/publication-link";
+import { initGlobals } from "@r2-shared-js/init-globals";
+import { encodeURIComponent_RFC3986 } from "@utils/http/UrlUtils";
 import { shell } from "electron";
 import { ipcRenderer } from "electron";
 import { JSON as TAJSON } from "ta-json";
@@ -500,7 +500,7 @@ const initFontSelector = () => {
             id: ID_PREFIX + "SANS",
             label: "Sans",
             style: "font-family: -apple-system, system-ui, BlinkMacSystemFont," +
-            " \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif;",
+                " \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif;",
         }, {
             id: ID_PREFIX + "HUMAN",
             label: "Humanist",

@@ -1,4 +1,4 @@
-import { streamToBufferPromise } from "@r2-streamer-js/_utils/stream/BufferUtils";
+import { streamToBufferPromise } from "@utils/stream/BufferUtils";
 import * as debug_ from "debug";
 import * as request from "request";
 import * as requestPromise from "request-promise-native";
