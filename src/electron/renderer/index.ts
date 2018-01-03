@@ -523,6 +523,7 @@ const initFontSelector = () => {
     }
     const opts: IRiotOptsMenuSelect = {
         disabled: !electronStore.get("styling.readiumcss"),
+        label: "Font name",
         options,
         selected: selectedID,
     };
@@ -643,44 +644,44 @@ window.addEventListener("DOMContentLoaded", () => {
     drawerButton.addEventListener("click", () => {
         drawer.open = true;
     });
-    drawerElement.addEventListener("click", (ev) => {
-        const allMenus = drawerElement.querySelectorAll(".mdc-simple-menu");
-        const openedMenus: Node[] = [];
-        allMenus.forEach((elem) => {
-            if ((elem as any).mdcSimpleMenu && (elem as any).mdcSimpleMenu.open) {
-                openedMenus.push(elem);
-            }
-        });
+    // drawerElement.addEventListener("click", (ev) => {
+    //     const allMenus = drawerElement.querySelectorAll(".mdc-simple-menu");
+    //     const openedMenus: Node[] = [];
+    //     allMenus.forEach((elem) => {
+    //         if ((elem as any).mdcSimpleMenu && (elem as any).mdcSimpleMenu.open) {
+    //             openedMenus.push(elem);
+    //         }
+    //     });
 
-        let needsToCloseMenus = true;
-        let currElem: Node | null = ev.target as Node;
-        while (currElem) {
-            if (openedMenus.indexOf(currElem) >= 0) {
-                needsToCloseMenus = false;
-                break;
-            }
-            currElem = currElem.parentNode;
-        }
-        if (needsToCloseMenus) {
-            // openedMenus.forEach((elem) => {
-            //     (elem as any).mdcSimpleMenu.open = false;
-            //     let ss = (elem.parentNode as HTMLElement).querySelector(".mdc-select__selected-text");
-            //     if (ss) {
-            //         (ss as HTMLElement).style.transform = "initial";
-            //         (ss as HTMLElement).style.opacity = "1";
-            //         (ss as HTMLElement).focus();
-            //     }
-            //     ss = (elem.parentNode as HTMLElement).querySelector(".mdc-select__label");
-            //     if (ss) {
-            //         (ss as HTMLElement).style.transform = "initial";
-            //         (ss as HTMLElement).style.opacity = "1";
-            //         (ss as HTMLElement).focus();
-            //     }
-            // });
-        } else {
-            // console.log("NOT CLOSING MENU");
-        }
-    }, true);
+    //     let needsToCloseMenus = true;
+    //     let currElem: Node | null = ev.target as Node;
+    //     while (currElem) {
+    //         if (openedMenus.indexOf(currElem) >= 0) {
+    //             needsToCloseMenus = false;
+    //             break;
+    //         }
+    //         currElem = currElem.parentNode;
+    //     }
+    //     if (needsToCloseMenus) {
+    //         openedMenus.forEach((elem) => {
+    //             (elem as any).mdcSimpleMenu.open = false;
+    //             let ss = (elem.parentNode as HTMLElement).querySelector(".mdc-select__selected-text");
+    //             if (ss) {
+    //                 (ss as HTMLElement).style.transform = "initial";
+    //                 (ss as HTMLElement).style.opacity = "1";
+    //                 (ss as HTMLElement).focus();
+    //             }
+    //             ss = (elem.parentNode as HTMLElement).querySelector(".mdc-select__label");
+    //             if (ss) {
+    //                 (ss as HTMLElement).style.transform = "initial";
+    //                 (ss as HTMLElement).style.opacity = "1";
+    //                 (ss as HTMLElement).focus();
+    //             }
+    //         });
+    //     } else {
+    //         console.log("NOT CLOSING MENU");
+    //     }
+    // }, true);
 
     initFontSelector();
     initFontSizeSelector();

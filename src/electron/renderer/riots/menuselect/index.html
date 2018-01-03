@@ -1,6 +1,7 @@
 <riot-menuselect class="mdc-select" role="listbox" tabindex="0">
   <div class="mdc-select__surface">
-    <div class="mdc-select__label">{ getLabelForId(opts.selected) }</div>
+    <!-- float-above ==> https://github.com/material-components/material-components-web/issues/1810 -->
+    <div class="mdc-select__label mdc-select__label--float-above">{ opts.label }</div>
     <div class="mdc-select__selected-text"></div>
     <div class="mdc-select__bottom-line"></div>
   </div>
