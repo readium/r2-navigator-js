@@ -17,7 +17,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { Publication } from "@models/publication";
-import { setLcpNativePluginPath } from "@parser/epub/lcp";
+import { setLcpNativePluginPath } from "@r2-lcp-js/parser/epub/lcp";
 import { initGlobals } from "@r2-shared-js/init-globals";
 import { Server } from "@r2-streamer-js/http/server";
 import { encodeURIComponent_RFC3986 } from "@utils/http/UrlUtils";

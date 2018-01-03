@@ -37,6 +37,9 @@
       ],
       "@r2-streamer-js/*": [
         "node_modules/r2-streamer-js/dist/es6-es2015/src/*"
+      ],
+      "@r2-lcp-js/*": [
+        "node_modules/r2-lcp-js/dist/es6-es2015/src/*"
       ]
     }
   }

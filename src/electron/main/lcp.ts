@@ -2,7 +2,7 @@ import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
 
-import { LCP } from "@parser/epub/lcp";
+import { LCP } from "@r2-lcp-js/parser/epub/lcp";
 import { Server } from "@r2-streamer-js/http/server";
 import { injectFileInZip } from "@utils/zip/zipInjector";
 import * as debug_ from "debug";

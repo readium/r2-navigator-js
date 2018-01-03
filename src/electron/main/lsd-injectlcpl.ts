@@ -1,7 +1,7 @@
 import * as fs from "fs";
 
 import { Publication } from "@models/publication";
-import { LCP } from "@parser/epub/lcp";
+import { LCP } from "@r2-lcp-js/parser/epub/lcp";
 import { streamToBufferPromise } from "@utils/stream/BufferUtils";
 import { injectBufferInZip } from "@utils/zip/zipInjector";
 import * as debug_ from "debug";
