@@ -5,12 +5,12 @@
 
       <span if="{ title }" class="mdc-list-item__text">
         { title }
-        <span if="{ !parent.opts.basic }" class="mdc-list-item__text__secondary">{ href }</span>
+        <span if="{ !parent.opts.basic }" class="mdc-list-item__secondary-text">{ href }</span>
       </span>
 
       <span if="{ !title }" class="mdc-list-item__text">
         { href }
-        <span if="{ !parent.opts.basic }" class="mdc-list-item__text__secondary"> </span>
+        <span if="{ !parent.opts.basic }" class="mdc-list-item__secondary-text"> </span>
       </span>
     </a>
   </nav>
@@ -18,7 +18,7 @@
   <p if="{ !opts.links || !opts.links.length }">NO LINKS!?</p>
 
   <style>
-    .mdc-list-item__text, .mdc-list-item__text__secondary {
+    .mdc-list-item__text, .mdc-list-item__secondary-text {
       white-space: nowrap;
       text-overflow: clip;
     }

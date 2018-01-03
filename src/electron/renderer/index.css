@@ -291,6 +291,7 @@ form {
   borderxx: 2px solid red;
   box-sizing: border-box;
   display: inline-flex;
+  margin-top: 1px;
 }
 .tabPanel {
   display: none;
@@ -302,6 +303,14 @@ form {
 .tabPanel.active {
   display: block;
 }
+
+riot-linktree,
+[data-is="riot-linktree"] {
+  padding-left: 0;
+  list-style: none;
+  border-left: 1px solid #DDDDDD;
+}
+
 #reader_controls_ADVANCED, #reader_controls_TOOLS, #reader_controls_STYLES {
   padding: 1em;
 }
@@ -373,7 +382,7 @@ form {
 #tabsPanels .mdc-list-item__text {
   max-width: 100%;
 }
-#tabsPanels .mdc-list-item__text__secondary {
+#tabsPanels .mdc-list-item__secondary-text {
   word-wrap: break-word;
 }
 #lineHeightSelector {
