@@ -304,8 +304,10 @@ form {
   display: block;
 }
 
-riot-linktree,
-[data-is="riot-linktree"] {
+/* riot-linktree,
+[data-is="riot-linktree"] */
+#reader_controls_TOC,
+#reader_controls_TOC ul {
   padding-left: 0;
   list-style: none;
   border-left: 1px solid #DDDDDD;
@@ -494,6 +496,7 @@ riot-linktree,
 .mdc-theme--dark #reader_controls_TOC a:focus {
   background-color: rgba(70, 70, 70, 1);
 }
+.mdc-theme--dark #reader_controls_TOC,
 .mdc-theme--dark #reader_controls_TOC ul {
   border-left: 1px solid #000000;
 }
