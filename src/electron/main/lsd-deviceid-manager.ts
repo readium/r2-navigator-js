@@ -1,6 +1,8 @@
 import * as debug_ from "debug";
 import * as uuid from "uuid";
 
+import { IDeviceIDManager } from "@r2-lcp-js/lsd/deviceid-manager";
+
 import { IStore } from "../common/store";
 import { StoreElectron } from "../common/store-electron";
 
@@ -9,16 +11,6 @@ export const electronStoreLSD: IStore = new StoreElectron("readium2-navigator-ls
 const debug = debug_("r2:electron:main:lsd");
 
 const LSD_STORE_DEVICEID_ENTRY_PREFIX = "deviceID_";
-
-export interface IDeviceIDManager {
-    getDeviceNAME(): string;
-
-    getDeviceID(): string;
-
-    checkDeviceID(key: string): string | undefined;
-
-    recordDeviceID(key: string): void;
-}
 
 export const deviceIDManager: IDeviceIDManager = {
 

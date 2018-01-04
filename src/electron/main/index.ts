@@ -17,7 +17,9 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { Publication } from "@models/publication";
+import { launchStatusDocumentProcessing } from "@r2-lcp-js/lsd/status-document-processing";
 import { setLcpNativePluginPath } from "@r2-lcp-js/parser/epub/lcp";
+import { downloadEPUBFromLCPL } from "@r2-lcp-js/publication-download";
 import { initGlobals } from "@r2-shared-js/init-globals";
 import { Server } from "@r2-streamer-js/http/server";
 import { encodeURIComponent_RFC3986 } from "@utils/http/UrlUtils";
@@ -28,9 +30,9 @@ import * as portfinder from "portfinder";
 
 import { R2_EVENT_DEVTOOLS } from "../common/events";
 import { trackBrowserWindow } from "./browser-window-tracker";
-import { downloadFromLCPL, installLcpHandler } from "./lcp";
-import { launchStatusDocumentProcessing } from "./lsd";
+import { installLcpHandler } from "./lcp";
 import { deviceIDManager } from "./lsd-deviceid-manager";
+import { lsdLcpUpdateInject } from "./lsd-injectlcpl";
 import { setupReadiumCSS } from "./readium-css";
 import { initSessions } from "./sessions";
 
@@ -95,11 +97,21 @@ async function createElectronBrowserWindow(publicationFilePath: string, publicat
 
     let lcpHint: string | undefined;
     if (publication && publication.LCP) {
-
         try {
-            await launchStatusDocumentProcessing(publication, publicationFilePath, deviceIDManager, () => {
-                debug("launchStatusDocumentProcessing DONE.");
-            });
+            await launchStatusDocumentProcessing(publication.LCP, deviceIDManager,
+                async (licenseUpdateJson: string | undefined) => {
+                    debug("launchStatusDocumentProcessing DONE.");
+
+                    if (licenseUpdateJson) {
+                        let res: string;
+                        try {
+                            res = await lsdLcpUpdateInject(licenseUpdateJson, publication, publicationFilePath);
+                            debug("EPUB SAVED: " + res);
+                        } catch (err) {
+                            debug(err);
+                        }
+                    }
+                });
         } catch (err) {
             debug(err);
         }
@@ -460,7 +472,7 @@ async function openFileDownload(filePath: string) {
     if (ext === ".lcpl") {
         let epubFilePath: string[];
         try {
-            epubFilePath = await downloadFromLCPL(filePath, dir, destFileName);
+            epubFilePath = await downloadEPUBFromLCPL(filePath, dir, destFileName);
         } catch (err) {
             process.nextTick(() => {
                 const detail = (typeof err === "string") ?
