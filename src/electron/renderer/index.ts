@@ -57,13 +57,8 @@ export function readiumCssOnOff() {
     (_webview2 as any).send(R2_EVENT_READIUMCSS, readiumCssJsonMessage); // .getWebContents()
 }
 
-// CAN'T USE Electron.WebviewTag !! :(
-// https://github.com/electron/electron-typescript-definitions/pull/81
-// TypeScript compiler with strictFunctionTypes =>
-// node_modules/electron/electron.d.ts(5390,13):
-// error TS2430: Interface 'WebviewTag' incorrectly extends interface 'HTMLElement'.
-let _webview1: HTMLElement; // Electron.WebviewTag;
-let _webview2: HTMLElement; // Electron.WebviewTag;
+let _webview1: Electron.WebviewTag;
+let _webview2: Electron.WebviewTag;
 
 let _viewHideInterval: NodeJS.Timer | undefined;
 
@@ -135,7 +130,7 @@ export function installNavigatorDOM(
         _webview1.style.left = "50%";
     } else {
         _webview2.classList.add("posRight");
-        _webview1.style.left = "50%";
+        _webview2.style.left = "50%";
     }
 
     let linkToLoad: Link | undefined;
@@ -196,14 +191,11 @@ export function navLeftOrRight(left: boolean) {
     (activeWebView as any).send(R2_EVENT_PAGE_TURN, messageStr); // .getWebContents()
 }
 
-const getActiveWebView = (): HTMLElement => { // Electron.WebviewTag
+const getActiveWebView = (): Electron.WebviewTag => {
 
-    let activeWebView: HTMLElement; // Electron.WebviewTag
+    let activeWebView: Electron.WebviewTag;
 
     const slidingViewport = document.getElementById("r2_navigator_sliding_viewport") as HTMLElement;
-    if (!slidingViewport) {
-        return document.body;
-    }
     if (slidingViewport.classList.contains("shiftedLeft")) {
         if (_webview1.classList.contains("posRight")) {
             activeWebView = _webview1;
@@ -419,8 +411,8 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     }
 }
 
-function createWebView(preloadScriptPath: string): HTMLElement { // Electron.WebviewTag
-    const wv = document.createElement("webview") as HTMLElement;
+function createWebView(preloadScriptPath: string): Electron.WebviewTag {
+    const wv = document.createElement("webview");
     wv.setAttribute("webpreferences",
         "nodeIntegration=0, nodeIntegrationInWorker=0, sandbox=0, javascript=1, " +
         "contextIsolation=0, webSecurity=1, allowRunningInsecureContent=0");
@@ -441,8 +433,8 @@ function createWebView(preloadScriptPath: string): HTMLElement { // Electron.Web
         (wv as any).clearHistory();
     });
 
-    wv.addEventListener("ipc-message", (event: any) => { // Electron.IpcMessageEvent
-        const webview = event.currentTarget as HTMLElement; // Electron.WebviewTag;
+    wv.addEventListener("ipc-message", (event: Electron.IpcMessageEvent) => {
+        const webview = event.currentTarget as Electron.WebviewTag;
         const activeWebView = getActiveWebView();
         if (webview !== activeWebView) {
             return;
@@ -503,7 +495,7 @@ function createWebView(preloadScriptPath: string): HTMLElement { // Electron.Web
     return wv;
 }
 
-const adjustResize = (webview: HTMLElement) => { // Electron.WebviewTag
+const adjustResize = (webview: Electron.WebviewTag) => {
     const width = webview.clientWidth;
     const height = webview.clientHeight;
     const wc = (webview as any).getWebContents();
