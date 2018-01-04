@@ -11,6 +11,7 @@ import {
     R2_EVENT_LINK,
     R2_EVENT_PAGE_TURN,
     R2_EVENT_PAGE_TURN_RES,
+    R2_EVENT_READING_LOCATION,
     R2_EVENT_READIUMCSS,
     R2_EVENT_SCROLLTO,
     R2_EVENT_WEBVIEW_READY,
@@ -38,6 +39,13 @@ let _computeReadiumCssJsonMessage: () => string = () => {
 };
 export function setReadiumCssJsonGetter(func: () => string) {
     _computeReadiumCssJsonMessage = func;
+}
+
+let _saveReadingLocation: (docHref: string, cssSelector: string) => void = (_docHref: string, _cssSelector: string) => {
+    return;
+};
+export function setReadingLocationSaver(func: () => string) {
+    _saveReadingLocation = func;
 }
 
 export function readiumCssOnOff() {
@@ -89,8 +97,8 @@ export function installNavigatorDOM(
     publicationJsonUrl: string,
     rootHtmlElementID: string,
     preloadScriptPath: string,
-    pubDocHrefToLoad: string,
-    pubDocSelectorToGoto: string) {
+    pubDocHrefToLoad: string | undefined,
+    pubDocSelectorToGoto: string | undefined) {
 
     _publication = publication;
     _publicationJsonUrl = publicationJsonUrl;
@@ -422,7 +430,7 @@ function createWebView(preloadScriptPath: string): HTMLElement { // Electron.Web
     }
     wv.setAttribute("style", "display: flex; margin: 0; padding: 0; box-sizing: border-box; " +
         "position: absolute; left: 0; width: 50%; bottom: 0; top: 0;");
-    wv.setAttribute("preload", preloadScriptPath); // "./webview/preload.js"
+    wv.setAttribute("preload", preloadScriptPath);
     wv.setAttribute("disableguestresize", "");
     setTimeout(() => {
         wv.removeAttribute("tabindex");
@@ -445,6 +453,11 @@ function createWebView(preloadScriptPath: string): HTMLElement { // Electron.Web
         } else if (event.channel === R2_EVENT_WEBVIEW_READY) {
             // const id = event.args[0];
             unhideWebView(false);
+        } else if (event.channel === R2_EVENT_READING_LOCATION) {
+            const cssSelector = event.args[0];
+            if ((webview as any).READIUM2_LINK && _saveReadingLocation) {
+                _saveReadingLocation((webview as any).READIUM2_LINK.Href, cssSelector);
+            }
         } else if (event.channel === R2_EVENT_PAGE_TURN_RES) {
             if (!_publication) {
                 return;
