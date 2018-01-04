@@ -72,15 +72,6 @@ export function handleLink(href: string, previous: boolean | undefined, useGoto:
 
     const prefix = _publicationJsonUrl.replace("manifest.json", "");
     if (href.startsWith(prefix)) {
-        // TODO
-        // if (drawer.open) {
-        //     drawer.open = false;
-        //     setTimeout(() => {
-        //         loadLink(href, previous, useGoto);
-        //     }, 200);
-        // } else {
-        //     loadLink(href, previous, useGoto);
-        // }
         loadLink(href, previous, useGoto);
     } else {
         shell.openExternal(href);
@@ -164,8 +155,6 @@ export function installNavigatorDOM(
     }
 
     setTimeout(() => {
-        // TODO
-        // drawer.open = true; // necessary otherwise focus steal for links in publication documents!
         if (linkToLoad) {
             const hrefToLoad = _publicationJsonUrl + "/../" + linkToLoad.Href +
                 (linkToLoadGoto ? ("?readiumgoto=" + encodeURIComponent_RFC3986(linkToLoadGoto)) : "");
