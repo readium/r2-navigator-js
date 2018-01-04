@@ -51,7 +51,3 @@ export const R2_EVENT_LINK = "R2_EVENT_LINK";
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
 export const R2_EVENT_WEBVIEW_READY = "R2_EVENT_WEBVIEW_READY";
-
-// in RENDERER: ipcRenderer.send()
-// in MAIN: ipcMain.on()
-export const R2_EVENT_DEVTOOLS = "R2_EVENT_DEVTOOLS";
