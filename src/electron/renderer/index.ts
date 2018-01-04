@@ -44,7 +44,7 @@ export function setReadiumCssJsonGetter(func: () => string) {
 let _saveReadingLocation: (docHref: string, cssSelector: string) => void = (_docHref: string, _cssSelector: string) => {
     return;
 };
-export function setReadingLocationSaver(func: () => string) {
+export function setReadingLocationSaver(func: (docHref: string, cssSelector: string) => void) {
     _saveReadingLocation = func;
 }
 
