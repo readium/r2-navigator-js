@@ -90,7 +90,7 @@
   ],
   "scripts": {
     "cson2json": "sed -E \"s/#ECMASCRIPT#/es5/g\" package-scripts-build.cson > tmp-build.cson && sed -E \"s/#ECMASCRIPT#/es6-es2015/g\" package-scripts-build.cson >> tmp-build.cson && sed -E \"s/#ECMASCRIPT#/es7-es2016/g\" package-scripts-build.cson >> tmp-build.cson && sed -E \"s/#ECMASCRIPT#/es8-es2017/g\" package-scripts-build.cson >> tmp-build.cson && json -I -f package.json -e \"this.scripts=$(cat package-scripts.cson tmp-build.cson | node node_modules/cson/bin/cson2json)\" && rimraf tmp-*.cson",
-    "electron-renderer:all": "cpy \"./ReadiumCSS/**/*.*\" ../dist/ --cwd=./misc --parents",
+    "electron-renderer:all": "cpy \"./ReadiumCSS/**/*.*\" ../dist/ --cwd=./misc --parents && rimraf \"./dist/ReadiumCSS/*.css\"",
     "_pregitdist": "npm run build:all",
     "gitdist": "cd ../r2-navigator-js-dist/ && git checkout -B master && git pull && (git status || echo status) && ((rimraf \"*\" && echo rimrafOK) || echo rimrafNOK) && cpy ../r2-navigator-js/package.json . && cpy ../r2-navigator-js/package-lock.json . && cpy ../r2-navigator-js/LICENSE . && cpy ../r2-navigator-js/README.md . && cpy \"docs/**/*.*\" ../r2-navigator-js-dist/ --cwd=../r2-navigator-js/ --parents && cpy \"dist/**/*.*\" ../r2-navigator-js-dist/ --cwd=../r2-navigator-js/ --parents && (git add * || echo add) && (git commit -a -m \"add new dist\" || echo commit) && (git push --set-upstream origin master || echo push) && (git status || echo status) && cd ../r2-navigator-js",
     "prepare_": "npm run build:all && npm test",
@@ -121,22 +121,22 @@
     "build:es5": "npm run transpile:typescript:es5",
     "postbuild:es5": "npm run afterdist && npm run electron-renderer:es5",
     "transpile:typescript:es5": "tsc -p \"./tsconfigs/tsconfig-es5-all.json\"",
-    "electron-renderer:es5": "cpy \"./ReadiumCSS/**/*.*\" ../dist/ --cwd=./misc --parents",
+    "electron-renderer:es5": "cpy \"./ReadiumCSS/**/*.*\" ../dist/ --cwd=./misc --parents && rimraf \"./dist/ReadiumCSS/*.css\"",
     "prebuild:es6-es2015": "npm run lint && npm run clean",
     "build:es6-es2015": "npm run transpile:typescript:es6-es2015",
     "postbuild:es6-es2015": "npm run afterdist && npm run electron-renderer:es6-es2015",
     "transpile:typescript:es6-es2015": "tsc -p \"./tsconfigs/tsconfig-es6-es2015-all.json\"",
-    "electron-renderer:es6-es2015": "cpy \"./ReadiumCSS/**/*.*\" ../dist/ --cwd=./misc --parents",
+    "electron-renderer:es6-es2015": "cpy \"./ReadiumCSS/**/*.*\" ../dist/ --cwd=./misc --parents && rimraf \"./dist/ReadiumCSS/*.css\"",
     "prebuild:es7-es2016": "npm run lint && npm run clean",
     "build:es7-es2016": "npm run transpile:typescript:es7-es2016",
     "postbuild:es7-es2016": "npm run afterdist && npm run electron-renderer:es7-es2016",
     "transpile:typescript:es7-es2016": "tsc -p \"./tsconfigs/tsconfig-es7-es2016-all.json\"",
-    "electron-renderer:es7-es2016": "cpy \"./ReadiumCSS/**/*.*\" ../dist/ --cwd=./misc --parents",
+    "electron-renderer:es7-es2016": "cpy \"./ReadiumCSS/**/*.*\" ../dist/ --cwd=./misc --parents && rimraf \"./dist/ReadiumCSS/*.css\"",
     "prebuild:es8-es2017": "npm run lint && npm run clean",
     "build:es8-es2017": "npm run transpile:typescript:es8-es2017",
     "postbuild:es8-es2017": "npm run afterdist && npm run electron-renderer:es8-es2017",
     "transpile:typescript:es8-es2017": "tsc -p \"./tsconfigs/tsconfig-es8-es2017-all.json\"",
-    "electron-renderer:es8-es2017": "cpy \"./ReadiumCSS/**/*.*\" ../dist/ --cwd=./misc --parents"
+    "electron-renderer:es8-es2017": "cpy \"./ReadiumCSS/**/*.*\" ../dist/ --cwd=./misc --parents && rimraf \"./dist/ReadiumCSS/*.css\""
   },
   "importSort": {
     ".ts": {
