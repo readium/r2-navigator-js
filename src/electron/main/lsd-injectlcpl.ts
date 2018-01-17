@@ -28,8 +28,13 @@ export async function lsdLcpUpdateInject(
     lcpl.JsonSource = lcplStr;
     lcpl.init();
     publication.LCP = lcpl;
-    // publication.AddLink("application/vnd.readium.lcp.license-1.0+json", ["license"],
-    //     lcpl.ZipPath, false);
+
+    // https://github.com/readium/readium-lcp-specs/issues/15#issuecomment-358247286
+    // application/vnd.readium.lcp.license-1.0+json (LEGACY)
+    // application/vnd.readium.lcp.license.v1.0+json (NEW)
+    // application/vnd.readium.license.status.v1.0+json (LSD)
+    // const mime = "application/vnd.readium.lcp.license.v1.0+json";
+    // publication.AddLink(mime, ["license"], lcpl.ZipPath, false);
 
     return new Promise<any>(async (resolve, reject) => {
         const newPublicationPath = publicationPath + ".new";
