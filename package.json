@@ -57,7 +57,7 @@
     "r2-utils-js": "github:edrlab/r2-utils-js-dist#master",
     "resize-sensor": "github:normanzb/resize-sensor#master",
     "ta-json": "github:danielweck/ta-json#dist",
-    "tslib": "^1.8.0",
+    "tslib": "^1.9.0",
     "urijs": "^1.19.0",
     "uuid": "^3.2.1"
   },
