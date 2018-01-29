@@ -1,9 +1,98 @@
 import * as debug_ from "debug";
-import { app, session } from "electron";
+import { Certificate, app, session } from "electron";
+
+import { Server } from "@r2-streamer-js/http/server";
 
 import { R2_SESSION_WEBVIEW } from "../common/sessions";
 
 const debug = debug_("r2:electron:main");
+
+export function configureWebViewSession(server: Server) {
+
+    const webViewSession = getWebViewSession();
+    if (!webViewSession) {
+        return;
+    }
+
+    const urlFilter = server.serverUrl() + "/*";
+    debug(urlFilter);
+
+    const filter = { urls: ["*"] };
+
+    webViewSession.webRequest.onBeforeSendHeaders(filter, (details: any, callback: any) => {
+        debug("onBeforeSendHeaders");
+        debug(details);
+
+        details.requestHeaders["User-Agent"] = "R2";
+
+        if (server.isSecured()) {
+            const info = server.serverInfo();
+            if (info) {
+                details.requestHeaders["X-Debug-" + info.trustKey] = info.trustVal;
+            }
+        }
+        callback({ cancel: false, requestHeaders: details.requestHeaders });
+    });
+
+    webViewSession.setCertificateVerifyProc((request, callback) => {
+        debug("setCertificateVerifyProc");
+        debug(request);
+
+        if (server.isSecured()) {
+            const info = server.serverInfo();
+            if (info) {
+                debug(info);
+                if (request.hostname === info.urlHost) {
+                    callback(0); // OK
+                    return;
+                }
+            }
+        }
+        callback(-3); // Chromium
+        // callback(-2); // Fail
+    });
+
+    app.on("certificate-error", (event, _webContents, url, error, certificate, callback) => {
+        debug("certificate-error");
+        debug(url);
+        debug(error);
+        debug(certificate);
+
+        if (server.isSecured()) {
+            const info = server.serverInfo();
+            if (info) {
+                debug(info);
+                if (url.indexOf(server.serverUrl() as string) >= 0) {
+                    event.preventDefault();
+                    callback(true);
+                    return;
+                }
+            }
+        }
+
+        callback(false);
+    });
+
+    app.on("select-client-certificate", (event, _webContents, url, list, callback) => {
+        debug("select-client-certificate");
+        debug(url);
+        debug(list);
+
+        if (server.isSecured()) {
+            const info = server.serverInfo();
+            if (info) {
+                debug(info);
+                if (url.indexOf(server.serverUrl() as string) >= 0) {
+                    event.preventDefault();
+                    callback({ data: info.clientcert } as Certificate);
+                    return;
+                }
+            }
+        }
+
+        callback();
+    });
+}
 
 export function initSessions() {
 
