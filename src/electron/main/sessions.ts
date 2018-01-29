@@ -5,7 +5,7 @@ import { Server } from "@r2-streamer-js/http/server";
 
 import { R2_SESSION_WEBVIEW } from "../common/sessions";
 
-const debug = debug_("r2:electron:main");
+const debug = debug_("r2:navigator:sessions");
 
 export function configureWebViewSession(server: Server) {
 
@@ -62,7 +62,9 @@ export function configureWebViewSession(server: Server) {
             const info = server.serverInfo();
             if (info) {
                 debug(info);
-                if (url.indexOf(server.serverUrl() as string) >= 0) {
+                if (url.indexOf(info.urlScheme + "://" + info.urlHost) === 0) {
+                    debug("certificate-error: BYPASS");
+
                     event.preventDefault();
                     callback(true);
                     return;
@@ -82,7 +84,9 @@ export function configureWebViewSession(server: Server) {
             const info = server.serverInfo();
             if (info) {
                 debug(info);
-                if (url.indexOf(server.serverUrl() as string) >= 0) {
+                if (url.indexOf(info.urlScheme + "://" + info.urlHost) === 0) {
+                    debug("select-client-certificate: BYPASS");
+
                     event.preventDefault();
                     callback({ data: info.clientcert } as Certificate);
                     return;
