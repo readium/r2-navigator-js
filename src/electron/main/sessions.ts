@@ -1,9 +1,107 @@
 import * as debug_ from "debug";
-import { app, session } from "electron";
+import { CertificateVerifyProcRequest, app, session } from "electron";
+
+import { Server } from "@r2-streamer-js/http/server";
 
 import { R2_SESSION_WEBVIEW } from "../common/sessions";
 
-const debug = debug_("r2:electron:main");
+const debug = debug_("r2:navigator:sessions");
+
+export function secureSessions(server: Server) {
+
+    const filter = { urls: ["*", "*://*/*"] };
+
+    const onBeforeSendHeadersCB = (details: any, callback: any) => {
+        // debug("onBeforeSendHeaders");
+        // debug(details);
+
+        // details.requestHeaders["User-Agent"] = "R2 Electron";
+
+        if (server.isSecured()) {
+            const info = server.serverInfo();
+            if (info) {
+                details.requestHeaders["X-Debug-" + info.trustKey] = info.trustVal;
+            }
+        }
+        callback({ cancel: false, requestHeaders: details.requestHeaders });
+    };
+
+    const setCertificateVerifyProcCB = (
+        request: CertificateVerifyProcRequest,
+        callback: (verificationResult: number) => void) => {
+        // debug("setCertificateVerifyProc");
+        // debug(request);
+
+        if (server.isSecured()) {
+            const info = server.serverInfo();
+            if (info) {
+                // debug(info);
+                if (request.hostname === info.urlHost) {
+                    callback(0); // OK
+                    return;
+                }
+            }
+        }
+        callback(-3); // Chromium
+        // callback(-2); // Fail
+    };
+
+    if (session.defaultSession) {
+        session.defaultSession.webRequest.onBeforeSendHeaders(filter, onBeforeSendHeadersCB);
+        session.defaultSession.setCertificateVerifyProc(setCertificateVerifyProcCB);
+    }
+
+    const webViewSession = getWebViewSession();
+    if (webViewSession) {
+        webViewSession.webRequest.onBeforeSendHeaders(filter, onBeforeSendHeadersCB);
+        webViewSession.setCertificateVerifyProc(setCertificateVerifyProcCB);
+    }
+
+    app.on("certificate-error", (event, _webContents, url, _error, _certificate, callback) => {
+        // debug("certificate-error");
+        // debug(url);
+        // debug(error);
+        // debug(certificate);
+
+        if (server.isSecured()) {
+            const info = server.serverInfo();
+            if (info) {
+                // debug(info);
+                if (url.indexOf(info.urlScheme + "://" + info.urlHost) === 0) {
+                    // debug("certificate-error: BYPASS");
+
+                    event.preventDefault();
+                    callback(true);
+                    return;
+                }
+            }
+        }
+
+        callback(false);
+    });
+
+    // app.on("select-client-certificate", (event, _webContents, url, list, callback) => {
+    //     debug("select-client-certificate");
+    //     debug(url);
+    //     debug(list);
+
+    //     if (server.isSecured()) {
+    //         const info = server.serverInfo();
+    //         if (info) {
+    //             debug(info);
+    //             if (url.indexOf(info.urlScheme + "://" + info.urlHost) === 0) {
+    //                 debug("select-client-certificate: BYPASS");
+
+    //                 event.preventDefault();
+    //                 callback({ data: info.clientcert } as Certificate);
+    //                 return;
+    //             }
+    //         }
+    //     }
+
+    //     callback();
+    // });
+}
 
 export function initSessions() {
 
