@@ -17,6 +17,5 @@
   '
 
   'electron-renderer:#ECMASCRIPT#': '
-    cpy "./ReadiumCSS/**/*.*" ../dist/ --cwd=./misc --parents &&
-    rimraf "./dist/ReadiumCSS/*.css"
+    cpy "./ReadiumCSS/**/*.*" ../dist/ --cwd=./misc --parents
   '

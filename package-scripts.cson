@@ -8,8 +8,7 @@
   '
 
   'electron-renderer:all': '
-    cpy "./ReadiumCSS/**/*.*" ../dist/ --cwd=./misc --parents &&
-    rimraf "./dist/ReadiumCSS/*.css"
+    cpy "./ReadiumCSS/**/*.*" ../dist/ --cwd=./misc --parents
   '
 
   '_pregitdist': '
