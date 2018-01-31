@@ -1,4 +1,4 @@
-/* Readium CSS 
+/* Readium CSS
    Base module
 
    A minimal stylesheet for all ebooks
@@ -34,7 +34,7 @@
 
   /* Config */
   --RS__baseFontFamily: var(--RS__oldStyleTf);
-  
+
   /* Dynamic leading based on typeface metrics + font-size setting */
   --RS__baseLineHeight: calc(1em + (2ex - 1ch) - ((1rem - 16px) * 0.1667));
   /* For CJK, the line-height is usually 15–20% more than for Latin */
@@ -52,13 +52,13 @@ html {
 }
 
 /* Disable text-selection in CSS until it’s managed in touchHandler.js */
-
+/*
 body {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-}
+} */
 
 /* 1.5 being too loose with larger font-sizes, we reset headings to normal (which value is 1.125–1.375 for our font-stacks) */
 
@@ -202,7 +202,7 @@ math {
   --RS__baseLineHeight: calc((1em + (2ex - 1ch) - ((1rem - 16px) * 0.1667)) * var(--RS__cjkCompensation));
 }
 
-/* Readium CSS 
+/* Readium CSS
    Day/Default mode
 
    A preset theme for day mode, which is the default
@@ -237,7 +237,7 @@ math {
   background-color: var(--RS__selectionBackgroundColor);
 }
 
-/* Readium CSS 
+/* Readium CSS
    Fonts module
 
    A stylesheet for embedded fonts
@@ -251,15 +251,15 @@ math {
   font-style: normal;
   font-weight: normal;
   src: local("AccessibleDfa"),
-       url("../fonts/AccessibleDfA.otf") format("opentype");
+       url("./fonts/AccessibleDfA.otf") format("opentype");
 }
 
-/* If you have different weights/styles, 
-   use `font-weight` and `font-style`, 
-   not prefixes in the font-family name, 
+/* If you have different weights/styles,
+   use `font-weight` and `font-style`,
+   not prefixes in the font-family name,
    or else it will be a nightmare to manage in user settings. */
 
-/* Readium CSS 
+/* Readium CSS
    HTML5 SR Patch stylesheet
 
    A set of style to adjust HTML5 Suggested Rendering to paginated content
@@ -285,7 +285,7 @@ hr, caption {
   break-after: avoid;
 }
 
-h1, h2, h3, h4, h5, h6, dt, 
+h1, h2, h3, h4, h5, h6, dt,
 figure, tr {
   -webkit-column-break-inside: avoid;
   page-break-inside: avoid;
@@ -368,13 +368,13 @@ figure, blockquote {
   margin: 1em 5%;
 }
 
-/* 
+/*
 
 :lang(ja) figure, :lang(ja) blockquote,
 :lang(zh-Hant) figure, :lang(zh-Hant) blockquote,
 :lang(zh-TW) figure, :lang(zh-TW) blockquote,
 :lang(mn) figure, :lang(mn) blockquote {
-  margin: 5% 1em;  
+  margin: 5% 1em;
 }
 
 */
@@ -383,13 +383,13 @@ ul, ol {
   padding-left: 5%;
 }
 
-/* 
+/*
 
 :lang(ja) ul, :lang(ja) ol,
 :lang(zh-Hant) ul, :lang(zh-Hant) ol,
 :lang(zh-TW) ul, :lang(zh-TW) ol,
 :lang(mn) ul, :lang(mn) ol   {
-  padding-top: 5%;  
+  padding-top: 5%;
 }
 
 */
@@ -398,13 +398,13 @@ dd {
   margin-left: 5%;
 }
 
-/* 
+/*
 
 :lang(ja) dd,
 :lang(zh-Hant) dd,
-:lang(zh-TW) dd, 
+:lang(zh-TW) dd,
 :lang(mn) dd {
-  margin-top: 5%;  
+  margin-top: 5%;
 }
 
 */
@@ -441,19 +441,19 @@ ruby > rt, ruby > rp {
 *:lang(ja),
 *:lang(zh),
 *:lang(ko),
-:lang(ja) cite, :lang(ja) dfn, :lang(ja) em, :lang(ja) i,  
+:lang(ja) cite, :lang(ja) dfn, :lang(ja) em, :lang(ja) i,
 :lang(zh) cite, :lang(zh) dfn, :lang(zh) em, :lang(zh) i,
 :lang(ko) cite, :lang(ko) dfn, :lang(ko) em, :lang(ko) i {
   font-style: normal;
 }
 
-:lang(ja) a,  
+:lang(ja) a,
 :lang(zh) a,
 :lang(ko) a {
   text-decoration: none;
 }
 
-/* Readium CSS 
+/* Readium CSS
    Safeguards module
 
    A set of styles to prevent common issues in pagination
@@ -468,7 +468,7 @@ ruby > rt, ruby > rp {
   /* max-width for media, you can override that via JS if not compiled to static */
   --RS__maxMediaWidth: 100%;
 
-  /* max-height for media, you can override that via JS if not compiled to static 
+  /* max-height for media, you can override that via JS if not compiled to static
      Please consider figures might have a figcaption, which is why 95vh in the first place */
   --RS__maxMediaHeight: 95vh;
 
@@ -524,7 +524,7 @@ img, svg, audio, video {
   break-inside: avoid;
 }
 
-/* Try managing image + figcaption, primarily for portrait images (only of type image but not only child in div/figure 
+/* Try managing image + figcaption, primarily for portrait images (only of type image but not only child in div/figure
 Disabled as it may create issues (min-height)
 
 div > img:only-of-type:not(:only-child),
