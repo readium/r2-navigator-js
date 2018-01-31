@@ -1,4 +1,4 @@
-/* Readium CSS
+/* Readium CSS 
    Base module
 
    A minimal stylesheet for all ebooks
@@ -34,31 +34,30 @@
 
   /* Config */
   --RS__baseFontFamily: var(--RS__oldStyleTf);
-  --RS__baseLineHeight: 1.5;
-
-  --RS__textColor: #121212;
-  --RS__backgroundColor: #FFFFFF;
+  
+  /* Dynamic leading based on typeface metrics + font-size setting */
+  --RS__baseLineHeight: calc(1em + (2ex - 1ch) - ((1rem - 16px) * 0.1667));
+  /* For CJK, the line-height is usually 15–20% more than for Latin */
+  --RS__cjkCompensation: 1.1667;
 }
 
-/* Default colors */
+/* Set default font for the html doc, so that it can be overridden by the authors’s stylesheet */
 
-:root {
-  color: var(--RS__textColor) !important;
-  background-color: var(--RS__backgroundColor) !important;
-}
-
-/* Set default font for the doc’s body, it will be overridden by the authors’s stylesheet */
-
-body {
+html {
   font-family: var(--RS__baseFontFamily);
+  /* Fallback line-height */
+  line-height: 1.6; /* Fits a little bit better for all languages than 1.5 */
   line-height: var(--RS__baseLineHeight);
   text-rendering: optimizeLegibility;
+}
 
-  /* Disable text-selection in CSS until it’s managed in touchHandler.js */
-  /* -webkit-user-select: none;
+/* Disable text-selection in CSS until it’s managed in touchHandler.js */
+
+body {
+  -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
-  user-select: none; */
+  user-select: none;
 }
 
 /* 1.5 being too loose with larger font-sizes, we reset headings to normal (which value is 1.125–1.375 for our font-stacks) */
@@ -67,7 +66,9 @@ h1, h2, h3 {
   line-height: normal;
 }
 
-:lang(ja) {
+:lang(ja),
+:lang(zh),
+:lang(ko) {
   word-wrap: break-word;
   -webkit-line-break: strict;
   -epub-line-break: strict;
@@ -77,7 +78,7 @@ h1, h2, h3 {
 /* Set default font for Math */
 
 math {
-  font-family: "Latin Modern Math", "STIX Two Math", "XITS Math", "STIX Math", "Libertinus Math", "TeX Gyre Termes Math", "TeX Gyre Bonum Math", "TeX Gyre Schola", "DejaVu Math TeX Gyre", "TeX Gyre Pagella Math", "Asana Math", "Cambria Math", "Lucida Bright Math", "Minion Math", STIXGeneral, STIXSizeOneSym, Symbol, "Times New Roman", serif;;
+  font-family: "Latin Modern Math", "STIX Two Math", "XITS Math", "STIX Math", "Libertinus Math", "TeX Gyre Termes Math", "TeX Gyre Bonum Math", "TeX Gyre Schola", "DejaVu Math TeX Gyre", "TeX Gyre Pagella Math", "Asana Math", "Cambria Math", "Lucida Bright Math", "Minion Math", STIXGeneral, STIXSizeOneSym, Symbol, "Times New Roman", serif;
 }
 
 /* Language Overrides
@@ -103,6 +104,10 @@ math {
   --RS__baseFontFamily: "Plantagenet Cherokee", Roboto, Noto, "Noto Sans Cherokee";
 }
 
+:lang(fa) {
+  --RS__baseFontFamily: "Geeza Pro", "Arabic Typesetting", Roboto, Noto, "Noto Naskh Arabic", "Times New Roman", serif;
+}
+
 :lang(gu) {
   --RS__baseFontFamily: "Gujarati Sangam MN", "Nirmala UI", Shruti, Roboto, Noto, "Noto Sans Gujarati", sans-serif;
 }
@@ -125,6 +130,13 @@ math {
 
 :lang(ja) {
   --RS__baseFontFamily: "游ゴシック体", YuGothic, "ヒラギノ丸ゴ", "Hiragino Sans", "Yu Gothic UI", "Meiryo UI", "MS Gothic", Roboto, Noto, "Noto Sans CJK JP", sans-serif;
+  --RS__baseLineHeight: calc((1em + (2ex - 1ch) - ((1rem - 16px) * 0.1667)) * var(--RS__cjkCompensation));
+
+  /* Extra variables for Japanese font-stacks as we may want to reuse them for user settings + default */
+  --RS__serif-ja: "ＭＳ Ｐ明朝", "MS PMincho", "Hiragino Mincho Pro", "ヒラギノ明朝 Pro W3", "游明朝", "YuMincho", "ＭＳ 明朝", "MS Mincho", "Hiragino Mincho ProN", serif;
+  --RS__sans-serif-ja: "ＭＳ Ｐゴシック", "MS PGothic", "Hiragino Kaku Gothic Pro W3", "ヒラギノ角ゴ Pro W3", "Hiragino Sans GB", "ヒラギノ角ゴシック W3", "游ゴシック", "YuGothic", "ＭＳ ゴシック", "MS Gothic", "Hiragino Sans", sans-serif;
+  --RS__serif-ja-v: "ＭＳ 明朝", "MS Mincho", "Hiragino Mincho Pro", "ヒラギノ明朝 Pro W3", "游明朝", "YuMincho", "ＭＳ Ｐ明朝", "MS PMincho", "Hiragino Mincho ProN", serif;
+  --RS__sans-serif-ja-v: "ＭＳ ゴシック", "MS Gothic", "Hiragino Kaku Gothic Pro W3", "ヒラギノ角ゴ Pro W3", "Hiragino Sans GB", "ヒラギノ角ゴシック W3", "游ゴシック", "YuGothic", "ＭＳ Ｐゴシック", "MS PGothic", "Hiragino Sans", sans-serif;
 }
 
 :lang(km) {
@@ -137,6 +149,7 @@ math {
 
 :lang(ko) {
   --RS__baseFontFamily: "Nanum Gothic", "Apple SD Gothic Neo", "Malgun Gothic", Roboto, Noto, "Noto Sans CJK KR", sans-serif;
+  --RS__baseLineHeight: calc((1em + (2ex - 1ch) - ((1rem - 16px) * 0.1667)) * var(--RS__cjkCompensation));
 }
 
 :lang(lo) {
@@ -175,18 +188,56 @@ math {
 
 :lang(zh) {
   --RS__baseFontFamily: "方体", "PingFang SC", "黑体", "Heiti SC", "Microsoft JhengHei UI", "Microsoft JhengHei", Roboto, Noto, "Noto Sans CJK SC", sans-serif;
+  --RS__baseLineHeight: calc((1em + (2ex - 1ch) - ((1rem - 16px) * 0.1667)) * var(--RS__cjkCompensation));
 }
 
 :lang(zh-Hant),
 :lang(zh-TW) {
   --RS__baseFontFamily: "方體", "PingFang TC", "黑體", "Heiti TC", "Microsoft JhengHei UI", "Microsoft JhengHei", Roboto, Noto, "Noto Sans CJK TC", sans-serif;
+  --RS__baseLineHeight: calc((1em + (2ex - 1ch) - ((1rem - 16px) * 0.1667)) * var(--RS__cjkCompensation));
 }
 
 :lang(zh-HK) {
   --RS__baseFontFamily: "方體", "PingFang HK", "方體", "PingFang TC", "黑體", "Heiti TC", "Microsoft JhengHei UI", "Microsoft JhengHei", Roboto, Noto, "Noto Sans CJK TC", sans-serif;
+  --RS__baseLineHeight: calc((1em + (2ex - 1ch) - ((1rem - 16px) * 0.1667)) * var(--RS__cjkCompensation));
 }
 
-/* Readium CSS
+/* Readium CSS 
+   Day/Default mode
+
+   A preset theme for day mode, which is the default
+
+   Repo: https://github.com/readium/readium-css */
+
+/* CONFIG */
+
+:root {
+  --RS__backgroundColor: #FFFFFF;
+  --RS__textColor: #121212;
+
+  /* This can be customized but initial will re-use default value of the browser */
+  --RS__selectionBackgroundColor: #b4d8fe;
+  --RS__selectionTextColor: inherit;
+}
+
+:root {
+  color: var(--RS__textColor) !important;
+  background-color: var(--RS__backgroundColor) !important;
+}
+
+/* Note: Though `::selection` was present in drafts of CSS Selectors Level 3, it was removed during the Candidate Recommendation phase because its behavior was under-specified (especially with nested elements) and interoperability wasn’t achieved. Source: https://developer.mozilla.org/en-US/docs/Web/CSS/::selection */
+
+::-moz-selection {
+  color: var(--RS__selectionTextColor);
+  background-color: var(--RS__selectionBackgroundColor);
+}
+
+::selection {
+  color: var(--RS__selectionTextColor);
+  background-color: var(--RS__selectionBackgroundColor);
+}
+
+/* Readium CSS 
    Fonts module
 
    A stylesheet for embedded fonts
@@ -203,12 +254,12 @@ math {
        url("../fonts/AccessibleDfA.otf") format("opentype");
 }
 
-/* If you have different weights/styles,
-   use `font-weight` and `font-style`,
-   not prefixes in the font-family name,
+/* If you have different weights/styles, 
+   use `font-weight` and `font-style`, 
+   not prefixes in the font-family name, 
    or else it will be a nightmare to manage in user settings. */
 
-/* Readium CSS
+/* Readium CSS 
    HTML5 SR Patch stylesheet
 
    A set of style to adjust HTML5 Suggested Rendering to paginated content
@@ -234,7 +285,7 @@ hr, caption {
   break-after: avoid;
 }
 
-h1, h2, h3, h4, h5, h6, dt,
+h1, h2, h3, h4, h5, h6, dt, 
 figure, tr {
   -webkit-column-break-inside: avoid;
   page-break-inside: avoid;
@@ -255,7 +306,7 @@ body {
 
 h1, h2, h3, h4, h5, h6, dt,
 figcaption, pre, caption, address,
-center {
+center, code, var {
   -ms-hyphens: none;
   -moz-hyphens: none;
   -webkit-hyphens: none;
@@ -267,6 +318,12 @@ center {
 
 body {
   font-variant-numeric: oldstyle-nums proportional-nums;
+}
+
+:lang(ja) body,
+:lang(zh) body,
+:lang(ko) body {
+  font-variant-numeric: lining-nums proportional-nums;
 }
 
 h1, h2, h3, h4, h5, h6, dt {
@@ -286,6 +343,14 @@ rt {
   font-variant-east-asian: ruby;
 }
 
+:lang(ar) {
+  font-variant-ligatures: common-ligatures;
+}
+
+:lang(ko) {
+  font-kerning: normal;
+}
+
 /* Night mode */
 
 hr {
@@ -303,13 +368,46 @@ figure, blockquote {
   margin: 1em 5%;
 }
 
+/* 
+
+:lang(ja) figure, :lang(ja) blockquote,
+:lang(zh-Hant) figure, :lang(zh-Hant) blockquote,
+:lang(zh-TW) figure, :lang(zh-TW) blockquote,
+:lang(mn) figure, :lang(mn) blockquote {
+  margin: 5% 1em;  
+}
+
+*/
+
 ul, ol {
   padding-left: 5%;
 }
 
+/* 
+
+:lang(ja) ul, :lang(ja) ol,
+:lang(zh-Hant) ul, :lang(zh-Hant) ol,
+:lang(zh-TW) ul, :lang(zh-TW) ol,
+:lang(mn) ul, :lang(mn) ol   {
+  padding-top: 5%;  
+}
+
+*/
+
 dd {
   margin-left: 5%;
 }
+
+/* 
+
+:lang(ja) dd,
+:lang(zh-Hant) dd,
+:lang(zh-TW) dd, 
+:lang(mn) dd {
+  margin-top: 5%;  
+}
+
+*/
 
 pre {
   white-space: pre-wrap;
@@ -338,8 +436,25 @@ ruby > rt, ruby > rp {
   user-select: none;
 }
 
-/* Readium CSS
-   Safeguards module
+/* Internationalization */
+
+*:lang(ja),
+*:lang(zh),
+*:lang(ko),
+:lang(ja) cite, :lang(ja) dfn, :lang(ja) em, :lang(ja) i,  
+:lang(zh) cite, :lang(zh) dfn, :lang(zh) em, :lang(zh) i,
+:lang(ko) cite, :lang(ko) dfn, :lang(ko) em, :lang(ko) i {
+  font-style: normal;
+}
+
+:lang(ja) a,  
+:lang(zh) a,
+:lang(ko) a {
+  text-decoration: none;
+}
+
+/* Readium CSS 
+   Safeguards module for vertical writing
 
    A set of styles to prevent common issues in pagination
 
@@ -353,9 +468,8 @@ ruby > rt, ruby > rp {
   /* max-width for media, you can override that via JS if not compiled to static */
   --RS__maxMediaWidth: 100%;
 
-  /* max-height for media, you can override that via JS if not compiled to static
-     Please consider figures might have a figcaption, which is why 95vh in the first place */
-  --RS__maxMediaHeight: 95vh;
+  /* max-height for media, you can override that via JS if not compiled to static  */
+  --RS__maxMediaHeight: 100%;
 
   /* value for medias’ box-sizing */
   --RS__boxSizingMedia: border-box;
@@ -394,11 +508,11 @@ img, svg, audio, video {
   width: auto;
   height: auto;
 
-  /* Some files don’t have max-width */
-  max-width: var(--RS__maxMediaWidth);
-
   /* We’re setting a max-height, especially for covers */
-  max-height: var(--RS__maxMediaHeight) !important;
+  max-width: var(--RS__maxMediaHeight);
+
+  /* Some files don’t have max-width */
+  max-height: var(--RS__maxMediaWidth) !important;
   /* We probably don’t need to use modern box-sizing as auto behaves like it */
   box-sizing: var(--RS__boxSizingMedia);
 
@@ -409,23 +523,12 @@ img, svg, audio, video {
   break-inside: avoid;
 }
 
-/* Try managing image + figcaption, primarily for portrait images (only of type image but not only child in div/figure
-Disabled as it may create issues (min-height)
-
-div > img:only-of-type:not(:only-child),
-p > img:only-of-type:not(:only-child),
-figure img:only-of-type:not(:only-child) {
-  min-height: 75vh;
-  max-height: calc(100vh - 3rem);
-}
-*/
-
 /* Try preventing border being cut-off, webkit + blink have content-box by default */
 
 table {
 
-  /* We might want to set at least overflow-x to auto in case the table doesn't fit,
-     max-width is not necessarily the best solution there, but maybe we could investigate transform scale */
-  overflow-x: auto;
+  /* We might want to set at least overflow-y to auto in case the table doesn't fit,
+     max-height is not necessarily the best solution there, but maybe we could investigate transform scale */
+  overflow-y: auto;
   box-sizing: var(--RS__boxSizingTable);
 }
