@@ -6,7 +6,7 @@ import {
 
 const win = (global as any).window as Window;
 
-const urlRootReadiumCSS = win.location.origin + "/readium-css/iOS/";
+const urlRootReadiumCSS = win.location.origin + "/readium-css/";
 // const urlResizeSensor = win.location.origin + "/resize-sensor.js";
 
 export const DEBUG_VISUALS = false;
@@ -145,6 +145,11 @@ export function isRTL(): boolean {
     return _isRTL;
 }
 
+// TODO? page-progression-direction
+// TODO? xml:lang ar, fa, he ==> RTL, ensure html@xml:lang and html@dir (if missing)
+// TODO? xml:lang zh, ja, ko ==> horizontal, ensure html@xml:lang (if missing)
+// tslint:disable-next-line:max-line-length
+// https://github.com/readium/readium-css/blob/develop/prototype/iOS-implem/dist/ReadMe.md#dealing-with-languagesscripts
 function computeVerticalRTL() {
 
     let dirAttr = win.document.documentElement.getAttribute("dir");
@@ -194,7 +199,7 @@ function computeVerticalRTL() {
                 }
             }
             if (!_isRTL) {
-                prop = htmlStyle.getPropertyValue("direction");
+                prop = bodyStyle.getPropertyValue("direction");
                 if (prop && prop.indexOf("rtl") >= 0) {
                     _isRTL = true;
                 }
@@ -481,6 +486,9 @@ function readiumCSSSet(messageJson: any) {
 
         // docElement.style.setProperty("--USER__backgroundColor", "#FFFFFF");
         // docElement.style.setProperty("--USER__textColor", "#000000");
+
+        // https://github.com/readium/readium-css/blob/develop/prototype/iOS-implem/dist/ReadMe.md#right-to-left
+        // TODO? --USER__ligatures (for RTL)
     }
 }
 
@@ -538,16 +546,16 @@ function removeAllCSSInline() {
 function removeAllCSS() {
     removeCSS("before");
     removeCSS("after");
-    removeCSS("base");
-    removeCSS("html5patch");
-    removeCSS("safeguards");
+    // removeCSS("base");
+    // removeCSS("html5patch");
+    // removeCSS("safeguards");
     removeCSS("default");
-    removeCSS("highlights");
-    removeCSS("scroll");
-    removeCSS("pagination");
-    removeCSS("night_mode");
-    removeCSS("pagination");
-    removeCSS("os_a11y");
-    removeCSS("user_settings");
-    removeCSS("fs_normalize");
+    // removeCSS("highlights");
+    // removeCSS("scroll");
+    // removeCSS("pagination");
+    // removeCSS("night_mode");
+    // removeCSS("pagination");
+    // removeCSS("os_a11y");
+    // removeCSS("user_settings");
+    // removeCSS("fs_normalize");
 }
