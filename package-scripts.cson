@@ -144,7 +144,7 @@
   '
 
   'transpile:typescript': '
-    tsc -p "./tsconfig.json"
+    tsc --pretty -p "./tsconfig.json"
   '
 
   'pretranspile:typescript:all': '
