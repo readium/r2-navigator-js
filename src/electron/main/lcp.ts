@@ -51,7 +51,7 @@ export function installLcpHandler(publicationsServer: Server, deviceIDManager: I
 
     async function tryLcpPass(publicationFilePath: string, lcpPass: string, isSha256Hex: boolean): Promise<boolean> {
         const publication = publicationsServer.cachedPublication(publicationFilePath);
-        if (!publication) {
+        if (!publication || !publication.LCP) {
             return false;
         }
 
