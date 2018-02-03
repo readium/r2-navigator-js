@@ -1,3 +1,4 @@
+import * as crypto from "crypto";
 import * as debug_ from "debug";
 import { CertificateVerifyProcRequest, app, session } from "electron";
 
@@ -19,8 +20,32 @@ export function secureSessions(server: Server) {
 
         if (server.isSecured()) {
             const info = server.serverInfo();
-            if (info) {
-                details.requestHeaders["X-Debug-" + info.trustKey] = info.trustVal;
+            if (info && info.trustKey && info.trustCheck) {
+                const AES_BLOCK_SIZE = 16;
+                // const encrypted = encrypt(info.trustKey, details.url);
+
+                const encrypteds: Buffer[] = [];
+                const ivBuff = new Buffer(info.trustCheck);
+                debug(ivBuff.length);
+                const iv = ivBuff.slice(0, AES_BLOCK_SIZE);
+                debug(iv.length);
+                encrypteds.push(iv);
+                const encryptStream = crypto.createCipheriv("aes-256-cbc",
+                    info.trustKey,
+                    iv);
+                encryptStream.setAutoPadding(true);
+                const buff1 = encryptStream.update(details.url);
+                if (buff1) {
+                    encrypteds.push(buff1);
+                }
+                const buff2 = encryptStream.final();
+                if (buff2) {
+                    encrypteds.push(buff2);
+                }
+                const encrypted = Buffer.concat(encrypteds);
+
+                const base64 = new Buffer(encrypted).toString("base64");
+                details.requestHeaders["X-" + info.trustCheck] = base64;
             }
         }
         callback({ cancel: false, requestHeaders: details.requestHeaders });
