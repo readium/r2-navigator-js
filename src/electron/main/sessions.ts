@@ -20,19 +20,12 @@ export function secureSessions(server: Server) {
 
         if (server.isSecured()) {
             const info = server.serverInfo();
-            if (info && info.trustKey && info.trustCheck) {
-                const AES_BLOCK_SIZE = 16;
-                // const encrypted = encrypt(info.trustKey, details.url);
-
+            if (info && info.trustKey && info.trustCheck && info.trustCheckIV) {
                 const encrypteds: Buffer[] = [];
-                const ivBuff = new Buffer(info.trustCheck);
-                debug(ivBuff.length);
-                const iv = ivBuff.slice(0, AES_BLOCK_SIZE);
-                debug(iv.length);
-                encrypteds.push(iv);
+                encrypteds.push(info.trustCheckIV);
                 const encryptStream = crypto.createCipheriv("aes-256-cbc",
                     info.trustKey,
-                    iv);
+                    info.trustCheckIV);
                 encryptStream.setAutoPadding(true);
                 const buff1 = encryptStream.update(details.url);
                 if (buff1) {
