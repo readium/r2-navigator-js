@@ -22,7 +22,7 @@ export function secureSessions(server: Server) {
             const info = server.serverInfo();
             if (info && info.trustKey && info.trustCheck && info.trustCheckIV) {
                 const encrypteds: Buffer[] = [];
-                encrypteds.push(info.trustCheckIV);
+                // encrypteds.push(info.trustCheckIV);
                 const encryptStream = crypto.createCipheriv("aes-256-cbc",
                     info.trustKey,
                     info.trustCheckIV);
