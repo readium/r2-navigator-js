@@ -5,7 +5,7 @@ import { Server } from "@r2-streamer-js/http/server";
 
 import { R2_SESSION_WEBVIEW } from "../common/sessions";
 
-const debug = debug_("r2:navigator:sessions");
+const debug = debug_("r2:navigator#electron/main/sessions");
 
 export function secureSessions(server: Server) {
 

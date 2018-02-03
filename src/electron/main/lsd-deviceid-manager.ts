@@ -8,7 +8,7 @@ import { IStore } from "../common/store";
 // import { StoreElectron } from "../common/store-electron";
 // export const electronStoreLSD: IStore = new StoreElectron("readium2-navigator-lsd", {});
 
-const debug = debug_("r2:electron:main:lsd");
+const debug = debug_("r2:navigator#electron/main/lsd-deviceid-manager");
 
 const LSD_STORE_DEVICEID_ENTRY_PREFIX = "deviceID_";
 

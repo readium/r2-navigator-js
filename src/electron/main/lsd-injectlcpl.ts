@@ -6,7 +6,7 @@ import { injectBufferInZip } from "@utils/zip/zipInjector";
 import * as debug_ from "debug";
 import { JSON as TAJSON } from "ta-json";
 
-const debug = debug_("r2:electron:main:lsd");
+const debug = debug_("r2:navigator#electron/main/lsd-injectlcpl");
 
 export async function lsdLcpUpdateInject(
     lcplStr: string,

@@ -13,7 +13,7 @@ import {
     R2_EVENT_LCP_LSD_RETURN_RES,
 } from "../common/events";
 
-const debug = debug_("r2:electron:main:lsd");
+const debug = debug_("r2:navigator#electron/main/lsd");
 
 export function installLsdHandler(publicationsServer: Server, deviceIDManager: IDeviceIDManager) {
 

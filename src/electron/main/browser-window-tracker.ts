@@ -1,6 +1,10 @@
+import * as debug_ from "debug";
+
 import { app } from "electron";
 
 import { R2_EVENT_LINK } from "../common/events";
+
+const debug = debug_("r2:navigator#electron/main/browser-window-tracker");
 
 let _electronBrowserWindows: Electron.BrowserWindow[];
 
@@ -30,16 +34,16 @@ app.on("web-contents-created", (_evt, wc) => {
     }
     _electronBrowserWindows.forEach((win) => {
         if (wc.hostWebContents.id === win.webContents.id) {
-            console.log("WEBVIEW web-contents-created");
+            debug("WEBVIEW web-contents-created");
 
             wc.on("will-navigate", (event, url) => {
-                console.log("webview.getWebContents().on('will-navigate'");
+                debug("webview.getWebContents().on('will-navigate'");
 
-                // console.log(event.sender);
-                console.log(url);
+                // debug(event.sender);
+                debug(url);
 
                 const wcUrl = event.sender.getURL();
-                console.log(wcUrl);
+                debug(wcUrl);
 
                 event.preventDefault();
 
