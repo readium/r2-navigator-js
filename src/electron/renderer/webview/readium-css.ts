@@ -122,6 +122,89 @@ const readPosCssStyles = `
     background-color: yellow !important;
 }`;
 
+export const configureFixedLayout = (isFixedLayout: boolean) => {
+    if (!win.document || !win.document.head || !win.document.body) {
+        console.log("configureFixedLayout !win.document || !win.document.head || !win.document.body");
+        return;
+    }
+
+    let width: number = (win as any).READIUM_FXL_VIEWPORT_WIDTH;
+    let height: number = (win as any).READIUM_FXL_VIEWPORT_HEIGHT;
+
+    if (!width || !height) {
+        const metaViewport = win.document.head.querySelector("meta[name=viewport]");
+        if (!metaViewport) {
+            console.log("configureFixedLayout NO meta[name=viewport]");
+            return;
+        }
+        const attr = metaViewport.getAttribute("content");
+        if (!attr) {
+            console.log("configureFixedLayout NO meta[name=viewport && content]");
+            return;
+        }
+        const wMatch = attr.match(/\s*width\s*=\s*([0-9]+)/);
+        if (wMatch && wMatch.length >= 2) {
+            try {
+                width = parseInt(wMatch[1], 10);
+            } catch (err) {
+                console.log(err);
+                // ignore
+            }
+        } else {
+            console.log("configureFixedLayout NO meta[name=viewport && content WIDTH]");
+        }
+        const hMatch = attr.match(/\s*height\s*=\s*([0-9]+)/);
+        if (hMatch && hMatch.length >= 2) {
+            try {
+                height = parseInt(hMatch[1], 10);
+            } catch (err) {
+                console.log(err);
+                // ignore
+            }
+        } else {
+            console.log("configureFixedLayout NO meta[name=viewport && content HEIGHT]");
+        }
+
+        if (width && height) {
+            console.log("READIUM_FXL_VIEWPORT_WIDTH: " + width);
+            console.log("READIUM_FXL_VIEWPORT_HEIGHT: " + height);
+
+            (win as any).READIUM_FXL_VIEWPORT_WIDTH = width;
+            (win as any).READIUM_FXL_VIEWPORT_HEIGHT = height;
+        }
+    }
+
+    if (width && height && isFixedLayout) {
+        win.document.documentElement.style.overflow = "hidden";
+
+        // Many FXL EPUBs lack the body dimensions (only viewport meta)
+        win.document.body.style.width = width + "px";
+        win.document.body.style.height = height + "px";
+        win.document.body.style.overflow = "hidden";
+        win.document.body.style.margin = "0"; // 8px by default!
+
+        console.log("FXL width: " + width);
+        console.log("FXL height: " + height);
+
+        const visibleWidth = win.innerWidth;
+        const visibleHeight = win.innerHeight;
+        console.log("FXL visible width: " + visibleWidth);
+        console.log("FXL visible height: " + visibleHeight);
+
+        const ratioX = visibleWidth / width;
+        const ratioY = visibleHeight / height;
+        const ratio = Math.min(ratioX, ratioY);
+
+        const tx = (visibleWidth - (width * ratio)) / 2;
+        const ty = (visibleHeight - (height * ratio)) / 2;
+        console.log("FXL trans X: " + tx);
+        console.log("FXL trans Y: " + ty);
+
+        win.document.documentElement.style.transformOrigin = "0 0";
+        win.document.documentElement.style.transform = `translateX(${tx}px) translateY(${ty}px) scale(${ratio})`;
+    }
+};
+
 export const injectDefaultCSS = () => {
     appendCSSInline("electron-selection", selectionCssStyles);
     appendCSSInline("electron-focus", focusCssStyles);
@@ -310,7 +393,7 @@ function readiumCSSInject(messageJson: any) {
 }
 
 function readiumCSSSet(messageJson: any) {
-    if (typeof messageJson.setCSS === "undefined") {
+    if (!messageJson || typeof messageJson.setCSS === "undefined") {
         return;
     }
 
@@ -327,7 +410,11 @@ function readiumCSSSet(messageJson: any) {
         || !messageJson.setCSS;
     if (remove) {
 
-        docElement.style.overflow = "auto";
+        if (messageJson.isFixedLayout) {
+            docElement.style.overflow = "hidden";
+        } else {
+            docElement.style.overflow = "auto";
+        }
 
         const toRemove: string[] = [];
         for (let i = 0; i < docElement.style.length; i++) {

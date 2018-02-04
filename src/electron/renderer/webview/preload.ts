@@ -17,6 +17,7 @@ import { easings } from "../common/easings";
 import { getURLQueryParams } from "../common/querystring";
 import {
     DEBUG_VISUALS,
+    configureFixedLayout,
     injectDefaultCSS,
     injectReadPosCSS,
     isRTL,
@@ -82,7 +83,7 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, messageString: any) => {
 let _lastAnimState: IPropertyAnimationState | undefined;
 
 ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, messageString: any) => {
-    if (!win.document.body) {
+    if (_isFixedLayout || !win.document.body) {
         ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, messageString);
         return;
     }
@@ -270,7 +271,10 @@ const checkReadyPass = () => {
         }
     }
 
+    // assumes debounced from outside (Electron's webview object embedded in main renderer process HTML)
     win.addEventListener("resize", () => {
+        configureFixedLayout(_isFixedLayout);
+
         scrollToHashRaw(false);
         // scrollToHash(); // debounced
     });
@@ -280,7 +284,9 @@ const checkReadyPass = () => {
     // let skipFirstScroll = skipFirstResize;
 
     setTimeout(() => {
-        scrollToHashRaw(true);
+        if (!_isFixedLayout) {
+            scrollToHashRaw(true);
+        }
 
         win.addEventListener("scroll", (_ev: Event) => {
 
@@ -299,7 +305,7 @@ const checkReadyPass = () => {
 
     }, 800);
 
-    const useResizeSensor = true;
+    const useResizeSensor = !_isFixedLayout;
     if (useResizeSensor && win.document.body) {
 
         setTimeout(() => {
@@ -450,12 +456,12 @@ const scrollToHashRaw = (firstCall: boolean) => {
                     console.log("readiumprevious");
 
                     const maxHeightShift = isPaged ?
-                    ((isVerticalWritingMode() ?
-                        (win.document.body.scrollHeight - win.document.documentElement.offsetHeight) :
-                        (win.document.body.scrollWidth - win.document.documentElement.offsetWidth))) :
-                    ((isVerticalWritingMode() ?
-                        (win.document.body.scrollWidth - win.document.documentElement.clientWidth) :
-                        (win.document.body.scrollHeight - win.document.documentElement.clientHeight)));
+                        ((isVerticalWritingMode() ?
+                            (win.document.body.scrollHeight - win.document.documentElement.offsetHeight) :
+                            (win.document.body.scrollWidth - win.document.documentElement.offsetWidth))) :
+                        ((isVerticalWritingMode() ?
+                            (win.document.body.scrollWidth - win.document.documentElement.clientWidth) :
+                            (win.document.body.scrollHeight - win.document.documentElement.clientHeight)));
                     // console.log("maxHeightShift: " + maxHeightShift);
 
                     _ignoreScrollEvent = true;
@@ -572,12 +578,7 @@ let _locationHashOverride: Element | undefined;
 let _locationHashOverrideCSSselector: string | undefined;
 let _readyPassDone = false;
 let _readyEventSent = false;
-
-const resetInitialState = () => {
-    _locationHashOverride = undefined;
-    _readyPassDone = false;
-    _readyEventSent = false;
-};
+let _isFixedLayout = false;
 
 // after DOMContentLoaded
 win.addEventListener("load", () => {
@@ -593,11 +594,53 @@ win.addEventListener("load", () => {
 
 win.addEventListener("DOMContentLoaded", () => {
 
+    // const linkUri = new URI(win.location.href);
+
     if (win.location.hash && win.location.hash.length > 1) {
         _hashElement = win.document.getElementById(win.location.hash.substr(1));
     }
 
-    resetInitialState();
+    // resetInitialState();
+    _locationHashOverride = undefined;
+    _readyPassDone = false;
+    _readyEventSent = false;
+
+    let readiumcssJson: any = {};
+    if (queryParams) {
+        // tslint:disable-next-line:no-string-literal
+        const base64 = queryParams["readiumcss"];
+        // if (!base64) {
+        //     console.log("!readiumcss BASE64 ??!");
+        //     const token = "readiumcss=";
+        //     const i = win.location.search.indexOf(token);
+        //     if (i > 0) {
+        //         base64 = win.location.search.substr(i + token.length);
+        //         const j = base64.indexOf("&");
+        //         if (j > 0) {
+        //             base64 = base64.substr(0, j);
+        //         }
+        //         base64 = decodeURIComponent(base64);
+        //     }
+        // }
+        if (base64) {
+            try {
+                // console.log(base64);
+                const str = window.atob(base64);
+                // console.log(str);
+
+                readiumcssJson = JSON.parse(str);
+                // console.log(readiumcssJson);
+
+            } catch (err) {
+                console.log(err);
+            }
+        }
+    }
+    _isFixedLayout = readiumcssJson && readiumcssJson.isFixedLayout;
+    configureFixedLayout(_isFixedLayout);
+    if (_isFixedLayout) {
+        notifyReady();
+    }
 
     injectDefaultCSS();
 
@@ -643,37 +686,8 @@ win.addEventListener("DOMContentLoaded", () => {
 
     // injectResizeSensor();
 
-    // const linkUri = new URI(win.location.href);
-    try {
-        if (queryParams) {
-            // tslint:disable-next-line:no-string-literal
-            const base64 = queryParams["readiumcss"];
-            // if (!base64) {
-            //     console.log("!readiumcss BASE64 ??!");
-            //     const token = "readiumcss=";
-            //     const i = win.location.search.indexOf(token);
-            //     if (i > 0) {
-            //         base64 = win.location.search.substr(i + token.length);
-            //         const j = base64.indexOf("&");
-            //         if (j > 0) {
-            //             base64 = base64.substr(0, j);
-            //         }
-            //         base64 = decodeURIComponent(base64);
-            //     }
-            // }
-            if (base64) {
-                // console.log(base64);
-                const str = window.atob(base64);
-                // console.log(str);
-
-                const messageJson = JSON.parse(str);
-                // console.log(messageJson);
-
-                readiumCSS(messageJson);
-            }
-        }
-    } catch (err) {
-        console.log(err);
+    if (readiumcssJson) {
+        readiumCSS(readiumcssJson);
     }
 });
 
