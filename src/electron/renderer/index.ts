@@ -18,6 +18,8 @@ import {
 } from "../common/events";
 import { R2_SESSION_WEBVIEW } from "../common/sessions";
 
+const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+
 // const queryParams = getURLQueryParams();
 
 // // tslint:disable-next-line:no-string-literal
@@ -88,6 +90,12 @@ export function installNavigatorDOM(
 
     _publication = publication;
     _publicationJsonUrl = publicationJsonUrl;
+
+    if (IS_DEV) {
+        // quick debugging from the console
+        (window as any).R2_Publication = _publication;
+        (window as any).R2_PublicationUrl = _publicationJsonUrl;
+    }
 
     const rootHtmlElement = document.getElementById(rootHtmlElementID) as HTMLElement;
     if (!rootHtmlElement) {
