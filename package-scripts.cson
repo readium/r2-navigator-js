@@ -11,6 +11,10 @@
     cpy "./ReadiumCSS/**/*.*" ../dist/ --cwd=./misc --parents
   '
 
+  'copydist': '
+    cpy "dist/**/*.*" ../r2-testapp-js/node_modules/r2-navigator-js/ --cwd=./ --parents
+  '
+
   '_pregitdist': '
     npm run build:all
   '
