@@ -36,8 +36,29 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 // // tslint:disable-next-line:no-string-literal
 // const lcpHint = queryParams["lcpHint"];
 
+// tslint:disable-next-line:variable-name
+const __computeReadiumCssJsonMessage: () => string = () => {
+
+    const isFixedLayout = _publication &&
+        _publication.Metadata &&
+        _publication.Metadata.Rendition &&
+        _publication.Metadata.Rendition.Layout &&
+        _publication.Metadata.Rendition.Layout === "fixed";
+
+    if (isFixedLayout) {
+        const jsonMsg = { injectCSS: "rollback", setCSS: "rollback" };
+        const readiumCssJsonMessage = JSON.stringify(jsonMsg, null, 0);
+        return readiumCssJsonMessage;
+    } else {
+        if (!_computeReadiumCssJsonMessage) {
+            return "{}";
+        }
+        const readiumCssJsonMessage = _computeReadiumCssJsonMessage();
+        return readiumCssJsonMessage;
+    }
+};
 let _computeReadiumCssJsonMessage: () => string = () => {
-    return "";
+    return "{}";
 };
 export function setReadiumCssJsonGetter(func: () => string) {
     _computeReadiumCssJsonMessage = func;
@@ -51,10 +72,7 @@ export function setReadingLocationSaver(func: (docHref: string, cssSelector: str
 }
 
 export function readiumCssOnOff() {
-    if (!_computeReadiumCssJsonMessage) {
-        return;
-    }
-    const readiumCssJsonMessage = _computeReadiumCssJsonMessage();
+    const readiumCssJsonMessage = __computeReadiumCssJsonMessage();
     (_webview1 as any).send(R2_EVENT_READIUMCSS, readiumCssJsonMessage); // .getWebContents()
     (_webview2 as any).send(R2_EVENT_READIUMCSS, readiumCssJsonMessage); // .getWebContents()
 }
@@ -216,7 +234,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         return;
     }
 
-    const rcssJsonstr = _computeReadiumCssJsonMessage ? _computeReadiumCssJsonMessage() : "{}";
+    const rcssJsonstr = __computeReadiumCssJsonMessage();
     // const str = window.atob(base64);
     const rcssJsonstrBase64 = window.btoa(rcssJsonstr);
 
