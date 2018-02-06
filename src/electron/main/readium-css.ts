@@ -16,5 +16,8 @@ export function setupReadiumCSS(server: Server, folderPath: string) {
         //   res.set('x-timestamp', Date.now())
         // }
     };
+
+    // TODO: extract the const string "readium-css"
+    // (also used in electron/renderer/webview/readium-css.ts)
     server.expressUse("/readium-css", express.static(folderPath, staticOptions));
 }
