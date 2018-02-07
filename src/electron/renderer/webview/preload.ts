@@ -5,6 +5,7 @@ import { ipcRenderer } from "electron";
 
 import {
     IEventPayload_R2_EVENT_LINK,
+    IEventPayload_R2_EVENT_PAGE_TURN,
     IEventPayload_R2_EVENT_READING_LOCATION,
     IEventPayload_R2_EVENT_SCROLLTO,
     IEventPayload_R2_EVENT_WEBVIEW_READY,
@@ -99,9 +100,9 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
 
 let _lastAnimState: IPropertyAnimationState | undefined;
 
-ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, messageString: any) => {
+ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT_PAGE_TURN) => {
     if (win.READIUM2.isFixedLayout || !win.document.body) {
-        ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, messageString);
+        ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
         return;
     }
 
@@ -155,8 +156,7 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, messageString: any) => {
             (win.document.body.scrollHeight - win.document.documentElement.clientHeight)));
     // console.log("maxHeightShift: " + maxHeightShift);
 
-    const messageJson = JSON.parse(messageString);
-    const goPREVIOUS = messageJson.go === "PREVIOUS"; // any other value is NEXT
+    const goPREVIOUS = payload.go === "PREVIOUS"; // any other value is NEXT
 
     // const isRTL = messageJson.direction === "RTL"; //  any other value is LTR
     // console.log(JSON.stringify(messageJson, null, "  "));
@@ -273,7 +273,7 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, messageString: any) => {
         }
     }
 
-    ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, messageString);
+    ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
 });
 
 const checkReadyPass = () => {

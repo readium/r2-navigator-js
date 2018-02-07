@@ -9,6 +9,7 @@ import { ipcRenderer } from "electron";
 
 import {
     IEventPayload_R2_EVENT_LINK,
+    IEventPayload_R2_EVENT_PAGE_TURN,
     IEventPayload_R2_EVENT_READING_LOCATION,
     IEventPayload_R2_EVENT_SCROLLTO,
     IEventPayload_R2_EVENT_WEBVIEW_READY,
@@ -222,12 +223,11 @@ export function navLeftOrRight(left: boolean) {
         _publication.Metadata.Direction &&
         _publication.Metadata.Direction.toLowerCase() === "rtl"; //  any other value is LTR
     const goPREVIOUS = left ? !isRTL : isRTL;
-    const messageJson = {
+    const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
         direction: isRTL ? "RTL" : "LTR",
         go: goPREVIOUS ? "PREVIOUS" : "NEXT",
     };
-    const messageStr = JSON.stringify(messageJson);
-    activeWebView.send(R2_EVENT_PAGE_TURN, messageStr); // .getWebContents()
+    activeWebView.send(R2_EVENT_PAGE_TURN, payload); // .getWebContents()
 }
 
 const getActiveWebView = (): IElectronWebviewTag => {
@@ -516,10 +516,10 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
             // _publication.Metadata.Direction &&
             // _publication.Metadata.Direction.toLowerCase() === "rtl"; //  any other value is LTR
 
-            const messageString = event.args[0];
-            const messageJson = JSON.parse(messageString);
+            const payload = event.args[0] as IEventPayload_R2_EVENT_PAGE_TURN;
+
             // const isRTL = messageJson.direction === "RTL"; //  any other value is LTR
-            const goPREVIOUS = messageJson.go === "PREVIOUS"; // any other value is NEXT
+            const goPREVIOUS = payload.go === "PREVIOUS"; // any other value is NEXT
 
             if (!webview.READIUM2.link) {
                 console.log("WEBVIEW READIUM2_LINK ??!!");

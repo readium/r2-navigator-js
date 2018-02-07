@@ -19,6 +19,11 @@ export const R2_EVENT_PAGE_TURN = "R2_EVENT_PAGE_TURN";
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
 export const R2_EVENT_PAGE_TURN_RES = "R2_EVENT_PAGE_TURN_RES";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_PAGE_TURN {
+    direction: string;
+    go: string;
+}
 
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
