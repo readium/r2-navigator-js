@@ -10,6 +10,9 @@ import { focusCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyle
 
 const win = (global as any).window as IElectronWebviewTagWindow;
 
+// TODO DARK THEME
+const CSS_CLASS_DARK_THEME = "mdc-theme--dark";
+
 // TODO: extract the const string "readium-css"
 // (also used in electron/main/readium-css.ts)
 const urlRootReadiumCSS = win.location.origin + "/readium-css/";
@@ -321,7 +324,7 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
             docElement.style.removeProperty(item);
         });
 
-        docElement.classList.remove("mdc-theme--dark");
+        docElement.classList.remove(CSS_CLASS_DARK_THEME);
     } else {
         let dark = false;
         let night = false;
@@ -368,10 +371,10 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
 
         if (night) {
             // win.document.body
-            docElement.classList.add("mdc-theme--dark");
+            docElement.classList.add(CSS_CLASS_DARK_THEME);
         } else {
             // win.document.body
-            docElement.classList.remove("mdc-theme--dark");
+            docElement.classList.remove(CSS_CLASS_DARK_THEME);
         }
 
         const needsAdvanced = true; // dark || invert;
