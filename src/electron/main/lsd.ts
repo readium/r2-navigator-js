@@ -32,14 +32,14 @@ export async function doLsdRenew(
     publicationsServer: Server,
     deviceIDManager: IDeviceIDManager,
     publicationFilePath: string,
-    endDateStr: string): Promise<any> {
+    endDateStr: string | undefined): Promise<any> {
 
     const publication = publicationsServer.cachedPublication(publicationFilePath);
     if (!publication || !publication.LCP || !publication.LCP.LSDJson) {
         return Promise.reject("Internal error!");
     }
 
-    const endDate = endDateStr.length ? moment(endDateStr).toDate() : undefined;
+    const endDate = endDateStr ? moment(endDateStr).toDate() : undefined;
     let renewResponseJson: any;
     try {
         renewResponseJson = await lsdRenew(endDate, publication.LCP.LSDJson, deviceIDManager);
