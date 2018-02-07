@@ -28,6 +28,11 @@ import { IElectronWebviewTag } from "./webview/state";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
+export const DOM_EVENT_HIDE_VIEWPORT = "r2:hide-content-viewport";
+export const DOM_EVENT_SHOW_VIEWPORT = "r2:show-content-viewport";
+
+const ELEMENT_ID_SLIDING_VIEWPORT = "r2_navigator_sliding_viewport";
+
 // const queryParams = getURLQueryParams();
 
 // // tslint:disable-next-line:no-string-literal
@@ -99,10 +104,10 @@ export function readiumCssOnOff() {
 let _webview1: IElectronWebviewTag;
 let _webview2: IElectronWebviewTag;
 
-let _viewHideInterval: NodeJS.Timer | undefined;
-
 let _publication: Publication | undefined;
 let _publicationJsonUrl: string | undefined;
+
+let _rootHtmlElement: Element | undefined;
 
 export function handleLink(href: string, previous: boolean | undefined, useGoto: boolean) {
     if (!_publicationJsonUrl) {
@@ -134,14 +139,14 @@ export function installNavigatorDOM(
         (window as any).READIUM2_PUBURL = _publicationJsonUrl;
     }
 
-    const rootHtmlElement = document.getElementById(rootHtmlElementID) as HTMLElement;
-    if (!rootHtmlElement) {
+    _rootHtmlElement = document.getElementById(rootHtmlElementID) as HTMLElement;
+    if (!_rootHtmlElement) {
         console.log("!rootHtmlElement ???");
         return;
     }
 
     const slidingViewport = document.createElement("div");
-    slidingViewport.setAttribute("id", "r2_navigator_sliding_viewport");
+    slidingViewport.setAttribute("id", ELEMENT_ID_SLIDING_VIEWPORT);
     slidingViewport.setAttribute("style", "display: block; position: absolute; left: 0; width: 200%; " +
         "top: 0; bottom: 0; margin: 0; padding: 0; box-sizing: border-box; background: white; overflow: hidden;");
 
@@ -234,7 +239,7 @@ const getActiveWebView = (): IElectronWebviewTag => {
 
     let activeWebView: IElectronWebviewTag;
 
-    const slidingViewport = document.getElementById("r2_navigator_sliding_viewport") as HTMLElement;
+    const slidingViewport = document.getElementById(ELEMENT_ID_SLIDING_VIEWPORT) as HTMLElement;
     if (slidingViewport.classList.contains("shiftedLeft")) {
         if (_webview1.classList.contains("posRight")) {
             activeWebView = _webview1;
@@ -328,7 +333,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
 
             console.log("INTO VIEW ...");
 
-            const slidingView = document.getElementById("r2_navigator_sliding_viewport") as HTMLElement;
+            const slidingView = document.getElementById(ELEMENT_ID_SLIDING_VIEWPORT) as HTMLElement;
             if (slidingView) {
                 let animate = true;
                 if (goto || hash) {
@@ -394,12 +399,8 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     }
 
     if (!isFixedLayout(pubLink)) {
-        const hidePanel = document.getElementById("r2_navigator_reader_chrome_HIDE") as HTMLElement;
-        if (hidePanel) {
-            hidePanel.style.display = "block";
-            _viewHideInterval = setInterval(() => {
-                unhideWebView(true);
-            }, 5000);
+        if (_rootHtmlElement) {
+            _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_HIDE_VIEWPORT));
         }
     }
 
@@ -503,7 +504,10 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
         } else if (event.channel === R2_EVENT_WEBVIEW_READY) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_WEBVIEW_READY;
             console.log("WEBVIEW READY: " + payload.href);
-            unhideWebView(false);
+
+            if (_rootHtmlElement) {
+                _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_SHOW_VIEWPORT));
+            }
         } else if (event.channel === R2_EVENT_READING_LOCATION) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_READING_LOCATION;
             if (webview.READIUM2.link && _saveReadingLocation) {
@@ -571,19 +575,18 @@ const adjustResize = (webview: IElectronWebviewTag) => {
 const onResizeDebounced = debounce(() => {
     adjustResize(_webview1);
     adjustResize(_webview2);
+
     setTimeout(() => {
-        unhideWebView(false);
+        if (_rootHtmlElement) {
+            _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_SHOW_VIEWPORT));
+        }
     }, 1000);
 }, 200);
 
 window.addEventListener("resize", () => {
     if (!isFixedLayout(_webview1.READIUM2.link)) {
-        const hidePanel = document.getElementById("r2_navigator_reader_chrome_HIDE") as HTMLElement;
-        if (hidePanel && hidePanel.style.display !== "block") {
-            hidePanel.style.display = "block";
-            _viewHideInterval = setInterval(() => {
-                unhideWebView(true);
-            }, 5000);
+        if (_rootHtmlElement) {
+            _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_HIDE_VIEWPORT));
         }
     }
     onResizeDebounced();
@@ -594,20 +597,3 @@ ipcRenderer.on(R2_EVENT_LINK, (_event: any, payload: IEventPayload_R2_EVENT_LINK
     console.log(payload.url);
     handleLink(payload.url, undefined, false);
 });
-
-const unhideWebView = (forced: boolean) => {
-    if (_viewHideInterval) {
-        clearInterval(_viewHideInterval);
-        _viewHideInterval = undefined;
-    }
-    const hidePanel = document.getElementById("r2_navigator_reader_chrome_HIDE") as HTMLElement;
-    if (!hidePanel || hidePanel.style.display === "none") {
-        return;
-    }
-    if (forced) {
-        console.log("unhideWebView FORCED");
-    }
-    if (hidePanel) {
-        hidePanel.style.display = "none";
-    }
-};
