@@ -10,7 +10,7 @@ export interface IEventPayload_R2_EVENT_READIUMCSS {
         dark: boolean;
         font: string;
         fontSize: string;
-        invert: string;
+        invert: boolean;
         lineHeight: string;
         night: boolean;
         paged: boolean;
