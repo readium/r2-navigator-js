@@ -1,6 +1,7 @@
 import { ipcRenderer } from "electron";
 
 import {
+    IEventPayload_R2_EVENT_READIUMCSS,
     R2_EVENT_READIUMCSS,
 } from "../../common/events";
 import { IElectronWebviewTagWindow } from "./state";
@@ -207,12 +208,11 @@ const ensureHead = () => {
     }
 };
 
-ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, messageString: any) => {
-    const messageJson = JSON.parse(messageString);
-    readiumCSS(messageJson);
+ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVENT_READIUMCSS) => {
+    readiumCSS(payload);
 });
 
-function readiumCSSInject(messageJson: any) {
+function readiumCSSInject(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
 
     if (typeof messageJson.injectCSS === "undefined") {
         return;
@@ -286,7 +286,7 @@ function readiumCSSInject(messageJson: any) {
     }
 }
 
-function readiumCSSSet(messageJson: any) {
+function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
     if (!messageJson || typeof messageJson.setCSS === "undefined") {
         return;
     }
@@ -473,7 +473,7 @@ function readiumCSSSet(messageJson: any) {
     }
 }
 
-export const readiumCSS = (messageJson: any) => {
+export const readiumCSS = (messageJson: IEventPayload_R2_EVENT_READIUMCSS) => {
     readiumCSSInject(messageJson);
     readiumCSSSet(messageJson);
 };

@@ -11,6 +11,7 @@ import {
     IEventPayload_R2_EVENT_LINK,
     IEventPayload_R2_EVENT_PAGE_TURN,
     IEventPayload_R2_EVENT_READING_LOCATION,
+    IEventPayload_R2_EVENT_READIUMCSS,
     IEventPayload_R2_EVENT_SCROLLTO,
     IEventPayload_R2_EVENT_WEBVIEW_READY,
     R2_EVENT_LINK,
@@ -59,24 +60,23 @@ function isFixedLayout(link: Link | undefined): boolean {
     return isFXL as boolean;
 }
 
-function __computeReadiumCssJsonMessage(link: Link | undefined): string {
+function __computeReadiumCssJsonMessage(link: Link | undefined): IEventPayload_R2_EVENT_READIUMCSS {
 
     if (isFixedLayout(link)) {
-        const jsonMsg = { injectCSS: "rollback", setCSS: "rollback", isFixedLayout: true };
-        return JSON.stringify(jsonMsg, null, 0);
+        return { injectCSS: "rollback", setCSS: "rollback", isFixedLayout: true };
     }
 
     if (!_computeReadiumCssJsonMessage) {
-        return "{}";
+        return { injectCSS: "rollback", setCSS: "rollback", isFixedLayout: false };
     }
+
     const readiumCssJsonMessage = _computeReadiumCssJsonMessage();
     return readiumCssJsonMessage;
 }
-
-let _computeReadiumCssJsonMessage: () => string = () => {
-    return "{}";
+let _computeReadiumCssJsonMessage: () => IEventPayload_R2_EVENT_READIUMCSS = () => {
+    return { injectCSS: "rollback", setCSS: "rollback", isFixedLayout: false };
 };
-export function setReadiumCssJsonGetter(func: () => string) {
+export function setReadiumCssJsonGetter(func: () => IEventPayload_R2_EVENT_READIUMCSS) {
     _computeReadiumCssJsonMessage = func;
 }
 
@@ -89,11 +89,11 @@ export function setReadingLocationSaver(func: (docHref: string, cssSelector: str
 
 export function readiumCssOnOff() {
 
-    const readiumCssJsonMessage1 = __computeReadiumCssJsonMessage(_webview1.READIUM2.link);
-    _webview1.send(R2_EVENT_READIUMCSS, readiumCssJsonMessage1); // .getWebContents()
+    const payload1 = __computeReadiumCssJsonMessage(_webview1.READIUM2.link);
+    _webview1.send(R2_EVENT_READIUMCSS, payload1); // .getWebContents()
 
-    const readiumCssJsonMessage2 = __computeReadiumCssJsonMessage(_webview2.READIUM2.link);
-    _webview2.send(R2_EVENT_READIUMCSS, readiumCssJsonMessage2); // .getWebContents()
+    const payload2 = __computeReadiumCssJsonMessage(_webview2.READIUM2.link);
+    _webview2.send(R2_EVENT_READIUMCSS, payload2); // .getWebContents()
 }
 
 let _webview1: IElectronWebviewTag;
@@ -302,7 +302,8 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         return;
     }
 
-    const rcssJsonstr = __computeReadiumCssJsonMessage(pubLink);
+    const rcssJson = __computeReadiumCssJsonMessage(pubLink);
+    const rcssJsonstr = JSON.stringify(rcssJson, null, "");
     // const str = window.atob(base64);
     const rcssJsonstrBase64 = window.btoa(rcssJsonstr);
 

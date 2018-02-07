@@ -1,6 +1,23 @@
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_READIUMCSS = "R2_EVENT_READIUMCSS";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_READIUMCSS {
+    injectCSS: string;
+    setCSS: string | {
+        align: string;
+        colCount: string;
+        dark: boolean;
+        font: string;
+        fontSize: string;
+        invert: string;
+        lineHeight: string;
+        night: boolean;
+        paged: boolean;
+        sepia: boolean;
+    };
+    isFixedLayout?: boolean;
+}
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
