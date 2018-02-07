@@ -8,6 +8,7 @@ import { shell } from "electron";
 import { ipcRenderer } from "electron";
 
 import {
+    IEventPayload_R2_EVENT_LINK,
     R2_EVENT_LINK,
     R2_EVENT_PAGE_TURN,
     R2_EVENT_PAGE_TURN_RES,
@@ -483,7 +484,8 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
         }
 
         if (event.channel === R2_EVENT_LINK) {
-            handleLink(event.args[0], undefined, false);
+            const payload = event.args[0] as IEventPayload_R2_EVENT_LINK;
+            handleLink(payload.url, undefined, false);
         } else if (event.channel === R2_EVENT_WEBVIEW_READY) {
             // const id = event.args[0];
             unhideWebView(false);
@@ -572,10 +574,10 @@ window.addEventListener("resize", () => {
     onResizeDebounced();
 });
 
-ipcRenderer.on(R2_EVENT_LINK, (_event: any, href: string) => {
+ipcRenderer.on(R2_EVENT_LINK, (_event: any, payload: IEventPayload_R2_EVENT_LINK) => {
     console.log("R2_EVENT_LINK");
-    console.log(href);
-    handleLink(href, undefined, false);
+    console.log(payload.url);
+    handleLink(payload.url, undefined, false);
 });
 
 const unhideWebView = (forced: boolean) => {

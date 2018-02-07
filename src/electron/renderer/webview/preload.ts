@@ -4,6 +4,7 @@ import ResizeSensor = require("resize-sensor/ResizeSensor");
 import { ipcRenderer } from "electron";
 
 import {
+    IEventPayload_R2_EVENT_LINK,
     R2_EVENT_LINK,
     R2_EVENT_PAGE_TURN,
     R2_EVENT_PAGE_TURN_RES,
@@ -685,7 +686,11 @@ win.addEventListener("DOMContentLoaded", () => {
 
         e.preventDefault();
         e.stopPropagation();
-        ipcRenderer.sendToHost(R2_EVENT_LINK, href);
+
+        const payload: IEventPayload_R2_EVENT_LINK = {
+            url: href,
+        };
+        ipcRenderer.sendToHost(R2_EVENT_LINK, payload);
         return false;
     }, true);
 

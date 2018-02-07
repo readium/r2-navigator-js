@@ -2,7 +2,7 @@ import * as debug_ from "debug";
 
 import { app } from "electron";
 
-import { R2_EVENT_LINK } from "../common/events";
+import { IEventPayload_R2_EVENT_LINK, R2_EVENT_LINK } from "../common/events";
 
 const debug = debug_("r2:navigator#electron/main/browser-window-tracker");
 
@@ -47,8 +47,11 @@ app.on("web-contents-created", (_evt, wc) => {
 
                 event.preventDefault();
 
+                const payload: IEventPayload_R2_EVENT_LINK = {
+                    url,
+                };
                 // ipcMain.emit
-                win.webContents.send(R2_EVENT_LINK, url);
+                win.webContents.send(R2_EVENT_LINK, payload);
             });
         }
     });

@@ -23,6 +23,10 @@ export const R2_EVENT_READING_LOCATION = "R2_EVENT_READING_LOCATION";
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
 export const R2_EVENT_LINK = "R2_EVENT_LINK";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_LINK {
+    url: string;
+}
 
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
