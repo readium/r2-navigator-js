@@ -9,6 +9,7 @@ import { ipcRenderer } from "electron";
 
 import {
     IEventPayload_R2_EVENT_LINK,
+    IEventPayload_R2_EVENT_READING_LOCATION,
     IEventPayload_R2_EVENT_WEBVIEW_READY,
     R2_EVENT_LINK,
     R2_EVENT_PAGE_TURN,
@@ -492,9 +493,9 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
             console.log("WEBVIEW READY: " + payload.href);
             unhideWebView(false);
         } else if (event.channel === R2_EVENT_READING_LOCATION) {
-            const cssSelector = event.args[0];
+            const payload = event.args[0] as IEventPayload_R2_EVENT_READING_LOCATION;
             if (webview.READIUM2.link && _saveReadingLocation) {
-                _saveReadingLocation(webview.READIUM2.link.Href, cssSelector);
+                _saveReadingLocation(webview.READIUM2.link.Href, payload.cssSelector);
             }
         } else if (event.channel === R2_EVENT_PAGE_TURN_RES) {
             if (!_publication) {

@@ -5,6 +5,7 @@ import { ipcRenderer } from "electron";
 
 import {
     IEventPayload_R2_EVENT_LINK,
+    IEventPayload_R2_EVENT_READING_LOCATION,
     IEventPayload_R2_EVENT_WEBVIEW_READY,
     R2_EVENT_LINK,
     R2_EVENT_PAGE_TURN,
@@ -795,5 +796,8 @@ const notifyReadingLocation = () => {
     }
 
     win.READIUM2.locationHashOverrideCSSselector = fullQualifiedSelector(win.READIUM2.locationHashOverride, false);
-    ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION, win.READIUM2.locationHashOverrideCSSselector);
+    const payload: IEventPayload_R2_EVENT_READING_LOCATION = {
+        cssSelector: win.READIUM2.locationHashOverrideCSSselector,
+    };
+    ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION, payload);
 };
