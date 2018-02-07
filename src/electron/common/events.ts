@@ -5,6 +5,12 @@ export const R2_EVENT_READIUMCSS = "R2_EVENT_READIUMCSS";
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_SCROLLTO = "R2_EVENT_SCROLLTO";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_SCROLLTO {
+    goto: string | undefined;
+    hash: string | undefined;
+    previous: boolean;
+}
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()

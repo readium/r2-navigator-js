@@ -6,6 +6,7 @@ import { ipcRenderer } from "electron";
 import {
     IEventPayload_R2_EVENT_LINK,
     IEventPayload_R2_EVENT_READING_LOCATION,
+    IEventPayload_R2_EVENT_SCROLLTO,
     IEventPayload_R2_EVENT_WEBVIEW_READY,
     R2_EVENT_LINK,
     R2_EVENT_PAGE_TURN,
@@ -52,15 +53,14 @@ win.READIUM2.urlQueryParams = win.location.search ? getURLQueryParams(win.locati
 // console.log(win.location.search);
 // console.log(win.location.hash);
 
-ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, messageString: any) => {
+ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_SCROLLTO) => {
     // console.log("R2_EVENT_SCROLLTO");
-    // console.log(messageString);
+    // console.log(payload);
 
-    const messageJson = JSON.parse(messageString);
     if (!win.READIUM2.urlQueryParams) {
         win.READIUM2.urlQueryParams = {};
     }
-    if (messageJson.previous) {
+    if (payload.previous) {
         // tslint:disable-next-line:no-string-literal
         win.READIUM2.urlQueryParams[URL_PARAM_PREVIOUS] = "true";
     } else {
@@ -70,9 +70,9 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, messageString: any) => {
             delete win.READIUM2.urlQueryParams[URL_PARAM_PREVIOUS];
         }
     }
-    if (messageJson.goto) {
+    if (payload.goto) {
         // tslint:disable-next-line:no-string-literal
-        win.READIUM2.urlQueryParams[URL_PARAM_GOTO] = "true";
+        win.READIUM2.urlQueryParams[URL_PARAM_GOTO] = payload.goto;
     } else {
         // tslint:disable-next-line:no-string-literal
         if (typeof win.READIUM2.urlQueryParams[URL_PARAM_GOTO] !== "undefined") {
@@ -80,8 +80,8 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, messageString: any) => {
             delete win.READIUM2.urlQueryParams[URL_PARAM_GOTO];
         }
     }
-    if (messageJson.hash) {
-        win.READIUM2.hashElement = win.document.getElementById(messageJson.hash);
+    if (payload.hash) {
+        win.READIUM2.hashElement = win.document.getElementById(payload.hash);
     } else {
         win.READIUM2.hashElement = null;
     }

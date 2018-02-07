@@ -10,6 +10,7 @@ import { ipcRenderer } from "electron";
 import {
     IEventPayload_R2_EVENT_LINK,
     IEventPayload_R2_EVENT_READING_LOCATION,
+    IEventPayload_R2_EVENT_SCROLLTO,
     IEventPayload_R2_EVENT_WEBVIEW_READY,
     R2_EVENT_LINK,
     R2_EVENT_PAGE_TURN,
@@ -315,15 +316,10 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     const wv1AlreadyLoaded = _webview1.READIUM2.link === pubLink;
     const wv2AlreadyLoaded = _webview2.READIUM2.link === pubLink;
     if (wv1AlreadyLoaded || wv2AlreadyLoaded) {
-        const msgJson = {
-            goto: useGoto ? linkUri.search(URL_PARAM_GOTO) : undefined,
-            hash: useGoto ? undefined : linkUri.fragment(),
-            previous,
-        };
-        const msgStr = JSON.stringify(msgJson);
+        const goto = useGoto ? linkUri.search(true)[URL_PARAM_GOTO] as string : undefined;
+        const hash = useGoto ? undefined : linkUri.fragment();
 
         console.log("ALREADY LOADED: " + pubLink.Href);
-        console.log(msgStr);
 
         const webviewToReuse = wv1AlreadyLoaded ? _webview1 : _webview2;
         // const otherWebview = webviewToReuse === _webview2 ? _webview1 : _webview2;
@@ -334,7 +330,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
             const slidingView = document.getElementById("r2_navigator_sliding_viewport") as HTMLElement;
             if (slidingView) {
                 let animate = true;
-                if (msgJson.goto || msgJson.hash) {
+                if (goto || hash) {
                     console.log("DISABLE ANIM");
                     animate = false;
                 } else if (previous) {
@@ -376,7 +372,22 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
             }
         }
 
-        webviewToReuse.send(R2_EVENT_SCROLLTO, msgStr); // .getWebContents()
+        // const msgJson = {
+        //     goto: ,
+        //     hash: ,
+        //     previous,
+        // };
+
+        const payload: IEventPayload_R2_EVENT_SCROLLTO = {
+            goto,
+            hash,
+            previous: previous ? true : false,
+        };
+
+        const msgStr = JSON.stringify(payload);
+        console.log(msgStr);
+
+        webviewToReuse.send(R2_EVENT_SCROLLTO, payload); // .getWebContents()
 
         return;
     }
