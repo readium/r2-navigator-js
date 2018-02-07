@@ -5,6 +5,7 @@ import { ipcRenderer } from "electron";
 
 import {
     IEventPayload_R2_EVENT_LINK,
+    IEventPayload_R2_EVENT_WEBVIEW_READY,
     R2_EVENT_LINK,
     R2_EVENT_PAGE_TURN,
     R2_EVENT_PAGE_TURN_RES,
@@ -88,7 +89,10 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, messageString: any) => {
     win.READIUM2.locationHashOverride = undefined;
     scrollToHashRaw(false);
 
-    // ipcRenderer.sendToHost(R2_EVENT_WEBVIEW_READY, win.location.href);
+    // const payload: IEventPayload_R2_EVENT_WEBVIEW_READY = {
+    //     href: win.location.href,
+    // };
+    // ipcRenderer.sendToHost(R2_EVENT_WEBVIEW_READY, payload);
     // notifyReadingLocation();
 });
 
@@ -360,7 +364,10 @@ const notifyReady = () => {
     }
     win.READIUM2.readyEventSent = true;
 
-    ipcRenderer.sendToHost(R2_EVENT_WEBVIEW_READY, win.location.href);
+    const payload: IEventPayload_R2_EVENT_WEBVIEW_READY = {
+        href: win.location.href,
+    };
+    ipcRenderer.sendToHost(R2_EVENT_WEBVIEW_READY, payload);
 };
 
 function scrollIntoView(element: HTMLElement) {

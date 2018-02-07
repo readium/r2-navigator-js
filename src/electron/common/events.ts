@@ -31,3 +31,7 @@ export interface IEventPayload_R2_EVENT_LINK {
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
 export const R2_EVENT_WEBVIEW_READY = "R2_EVENT_WEBVIEW_READY";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_WEBVIEW_READY {
+    href: string;
+}
