@@ -167,7 +167,7 @@ export function installNavigatorDOM(
     slidingViewport.appendChild(_webview1 as Node);
     slidingViewport.appendChild(_webview2 as Node);
 
-    rootHtmlElement.appendChild(slidingViewport);
+    _rootHtmlElement.appendChild(slidingViewport);
 
     const isRTL = _publication.Metadata &&
         _publication.Metadata.Direction &&
