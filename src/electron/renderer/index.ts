@@ -4,8 +4,8 @@ import URI = require("urijs");
 import { Publication } from "@models/publication";
 import { Link } from "@models/publication-link";
 import { encodeURIComponent_RFC3986 } from "@utils/http/UrlUtils";
-import { shell } from "electron";
-import { ipcRenderer } from "electron";
+
+import { ipcRenderer, shell } from "electron";
 
 import {
     IEventPayload_R2_EVENT_LINK,
@@ -22,7 +22,12 @@ import {
     R2_EVENT_SCROLLTO,
     R2_EVENT_WEBVIEW_READY,
 } from "../common/events";
-import { R2_SESSION_WEBVIEW } from "../common/sessions";
+import {
+    R2_SESSION_WEBVIEW,
+    READIUM2_ELECTRON_HTTP_PROTOCOL,
+    convertCustomSchemeToHttpUrl,
+    convertHttpUrlToCustomScheme,
+} from "../common/sessions";
 import { URL_PARAM_GOTO, URL_PARAM_PREVIOUS } from "./common/url-params";
 import { IElectronWebviewTag } from "./webview/state";
 
@@ -37,14 +42,18 @@ const ELEMENT_ID_SLIDING_VIEWPORT = "r2_navigator_sliding_viewport";
 
 // // tslint:disable-next-line:no-string-literal
 // const publicationJsonUrl = queryParams["pub"];
-
-// const pathBase64 = publicationJsonUrl.replace(/.*\/pub\/(.*)\/manifest.json/, "$1");
-
+// console.log(publicationJsonUrl);
+// const publicationJsonUrl_ = publicationJsonUrl.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL) ?
+//     convertCustomSchemeToHttpUrl(publicationJsonUrl) : publicationJsonUrl;
+// console.log(publicationJsonUrl_);
+// const pathBase64 = publicationJsonUrl_.replace(/.*\/pub\/(.*)\/manifest.json/, "$1");
+// console.log(pathBase64);
 // const pathDecoded = window.atob(pathBase64);
-
+// console.log(pathDecoded);
 // const pathFileName = pathDecoded.substr(
 //     pathDecoded.replace(/\\/g, "/").lastIndexOf("/") + 1,
 //     pathDecoded.length - 1);
+// console.log(pathFileName);
 
 // // tslint:disable-next-line:no-string-literal
 // const lcpHint = queryParams["lcpHint"];
@@ -110,14 +119,17 @@ let _publicationJsonUrl: string | undefined;
 let _rootHtmlElement: Element | undefined;
 
 export function handleLink(href: string, previous: boolean | undefined, useGoto: boolean) {
-    if (!_publicationJsonUrl) {
-        return;
-    }
 
-    const prefix = _publicationJsonUrl.replace("manifest.json", "");
-    if (href.startsWith(prefix)) {
+    let okay = href.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
+    if (!okay && _publicationJsonUrl) {
+        const prefix = _publicationJsonUrl.replace("manifest.json", "");
+        okay = href.startsWith(prefix);
+    }
+    if (okay) {
         loadLink(href, previous, useGoto);
     } else {
+        console.log("EXTERNAL LINK:");
+        console.log(href);
         shell.openExternal(href);
     }
 }
@@ -263,6 +275,10 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         return;
     }
 
+    if (hrefFull.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+        hrefFull = convertCustomSchemeToHttpUrl(hrefFull);
+    }
+
     const linkUri = new URI(hrefFull);
     linkUri.search((data: any) => {
         // overrides existing (leaves others intact)
@@ -285,7 +301,9 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         linkUri.hash("").normalizeHash();
     }
 
-    const pubUri = new URI(_publicationJsonUrl);
+    const pubJsonUri = _publicationJsonUrl.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ?
+        convertCustomSchemeToHttpUrl(_publicationJsonUrl) : _publicationJsonUrl;
+    const pubUri = new URI(pubJsonUri);
 
     // "/pub/BASE64_PATH/manifest.json" ==> "/pub/BASE64_PATH/"
     const pathPrefix = pubUri.path().replace("manifest.json", "");
@@ -415,9 +433,15 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     console.log(linkUri.search(true)[URL_PARAM_PREVIOUS]);
     console.log("####### >>> ---");
     activeWebView.READIUM2.link = pubLink;
-    activeWebView.setAttribute("src", uriStr);
-    // wv.getWebContents().loadURL(uriStr, { extraHeaders: "pragma: no-cache\n" });
-    // wv.loadURL(uriStr, { extraHeaders: "pragma: no-cache\n" });
+
+    const needConvert = _publicationJsonUrl.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
+    const uriStr_ = uriStr.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ?
+        uriStr : (needConvert ? convertHttpUrlToCustomScheme(uriStr) : uriStr);
+    console.log("setAttribute SRC:");
+    console.log(uriStr_);
+    activeWebView.setAttribute("src", uriStr_);
+    // activeWebView.getWebContents().loadURL(uriStr_, { extraHeaders: "pragma: no-cache\n" });
+    // activeWebView.loadURL(uriStr_, { extraHeaders: "pragma: no-cache\n" });
 
     // ALWAYS FALSE => let's comment for now...
     // const enableOffScreenRenderPreload = false;
@@ -476,6 +500,8 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
         "contextIsolation=0, webSecurity=1, allowRunningInsecureContent=0");
     wv.setAttribute("partition", R2_SESSION_WEBVIEW);
     if (_publicationJsonUrl) {
+        // const ref = _publicationJsonUrl.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ?
+        //     _publicationJsonUrl : convertHttpUrlToCustomScheme(_publicationJsonUrl);
         wv.setAttribute("httpreferrer", _publicationJsonUrl);
     }
     wv.setAttribute("style", "display: flex; margin: 0; padding: 0; box-sizing: border-box; " +

@@ -16,6 +16,8 @@ import {
     R2_EVENT_SCROLLTO,
     R2_EVENT_WEBVIEW_READY,
 } from "../../common/events";
+
+// import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../../common/sessions";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { fullQualifiedSelector } from "../common/cssselector";
 import { easings } from "../common/easings";
@@ -31,6 +33,16 @@ import {
     readiumCSS,
 } from "./readium-css";
 import { IElectronWebviewTagWindow } from "./state";
+
+// webFrame.registerURLSchemeAsSecure(READIUM2_ELECTRON_HTTP_PROTOCOL);
+// webFrame.registerURLSchemeAsBypassingCSP(READIUM2_ELECTRON_HTTP_PROTOCOL);
+// webFrame.registerURLSchemeAsPrivileged(READIUM2_ELECTRON_HTTP_PROTOCOL, {
+//     allowServiceWorkers: false,
+//     bypassCSP: false,
+//     corsEnabled: false,
+//     secure: true,
+//     supportFetchAPI: false,
+// });
 
 const win = (global as any).window as IElectronWebviewTagWindow;
 win.READIUM2 = {

@@ -1,10 +1,14 @@
 import * as crypto from "crypto";
 import * as debug_ from "debug";
-import { CertificateVerifyProcRequest, app, session } from "electron";
+import { CertificateVerifyProcRequest, app, protocol, session } from "electron";
 
 import { Server } from "@r2-streamer-js/http/server";
 
-import { R2_SESSION_WEBVIEW } from "../common/sessions";
+import {
+    R2_SESSION_WEBVIEW,
+    READIUM2_ELECTRON_HTTP_PROTOCOL,
+    convertCustomSchemeToHttpUrl,
+} from "../common/sessions";
 
 const debug = debug_("r2:navigator#electron/main/sessions");
 const debugHttps = debug_("r2:https");
@@ -148,14 +152,69 @@ export function secureSessions(server: Server) {
     // });
 }
 
+const httpProtocolHandler = (
+    request: Electron.RegisterHttpProtocolRequest,
+    callback: (redirectRequest: Electron.RedirectRequest) => void) => {
+
+    // debug("httpProtocolHandler:");
+    // debug(request.url);
+    // debug(request.referrer);
+    // debug(request.method);
+
+    const url = convertCustomSchemeToHttpUrl(request.url);
+    // debug(url);
+
+    callback({
+        method: request.method,
+        // referrer: request.referrer,
+        // session: getWebViewSession() session.defaultSession
+        url,
+    });
+};
+
 export function initSessions() {
+
+    protocol.registerStandardSchemes([READIUM2_ELECTRON_HTTP_PROTOCOL], { secure: true });
 
     app.on("ready", () => {
         debug("app ready");
 
         clearSessions(undefined, undefined);
+        // protocol.registerHttpProtocol(
+        //     READIUM2_ELECTRON_HTTP_PROTOCOL,
+        //     httpProtocolHandler,
+        //     (error: Error) => {
+        //         if (error) {
+        //             debug(error);
+        //         } else {
+        //             debug("registerHttpProtocol OKAY (protocol session)");
+        //         }
+        //     });
+        if (session.defaultSession) {
+            session.defaultSession.protocol.registerHttpProtocol(
+                READIUM2_ELECTRON_HTTP_PROTOCOL,
+                httpProtocolHandler,
+                (error: Error) => {
+                    if (error) {
+                        debug(error);
+                    } else {
+                        debug("registerHttpProtocol OKAY (default session)");
+                    }
+                });
+        }
         const webViewSession = getWebViewSession();
         if (webViewSession) {
+            webViewSession.protocol.registerHttpProtocol(
+                READIUM2_ELECTRON_HTTP_PROTOCOL,
+                httpProtocolHandler,
+                (error: Error) => {
+                    if (error) {
+                        debug(error);
+                    } else {
+                        debug("registerHttpProtocol OKAY (webview session)");
+                    }
+                });
+
             webViewSession.setPermissionRequestHandler((wc, permission, callback) => {
                 debug("setPermissionRequestHandler");
                 debug(wc.getURL());
@@ -213,6 +272,8 @@ export function clearSession(
             callbackCache();
         }
     });
+
+    // TODO: this does not seem to work (localStorage not wiped!)
     sess.clearStorageData({
         origin: "*",
         quotas: [
@@ -262,7 +323,6 @@ export function clearDefaultSession(
     callbackStorageData: (() => void) | undefined) {
 
     if (session.defaultSession) {
-        // const proto = session.defaultSession.protocol;
         clearSession(session.defaultSession, "[default]", callbackCache, callbackStorageData);
     } else {
         if (callbackCache) {
