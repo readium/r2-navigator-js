@@ -8,6 +8,11 @@ import { IElectronWebviewTagWindow } from "./state";
 
 import { focusCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles } from "./styles";
 
+import {
+    READIUM2_ELECTRON_HTTP_PROTOCOL,
+    convertCustomSchemeToHttpUrl,
+} from "../../common/sessions";
+
 const win = (global as any).window as IElectronWebviewTagWindow;
 
 // TODO DARK THEME
@@ -15,7 +20,13 @@ const CSS_CLASS_DARK_THEME = "mdc-theme--dark";
 
 // TODO: extract the const string "readium-css"
 // (also used in electron/main/readium-css.ts)
-const urlRootReadiumCSS = win.location.origin + "/readium-css/";
+let origin = win.location.origin;
+if (origin.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+    origin = convertCustomSchemeToHttpUrl(origin);
+    origin = origin.replace(/\/pub\/.*/, "");
+}
+const urlRootReadiumCSS = origin + "/readium-css/";
+console.log(urlRootReadiumCSS);
 // const urlResizeSensor = win.location.origin + "/resize-sensor.js";
 
 export const DEBUG_VISUALS = false;
