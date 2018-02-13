@@ -12,9 +12,10 @@ export function setupReadiumCSS(server: Server, folderPath: string) {
         maxAge: "1d",
         redirect: false,
         // extensions: ["css", "otf"],
-        // setHeaders: function (res, path, stat) {
-        //   res.set('x-timestamp', Date.now())
-        // }
+        setHeaders: (res: express.Response, _path: string, _stat: any) => {
+            //   res.set('x-timestamp', Date.now())
+            server.setResponseCORS(res);
+        },
     };
 
     // TODO: extract the const string "readium-css"
