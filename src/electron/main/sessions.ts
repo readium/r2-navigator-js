@@ -162,7 +162,6 @@ const httpProtocolHandler = (
     // debug(request.method);
 
     const url = convertCustomSchemeToHttpUrl(request.url);
-    // debug(url);
 
     callback({
         method: request.method,
@@ -279,16 +278,18 @@ export function clearSession(
         quotas: [
             "temporary",
             "persistent",
-            "syncable"],
+            "syncable",
+        ],
         storages: [
             "appcache",
-            "cookies",
-            "filesystem",
-            "indexdb",
-            "localstorage",
-            "shadercache",
-            "websql",
-            "serviceworkers"],
+            // "cookies",
+            // "filesystem",
+            // "indexdb",
+            // "localstorage",
+            // "shadercache",
+            // "websql",
+            "serviceworkers",
+        ],
     }, () => {
         debug("SESSION STORAGE DATA CLEARED - " + str);
         if (callbackStorageData) {
