@@ -22,7 +22,7 @@ const CSS_CLASS_DARK_THEME = "mdc-theme--dark";
 // (also used in electron/main/readium-css.ts)
 let origin = win.location.origin;
 if (origin.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
-    origin = convertCustomSchemeToHttpUrl(origin);
+    origin = convertCustomSchemeToHttpUrl(win.location.href);
     origin = origin.replace(/\/pub\/.*/, "");
 }
 const urlRootReadiumCSS = origin + "/readium-css/";
