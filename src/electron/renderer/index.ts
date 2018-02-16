@@ -103,11 +103,15 @@ export function setReadingLocationSaver(func: (docHref: string, cssSelector: str
 
 export function readiumCssOnOff() {
 
-    const payload1 = __computeReadiumCssJsonMessage(_webview1.READIUM2.link);
-    _webview1.send(R2_EVENT_READIUMCSS, payload1); // .getWebContents()
+    if (_webview1) {
+        const payload1 = __computeReadiumCssJsonMessage(_webview1.READIUM2.link);
+        _webview1.send(R2_EVENT_READIUMCSS, payload1); // .getWebContents()
+    }
 
-    const payload2 = __computeReadiumCssJsonMessage(_webview2.READIUM2.link);
-    _webview2.send(R2_EVENT_READIUMCSS, payload2); // .getWebContents()
+    if (_webview2) {
+        const payload2 = __computeReadiumCssJsonMessage(_webview2.READIUM2.link);
+        _webview2.send(R2_EVENT_READIUMCSS, payload2); // .getWebContents()
+    }
 }
 
 let _webview1: IElectronWebviewTag;
