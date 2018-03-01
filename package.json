@@ -75,6 +75,7 @@
     "electron": "1.8.*",
     "filehound": "^1.16.2",
     "git-rev-sync": "^1.10.0",
+    "json": "^9.0.6",
     "mkdirp": "^0.5.1",
     "rimraf": "^2.6.2",
     "tslint": "^5.9.1",
