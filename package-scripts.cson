@@ -8,11 +8,11 @@
   '
 
   'electron-renderer:all': '
-    cpy "./ReadiumCSS/**/*.*" ../dist/ --cwd=./misc --parents
+    cpy "./ReadiumCSS/**/*" ../dist/ --cwd=./misc --parents
   '
 
   'copydist': '
-    cpy "dist/**/*.*" ../r2-testapp-js/node_modules/r2-navigator-js/ --cwd=./ --parents
+    cpy "dist/**/*" ../r2-testapp-js/node_modules/r2-navigator-js/ --cwd=./ --parents
   '
 
   'quick-build-dist': '
@@ -34,8 +34,8 @@
     cpy ../r2-navigator-js/package-lock.json . &&
     cpy ../r2-navigator-js/LICENSE . &&
     cpy ../r2-navigator-js/README.md . &&
-    cpy "docs/**/*.*" ../r2-navigator-js-dist/ --cwd=../r2-navigator-js/ --parents &&
-    cpy "dist/**/*.*" ../r2-navigator-js-dist/ --cwd=../r2-navigator-js/ --parents &&
+    cpy "docs/**/*" ../r2-navigator-js-dist/ --cwd=../r2-navigator-js/ --parents &&
+    cpy "dist/**/*" ../r2-navigator-js-dist/ --cwd=../r2-navigator-js/ --parents &&
     (git add * || echo add) &&
     (git commit -a -m "add new dist" || echo commit) &&
     (git push --set-upstream origin develop || echo push) &&
