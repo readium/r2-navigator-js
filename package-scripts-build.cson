@@ -17,5 +17,5 @@
   '
 
   'electron-renderer:#ECMASCRIPT#': '
-    cpy "./ReadiumCSS/**/*" ../dist/ --cwd=./misc --parents
+    cpy "./ReadiumCSS/**/*" ../dist/ --cwd=./misc --parents --no-dir
   '
