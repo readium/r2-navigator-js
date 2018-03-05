@@ -421,16 +421,19 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
         docElement.style.setProperty("--USER__fontOverride",
             needsFontOverride ? "readium-font-on" : "readium-font-off");
 
-        // var(--RS__oldStyleTf) | var(--RS__modernTf) | var(--RS__sansTf) | var(--RS__humanistTf) | AccessibleDfa
+        // tslint:disable-next-line:max-line-length
+        // var(--RS__oldStyleTf) | var(--RS__modernTf) | var(--RS__sansTf) | var(--RS__humanistTf) | AccessibleDfa | "IA Writer Duospace"
         docElement.style.setProperty("--USER__fontFamily",
             !needsFontOverride ? "" :
-                (font === "DYS" ? "AccessibleDfa" :
-                    (font === "OLD" ? "var(--RS__oldStyleTf)" :
-                        (font === "MODERN" ? "var(--RS__modernTf)" :
-                            (font === "SANS" ? "var(--RS__sansTf)" :
-                                (font === "HUMAN" ? "var(--RS__humanistTf)" :
-                                    (font === "MONO" ? "var(--RS__monospaceTf)" :
-                                        (font ? font : "var(--RS__oldStyleTf)")
+                (font === "DUO" ? "IA Writer Duospace" :
+                    (font === "DYS" ? "AccessibleDfa" :
+                        (font === "OLD" ? "var(--RS__oldStyleTf)" :
+                            (font === "MODERN" ? "var(--RS__modernTf)" :
+                                (font === "SANS" ? "var(--RS__sansTf)" :
+                                    (font === "HUMAN" ? "var(--RS__humanistTf)" :
+                                        (font === "MONO" ? "var(--RS__monospaceTf)" :
+                                            (font ? font : "var(--RS__oldStyleTf)")
+                                        )
                                     )
                                 )
                             )
