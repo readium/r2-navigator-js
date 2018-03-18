@@ -292,7 +292,9 @@ function readiumCSSInject(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
         //     appendCSS("fs_normalize");
         // }
 
-        const urlRoot = messageJson.urlRoot ? messageJson.urlRoot : urlRootReadiumCSS;
+        const urlRoot = messageJson.urlRoot ?
+            messageJson.urlRoot + "/readium-css/" :
+            urlRootReadiumCSS;
 
         appendCSS("before", urlRoot);
         if (needsDefaultCSS) {
