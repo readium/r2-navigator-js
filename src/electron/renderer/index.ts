@@ -310,10 +310,11 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     const pubUri = new URI(pubJsonUri);
 
     // "/pub/BASE64_PATH/manifest.json" ==> "/pub/BASE64_PATH/"
-    const pathPrefix = pubUri.path().replace("manifest.json", "");
+    const pathPrefix = decodeURIComponent(pubUri.path().replace("manifest.json", ""));
 
     // "/pub/BASE64_PATH/epub/chapter.html" ==> "epub/chapter.html"
-    const linkPath = decodeURIComponent(linkUri.normalizePath().path().replace(pathPrefix, ""));
+    const normPath = decodeURIComponent(linkUri.normalizePath().path());
+    const linkPath = normPath.replace(pathPrefix, "");
 
     let pubLink = _publication.Spine.find((spineLink) => {
         return spineLink.Href === linkPath;

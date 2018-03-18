@@ -13,7 +13,7 @@ export async function doTryLcpPass(
 
     const publication = publicationsServer.cachedPublication(publicationFilePath);
     if (!publication || !publication.LCP) {
-        return Promise.reject("no publication LCP data?!");
+        return Promise.reject("no publication LCP data?! " + publicationFilePath);
     }
 
     let passesSha256Hex: string[];
