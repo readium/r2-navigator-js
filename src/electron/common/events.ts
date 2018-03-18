@@ -17,6 +17,7 @@ export interface IEventPayload_R2_EVENT_READIUMCSS {
         sepia: boolean;
     };
     isFixedLayout?: boolean;
+    urlRoot?: string;
 }
 
 // in RENDERER: webview.send()

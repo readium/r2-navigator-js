@@ -292,11 +292,13 @@ function readiumCSSInject(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
         //     appendCSS("fs_normalize");
         // }
 
-        appendCSS("before");
+        const urlRoot = messageJson.urlRoot ? messageJson.urlRoot : urlRootReadiumCSS;
+
+        appendCSS("before", urlRoot);
         if (needsDefaultCSS) {
-            appendCSS("default");
+            appendCSS("default", urlRoot);
         }
-        appendCSS("after");
+        appendCSS("after", urlRoot);
     }
 }
 
@@ -513,14 +515,14 @@ function appendCSSInline(id: string, css: string) {
 //     }
 // }
 
-function appendCSS(mod: string) {
+function appendCSS(mod: string, urlRoot: string) {
     ensureHead();
 
     const linkElement = win.document.createElement("link");
     linkElement.setAttribute("id", "ReadiumCSS-" + mod);
     linkElement.setAttribute("rel", "stylesheet");
     linkElement.setAttribute("type", "text/css");
-    linkElement.setAttribute("href", urlRootReadiumCSS + "ReadiumCSS-" + mod + ".css");
+    linkElement.setAttribute("href", urlRoot + "ReadiumCSS-" + mod + ".css");
     if (mod === "before" && win.document.head.childElementCount) {
         win.document.head.insertBefore(linkElement, win.document.head.firstElementChild);
     } else {
