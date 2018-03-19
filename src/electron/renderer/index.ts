@@ -127,7 +127,7 @@ export function handleLink(href: string, previous: boolean | undefined, useGoto:
     let okay = href.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
     if (!okay && _publicationJsonUrl) {
         const prefix = _publicationJsonUrl.replace("manifest.json", "");
-        okay = href.startsWith(prefix);
+        okay = decodeURIComponent(href).startsWith(decodeURIComponent(prefix));
     }
     if (okay) {
         loadLink(href, previous, useGoto);
