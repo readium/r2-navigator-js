@@ -29,7 +29,7 @@ import { fullQualifiedSelector } from "../common/cssselector";
 import { easings } from "../common/easings";
 import { getURLQueryParams } from "../common/querystring";
 import { URL_PARAM_GOTO, URL_PARAM_PREVIOUS } from "../common/url-params";
-import { setWindowNavigatorEpubReadingSystem } from './epubReadingSystem';
+import { setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
     DEBUG_VISUALS,
     configureFixedLayout,

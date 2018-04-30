@@ -12,11 +12,11 @@ import { IElectronWebviewTagWindow } from "./state";
 export interface INameVersion {
     name: string;
     version: string;
-};
+}
 
 interface IEpubReadingSystem extends INameVersion {
     hasFeature: (feature: string, version: string) => boolean;
-};
+}
 
 interface IWindowNavigator extends Navigator {
     epubReadingSystem: IEpubReadingSystem;

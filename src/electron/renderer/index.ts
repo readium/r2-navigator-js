@@ -11,7 +11,6 @@ import URI = require("urijs");
 import { Publication } from "@models/publication";
 import { Link } from "@models/publication-link";
 import { encodeURIComponent_RFC3986 } from "@utils/http/UrlUtils";
-
 import { ipcRenderer, shell } from "electron";
 
 import {
@@ -36,8 +35,8 @@ import {
     convertHttpUrlToCustomScheme,
 } from "../common/sessions";
 import { URL_PARAM_GOTO, URL_PARAM_PREVIOUS } from "./common/url-params";
+import { INameVersion } from "./webview/epubReadingSystem";
 import { IElectronWebviewTag } from "./webview/state";
-import { INameVersion } from './webview/epubReadingSystem';
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
