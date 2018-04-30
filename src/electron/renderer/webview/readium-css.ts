@@ -11,14 +11,12 @@ import {
     IEventPayload_R2_EVENT_READIUMCSS,
     R2_EVENT_READIUMCSS,
 } from "../../common/events";
-import { IElectronWebviewTagWindow } from "./state";
-
-import { focusCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles } from "./styles";
-
 import {
     READIUM2_ELECTRON_HTTP_PROTOCOL,
     convertCustomSchemeToHttpUrl,
 } from "../../common/sessions";
+import { IElectronWebviewTagWindow } from "./state";
+import { focusCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles, targetCssStyles } from "./styles";
 
 const win = (global as any).window as IElectronWebviewTagWindow;
 
@@ -132,6 +130,7 @@ export const injectReadPosCSS = () => {
         return;
     }
     appendCSSInline("electron-readPos", readPosCssStyles);
+    appendCSSInline("electron-target", targetCssStyles);
 };
 
 let _isVerticalWritingMode = false;

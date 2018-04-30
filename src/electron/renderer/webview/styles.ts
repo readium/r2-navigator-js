@@ -17,6 +17,18 @@ outline-style: none !important;
 }
 `;
 
+export const targetCssStyles = `
+*:target {
+outline-style: solid !important;
+outline-width: 2px !important;
+outline-color: magenta !important;
+outline-offset: 0px !important;
+}
+*.no-target-outline:target {
+outline-style: none !important;
+}
+`;
+
 export const selectionCssStyles = `
 ::selection {
 background-color: rgb(155, 179, 240) !important;

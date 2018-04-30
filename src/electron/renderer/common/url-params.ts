@@ -7,3 +7,6 @@
 
 export const URL_PARAM_PREVIOUS = "readiumprevious";
 export const URL_PARAM_GOTO = "readiumgoto";
+
+export const URL_PARAM_CSS = "readiumcss";
+export const URL_PARAM_EPUBREADINGSYSTEM = "readiumEpubReadingSystem";

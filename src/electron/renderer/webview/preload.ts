@@ -28,7 +28,7 @@ import { IPropertyAnimationState, animateProperty } from "../common/animatePrope
 import { fullQualifiedSelector } from "../common/cssselector";
 import { easings } from "../common/easings";
 import { getURLQueryParams } from "../common/querystring";
-import { URL_PARAM_GOTO, URL_PARAM_PREVIOUS } from "../common/url-params";
+import { URL_PARAM_CSS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS } from "../common/url-params";
 import { setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
     DEBUG_VISUALS,
@@ -70,7 +70,7 @@ if (win.READIUM2.urlQueryParams) {
     let readiumEpubReadingSystemJson: any = {};
 
     // tslint:disable-next-line:no-string-literal
-    const base64EpubReadingSystem = win.READIUM2.urlQueryParams["readiumEpubReadingSystem"];
+    const base64EpubReadingSystem = win.READIUM2.urlQueryParams[URL_PARAM_EPUBREADINGSYSTEM];
     if (base64EpubReadingSystem) {
         try {
             const str = window.atob(base64EpubReadingSystem);
@@ -119,15 +119,31 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
             delete win.READIUM2.urlQueryParams[URL_PARAM_GOTO];
         }
     }
+
+    let delayScrollIntoView = false;
     if (payload.hash) {
+        console.log("R2_EVENT_SCROLLTO payload.hash: " + payload.hash);
         win.READIUM2.hashElement = win.document.getElementById(payload.hash);
+
+        win.location.href = "#" + payload.hash;
+        delayScrollIntoView = true;
+
+        // unfortunately, does not sync CSS :target pseudo-class :(
+        // win.history.replaceState({}, undefined, "#" + payload.hash);
     } else {
         win.READIUM2.hashElement = null;
     }
 
     win.READIUM2.readyEventSent = false;
     win.READIUM2.locationHashOverride = undefined;
-    scrollToHashRaw(false);
+
+    if (delayScrollIntoView) {
+        setTimeout(() => {
+            scrollToHashRaw(false);
+        }, 100);
+    } else {
+        scrollToHashRaw(false);
+    }
 
     // const payload: IEventPayload_R2_EVENT_WEBVIEW_READY = {
     //     href: win.location.href,
@@ -660,10 +676,10 @@ win.addEventListener("DOMContentLoaded", () => {
     let readiumcssJson: any = {};
     if (win.READIUM2.urlQueryParams) {
         // tslint:disable-next-line:no-string-literal
-        const base64ReadiumCSS = win.READIUM2.urlQueryParams["readiumcss"];
+        const base64ReadiumCSS = win.READIUM2.urlQueryParams[URL_PARAM_CSS];
         // if (!base64ReadiumCSS) {
         //     console.log("!readiumcss BASE64 ??!");
-        //     const token = "readiumcss=";
+        //     const token = URL_PARAM_CSS + "=";
         //     const i = win.location.search.indexOf(token);
         //     if (i > 0) {
         //         base64ReadiumCSS = win.location.search.substr(i + token.length);

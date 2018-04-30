@@ -34,7 +34,7 @@ import {
     convertCustomSchemeToHttpUrl,
     convertHttpUrlToCustomScheme,
 } from "../common/sessions";
-import { URL_PARAM_GOTO, URL_PARAM_PREVIOUS } from "./common/url-params";
+import { URL_PARAM_CSS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS } from "./common/url-params";
 import { INameVersion } from "./webview/epubReadingSystem";
 import { IElectronWebviewTag } from "./webview/state";
 
@@ -357,8 +357,11 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     linkUri.search((data: any) => {
         // overrides existing (leaves others intact)
 
-        data.readiumcss = rcssJsonstrBase64;
-        data.readiumEpubReadingSystem = rersJsonstrBase64;
+        // tslint:disable-next-line:no-string-literal
+        data[URL_PARAM_CSS] = rcssJsonstrBase64;
+
+        // tslint:disable-next-line:no-string-literal
+        data[URL_PARAM_EPUBREADINGSYSTEM] = rersJsonstrBase64;
     });
 
     const activeWebView = getActiveWebView();
@@ -366,7 +369,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     const wv2AlreadyLoaded = _webview2.READIUM2.link === pubLink;
     if (wv1AlreadyLoaded || wv2AlreadyLoaded) {
         const goto = useGoto ? linkUri.search(true)[URL_PARAM_GOTO] as string : undefined;
-        const hash = useGoto ? undefined : linkUri.fragment();
+        const hash = useGoto ? undefined : linkUri.fragment(); // without #
 
         console.log("ALREADY LOADED: " + pubLink.Href);
 
@@ -451,7 +454,8 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     console.log("####### >>> ---");
     console.log(activeWebView.READIUM2.id);
     console.log(pubLink.Href);
-    console.log(linkUri.hash());
+    console.log(linkUri.hash()); // with #
+    console.log(linkUri.fragment()); // without #
     // tslint:disable-next-line:no-string-literal
     console.log(linkUri.search(true)[URL_PARAM_GOTO]);
     // tslint:disable-next-line:no-string-literal
@@ -497,14 +501,17 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     //                 linkUriNext.normalizePath();
     //                 linkUriNext.search((data: any) => {
     //                     // overrides existing (leaves others intact)
-    //                     data.readiumcss = rcssJsonstrBase64;
+
+    //                     // tslint:disable-next-line:no-string-literal
+    //                     data[URL_PARAM_CSS] = rcssJsonstrBase64;
     //                 });
     //                 const uriStrNext = linkUriNext.toString();
 
     //                 console.log("####### ======");
     //                 console.log(otherWebview.READIUM2.id);
     //                 console.log(nextPubLink.Href);
-    //                 console.log(linkUriNext.hash());
+    //                 console.log(linkUriNext.hash()); // with #
+    //                 console.log(linkUriNext.fragment()); // without #
     //                 // tslint:disable-next-line:no-string-literal
     //                 console.log(linkUriNext.search(true)[URL_PARAM_GOTO]);
     //                 // tslint:disable-next-line:no-string-literal
