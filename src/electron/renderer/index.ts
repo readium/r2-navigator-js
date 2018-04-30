@@ -37,6 +37,7 @@ import {
 } from "../common/sessions";
 import { URL_PARAM_GOTO, URL_PARAM_PREVIOUS } from "./common/url-params";
 import { IElectronWebviewTag } from "./webview/state";
+import { INameVersion } from './webview/epubReadingSystem';
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -79,6 +80,13 @@ function isFixedLayout(link: Link | undefined): boolean {
         _publication.Metadata.Rendition &&
         _publication.Metadata.Rendition.Layout === "fixed";
     return isFXL as boolean;
+}
+
+let _getEpubReadingSystem: () => INameVersion = () => {
+    return { name: "Readium2", version: "0.0.0" };
+};
+export function setEpubReadingSystemJsonGetter(func: () => INameVersion) {
+    _getEpubReadingSystem = func;
 }
 
 function __computeReadiumCssJsonMessage(link: Link | undefined): IEventPayload_R2_EVENT_READIUMCSS {
@@ -342,10 +350,16 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     // const str = window.atob(base64);
     const rcssJsonstrBase64 = window.btoa(rcssJsonstr);
 
+    const rersJson = _getEpubReadingSystem();
+    const rersJsonstr = JSON.stringify(rersJson, null, "");
+    // const str = window.atob(base64);
+    const rersJsonstrBase64 = window.btoa(rersJsonstr);
+
     linkUri.search((data: any) => {
         // overrides existing (leaves others intact)
 
         data.readiumcss = rcssJsonstrBase64;
+        data.readiumEpubReadingSystem = rersJsonstrBase64;
     });
 
     const activeWebView = getActiveWebView();
