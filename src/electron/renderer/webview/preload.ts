@@ -66,6 +66,25 @@ win.READIUM2 = {
 
 win.READIUM2.urlQueryParams = win.location.search ? getURLQueryParams(win.location.search) : undefined;
 
+if (win.READIUM2.urlQueryParams) {
+    let readiumEpubReadingSystemJson: any = {};
+
+    // tslint:disable-next-line:no-string-literal
+    const base64EpubReadingSystem = win.READIUM2.urlQueryParams["readiumEpubReadingSystem"];
+    if (base64EpubReadingSystem) {
+        try {
+            const str = window.atob(base64EpubReadingSystem);
+            readiumEpubReadingSystemJson = JSON.parse(str);
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    if (readiumEpubReadingSystemJson) {
+        setWindowNavigatorEpubReadingSystem(win, readiumEpubReadingSystemJson);
+    }
+}
+
 // console.log("-----");
 // console.log(win.location.href);
 // console.log(win.location.origin);
@@ -639,7 +658,6 @@ win.addEventListener("DOMContentLoaded", () => {
     win.READIUM2.readyEventSent = false;
 
     let readiumcssJson: any = {};
-    let readiumEpubReadingSystemJson: any = {};
     if (win.READIUM2.urlQueryParams) {
         // tslint:disable-next-line:no-string-literal
         const base64ReadiumCSS = win.READIUM2.urlQueryParams["readiumcss"];
@@ -664,21 +682,6 @@ win.addEventListener("DOMContentLoaded", () => {
                 console.log(err);
             }
         }
-
-        // tslint:disable-next-line:no-string-literal
-        const base64EpubReadingSystem = win.READIUM2.urlQueryParams["readiumEpubReadingSystem"];
-        if (base64EpubReadingSystem) {
-            try {
-                const str = window.atob(base64EpubReadingSystem);
-                readiumEpubReadingSystemJson = JSON.parse(str);
-            } catch (err) {
-                console.log(err);
-            }
-        }
-    }
-
-    if (readiumEpubReadingSystemJson) {
-        setWindowNavigatorEpubReadingSystem(win, readiumEpubReadingSystemJson);
     }
 
     win.READIUM2.isFixedLayout = readiumcssJson && readiumcssJson.isFixedLayout;
