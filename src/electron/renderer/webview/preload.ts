@@ -5,8 +5,10 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import ResizeSensor = require("css-element-queries/src/ResizeSensor");
+// import ResizeSensor = require("resize-sensor/ResizeSensor");
+
 import debounce = require("debounce");
-import ResizeSensor = require("resize-sensor/ResizeSensor");
 
 import { ipcRenderer } from "electron";
 
