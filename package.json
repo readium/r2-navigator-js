@@ -69,7 +69,7 @@
     "@types/node": "8.*.*",
     "@types/urijs": "^1.15.38",
     "@types/uuid": "^3.4.3",
-    "cpy-cli": "github:sindresorhus/cpy-cli#nodir",
+    "cpy-cli": "^2.0.0",
     "cross-env": "^5.2.0",
     "cson": "^5.1.0",
     "eclint": "^2.7.0",
