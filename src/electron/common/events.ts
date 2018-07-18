@@ -55,6 +55,7 @@ export interface IEventPayload_R2_EVENT_PAGE_TURN {
 export const R2_EVENT_READING_LOCATION = "R2_EVENT_READING_LOCATION";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_READING_LOCATION {
+    cfi: string | undefined;
     cssSelector: string;
 }
 

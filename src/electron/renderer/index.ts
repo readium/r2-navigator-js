@@ -108,10 +108,12 @@ export function setReadiumCssJsonGetter(func: () => IEventPayload_R2_EVENT_READI
     _computeReadiumCssJsonMessage = func;
 }
 
-let _saveReadingLocation: (docHref: string, cssSelector: string) => void = (_docHref: string, _cssSelector: string) => {
+let _saveReadingLocation: (docHref: string, locator: IEventPayload_R2_EVENT_READING_LOCATION)
+    => void = (_docHref: string, _locator: IEventPayload_R2_EVENT_READING_LOCATION) => {
     return;
 };
-export function setReadingLocationSaver(func: (docHref: string, cssSelector: string) => void) {
+export function setReadingLocationSaver(func:
+    (docHref: string, locator: IEventPayload_R2_EVENT_READING_LOCATION) => void) {
     _saveReadingLocation = func;
 }
 
@@ -158,7 +160,7 @@ export function installNavigatorDOM(
     rootHtmlElementID: string,
     preloadScriptPath: string,
     pubDocHrefToLoad: string | undefined,
-    pubDocSelectorToGoto: string | undefined) {
+    location: IEventPayload_R2_EVENT_READING_LOCATION | undefined) {
 
     _publication = publication;
     _publicationJsonUrl = publicationJsonUrl;
@@ -211,14 +213,14 @@ export function installNavigatorDOM(
     }
 
     let linkToLoad: Link | undefined;
-    let linkToLoadGoto: string | undefined;
+    let linkToLoadGoto: IEventPayload_R2_EVENT_READING_LOCATION | undefined;
     if (pubDocHrefToLoad) {
         if (_publication.Spine && _publication.Spine.length) {
             linkToLoad = _publication.Spine.find((spineLink) => {
                 return spineLink.Href === pubDocHrefToLoad;
             });
-            if (linkToLoad && pubDocSelectorToGoto) {
-                linkToLoadGoto = pubDocSelectorToGoto;
+            if (linkToLoad && location) {
+                linkToLoadGoto = location;
             }
         }
         if (!linkToLoad &&
@@ -226,8 +228,8 @@ export function installNavigatorDOM(
             linkToLoad = _publication.Resources.find((resLink) => {
                 return resLink.Href === pubDocHrefToLoad;
             });
-            if (linkToLoad && pubDocSelectorToGoto) {
-                linkToLoadGoto = pubDocSelectorToGoto;
+            if (linkToLoad && location) {
+                linkToLoadGoto = location;
             }
         }
     }
@@ -243,7 +245,9 @@ export function installNavigatorDOM(
     setTimeout(() => {
         if (linkToLoad) {
             const hrefToLoad = _publicationJsonUrl + "/../" + linkToLoad.Href +
-                (linkToLoadGoto ? ("?" + URL_PARAM_GOTO + "=" + encodeURIComponent_RFC3986(linkToLoadGoto)) : "");
+                (linkToLoadGoto ? ("?" + URL_PARAM_GOTO + "=" +
+                    encodeURIComponent_RFC3986(linkToLoadGoto.cssSelector)) : "");
+            // TODO: linkToLoadGoto.cfi
             handleLink(hrefToLoad, undefined, true);
         }
     }, 100);
@@ -569,7 +573,7 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
         } else if (event.channel === R2_EVENT_READING_LOCATION) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_READING_LOCATION;
             if (webview.READIUM2.link && _saveReadingLocation) {
-                _saveReadingLocation(webview.READIUM2.link.Href, payload.cssSelector);
+                _saveReadingLocation(webview.READIUM2.link.Href, payload);
             }
         } else if (event.channel === R2_EVENT_PAGE_TURN_RES) {
             if (!_publication) {

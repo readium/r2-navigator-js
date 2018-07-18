@@ -60,6 +60,7 @@ win.READIUM2 = {
     hashElement: null,
     isFixedLayout: false,
     locationHashOverride: undefined,
+    locationHashOverrideCFI: undefined,
     locationHashOverrideCSSselector: undefined,
     readyEventSent: false,
     readyPassDone: false,
@@ -838,18 +839,57 @@ const processXY = debounce((x: number, y: number) => {
     processXYRaw(x, y);
 }, 300);
 
+export const computeCFI = (node: Node): string | undefined => {
+
+    // TODO: handle character position inside text node
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+        return undefined;
+    }
+
+    let cfi = "";
+
+    let currentElement = node as Element;
+    while (currentElement.parentNode && currentElement.parentNode.nodeType === Node.ELEMENT_NODE) {
+        const currentElementChildren = (currentElement.parentNode as Element).children;
+        let currentElementIndex = -1;
+        for (let i = 0; i < currentElementChildren.length; i++) {
+            if (currentElement === currentElementChildren[i]) {
+                currentElementIndex = i;
+                break;
+            }
+        }
+        if (currentElementIndex >= 0) {
+            const cfiIndex = (currentElementIndex + 1) * 2;
+            cfi = cfiIndex +
+                (currentElement.id ? ("[" + currentElement.id + "]") : "") +
+                (cfi.length ? ("/" + cfi) : "");
+        }
+        currentElement = currentElement.parentNode as Element;
+    }
+
+    return "/" + cfi;
+};
+
 const notifyReadingLocation = () => {
     if (!win.READIUM2.locationHashOverride) {
         return;
     }
 
-    if (DEBUG_VISUALS) {
-        win.READIUM2.locationHashOverride.classList.add("readium2-read-pos");
-    }
+    // win.READIUM2.locationHashOverride.nodeType === ELEMENT_NODE
 
     win.READIUM2.locationHashOverrideCSSselector = fullQualifiedSelector(win.READIUM2.locationHashOverride, false);
+    win.READIUM2.locationHashOverrideCFI = computeCFI(win.READIUM2.locationHashOverride);
+
     const payload: IEventPayload_R2_EVENT_READING_LOCATION = {
+        cfi: win.READIUM2.locationHashOverrideCFI,
         cssSelector: win.READIUM2.locationHashOverrideCSSselector,
     };
     ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION, payload);
+
+    if (DEBUG_VISUALS) {
+        win.READIUM2.locationHashOverride.classList.add("readium2-read-pos");
+
+        console.log("notifyReadingLocation CSS SELECTOR: " + win.READIUM2.locationHashOverrideCSSselector);
+        console.log("notifyReadingLocation CFI: " + win.READIUM2.locationHashOverrideCFI);
+    }
 };

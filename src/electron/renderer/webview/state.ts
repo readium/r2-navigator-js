@@ -16,6 +16,7 @@ export interface IReadium2State {
     hashElement: Element | null;
     locationHashOverride: Element | undefined;
     locationHashOverrideCSSselector: string | undefined;
+    locationHashOverrideCFI: string | undefined;
     readyPassDone: boolean;
     readyEventSent: boolean;
 
