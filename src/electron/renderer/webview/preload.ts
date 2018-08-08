@@ -43,6 +43,11 @@ import {
 } from "./readium-css";
 import { IElectronWebviewTagWindow } from "./state";
 
+import { consoleRedirect } from "../console-redirect";
+
+// const releaseConsoleRedirect =
+consoleRedirect("r2:navigator#electron/renderer/webview/preload", process.stdout, process.stderr, true);
+
 // webFrame.registerURLSchemeAsSecure(READIUM2_ELECTRON_HTTP_PROTOCOL);
 // webFrame.registerURLSchemeAsBypassingCSP(READIUM2_ELECTRON_HTTP_PROTOCOL);
 // webFrame.registerURLSchemeAsPrivileged(READIUM2_ELECTRON_HTTP_PROTOCOL, {

@@ -10,3 +10,6 @@
 declare module "filehound";
 declare module "resize-sensor/ResizeSensor";
 declare module "css-element-queries/src/ResizeSensor";
+
+declare module "debug/node";
+declare module "debug/src/browser";
