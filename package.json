@@ -47,7 +47,7 @@
   "homepage": "https://github.com/edrlab/r2-navigator-js",
   "dependencies": {
     "css-element-queries": "github:marcj/css-element-queries#master",
-    "debounce": "^1.1.0",
+    "debounce": "^1.2.0",
     "debug": "^3.1.0",
     "express": "^4.16.3",
     "moment": "^2.22.2",
