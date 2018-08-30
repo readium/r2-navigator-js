@@ -10,3 +10,7 @@ NPM updates:
 * `@types/uuid`
 * `r2-streamer-js`
 * `r2-lcp-js`
+
+# 1.0.0-alpha.3
+
+* `package-lock.json` had incorrect version

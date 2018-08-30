@@ -1,6 +1,6 @@
 {
   "name": "r2-navigator-js",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "description": "Readium 2 'navigator' for NodeJS (TypeScript)",
   "keywords": [
     "readium",
@@ -51,8 +51,8 @@
     "debug": "^3.1.0",
     "express": "^4.16.3",
     "moment": "^2.22.2",
-    "r2-lcp-js": "^1.0.0-alpha.1",
-    "r2-streamer-js": "^1.0.0-alpha.1",
+    "r2-lcp-js": "^1.0.0-alpha.3",
+    "r2-streamer-js": "^1.0.0-alpha.3",
     "resize-sensor": "github:normanzb/resize-sensor#master",
     "ta-json": "github:danielweck/ta-json#dist",
     "tslib": "^1.9.3",
