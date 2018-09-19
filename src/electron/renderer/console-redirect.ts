@@ -5,7 +5,7 @@ import * as util from "util";
 // used for TypeScript typings (defaults to "debug/src/browser" when Electron renderer process)
 import * as debugz from "debug";
 
-import * as debugNode from "debug/node";
+import * as debugNode from "debug/src/node";
 // import * as debugBrowser from "debug/src/browser";
 
 const _consoleFunctionNames = ["error", "info", "log", "warn"];
