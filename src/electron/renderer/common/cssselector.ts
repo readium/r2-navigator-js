@@ -12,7 +12,8 @@
 // https://chromium.googlesource.com/chromium/blink/+/master/Source/devtools/front_end/components/DOMPresentationUtils.js#259
 export const fullQualifiedSelector = (node: Node, justSelector: boolean): string => {
     if (node.nodeType !== Node.ELEMENT_NODE) {
-        const lowerCaseName = (node.localName && node.localName.toLowerCase()) || node.nodeName.toLowerCase();
+        const lowerCaseName = ((node as Element).localName && (node as Element).localName.toLowerCase())
+            || node.nodeName.toLowerCase();
         return lowerCaseName;
     }
     return cssPath(node, justSelector);
@@ -105,7 +106,8 @@ const _cssPathStep = (node: Node, optimized: boolean, isTargetNode: boolean): ID
     if (node.nodeType !== Node.ELEMENT_NODE) {
         return undefined;
     }
-    const lowerCaseName = (node.localName && node.localName.toLowerCase()) || node.nodeName.toLowerCase();
+    const lowerCaseName = ((node as Element).localName && (node as Element).localName.toLowerCase())
+        || node.nodeName.toLowerCase();
 
     const element = node as Element;
 

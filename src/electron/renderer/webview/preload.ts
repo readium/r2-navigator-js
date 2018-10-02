@@ -168,6 +168,10 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
         return;
     }
 
+    if (!win.document || !win.document.documentElement) {
+        return;
+    }
+
     // console.log("---");
     // console.log("webview.innerWidth: " + win.innerWidth);
     // console.log("document.offsetWidth: " + win.document.documentElement.offsetWidth);
@@ -378,6 +382,10 @@ const checkReadyPass = () => {
             //     return;
             // }
 
+            if (!win.document || !win.document.documentElement) {
+                return;
+            }
+
             const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
             processXY(x, 0);
         });
@@ -434,6 +442,11 @@ const notifyReady = () => {
 };
 
 function scrollIntoView(element: HTMLElement) {
+
+    if (!win.document || !win.document.documentElement) {
+        return;
+    }
+
     if (!win.document.body) {
         return;
     }
@@ -466,6 +479,10 @@ function scrollIntoView(element: HTMLElement) {
 const scrollToHashRaw = (firstCall: boolean) => {
 
     // console.log("scrollToHash: " + firstCall);
+
+    if (!win.document || !win.document.documentElement) {
+        return;
+    }
 
     const isPaged = win.document.documentElement.classList.contains("readium-paginated");
 
@@ -732,6 +749,11 @@ win.addEventListener("DOMContentLoaded", () => {
     // // DEBUG
 
     win.document.body.addEventListener("focusin", (ev: any) => {
+
+        if (!win.document || !win.document.documentElement) {
+            return;
+        }
+
         const isPaged = win.document.documentElement.classList.contains("readium-paginated");
         if (isPaged) {
             setTimeout(() => {

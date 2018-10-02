@@ -88,7 +88,8 @@ export const configureFixedLayout = (isFixedLayout: boolean) => {
         }
     }
 
-    if (width && height && isFixedLayout) {
+    if (width && height && isFixedLayout
+        && win.document && win.document.documentElement && win.document.body) {
         win.document.documentElement.style.overflow = "hidden";
 
         // Many FXL EPUBs lack the body dimensions (only viewport meta)
@@ -149,6 +150,10 @@ export function isRTL(): boolean {
 // tslint:disable-next-line:max-line-length
 // https://github.com/readium/readium-css/blob/develop/prototype/iOS-implem/dist/ReadMe.md#dealing-with-languagesscripts
 function computeVerticalRTL() {
+
+    if (!win.document || !win.document.documentElement) {
+        return;
+    }
 
     let dirAttr = win.document.documentElement.getAttribute("dir");
     if (dirAttr === "rtl") {
@@ -216,6 +221,11 @@ win.addEventListener("load", () => {
 });
 
 const ensureHead = () => {
+
+    if (!win.document || !win.document.documentElement) {
+        return;
+    }
+
     const docElement = win.document.documentElement;
 
     if (!win.document.head) {
@@ -235,6 +245,10 @@ ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVEN
 function readiumCSSInject(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
 
     if (typeof messageJson.injectCSS === "undefined") {
+        return;
+    }
+
+    if (!win.document || !win.document.documentElement) {
         return;
     }
 
@@ -312,6 +326,10 @@ function readiumCSSInject(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
 
 function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
     if (!messageJson || typeof messageJson.setCSS === "undefined") {
+        return;
+    }
+
+    if (!win.document || !win.document.documentElement) {
         return;
     }
 
@@ -508,6 +526,10 @@ export const readiumCSS = (messageJson: IEventPayload_R2_EVENT_READIUMCSS) => {
 function appendCSSInline(id: string, css: string) {
     ensureHead();
 
+    if (!win.document || !win.document.head) {
+        return;
+    }
+
     const styleElement = win.document.createElement("style");
     styleElement.setAttribute("id", "Readium2-" + id);
     styleElement.setAttribute("type", "text/css");
@@ -525,6 +547,10 @@ function appendCSSInline(id: string, css: string) {
 
 function appendCSS(mod: string, urlRoot: string) {
     ensureHead();
+
+    if (!win.document || !win.document.head) {
+        return;
+    }
 
     const linkElement = win.document.createElement("link");
     linkElement.setAttribute("id", "ReadiumCSS-" + mod);

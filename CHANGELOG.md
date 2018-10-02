@@ -1,7 +1,25 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.0-alpha.5...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.0-alpha.6...develop
+
+# 1.0.0-alpha.6
+
+Changes:
+* Dependency "ta-json" GitHub semver dependency becomes "ta-json-x" NPM package (fixes https://github.com/readium/r2-testapp-js/issues/10 )
+* Fixed TypeScript regression bug (3.0.3 -> 3.1.1) related to XML / HTML DOM typings
+* Removed TypeScript linter warning message (checks for no unused variables)
+* NPM updates related to the Node TypeScript typings
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.0-alpha.6/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.0-alpha.6/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.0-alpha.6
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.0-alpha.5...v1.0.0-alpha.6
 
 # 1.0.0-alpha.5
 

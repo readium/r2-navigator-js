@@ -11,7 +11,7 @@ import { Publication } from "@models/publication";
 import { LCP } from "@r2-lcp-js/parser/epub/lcp";
 import { injectBufferInZip } from "@utils/zip/zipInjector";
 import * as debug_ from "debug";
-import { JSON as TAJSON } from "ta-json";
+import { JSON as TAJSON } from "ta-json-x";
 
 const debug = debug_("r2:navigator#electron/main/lsd-injectlcpl");
 
