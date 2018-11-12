@@ -5,7 +5,8 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import debounce = require("debounce");
+import { debounce } from "debounce";
+
 import URI = require("urijs");
 
 import { Publication } from "@models/publication";

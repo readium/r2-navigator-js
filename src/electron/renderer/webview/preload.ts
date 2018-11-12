@@ -8,7 +8,7 @@
 import ResizeSensor = require("css-element-queries/src/ResizeSensor");
 // import ResizeSensor = require("resize-sensor/ResizeSensor");
 
-import debounce = require("debounce");
+import { debounce } from "debounce";
 
 import { ipcRenderer } from "electron";
 
