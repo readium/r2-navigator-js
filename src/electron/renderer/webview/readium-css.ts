@@ -148,7 +148,9 @@ export function isRTL(): boolean {
 // TODO? xml:lang ar, fa, he ==> RTL, ensure html@xml:lang and html@dir (if missing)
 // TODO? xml:lang zh, ja, ko ==> horizontal, ensure html@xml:lang (if missing)
 // tslint:disable-next-line:max-line-length
-// https://github.com/readium/readium-css/blob/develop/prototype/iOS-implem/dist/ReadMe.md#dealing-with-languagesscripts
+// https://github.com/readium/readium-css/blob/develop/docs/CSS16-internationalization.md
+// tslint:disable-next-line:max-line-length
+// https://github.com/readium/readium-css/blob/develop/docs/CSS12-user_prefs.md#user-settings-can-be-language-specific
 function computeVerticalRTL() {
 
     if (!win.document || !win.document.documentElement) {
@@ -336,11 +338,11 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
     const docElement = win.document.documentElement;
 
     // tslint:disable-next-line:max-line-length
-    // https://github.com/readium/readium-css/tree/develop/prototype/iOS-implem#manage-user-settings
+    // https://github.com/readium/readium-css/blob/develop/docs/CSS12-user_prefs.md
     // tslint:disable-next-line:max-line-length
-    // https://github.com/readium/readium-css/blob/develop/prototype/iOS-implem/Specific-docs/CSS12-api.md#user-settings
+    // https://github.com/readium/readium-css/blob/develop/docs/ReadiumCSS-user_variables.css
     // tslint:disable-next-line:max-line-length
-    // https://github.com/readium/readium-css/blob/develop/prototype/iOS-implem/Specific-docs/CSS09-user_prefs.md#switches
+    // https://github.com/readium/readium-css/blob/develop/docs/CSS19-api.md#user-settings
 
     const remove = (typeof messageJson.setCSS === "string" && messageJson.setCSS.indexOf("rollback") >= 0)
         || !messageJson.setCSS;
@@ -513,7 +515,6 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
         // docElement.style.setProperty("--USER__backgroundColor", "#FFFFFF");
         // docElement.style.setProperty("--USER__textColor", "#000000");
 
-        // https://github.com/readium/readium-css/blob/develop/prototype/iOS-implem/dist/ReadMe.md#right-to-left
         // TODO? --USER__ligatures (for RTL)
     }
 }
