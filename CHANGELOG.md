@@ -9,6 +9,7 @@ Git diff:
 
 Changes:
 * NPM updates (minor)
+* ReadiumCSS updated to latest (minor)
 * Git revision JSON info now includes NodeJS and NPM version (build environment)
 
 Git revision info:
