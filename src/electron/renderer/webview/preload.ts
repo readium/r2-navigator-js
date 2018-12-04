@@ -504,10 +504,14 @@ const scrollToHashRaw = (firstCall: boolean) => {
             scrollIntoView(win.READIUM2.locationHashOverride as HTMLElement);
         } else {
             win.READIUM2.locationHashOverride.scrollIntoView({
-                behavior: "instant",
+                // TypeScript lib.dom.d.ts difference in 3.2.1
+                // ScrollBehavior = "auto" | "instant" | "smooth" VS ScrollBehavior = "auto" | "smooth"
+                behavior: "auto",
+                // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
                 block: "start",
+                // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
                 inline: "start",
-            });
+            } as ScrollIntoViewOptions);
         }
 
         return;
@@ -528,10 +532,14 @@ const scrollToHashRaw = (firstCall: boolean) => {
                 scrollIntoView(win.READIUM2.hashElement as HTMLElement);
             } else {
                 win.READIUM2.hashElement.scrollIntoView({
-                    behavior: "instant",
+                    // TypeScript lib.dom.d.ts difference in 3.2.1
+                    // ScrollBehavior = "auto" | "instant" | "smooth" VS ScrollBehavior = "auto" | "smooth"
+                    behavior: "auto",
+                    // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
                     block: "start",
+                    // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
                     inline: "start",
-                });
+                } as ScrollIntoViewOptions);
             }
         }
 
@@ -628,10 +636,14 @@ const scrollToHashRaw = (firstCall: boolean) => {
                             scrollIntoView(selected as HTMLElement);
                         } else {
                             selected.scrollIntoView({
-                                behavior: "instant",
+                                // TypeScript lib.dom.d.ts difference in 3.2.1
+                                // ScrollBehavior = "auto" | "instant" | "smooth" VS ScrollBehavior = "auto" | "smooth"
+                                behavior: "auto",
+                                // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
                                 block: "start",
+                                // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
                                 inline: "start",
-                            });
+                            } as ScrollIntoViewOptions);
                         }
 
                         return;
