@@ -7,7 +7,6 @@
 
 // declare module "*";
 
-declare module "filehound";
 declare module "resize-sensor/ResizeSensor";
 declare module "css-element-queries/src/ResizeSensor";
 
