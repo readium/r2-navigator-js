@@ -5,24 +5,15 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import { IReadiumCSS } from "./readium-css-settings";
+
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_READIUMCSS = "R2_EVENT_READIUMCSS";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_READIUMCSS {
     injectCSS: string;
-    setCSS: string | {
-        align: string;
-        colCount: string;
-        dark: boolean;
-        font: string;
-        fontSize: string;
-        invert: boolean;
-        lineHeight: string;
-        night: boolean;
-        paged: boolean;
-        sepia: boolean;
-    };
+    setCSS: string | IReadiumCSS;
     isFixedLayout?: boolean;
     urlRoot?: string;
 }

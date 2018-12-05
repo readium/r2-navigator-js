@@ -367,19 +367,31 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
 
         docElement.classList.remove(CSS_CLASS_DARK_THEME);
     } else {
-        let dark = false;
+        let darken = false;
         let night = false;
         let sepia = false;
         let invert = false;
         let paged = false;
+        let a11yNormalize = false;
         let font: string | undefined;
         let fontSize: string | undefined;
         let lineHeight: string | undefined;
         let colCount: string | undefined;
-        let align: string | undefined;
+        let textAlign: string | undefined;
+        let letterSpacing: string | undefined;
+        let wordSpacing: string | undefined;
+        let pageMargins: string | undefined;
+        let paraIndent: string | undefined;
+        let paraSpacing: string | undefined;
+        let typeScale: string | undefined;
+        let bodyHyphens: string | undefined;
+        let backgroundColor: string | undefined;
+        let textColor: string | undefined;
+        let ligatures: string | undefined;
+
         if (typeof messageJson.setCSS === "object") {
-            if (messageJson.setCSS.dark) {
-                dark = true;
+            if (messageJson.setCSS.darken) {
+                darken = true;
             }
             if (messageJson.setCSS.night) {
                 night = true;
@@ -393,6 +405,9 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
             if (messageJson.setCSS.paged) {
                 paged = true;
             }
+            if (messageJson.setCSS.a11yNormalize) {
+                a11yNormalize = true;
+            }
             if (typeof messageJson.setCSS.font === "string") {
                 font = messageJson.setCSS.font;
             }
@@ -405,8 +420,38 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
             if (typeof messageJson.setCSS.colCount === "string") {
                 colCount = messageJson.setCSS.colCount;
             }
-            if (typeof messageJson.setCSS.align === "string") {
-                align = messageJson.setCSS.align;
+            if (typeof messageJson.setCSS.textAlign === "string") {
+                textAlign = messageJson.setCSS.textAlign;
+            }
+            if (typeof messageJson.setCSS.letterSpacing === "string") {
+                letterSpacing = messageJson.setCSS.letterSpacing;
+            }
+            if (typeof messageJson.setCSS.wordSpacing === "string") {
+                wordSpacing = messageJson.setCSS.wordSpacing;
+            }
+            if (typeof messageJson.setCSS.pageMargins === "string") {
+                pageMargins = messageJson.setCSS.pageMargins;
+            }
+            if (typeof messageJson.setCSS.paraIndent === "string") {
+                paraIndent = messageJson.setCSS.paraIndent;
+            }
+            if (typeof messageJson.setCSS.paraSpacing === "string") {
+                paraSpacing = messageJson.setCSS.paraSpacing;
+            }
+            if (typeof messageJson.setCSS.typeScale === "string") {
+                typeScale = messageJson.setCSS.typeScale;
+            }
+            if (typeof messageJson.setCSS.bodyHyphens === "string") {
+                bodyHyphens = messageJson.setCSS.bodyHyphens;
+            }
+            if (typeof messageJson.setCSS.backgroundColor === "string") {
+                backgroundColor = messageJson.setCSS.backgroundColor;
+            }
+            if (typeof messageJson.setCSS.textColor === "string") {
+                textColor = messageJson.setCSS.textColor;
+            }
+            if (typeof messageJson.setCSS.ligatures === "string") {
+                ligatures = messageJson.setCSS.ligatures;
             }
         }
 
@@ -418,7 +463,7 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
             docElement.classList.remove(CSS_CLASS_DARK_THEME);
         }
 
-        const needsAdvanced = true; // dark || invert;
+        const needsAdvanced = true; // textAlign, bodyHyphens, fontSize, etc.
 
         // readium-advanced-on | readium-advanced-off
         docElement.style.setProperty("--USER__advancedSettings",
@@ -426,7 +471,7 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
 
         // readium-darken-on | readium-darken-off
         docElement.style.setProperty("--USER__darkenFilter",
-            dark ? "readium-darken-on" : "readium-darken-off");
+            darken ? "readium-darken-on" : "readium-darken-off");
 
         // readium-invert-on | readium-invert-off
         docElement.style.setProperty("--USER__invertFilter",
@@ -446,41 +491,54 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
             docElement.classList.remove("readium-paginated");
         }
 
-        const needsFontOverride = typeof font !== "undefined" && font !== "DEFAULT";
+        const defaultPublisherFont = !font || font === "DEFAULT";
+        const needsFontOverride = a11yNormalize || !defaultPublisherFont;
         // readium-font-on | readium-font-off
         docElement.style.setProperty("--USER__fontOverride",
             needsFontOverride ? "readium-font-on" : "readium-font-off");
 
+        // readium-a11y-on | readium-a11y-off
+        docElement.style.setProperty("--USER__a11yNormalize",
+            a11yNormalize ? "readium-a11y-on" : "readium-a11y-off");
+
         // tslint:disable-next-line:max-line-length
         // var(--RS__oldStyleTf) | var(--RS__modernTf) | var(--RS__sansTf) | var(--RS__humanistTf) | AccessibleDfa | "IA Writer Duospace"
-        docElement.style.setProperty("--USER__fontFamily",
-            !needsFontOverride ? "" :
-                (font === "DUO" ? "IA Writer Duospace" :
-                    (font === "DYS" ? "AccessibleDfa" :
-                        (font === "OLD" ? "var(--RS__oldStyleTf)" :
-                            (font === "MODERN" ? "var(--RS__modernTf)" :
-                                (font === "SANS" ? "var(--RS__sansTf)" :
-                                    (font === "HUMAN" ? "var(--RS__humanistTf)" :
-                                        (font === "MONO" ? "var(--RS__monospaceTf)" :
-                                            (font ? font : "var(--RS__oldStyleTf)")
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
-                ));
-
-        // left (LTR) or right (RTL) | justify
-        docElement.style.setProperty("--USER__textAlign",
-            align === "justify" ? "justify" :
-                (align === "right" ? "right" :
-                    (align === "left" ? "left" :
-                        (align === "center" ? "center" :
-                            (align === "initial" ? "initial" : "inherit")
-                        )
-                    )
-                ));
+        // What about --RS__baseFontFamily??
+        if (defaultPublisherFont) {
+            docElement.style.removeProperty("--USER__fontFamily");
+        } else {
+            let fontValue = "";
+            if (font === "DUO" || font === "IA Writer Duospace") {
+                fontValue = "IA Writer Duospace";
+            } else if (font === "DYS" || font === "AccessibleDfa") {
+                fontValue = "AccessibleDfa";
+            } else if (font === "OLD" || font === "oldStyleTf") {
+                fontValue = "var(--RS__oldStyleTf)";
+            } else if (font === "MODERN" || font === "modernTf") {
+                fontValue = "var(--RS__modernTf)";
+            } else if (font === "SANS" || font === "sansTf") {
+                fontValue = "var(--RS__sansTf)";
+            } else if (font === "HUMAN" || font === "humanistTf") {
+                fontValue = "var(--RS__humanistTf)";
+            } else if (font === "MONO" || font === "monospaceTf") {
+                fontValue = "var(--RS__monospaceTf)";
+            } else if (font === "JA" || font === "serif-ja") {
+                fontValue = "var(--RS__serif-ja)";
+            } else if (font === "JA-SANS" || font === "sans-serif-ja") {
+                fontValue = "var(--RS__sans-serif-ja)";
+            } else if (font === "JA-V" || font === "serif-ja-v") {
+                fontValue = "var(--RS__serif-ja-v)";
+            } else if (font === "JA-V-SANS" || font === "sans-serif-ja-v") {
+                fontValue = "var(--RS__sans-serif-ja-v)";
+            } else if (typeof font === "string") {
+                fontValue = font;
+            }
+            if (fontValue) {
+                docElement.style.setProperty("--USER__fontFamily", fontValue);
+            } else {
+                docElement.style.removeProperty("--USER__fontFamily");
+            }
+        }
 
         // 75% | 87.5% | 100% | 112.5% | 137.5% | 150% | 162.5% | 175% | 200% | 225% | 250%
         docElement.style.setProperty("--USER__fontSize", fontSize ? fontSize : "100%");
@@ -488,34 +546,78 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
         // 1 | 1.125 | 1.25 | 1.35 | 1.5 | 1.65 | 1.75 | 2
         docElement.style.setProperty("--USER__lineHeight", lineHeight ? lineHeight : "2");
 
-        // 1 | 2 | auto
-        docElement.style.setProperty("--USER__colCount", colCount ? colCount : "auto");
+        // 1 | 1.067 | 1.125 | 1.2 (suggested default) | 1.25 | 1.333 | 1.414 | 1.5 | 1.618
+        docElement.style.setProperty("--USER__typeScale", typeScale ? typeScale : "1.2");
 
-        // // auto | none
-        // docElement.style.setProperty("--USER__bodyHyphens", "auto");
+        // 0 | 0.375rem | 0.75rem | 1rem | 1.125rem | 1.25rem | 1.35rem | 1.5rem | 1.65rem | 1.75rem | 2rem
+        docElement.style.setProperty("--USER__paraSpacing", paraSpacing ? paraSpacing : "1rem");
 
-        // // 1 | 1.067 | 1.125 | 1.2 (suggested default) | 1.25 | 1.333 | 1.414 | 1.5 | 1.618
-        // docElement.style.setProperty("--USER__typeScale", "1.2");
+        const isCJK = false; // TODO, lang tag?
+        if (_isVerticalWritingMode || (isRTL || isCJK)) {
+            docElement.style.removeProperty("--USER__bodyHyphens");
 
-        // // 0 | 0.375rem | 0.75rem | 1rem | 1.125rem | 1.25rem | 1.35rem | 1.5rem | 1.65rem | 1.75rem | 2rem
-        // docElement.style.setProperty("--USER__paraSpacing", "1rem");
+            docElement.style.removeProperty("--USER__wordSpacing");
 
-        // // 0 | 0.5rem | 1rem | 1.25rem | 1.5rem | 2rem | 2.5rem | 3rem
-        // docElement.style.setProperty("--USER__paraIndent", "1rem");
+            docElement.style.removeProperty("--USER__letterSpacing");
 
-        // // 0.125rem | 0.25rem | 0.375rem | 0.5rem
-        // docElement.style.setProperty("--USER__wordSpacing", "0.5rem");
+            if (_isVerticalWritingMode || isCJK) {
+                if (_isVerticalWritingMode) {
+                    docElement.style.removeProperty("--USER__colCount");
+                }
 
-        // // 0.0675rem | 0.125rem | 0.1875rem | 0.25rem
-        // docElement.style.setProperty("--USER__letterSpacing", "0.1875rem");
+                docElement.style.removeProperty("--USER__paraIndent");
 
-        // // 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2
-        // docElement.style.setProperty("--USER__pageMargins", "1.25");
+                docElement.style.removeProperty("--USER__textAlign");
 
-        // docElement.style.setProperty("--USER__backgroundColor", "#FFFFFF");
-        // docElement.style.setProperty("--USER__textColor", "#000000");
+            } else if (isRTL) {
+                // none | common-ligatures (for Arabic RTL)
+                docElement.style.setProperty("--USER__ligatures", ligatures ? ligatures : "none");
+            }
+        } else {
+            // auto | none
+            docElement.style.setProperty("--USER__bodyHyphens", bodyHyphens ? bodyHyphens : "auto");
 
-        // TODO? --USER__ligatures (for RTL)
+            // 0.125rem | 0.25rem | 0.375rem | 0.5rem | ... 1rem
+            docElement.style.setProperty("--USER__wordSpacing", wordSpacing ? wordSpacing : "0.5rem");
+
+            // 0.0675rem | 0.125rem | 0.1875rem | 0.25rem | ... 0.5rem
+            docElement.style.setProperty("--USER__letterSpacing", letterSpacing ? letterSpacing : "0.1875rem");
+
+            if (!_isVerticalWritingMode) {
+                // 1 | 2 | auto
+                docElement.style.setProperty("--USER__colCount", colCount ? colCount : "auto");
+
+                // 0 | 0.5rem | 1rem | 1.25rem | 1.5rem | 2rem | 2.5rem | 3rem
+                docElement.style.setProperty("--USER__paraIndent", paraIndent ? paraIndent : "1rem");
+
+                // left (LTR) or right (RTL) | justify AND start (auto left-right based on dir)
+                docElement.style.setProperty("--USER__textAlign",
+                    textAlign === "justify" ? "justify" :
+                        (textAlign === "right" ? "right" :
+                            (textAlign === "left" ? "left" :
+                                (textAlign === "center" ? "center" :
+                                    (textAlign === "initial" ? "initial" : "inherit")
+                                )
+                            )
+                        ));
+            } else if (!isRTL) {
+                docElement.style.removeProperty("--USER__ligatures");
+            }
+        }
+
+        // 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2
+        docElement.style.setProperty("--USER__pageMargins", pageMargins ? pageMargins : "1");
+
+        if (backgroundColor) {
+            docElement.style.setProperty("--USER__backgroundColor", backgroundColor);
+        } else {
+            docElement.style.removeProperty("--USER__backgroundColor");
+        }
+        if (textColor) {
+            docElement.style.setProperty("--USER__textColor", textColor);
+        } else {
+            docElement.style.removeProperty("--USER__textColor");
+        }
     }
 }
 
