@@ -144,6 +144,74 @@ export function isRTL(): boolean {
     return _isRTL;
 }
 
+export const isPaginated = (): boolean => {
+    return win && win.document && win.document.documentElement &&
+        win.document.documentElement.classList.contains("readium-paginated");
+};
+
+export const calculateMaxScrollShift = (): number => {
+
+    if (!win || !win.document || !win.document.body || !win.document.documentElement) {
+        return 0;
+    }
+
+    const isPaged = isPaginated();
+
+    // https://javascript.info/size-and-scroll
+    // offsetW/H: excludes margin, includes border, scrollbar, padding.
+    // clientW/H: excludes margin, border, scrollbar, includes padding.
+    // scrollW/H: like client, but includes hidden (overflow) areas
+
+    const maxScrollShift = isPaged ?
+        ((isVerticalWritingMode() ?
+            (win.document.body.scrollHeight - win.document.documentElement.offsetHeight) :
+            // document instead of body, because potential 2-column layout (2x body.offsetWidth)
+            (win.document.body.scrollWidth - win.document.documentElement.offsetWidth))) :
+        ((isVerticalWritingMode() ?
+            (win.document.body.scrollWidth - win.document.documentElement.clientWidth) :
+            (win.document.body.scrollHeight - win.document.documentElement.clientHeight)));
+
+    return maxScrollShift;
+};
+
+export const isTwoPageSpread = (): boolean => {
+
+    if (!win || !win.document || !win.document.documentElement) {
+        return false;
+    }
+
+    // const bodyStyle = win.getComputedStyle(win.document.body);
+    const docStyle = win.getComputedStyle(win.document.documentElement);
+
+    let docColumnCount: number | undefined;
+    let docColumnGap: number | undefined;
+    if (docStyle) {
+        docColumnCount = parseInt(docStyle.getPropertyValue("column-count"), 10);
+        console.log("document.columnCount: " + docColumnCount);
+
+        docColumnGap = parseInt(docStyle.getPropertyValue("column-gap"), 10);
+        console.log("document.columnGap: " + docColumnGap);
+    }
+
+    return docColumnCount === 2;
+};
+export const calculateTotalColumns = (): number => {
+    if (!win || !win.document || !win.document.body || !win.document.documentElement) {
+        return 0;
+    }
+
+    let totalColumns = 0;
+    const isPaged = isPaginated();
+    if (isPaged) {
+        if (isVerticalWritingMode()) {
+            totalColumns = Math.ceil(win.document.body.offsetWidth / win.document.body.scrollWidth);
+        } else {
+            totalColumns = Math.ceil(win.document.body.offsetHeight / win.document.body.scrollHeight);
+        }
+    }
+    return totalColumns;
+};
+
 // TODO? page-progression-direction
 // TODO? xml:lang ar, fa, he ==> RTL, ensure html@xml:lang and html@dir (if missing)
 // TODO? xml:lang zh, ja, ko ==> horizontal, ensure html@xml:lang (if missing)
@@ -612,3 +680,136 @@ function removeAllCSS() {
     // removeCSS("user_settings");
     // removeCSS("fs_normalize");
 }
+
+// // https://javascript.info/size-and-scroll
+// function debugCSSMetrics() {
+
+//     if (!win || !win.document || !win.document.documentElement || !win.document.body) {
+//         return;
+//     }
+
+//     // https://javascript.info/size-and-scroll
+//     // offsetW/H: excludes margin, includes border, scrollbar, padding.
+//     // clientW/H: excludes margin, border, scrollbar, includes padding.
+//     // scrollW/H: like client, but includes hidden (overflow) areas
+
+//     // win.document.body.offsetWidth === single column width (takes into account column gap?)
+//     // win.document.body.clientWidth === same
+//     // win.document.body.scrollWidth === full document width (all columns)
+
+//     // win.document.body.offsetHeight === full document height (sum of all columns minus trailing blank space?)
+//     // win.document.body.clientHeight === same
+//     // win.document.body.scrollHeight === visible viewport height
+
+//     // win.document.body.scrollLeft === positive number for horizontal shift (negative RTL)
+//     // win.document.body.scrollTop === positive number for vertical shift
+
+//     const bodyStyle = win.getComputedStyle(win.document.body);
+//     const docStyle = win.getComputedStyle(win.document.documentElement);
+
+//     console.log("--- XXXXX ---");
+//     console.log("webview.innerWidth: " + win.innerWidth);
+//     console.log("document.offsetWidth: " + win.document.documentElement.offsetWidth);
+//     console.log("document.clientWidth: " + win.document.documentElement.clientWidth);
+//     console.log("document.scrollWidth: " + win.document.documentElement.scrollWidth);
+//     console.log("document.scrollLeft: " + win.document.documentElement.scrollLeft);
+//     if (docStyle) {
+//         let propVal = docStyle.getPropertyValue("padding-left");
+//         const docPaddingLeft = parseInt(propVal, 10);
+//         console.log("document.paddingLeft: " + docPaddingLeft + " // " + propVal);
+
+//         propVal = docStyle.getPropertyValue("padding-right");
+//         const docPaddingRight = parseInt(propVal, 10);
+//         console.log("document.paddingRight: " + docPaddingRight + " // " + propVal);
+
+//         propVal = docStyle.getPropertyValue("margin-left");
+//         const docMarginLeft = parseInt(propVal, 10);
+//         console.log("document.marginLeft: " + docMarginLeft + " // " + propVal);
+
+//         propVal = docStyle.getPropertyValue("margin-right");
+//         const docMarginRight = parseInt(propVal, 10);
+//         console.log("document.marginRight: " + docMarginRight + " // " + propVal);
+
+//         const docTotalWidth = win.document.documentElement.offsetWidth + docMarginLeft + docMarginRight;
+//         console.log("document.offsetWidth + margins: " + docTotalWidth);
+//     }
+//     console.log("body.offsetWidth: " + win.document.body.offsetWidth);
+//     console.log("body.clientWidth: " + win.document.body.clientWidth);
+//     console.log("body.scrollWidth: " + win.document.body.scrollWidth);
+//     console.log("body.scrollLeft: " + win.document.body.scrollLeft);
+//     if (bodyStyle) {
+//         let propVal = bodyStyle.getPropertyValue("padding-left");
+//         const bodyPaddingLeft = parseInt(bodyStyle.getPropertyValue("padding-left"), 10);
+//         console.log("body.paddingLeft: " + bodyPaddingLeft + " // " + propVal);
+
+//         propVal = bodyStyle.getPropertyValue("padding-right");
+//         const bodyPaddingRight = parseInt(propVal, 10);
+//         console.log("body.paddingRight: " + bodyPaddingRight + " // " + propVal);
+
+//         propVal = bodyStyle.getPropertyValue("margin-left");
+//         const bodyMarginLeft = parseInt(propVal, 10);
+//         console.log("body.marginLeft: " + bodyMarginLeft + " // " + propVal);
+
+//         propVal = bodyStyle.getPropertyValue("margin-right");
+//         const bodyMarginRight = parseInt(propVal, 10);
+//         console.log("body.marginRight: " + bodyMarginRight + " // " + propVal);
+
+//         const bodyTotalWidth = win.document.body.offsetWidth + bodyMarginLeft + bodyMarginRight;
+//         console.log("body.offsetWidth + margins: " + bodyTotalWidth);
+
+//         console.log("--- X factor: " + (win.document.documentElement.offsetWidth / bodyTotalWidth));
+//     }
+//     console.log("--- YYYYY ---");
+//     console.log("webview.innerHeight: " + win.innerHeight);
+//     console.log("document.offsetHeight: " + win.document.documentElement.offsetHeight);
+//     console.log("document.clientHeight: " + win.document.documentElement.clientHeight);
+//     console.log("document.scrollHeight: " + win.document.documentElement.scrollHeight);
+//     console.log("document.scrollTop: " + win.document.documentElement.scrollTop);
+//     if (docStyle) {
+//         let propVal = docStyle.getPropertyValue("padding-top");
+//         const docPaddingTop = parseInt(propVal, 10);
+//         console.log("document.paddingTop: " + docPaddingTop + " // " + propVal);
+
+//         propVal = docStyle.getPropertyValue("padding-bottom");
+//         const docPaddingBottom = parseInt(propVal, 10);
+//         console.log("document.paddingBottom: " + docPaddingBottom + " // " + propVal);
+
+//         propVal = docStyle.getPropertyValue("margin-top");
+//         const docMarginTop = parseInt(propVal, 10);
+//         console.log("document.marginTop: " + docMarginTop + " // " + propVal);
+
+//         propVal = docStyle.getPropertyValue("margin-bottom");
+//         const docMarginBottom = parseInt(propVal, 10);
+//         console.log("document.marginBottom: " + docMarginBottom + " // " + propVal);
+
+//         const docTotalHeight = win.document.documentElement.offsetHeight + docMarginTop + docMarginBottom;
+//         console.log("document.offsetHeight + margins: " + docTotalHeight);
+//     }
+//     console.log("body.offsetHeight: " + win.document.body.offsetHeight);
+//     console.log("body.clientHeight: " + win.document.body.clientHeight);
+//     console.log("body.scrollHeight: " + win.document.body.scrollHeight);
+//     console.log("body.scrollTop: " + win.document.body.scrollTop);
+//     if (bodyStyle) {
+//         let propVal = bodyStyle.getPropertyValue("padding-top");
+//         const bodyPaddingTop = parseInt(propVal, 10);
+//         console.log("body.paddingTop: " + bodyPaddingTop);
+
+//         propVal = bodyStyle.getPropertyValue("padding-bottom");
+//         const bodyPaddingBottom = parseInt(propVal, 10);
+//         console.log("body.paddingBottom: " + bodyPaddingBottom);
+
+//         propVal = bodyStyle.getPropertyValue("margin-top");
+//         const bodyMarginTop = parseInt(propVal, 10);
+//         console.log("body.marginTop: " + bodyMarginTop);
+
+//         propVal = bodyStyle.getPropertyValue("margin-bottom");
+//         const bodyMarginBottom = parseInt(propVal, 10);
+//         console.log("body.marginBottom: " + bodyMarginBottom);
+
+//         const bodyTotalHeight = win.document.body.offsetHeight + bodyMarginTop + bodyMarginBottom;
+//         console.log("body.offsetHeight + margins: " + bodyTotalHeight);
+
+//         console.log("--- Y factor: " + (win.document.documentElement.offsetHeight / bodyTotalHeight));
+//     }
+//     console.log("---");
+// }

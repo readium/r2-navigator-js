@@ -35,10 +35,14 @@ import { URL_PARAM_CSS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_P
 import { setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
     DEBUG_VISUALS,
+    calculateMaxScrollShift,
+    calculateTotalColumns,
     configureFixedLayout,
     injectDefaultCSS,
     injectReadPosCSS,
+    isPaginated,
     isRTL,
+    isTwoPageSpread,
     isVerticalWritingMode,
     readiumCSS,
 } from "./readium-css";
@@ -175,30 +179,6 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
 
 let _lastAnimState: IPropertyAnimationState | undefined;
 
-const isPaginated = (): boolean => {
-    return win && win.document && win.document.documentElement &&
-        win.document.documentElement.classList.contains("readium-paginated");
-};
-
-const calculateMaxScrollShift = (): number => {
-
-    if (!win || !win.document || !win.document.body || !win.document.documentElement) {
-        return 0;
-    }
-
-    const isPaged = isPaginated();
-
-    const maxScrollShift = isPaged ?
-        ((isVerticalWritingMode() ?
-            (win.document.body.scrollHeight - win.document.documentElement.offsetHeight) :
-            (win.document.body.scrollWidth - win.document.documentElement.offsetWidth))) :
-        ((isVerticalWritingMode() ?
-            (win.document.body.scrollWidth - win.document.documentElement.clientWidth) :
-            (win.document.body.scrollHeight - win.document.documentElement.clientHeight)));
-
-    return maxScrollShift;
-};
-
 ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT_PAGE_TURN) => {
     if (win.READIUM2.isFixedLayout || !win.document.body) {
         ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
@@ -218,16 +198,23 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
     // const isRTL = messageJson.direction === "RTL"; //  any other value is LTR
     // console.log(JSON.stringify(messageJson, null, "  "));
 
+    // https://javascript.info/size-and-scroll
+    // offsetW/H: excludes margin, includes border, scrollbar, padding.
+    // clientW/H: excludes margin, border, scrollbar, includes padding.
+    // scrollW/H: like client, but includes hidden (overflow) areas
+
     if (!goPREVIOUS) { // goPREVIOUS && isRTL() || !goPREVIOUS && !isRTL()) { // right
         if (isPaged) {
             // console.log("element.scrollLeft: " + win.document.body.scrollLeft);
-            if (Math.abs(win.document.body.scrollLeft) < maxScrollShift) { // not at end
+            if (isVerticalWritingMode() && (Math.abs(win.document.body.scrollTop) < maxScrollShift) ||
+                !isVerticalWritingMode() && (Math.abs(win.document.body.scrollLeft) < maxScrollShift)) { // not at end
                 if (_lastAnimState && _lastAnimState.animating) {
                     win.cancelAnimationFrame(_lastAnimState.id);
                     _lastAnimState.object[_lastAnimState.property] = _lastAnimState.destVal;
                 }
-                const newVal = win.document.body.scrollLeft +
-                    (isRTL() ? -1 : 1) * win.document.documentElement.offsetWidth;
+                const newVal = isVerticalWritingMode() ?
+                    (win.document.body.scrollTop + win.document.documentElement.offsetHeight) :
+                        (win.document.body.scrollLeft + (isRTL() ? -1 : 1) * win.document.documentElement.offsetWidth);
                 // console.log("element.scrollLeft NEW: " + newVal);
                 _lastAnimState = animateProperty(
                     win.cancelAnimationFrame,
@@ -235,7 +222,7 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
                     // (cancelled: boolean) => {
                     //     console.log(cancelled);
                     // },
-                    "scrollLeft",
+                    isVerticalWritingMode() ? "scrollTop" : "scrollLeft",
                     300,
                     win.document.body,
                     newVal,
@@ -253,10 +240,8 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
                     _lastAnimState.object[_lastAnimState.property] = _lastAnimState.destVal;
                 }
                 const newVal = isVerticalWritingMode() ?
-                    (win.document.body.scrollLeft +
-                        (isRTL() ? -1 : 1) * win.document.documentElement.clientWidth) :
-                    (win.document.body.scrollTop +
-                        win.document.documentElement.clientHeight);
+                    (win.document.body.scrollLeft + (isRTL() ? -1 : 1) * win.document.documentElement.clientWidth) :
+                    (win.document.body.scrollTop + win.document.documentElement.clientHeight);
                 // console.log("element.scrollTop NEW: " + newVal);
                 _lastAnimState = animateProperty(
                     win.cancelAnimationFrame,
@@ -276,13 +261,15 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
         }
     } else if (goPREVIOUS) { //  && !isRTL() || !goPREVIOUS && isRTL()) { // left
         if (isPaged) {
-            if (Math.abs(win.document.body.scrollLeft) > 0) { // not at begin
+            if (isVerticalWritingMode() && (Math.abs(win.document.body.scrollTop) > 0) ||
+                !isVerticalWritingMode() && (Math.abs(win.document.body.scrollLeft) > 0)) { // not at begin
                 if (_lastAnimState && _lastAnimState.animating) {
                     win.cancelAnimationFrame(_lastAnimState.id);
                     _lastAnimState.object[_lastAnimState.property] = _lastAnimState.destVal;
                 }
-                const newVal = win.document.body.scrollLeft -
-                    (isRTL() ? -1 : 1) * win.document.documentElement.offsetWidth;
+                const newVal = isVerticalWritingMode() ?
+                    (win.document.body.scrollTop - win.document.documentElement.offsetHeight) :
+                    (win.document.body.scrollLeft - (isRTL() ? -1 : 1) * win.document.documentElement.offsetWidth);
                 // console.log("element.scrollLeft NEW: " + newVal);
                 _lastAnimState = animateProperty(
                     win.cancelAnimationFrame,
@@ -290,7 +277,7 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
                     // (cancelled: boolean) => {
                     //     console.log(cancelled);
                     // },
-                    "scrollLeft",
+                    isVerticalWritingMode() ? "scrollTop" : "scrollLeft",
                     300,
                     win.document.body,
                     newVal,
@@ -307,10 +294,8 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
                     _lastAnimState.object[_lastAnimState.property] = _lastAnimState.destVal;
                 }
                 const newVal = isVerticalWritingMode() ?
-                    (win.document.body.scrollLeft -
-                        (isRTL() ? -1 : 1) * win.document.documentElement.clientWidth) :
-                    (win.document.body.scrollTop -
-                        win.document.documentElement.clientHeight);
+                    (win.document.body.scrollLeft - (isRTL() ? -1 : 1) * win.document.documentElement.clientWidth) :
+                    (win.document.body.scrollTop - win.document.documentElement.clientHeight);
                 // console.log("element.scrollTop NEW: " + newVal);
                 _lastAnimState = animateProperty(
                     win.cancelAnimationFrame,
@@ -377,6 +362,11 @@ const checkReadyPass = () => {
                 return;
             }
 
+            // https://javascript.info/size-and-scroll
+            // offsetW/H: excludes margin, includes border, scrollbar, padding.
+            // clientW/H: excludes margin, border, scrollbar, includes padding.
+            // scrollW/H: like client, but includes hidden (overflow) areas
+
             const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
             processXY(x, 0);
         });
@@ -412,8 +402,10 @@ const checkReadyPass = () => {
 
         win.document.body.addEventListener("click", (ev: MouseEvent) => {
 
-            const x = ev.clientX; // win.document.body.scrollLeft;
-            const y = ev.clientY; // win.document.body.scrollTop;
+            // relative to fixed window top-left corner
+            // (unlike pageX/Y which is relative to top-left rendered content area, subject to scrolling)
+            const x = ev.clientX;
+            const y = ev.clientY;
 
             processXY(x, y);
         });
@@ -432,39 +424,65 @@ const notifyReady = () => {
     ipcRenderer.sendToHost(R2_EVENT_WEBVIEW_READY, payload);
 };
 
-function scrollIntoView(element: HTMLElement) {
+function scrollIntoView(_element: HTMLElement) {
 
-    if (!win.document || !win.document.documentElement) {
+    if (!win.document || !win.document.documentElement || !win.document.body || !isPaginated()) {
         return;
     }
 
-    if (!win.document.body) {
-        return;
-    }
     // console.log("element.offsetTop: " + element.offsetTop);
-    // console.log("win.document.body.scrollHeight: " + win.document.body.scrollHeight);
+    // // console.log("element.getBoundingClientRect().top: " + element.getBoundingClientRect().top);
+    // // console.log("element.offsetLeft: " + element.offsetLeft);
+    // // console.log("element.getBoundingClientRect().left: " + element.getBoundingClientRect().left);
 
-    // TODO: element.offsetTop probably breaks in nested DOM / CSS box contexts (relative to...)
+    // let offsetTop = element.offsetTop; // includes margin
+    // let offsetParent = element.offsetParent;
+    // while (offsetParent && (offsetParent as any).offsetTop) {
+    //     offsetTop += (offsetParent as any).offsetTop;
+    //     offsetParent = (offsetParent as any).offsetParent;
+    // }
+    // console.log("offsetTop: " + offsetTop);
 
-    let colIndex = (element.offsetTop + (isRTL() ? -20 : +20)) / win.document.body.scrollHeight;
-    // console.log("colIndex: " + colIndex);
-    colIndex = Math.ceil(colIndex); // 1-based index
+    // // https://javascript.info/size-and-scroll
+    // // offsetW/H: excludes margin, includes border, scrollbar, padding.
+    // // clientW/H: excludes margin, border, scrollbar, includes padding.
+    // // scrollW/H: like client, but includes hidden (overflow) areas
 
-    const isTwoPage = isTwoPageSpread();
-    const spreadIndex = isTwoPage ? Math.ceil(colIndex / 2) : colIndex;
+    // const totalColumns = calculateTotalColumns();
+
+    // const progressionRatio = offsetTop / (win.document.body.scrollHeight * totalColumns);
+    // console.log("progressionRatio: " + progressionRatio);
+
+    // const isTwoPage = isTwoPageSpread();
+    // const maxScrollShift = calculateMaxScrollShift();
+
+    // currentColumn = adjustedTotalColumns * progressionRatio;
+
+    // currentColumn = Math.round(currentColumn);
+    // console.log("currentColumn: " + currentColumn);
+
+    // spreadIndex = isTwoPage ? Math.floor(currentColumn / 2) : currentColumn;
     // console.log("spreadIndex: " + spreadIndex);
 
-    // console.log("element.getBoundingClientRect().top: " + element.getBoundingClientRect().top);
-    // console.log("element.getBoundingClientRect().left: " + element.getBoundingClientRect().left);
+    // let colIndex = (element.offsetTop + (isRTL() ? -20 : +20)) / win.document.body.scrollHeight;
+    // // console.log("colIndex: " + colIndex);
+    // colIndex = Math.ceil(colIndex); // 1-based index
 
-    // const top = (colIndex * win.document.body.scrollHeight) + element.getBoundingClientRect().top;
-    // console.log("top: " + top);
+    // const isTwoPage = isTwoPageSpread();
+    // const spreadIndex = isTwoPage ? Math.ceil(colIndex / 2) : colIndex;
+    // // console.log("spreadIndex: " + spreadIndex);
 
-    // const left = (colIndex * win.document.body.offsetWidth);
-    const left = ((spreadIndex - 1) * win.document.documentElement.offsetWidth);
-    // console.log("left: " + left);
+    // // console.log("element.getBoundingClientRect().top: " + element.getBoundingClientRect().top);
+    // // console.log("element.getBoundingClientRect().left: " + element.getBoundingClientRect().left);
 
-    win.document.body.scrollLeft = (isRTL() ? -1 : 1) * left;
+    // // const top = (colIndex * win.document.body.scrollHeight) + element.getBoundingClientRect().top;
+    // // console.log("top: " + top);
+
+    // // const left = (colIndex * win.document.body.offsetWidth);
+    // const left = ((spreadIndex - 1) * win.document.documentElement.offsetWidth);
+    // // console.log("left: " + left);
+
+    // win.document.body.scrollLeft = (isRTL() ? -1 : 1) * left;
 }
 
 const scrollToHashRaw = (firstCall: boolean) => {
@@ -582,15 +600,22 @@ const scrollToHashRaw = (firstCall: boolean) => {
                         position: undefined,
                         progression: undefined,
                     };
-                    processXYRaw(0,
-                        (isPaged ?
-                            (isVerticalWritingMode() ?
-                                win.document.documentElement.offsetWidth :
-                                win.document.documentElement.offsetHeight) :
-                            (isVerticalWritingMode() ?
-                                win.document.documentElement.clientWidth :
-                                win.document.documentElement.clientHeight))
-                        - 1);
+
+                    // https://javascript.info/size-and-scroll
+                    // offsetW/H: excludes margin, includes border, scrollbar, padding.
+                    // clientW/H: excludes margin, border, scrollbar, includes padding.
+                    // scrollW/H: like client, but includes hidden (overflow) areas
+
+                    // relative to fixed window top-left corner
+                    const y = (isPaged ?
+                        (isVerticalWritingMode() ?
+                            win.document.documentElement.offsetWidth :
+                            win.document.documentElement.offsetHeight) :
+                        (isVerticalWritingMode() ?
+                            win.document.documentElement.clientWidth :
+                            win.document.documentElement.clientHeight))
+                    - 1;
+                    processXYRaw(0, y);
 
                     console.log("BOTTOM (previous):");
                     console.log(win.READIUM2.locationHashOverride);
@@ -805,8 +830,14 @@ win.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+// relative to fixed window top-left corner
 const processXYRaw = (x: number, y: number) => {
     // console.log("processXY: " + x + ", " + y);
+
+    // https://javascript.info/size-and-scroll
+    // offsetW/H: excludes margin, includes border, scrollbar, padding.
+    // clientW/H: excludes margin, border, scrollbar, includes padding.
+    // scrollW/H: like client, but includes hidden (overflow) areas
 
     // const elems = document.elementsFromPoint(x, y);
     // // console.log(elems);
@@ -877,69 +908,81 @@ const processXY = debounce((x: number, y: number) => {
     processXYRaw(x, y);
 }, 300);
 
-const isTwoPageSpread = (): boolean => {
+// function computeOffsetTop(element: HTMLElement): number {
 
-    if (!win || !win.document || !win.document.documentElement) {
-        return false;
-    }
+//     // console.log("element.offsetTop: " + element.offsetTop);
+//     // console.log("element.getBoundingClientRect().top: " + element.getBoundingClientRect().top);
+//     // console.log("element.offsetLeft: " + element.offsetLeft);
+//     // console.log("element.getBoundingClientRect().left: " + element.getBoundingClientRect().left);
 
-    // const bodyStyle = win.getComputedStyle(win.document.body);
-    const docStyle = win.getComputedStyle(win.document.documentElement);
+//     let offsetTop = 0;
+//     let offsetParent: Element | null = element;
+//     while (offsetParent && (typeof (offsetParent as HTMLElement).offsetTop !== "undefined")) {
+//         if ((offsetParent as HTMLElement).offsetTop) {
+//             console.log("... offsetTop: " + (offsetParent as HTMLElement).offsetTop);
+//         }
+//         offsetTop += (offsetParent as HTMLElement).offsetTop;
 
-    let docColumnCount: number | undefined;
-    let docColumnGap: number | undefined;
-    if (docStyle) {
-        docColumnCount = parseInt(docStyle.getPropertyValue("column-count"), 10);
-        console.log("document.columnCount: " + docColumnCount);
+//         const elementStyle = win.getComputedStyle(offsetParent);
+//         if (elementStyle) {
+//             const marginTopPropVal = elementStyle.getPropertyValue("margin-top");
+//             const marginTop = parseInt(marginTopPropVal, 10);
+//             if (marginTop) {
+//                 console.log("... marginTop: " + marginTop);
+//             }
 
-        docColumnGap = parseInt(docStyle.getPropertyValue("column-gap"), 10);
-        console.log("document.columnGap: " + docColumnGap);
-    }
+//             offsetTop += marginTop;
+//         }
 
-    return docColumnCount === 2;
-};
+//         offsetParent = (offsetParent as HTMLElement).offsetParent;
+//     }
 
+//     console.log("offsetTop: " + offsetTop);
+//     return offsetTop;
+// }
 interface IProgressionData {
     percentRatio: number;
     paginationInfo: IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO | undefined;
 }
 export const computeProgressionData = (): IProgressionData => {
 
-    const isPaged = isPaginated(); // typeof docColumnCount !== "undefined"
+    const isPaged = isPaginated();
 
     const isTwoPage = isTwoPageSpread();
     console.log("isTwoPage: " + isTwoPage);
 
     const maxScrollShift = calculateMaxScrollShift();
-    // const maxScrollShift = isPaged ?
-    //     ((isVerticalWritingMode() ?
-    //         (win.document.body.scrollHeight - win.document.documentElement.offsetHeight) :
-    //         (win.document.body.scrollWidth - win.document.documentElement.offsetWidth))) :
-    //     ((isVerticalWritingMode() ?
-    //         (win.document.body.scrollWidth - win.document.documentElement.clientWidth) :
-    //         (win.document.body.scrollHeight - win.document.documentElement.clientHeight)));
+    console.log("maxScrollShift: " + maxScrollShift);
+
+    const totalColumns = calculateTotalColumns();
 
     let progressionRatio = 0;
-    let totalColumns = 0;
-    let adjustedTotalColumns = 0;
-    let currentColumn = 0; // zero-based index
-    let spreadIndex = 0; // zero-based index
+
+    // zero-based index: 0 <= currentColumn < totalColumns
+    let currentColumn = 0;
+    let spreadIndex = 0;
+
+    // https://javascript.info/size-and-scroll
+    // offsetW/H: excludes margin, includes border, scrollbar, padding.
+    // clientW/H: excludes margin, border, scrollbar, includes padding.
+    // scrollW/H: like client, but includes hidden (overflow) areas
 
     if (isPaged) {
         if (isVerticalWritingMode()) {
             progressionRatio = win.document.body.scrollTop / maxScrollShift;
-
-            totalColumns = Math.ceil(win.document.body.offsetWidth / win.document.body.scrollWidth);
         } else {
             progressionRatio = ((isRTL() ? -1 : 1) * win.document.body.scrollLeft) / maxScrollShift;
-
-            totalColumns = Math.ceil(win.document.body.offsetHeight / win.document.body.scrollHeight);
         }
         console.log("progressionRatio: " + progressionRatio);
         console.log("totalColumns: " + totalColumns);
 
-        // because maxScrollShift excludes a whole viewport of content (0%-100% scroll but minus last page/spread)
-        adjustedTotalColumns = (totalColumns - (isTwoPage ? 2 : 1));
+        // because maxScrollShift excludes whole viewport width of content (0%-100% scroll but minus last page/spread)
+        const adjustedTotalColumns = (totalColumns - (isTwoPage ? 2 : 1));
+
+        currentColumn = adjustedTotalColumns * progressionRatio;
+
+        currentColumn = Math.round(currentColumn);
+        console.log("currentColumn: " + currentColumn);
     } else {
         if (isVerticalWritingMode()) {
             progressionRatio = ((isRTL() ? -1 : 1) * win.document.body.scrollLeft) / maxScrollShift;
@@ -951,25 +994,59 @@ export const computeProgressionData = (): IProgressionData => {
     if (win.READIUM2.locationHashOverride) {
         const element = win.READIUM2.locationHashOverride as HTMLElement;
 
-        console.log("element.offsetTop: " + element.offsetTop);
-        // console.log("element.getBoundingClientRect().top: " + element.getBoundingClientRect().top);
-        // console.log("element.offsetLeft: " + element.offsetLeft);
-        // console.log("element.getBoundingClientRect().left: " + element.getBoundingClientRect().left);
+        // imprecise
+        // const offsetTop = computeOffsetTop(element);
 
-        // TODO:
-        // progressionRatio = ...
-        // adjustedTotalColumns = ...
+        const rect = element.getBoundingClientRect();
+        // console.log("element.getBoundingClientRect().top: " + rect.top);
+        // console.log("element.getBoundingClientRect().left: " + rect.left);
+        // console.log("element.getBoundingClientRect().width: " + rect.width);
+        // console.log("element.getBoundingClientRect().height: " + rect.height);
+        let offset = 0;
 
-        // let colIndex = (element.offsetTop + (isRTL() ? -20 : +20))
-        //     / win.document.body.scrollHeight;
-        // // console.log("colIndex: " + colIndex);
-        // colIndex = Math.ceil(colIndex); // 1-based index
+        if (isPaged) {
+            if (isVerticalWritingMode()) {
+                offset = (currentColumn * win.document.body.scrollWidth) + rect.left +
+                    (rect.top >= win.document.body.offsetHeight ?
+                    win.document.body.scrollWidth : 0);
+            } else {
+                offset = (currentColumn * win.document.body.scrollHeight) + rect.top +
+                    (rect.left >= win.document.body.offsetWidth ?
+                    win.document.body.scrollHeight : 0);
+            }
 
-        // const top = (colIndex * win.document.body.scrollHeight) + element.getBoundingClientRect().top;
-        // console.log("top: " + top);
+            console.log("getBoundingClientRect offset: " + offset);
+
+            // https://javascript.info/size-and-scroll
+            // offsetW/H: excludes margin, includes border, scrollbar, padding.
+            // clientW/H: excludes margin, border, scrollbar, includes padding.
+            // scrollW/H: like client, but includes hidden (overflow) areas
+
+            // includes whitespace beyond bottom/end of document, to fill the unnocupied remainder of the column
+            progressionRatio = offset /
+                ((isVerticalWritingMode() ? win.document.body.scrollWidth : win.document.body.scrollHeight) *
+                    totalColumns);
+            // no end-padding whitespace
+            // progressionRatio = offsetTop / ((isVerticalWritingMode() ? win.document.body.offsetWidth :
+            // win.document.body.offsetHeight);
+            console.log("progressionRatio elem: " + progressionRatio);
+
+            currentColumn = totalColumns * progressionRatio;
+            console.log("currentColumn elem 1: " + currentColumn);
+
+            currentColumn = Math.floor(currentColumn);
+            console.log("currentColumn elem 2: " + currentColumn);
+        } else {
+            // if (isVerticalWritingMode()) {
+            // } else {
+            // }
+        }
     }
 
     if (isPaged) {
+        spreadIndex = isTwoPage ? Math.floor(currentColumn / 2) : currentColumn;
+        console.log("spreadIndex: " + spreadIndex);
+
         // if (bodyStyle) {
         //     let totalColumns_ = 0;
         //     if (isVerticalWritingMode()) {
@@ -1005,18 +1082,9 @@ export const computeProgressionData = (): IProgressionData => {
         //         console.log("*** totalColumns!? " + totalColumns_);
         //     }
         // }
-
-        // zero-based index: 0 <= currentColumn < totalColumns
-        currentColumn = adjustedTotalColumns * progressionRatio;
-
-        currentColumn = Math.round(currentColumn);
-        console.log("currentColumn: " + currentColumn);
-
-        spreadIndex = isTwoPage ? Math.floor(currentColumn / 2) : currentColumn;
-        console.log("spreadIndex: " + spreadIndex);
     }
 
-    debugCSSMetrics();
+    // debugCSSMetrics();
 
     return {
         paginationInfo: isPaged ? {
@@ -1028,133 +1096,6 @@ export const computeProgressionData = (): IProgressionData => {
         percentRatio: progressionRatio,
     };
 };
-
-function debugCSSMetrics() {
-
-    if (!win || !win.document || !win.document.documentElement || !win.document.body) {
-        return;
-    }
-
-    const bodyStyle = win.getComputedStyle(win.document.body);
-    const docStyle = win.getComputedStyle(win.document.documentElement);
-
-    console.log("--- XXXXX ---");
-    console.log("webview.innerWidth: " + win.innerWidth);
-    console.log("document.offsetWidth: " + win.document.documentElement.offsetWidth);
-    console.log("document.clientWidth: " + win.document.documentElement.clientWidth);
-    console.log("document.scrollWidth: " + win.document.documentElement.scrollWidth);
-    console.log("document.scrollLeft: " + win.document.documentElement.scrollLeft);
-    if (docStyle) {
-        let propVal = docStyle.getPropertyValue("padding-left");
-        const docPaddingLeft = parseInt(propVal, 10);
-        console.log("document.paddingLeft: " + docPaddingLeft + " // " + propVal);
-
-        propVal = docStyle.getPropertyValue("padding-right");
-        const docPaddingRight = parseInt(propVal, 10);
-        console.log("document.paddingRight: " + docPaddingRight + " // " + propVal);
-
-        propVal = docStyle.getPropertyValue("margin-left");
-        const docMarginLeft = parseInt(propVal, 10);
-        console.log("document.marginLeft: " + docMarginLeft + " // " + propVal);
-
-        propVal = docStyle.getPropertyValue("margin-right");
-        const docMarginRight = parseInt(propVal, 10);
-        console.log("document.marginRight: " + docMarginRight + " // " + propVal);
-
-        const docTotalWidth = win.document.documentElement.offsetWidth + docMarginLeft + docMarginRight;
-        console.log("document.offsetWidth + margins: " + docTotalWidth);
-    }
-    console.log("body.offsetWidth: " + win.document.body.offsetWidth);
-    console.log("body.clientWidth: " + win.document.body.clientWidth);
-    console.log("body.scrollWidth: " + win.document.body.scrollWidth);
-    console.log("body.scrollLeft: " + win.document.body.scrollLeft);
-    if (bodyStyle) {
-        let propVal = bodyStyle.getPropertyValue("padding-left");
-        const bodyPaddingLeft = parseInt(bodyStyle.getPropertyValue("padding-left"), 10);
-        console.log("body.paddingLeft: " + bodyPaddingLeft + " // " + propVal);
-
-        propVal = bodyStyle.getPropertyValue("padding-right");
-        const bodyPaddingRight = parseInt(propVal, 10);
-        console.log("body.paddingRight: " + bodyPaddingRight + " // " + propVal);
-
-        propVal = bodyStyle.getPropertyValue("margin-left");
-        const bodyMarginLeft = parseInt(propVal, 10);
-        console.log("body.marginLeft: " + bodyMarginLeft + " // " + propVal);
-
-        propVal = bodyStyle.getPropertyValue("margin-right");
-        const bodyMarginRight = parseInt(propVal, 10);
-        console.log("body.marginRight: " + bodyMarginRight + " // " + propVal);
-
-        const bodyTotalWidth = win.document.body.offsetWidth + bodyMarginLeft + bodyMarginRight;
-        console.log("body.offsetWidth + margins: " + bodyTotalWidth);
-
-        console.log("--- X factor: " + (win.document.documentElement.offsetWidth / bodyTotalWidth));
-    }
-    console.log("--- YYYYY ---");
-    console.log("webview.innerHeight: " + win.innerHeight);
-    console.log("document.offsetHeight: " + win.document.documentElement.offsetHeight);
-    console.log("document.clientHeight: " + win.document.documentElement.clientHeight);
-    console.log("document.scrollHeight: " + win.document.documentElement.scrollHeight);
-    console.log("document.scrollTop: " + win.document.documentElement.scrollTop);
-    if (docStyle) {
-        let propVal = docStyle.getPropertyValue("padding-top");
-        const docPaddingTop = parseInt(propVal, 10);
-        console.log("document.paddingTop: " + docPaddingTop + " // " + propVal);
-
-        propVal = docStyle.getPropertyValue("padding-bottom");
-        const docPaddingBottom = parseInt(propVal, 10);
-        console.log("document.paddingBottom: " + docPaddingBottom + " // " + propVal);
-
-        propVal = docStyle.getPropertyValue("margin-top");
-        const docMarginTop = parseInt(propVal, 10);
-        console.log("document.marginTop: " + docMarginTop + " // " + propVal);
-
-        propVal = docStyle.getPropertyValue("margin-bottom");
-        const docMarginBottom = parseInt(propVal, 10);
-        console.log("document.marginBottom: " + docMarginBottom + " // " + propVal);
-
-        const docTotalHeight = win.document.documentElement.offsetHeight + docMarginTop + docMarginBottom;
-        console.log("document.offsetHeight + margins: " + docTotalHeight);
-    }
-    console.log("body.offsetHeight: " + win.document.body.offsetHeight);
-    console.log("body.clientHeight: " + win.document.body.clientHeight);
-    console.log("body.scrollHeight: " + win.document.body.scrollHeight);
-    console.log("body.scrollTop: " + win.document.body.scrollTop);
-    if (bodyStyle) {
-        let propVal = bodyStyle.getPropertyValue("padding-top");
-        const bodyPaddingTop = parseInt(propVal, 10);
-        console.log("body.paddingTop: " + bodyPaddingTop);
-
-        propVal = bodyStyle.getPropertyValue("padding-bottom");
-        const bodyPaddingBottom = parseInt(propVal, 10);
-        console.log("body.paddingBottom: " + bodyPaddingBottom);
-
-        propVal = bodyStyle.getPropertyValue("margin-top");
-        const bodyMarginTop = parseInt(propVal, 10);
-        console.log("body.marginTop: " + bodyMarginTop);
-
-        propVal = bodyStyle.getPropertyValue("margin-bottom");
-        const bodyMarginBottom = parseInt(propVal, 10);
-        console.log("body.marginBottom: " + bodyMarginBottom);
-
-        const bodyTotalHeight = win.document.body.offsetHeight + bodyMarginTop + bodyMarginBottom;
-        console.log("body.offsetHeight + margins: " + bodyTotalHeight);
-
-        console.log("--- Y factor: " + (win.document.documentElement.offsetHeight / bodyTotalHeight));
-    }
-    console.log("---");
-
-    // win.document.body.offsetWidth === single column width (takes into account column gap?)
-    // win.document.body.clientWidth === same
-    // win.document.body.scrollWidth === full document width (all columns)
-
-    // win.document.body.offsetHeight === full document height (sum of all columns minus trailing blank space?)
-    // win.document.body.clientHeight === same
-    // win.document.body.scrollHeight === visible viewport height
-
-    // win.document.body.scrollLeft === positive number for horizontal shift
-    // win.document.body.scrollTop === positive number for vertical shift
-}
 
 export const computeCFI = (node: Node): string | undefined => {
 

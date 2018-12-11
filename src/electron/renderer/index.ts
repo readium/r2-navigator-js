@@ -715,6 +715,10 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
 }
 
 const adjustResize = (webview: IElectronWebviewTag) => {
+    // https://javascript.info/size-and-scroll
+    // offsetW/H: excludes margin, includes border, scrollbar, padding.
+    // clientW/H: excludes margin, border, scrollbar, includes padding.
+    // scrollW/H: like client, but includes hidden (overflow) areas
     const width = webview.clientWidth;
     const height = webview.clientHeight;
     const wc = webview.getWebContents();
