@@ -425,6 +425,7 @@ function scrollElementIntoView(element: Element) {
     }
 }
 
+// TODO: vertical writing mode
 function scrollIntoView(element: HTMLElement) {
 
     if (!win.document || !win.document.documentElement || !win.document.body || !isPaginated()) {
@@ -433,11 +434,12 @@ function scrollIntoView(element: HTMLElement) {
 
     const rect = element.getBoundingClientRect();
 
-    const fullOffset = rect.left + win.document.body.scrollLeft;
+    const columnDimension = calculateColumnDimension();
 
     const isTwoPage = isTwoPageSpread();
 
-    const columnDimension = calculateColumnDimension();
+    const fullOffset = (isRTL() ? ((columnDimension * (isTwoPage ? 2 : 1)) - rect.left) : rect.left) +
+        ((isRTL() ? -1 : 1) * win.document.body.scrollLeft);
 
     const columnIndex = Math.floor(fullOffset / columnDimension); // 0-based index
 
@@ -950,9 +952,9 @@ const notifyReadingLocationRaw = () => {
         });
         win.READIUM2.locationHashOverride.setAttribute(readPosCssStylesAttr4, "notifyReadingLocationRaw");
 
-        // console.log("notifyReadingLocation CSS SELECTOR: " + cssSelector);
-        // console.log("notifyReadingLocation CFI: " + cfi);
-        // console.log("notifyReadingLocation PROGRESSION: " + progression);
+        console.log("notifyReadingLocation CSS SELECTOR: " + cssSelector);
+        console.log("notifyReadingLocation CFI: " + cfi);
+        console.log("notifyReadingLocation PROGRESSION: " + progression);
     }
 };
 const notifyReadingLocation = debounce(() => {
