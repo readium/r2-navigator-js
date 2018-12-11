@@ -438,6 +438,7 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
         docElement.style.overflow = "hidden";
         docElement.classList.add("readium-paginated");
     } else {
+        docElement.style.overflow = "auto";
         docElement.classList.remove("readium-paginated");
     }
 
