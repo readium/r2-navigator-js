@@ -973,7 +973,6 @@ export const computeProgressionData = (): IProgressionData => {
         } else {
             progressionRatio = ((isRTL() ? -1 : 1) * win.document.body.scrollLeft) / maxScrollShift;
         }
-        console.log("progressionRatio: " + progressionRatio);
         console.log("totalColumns: " + totalColumns);
 
         // because maxScrollShift excludes whole viewport width of content (0%-100% scroll but minus last page/spread)
@@ -990,6 +989,7 @@ export const computeProgressionData = (): IProgressionData => {
             progressionRatio = win.document.body.scrollTop / maxScrollShift;
         }
     }
+    console.log("progressionRatio: " + progressionRatio);
 
     if (win.READIUM2.locationHashOverride) {
         const element = win.READIUM2.locationHashOverride as HTMLElement;
@@ -1011,8 +1011,10 @@ export const computeProgressionData = (): IProgressionData => {
                     win.document.body.scrollWidth : 0);
             } else {
                 offset = (currentColumn * win.document.body.scrollHeight) + rect.top +
-                    (rect.left >= win.document.body.offsetWidth ?
-                    win.document.body.scrollHeight : 0);
+                        (((isRTL() ?
+                            (win.document.documentElement.clientWidth - (rect.left + rect.width)) :
+                            rect.left)
+                            >= win.document.body.offsetWidth) ? win.document.body.scrollHeight : 0);
             }
 
             console.log("getBoundingClientRect offset: " + offset);
@@ -1037,9 +1039,15 @@ export const computeProgressionData = (): IProgressionData => {
             currentColumn = Math.floor(currentColumn);
             console.log("currentColumn elem 2: " + currentColumn);
         } else {
-            // if (isVerticalWritingMode()) {
-            // } else {
-            // }
+            if (isVerticalWritingMode()) {
+                offset = ((isRTL() ? -1 : 1) * win.document.body.scrollLeft) + rect.left + (isRTL() ? rect.width : 0);
+            } else {
+                offset = win.document.body.scrollTop + rect.top;
+            }
+
+            progressionRatio = offset /
+                (isVerticalWritingMode() ? win.document.body.scrollWidth : win.document.body.scrollHeight);
+            console.log("progressionRatio elem: " + progressionRatio);
         }
     }
 
