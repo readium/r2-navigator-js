@@ -6,26 +6,38 @@
 // ==LICENSE-END==
 
 export const focusCssStyles = `
+@keyframes readium2ElectronAnimation_FOCUS {
+    100% {
+        outline: inherit;
+    }
+}
 *:focus {
-outline-style: solid !important;
-outline-width: 2px !important;
-outline-color: blue !important;
-outline-offset: 0px !important;
+    outline-color: blue !important;
+    outline-style: solid !important;
+    outline-width: 2px !important;
+    outline-offset: 0px !important;
+    animation: readium2ElectronAnimation_FOCUS 3s forwards;
 }
 *.no-focus-outline:focus {
-outline-style: none !important;
+    outline: inherit !important;
 }
 `;
 
 export const targetCssStyles = `
+@keyframes readium2ElectronAnimation_TARGET {
+    100% {
+        outline: inherit;
+    }
+}
 *:target {
-outline-style: solid !important;
-outline-width: 2px !important;
-outline-color: magenta !important;
-outline-offset: 0px !important;
+    outline-color: green !important;
+    outline-style: solid !important;
+    outline-width: 2px !important;
+    outline-offset: 2px !important;
+    animation: readium2ElectronAnimation_TARGET 3s forwards;
 }
 *.no-target-outline:target {
-outline-style: none !important;
+    outline: inherit !important;
 }
 `;
 
@@ -114,16 +126,52 @@ border-top: 1px solid black;
 border-left: 1px solid black;
 }`;
 
+export const readPosCssStylesAttr1 = "data-readium2-read-pos1";
+export const readPosCssStylesAttr2 = "data-readium2-read-pos2";
+export const readPosCssStylesAttr3 = "data-readium2-read-pos3";
+export const readPosCssStylesAttr4 = "data-readium2-read-pos4";
 export const readPosCssStyles = `
-:root[style*="readium-sepia-on"] .readium2-read-pos,
-:root[style*="readium-night-on"] .readium2-read-pos,
-.readium2-read-pos {
-    color: red !important;
-    background-color: silver !important;
+:root[style*="readium-sepia-on"] *[${readPosCssStylesAttr1}],
+:root[style*="readium-night-on"] *[${readPosCssStylesAttr1}],
+*[${readPosCssStylesAttr1}] {
+    color: black !important;
+    background-color: magenta !important;
+
+    outline-color: magenta !important;
+    outline-style: solid !important;
+    outline-width: 6px !important;
+    outline-offset: 0px !important;
 }
-:root[style*="readium-sepia-on"] .readium2-read-pos2,
-:root[style*="readium-night-on"] .readium2-read-pos2,
-.readium2-read-pos2 {
-    color: blue !important;
+:root[style*="readium-sepia-on"] *[${readPosCssStylesAttr2}],
+:root[style*="readium-night-on"] *[${readPosCssStylesAttr2}],
+*[${readPosCssStylesAttr2}] {
+    color: black !important;
     background-color: yellow !important;
+
+    outline-color: yellow !important;
+    outline-style: solid !important;
+    outline-width: 4px !important;
+    outline-offset: 0px !important;
+}
+:root[style*="readium-sepia-on"] *[${readPosCssStylesAttr3}],
+:root[style*="readium-night-on"] *[${readPosCssStylesAttr3}],
+*[${readPosCssStylesAttr3}] {
+    color: black !important;
+    background-color: green !important;
+
+    outline-color: green !important;
+    outline-style: solid !important;
+    outline-width: 2px !important;
+    outline-offset: 0px !important;
+}
+:root[style*="readium-sepia-on"] *[${readPosCssStylesAttr4}],
+:root[style*="readium-night-on"] *[${readPosCssStylesAttr4}],
+*[${readPosCssStylesAttr4}] {
+    color: black !important;
+    background-color: silver !important;
+
+    outline-color: silver !important;
+    outline-style: solid !important;
+    outline-width: 1px !important;
+    outline-offset: 0px !important;
 }`;
