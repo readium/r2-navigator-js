@@ -12,8 +12,7 @@ import { IReadiumCSS } from "./readium-css-settings";
 export const R2_EVENT_READIUMCSS = "R2_EVENT_READIUMCSS";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_READIUMCSS {
-    injectCSS: string;
-    setCSS: string | IReadiumCSS;
+    setCSS: IReadiumCSS | undefined;
     isFixedLayout?: boolean;
     urlRoot?: string;
 }
@@ -45,9 +44,20 @@ export interface IEventPayload_R2_EVENT_PAGE_TURN {
 // in RENDERER: webview.addEventListener("ipc-message")
 export const R2_EVENT_READING_LOCATION = "R2_EVENT_READING_LOCATION";
 // tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO {
+    totalColumns: number | undefined;
+    currentColumn: number | undefined;
+    isTwoPageSpread: boolean | undefined;
+    spreadIndex: number | undefined;
+}
+// tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_READING_LOCATION {
     cfi: string | undefined;
-    cssSelector: string;
+    cssSelector: string | undefined;
+    progression: number | undefined;
+    position: number | undefined;
+
+    paginationInfo: IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO | undefined;
 }
 
 // in MAIN: browserWindow.webContents.send(()

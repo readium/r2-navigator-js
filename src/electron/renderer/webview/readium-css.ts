@@ -34,7 +34,7 @@ const urlRootReadiumCSS = origin + "/readium-css/";
 console.log(urlRootReadiumCSS);
 // const urlResizeSensor = win.location.origin + "/resize-sensor.js";
 
-export const DEBUG_VISUALS = false;
+export const DEBUG_VISUALS = true;
 
 export const configureFixedLayout = (isFixedLayout: boolean) => {
     if (!win.document || !win.document.head || !win.document.body) {
@@ -168,7 +168,7 @@ function computeVerticalRTL() {
         }
     }
 
-    const htmlStyle = window.getComputedStyle(win.document.documentElement);
+    const htmlStyle = win.getComputedStyle(win.document.documentElement);
     if (htmlStyle) {
         let prop = htmlStyle.getPropertyValue("writing-mode");
         if (!prop) {
@@ -188,7 +188,7 @@ function computeVerticalRTL() {
         }
     }
     if ((!_isVerticalWritingMode || !_isRTL) && win.document.body) {
-        const bodyStyle = window.getComputedStyle(win.document.body);
+        const bodyStyle = win.getComputedStyle(win.document.body);
         if (bodyStyle) {
             let prop: string;
             if (!_isVerticalWritingMode) {
@@ -244,9 +244,14 @@ ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVEN
     readiumCSS(payload);
 });
 
-function readiumCSSInject(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
-
-    if (typeof messageJson.injectCSS === "undefined") {
+// tslint:disable-next-line:max-line-length
+// https://github.com/readium/readium-css/blob/develop/docs/CSS12-user_prefs.md
+// tslint:disable-next-line:max-line-length
+// https://github.com/readium/readium-css/blob/develop/docs/ReadiumCSS-user_variables.css
+// tslint:disable-next-line:max-line-length
+// https://github.com/readium/readium-css/blob/develop/docs/CSS19-api.md#user-settings
+function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
+    if (!messageJson) {
         return;
     }
 
@@ -255,15 +260,32 @@ function readiumCSSInject(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
     }
 
     const docElement = win.document.documentElement;
-    ensureHead();
 
-    const remove = (typeof messageJson.injectCSS === "string" && messageJson.injectCSS.indexOf("rollback") >= 0)
-        || !messageJson.injectCSS;
+    if (!messageJson.setCSS) {
 
-    if (remove) {
         docElement.removeAttribute("data-readiumcss");
         removeAllCSS();
         removeAllCSSInline();
+
+        if (messageJson.isFixedLayout) {
+            docElement.style.overflow = "hidden";
+        } else {
+            docElement.style.overflow = "auto";
+        }
+
+        const toRemove: string[] = [];
+        for (let i = 0; i < docElement.style.length; i++) {
+            const item = docElement.style.item(i);
+            if (item.indexOf("--USER__") === 0) {
+                toRemove.push(item);
+            }
+        }
+        toRemove.forEach((item) => {
+            docElement.style.removeProperty(item);
+        });
+
+        docElement.classList.remove(CSS_CLASS_DARK_THEME);
+
         return;
     }
 
@@ -293,27 +315,6 @@ function readiumCSSInject(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
             }
         }
 
-        // appendCSS("base");
-        // appendCSS("html5patch");
-        // appendCSS("safeguards");
-        // appendCSS("default");
-        // appendCSS("highlights");
-        // if (messageJson.injectCSS.indexOf("scroll") >= 0) {
-        //     appendCSS("scroll");
-        // } else {
-        //     appendCSS("pagination");
-        // }
-        // if (messageJson.injectCSS.indexOf("night_mode") >= 0) {
-        //     appendCSS("night_mode");
-        // } else if (messageJson.injectCSS.indexOf("sepia_mode") >= 0) {
-        //     appendCSS("pagination");
-        // }
-        // appendCSS("os_a11y");
-        // appendCSS("user_settings");
-        // if (messageJson.injectCSS.indexOf("fs_normalize") >= 0) {
-        //     appendCSS("fs_normalize");
-        // }
-
         const urlRoot = messageJson.urlRoot ?
             messageJson.urlRoot + "/readium-css/" :
             urlRootReadiumCSS;
@@ -324,305 +325,220 @@ function readiumCSSInject(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
         }
         appendCSS("after", urlRoot);
     }
-}
 
-function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
-    if (!messageJson || typeof messageJson.setCSS === "undefined") {
-        return;
-    }
+    const setCSS = messageJson.setCSS;
 
-    if (!win.document || !win.document.documentElement) {
-        return;
-    }
-
-    const docElement = win.document.documentElement;
-
-    // tslint:disable-next-line:max-line-length
-    // https://github.com/readium/readium-css/blob/develop/docs/CSS12-user_prefs.md
-    // tslint:disable-next-line:max-line-length
-    // https://github.com/readium/readium-css/blob/develop/docs/ReadiumCSS-user_variables.css
-    // tslint:disable-next-line:max-line-length
-    // https://github.com/readium/readium-css/blob/develop/docs/CSS19-api.md#user-settings
-
-    const remove = (typeof messageJson.setCSS === "string" && messageJson.setCSS.indexOf("rollback") >= 0)
-        || !messageJson.setCSS;
-    if (remove) {
-
-        if (messageJson.isFixedLayout) {
-            docElement.style.overflow = "hidden";
-        } else {
-            docElement.style.overflow = "auto";
-        }
-
-        const toRemove: string[] = [];
-        for (let i = 0; i < docElement.style.length; i++) {
-            const item = docElement.style.item(i);
-            if (item.indexOf("--USER__") === 0) {
-                toRemove.push(item);
-            }
-        }
-        toRemove.forEach((item) => {
-            docElement.style.removeProperty(item);
-        });
-
-        docElement.classList.remove(CSS_CLASS_DARK_THEME);
+    if (setCSS.night) {
+        // win.document.body
+        docElement.classList.add(CSS_CLASS_DARK_THEME);
     } else {
-        let darken = false;
-        let night = false;
-        let sepia = false;
-        let invert = false;
-        let paged = false;
-        let a11yNormalize = false;
-        let font: string | undefined;
-        let fontSize: string | undefined;
-        let lineHeight: string | undefined;
-        let colCount: string | undefined;
-        let textAlign: string | undefined;
-        let letterSpacing: string | undefined;
-        let wordSpacing: string | undefined;
-        let pageMargins: string | undefined;
-        let paraIndent: string | undefined;
-        let paraSpacing: string | undefined;
-        let typeScale: string | undefined;
-        let bodyHyphens: string | undefined;
-        let backgroundColor: string | undefined;
-        let textColor: string | undefined;
-        let ligatures: string | undefined;
+        // win.document.body
+        docElement.classList.remove(CSS_CLASS_DARK_THEME);
+    }
 
-        if (typeof messageJson.setCSS === "object") {
-            if (messageJson.setCSS.darken) {
-                darken = true;
-            }
-            if (messageJson.setCSS.night) {
-                night = true;
-            }
-            if (messageJson.setCSS.sepia) {
-                sepia = true;
-            }
-            if (messageJson.setCSS.invert) {
-                invert = true;
-            }
-            if (messageJson.setCSS.paged) {
-                paged = true;
-            }
-            if (messageJson.setCSS.a11yNormalize) {
-                a11yNormalize = true;
-            }
-            if (typeof messageJson.setCSS.font === "string") {
-                font = messageJson.setCSS.font;
-            }
-            if (typeof messageJson.setCSS.fontSize === "string") {
-                fontSize = messageJson.setCSS.fontSize;
-            }
-            if (typeof messageJson.setCSS.lineHeight === "string") {
-                lineHeight = messageJson.setCSS.lineHeight;
-            }
-            if (typeof messageJson.setCSS.colCount === "string") {
-                colCount = messageJson.setCSS.colCount;
-            }
-            if (typeof messageJson.setCSS.textAlign === "string") {
-                textAlign = messageJson.setCSS.textAlign;
-            }
-            if (typeof messageJson.setCSS.letterSpacing === "string") {
-                letterSpacing = messageJson.setCSS.letterSpacing;
-            }
-            if (typeof messageJson.setCSS.wordSpacing === "string") {
-                wordSpacing = messageJson.setCSS.wordSpacing;
-            }
-            if (typeof messageJson.setCSS.pageMargins === "string") {
-                pageMargins = messageJson.setCSS.pageMargins;
-            }
-            if (typeof messageJson.setCSS.paraIndent === "string") {
-                paraIndent = messageJson.setCSS.paraIndent;
-            }
-            if (typeof messageJson.setCSS.paraSpacing === "string") {
-                paraSpacing = messageJson.setCSS.paraSpacing;
-            }
-            if (typeof messageJson.setCSS.typeScale === "string") {
-                typeScale = messageJson.setCSS.typeScale;
-            }
-            if (typeof messageJson.setCSS.bodyHyphens === "string") {
-                bodyHyphens = messageJson.setCSS.bodyHyphens;
-            }
-            if (typeof messageJson.setCSS.backgroundColor === "string") {
-                backgroundColor = messageJson.setCSS.backgroundColor;
-            }
-            if (typeof messageJson.setCSS.textColor === "string") {
-                textColor = messageJson.setCSS.textColor;
-            }
-            if (typeof messageJson.setCSS.ligatures === "string") {
-                ligatures = messageJson.setCSS.ligatures;
-            }
-        }
+    const needsAdvanced = true; // textAlign, bodyHyphens, fontSize, etc.
 
-        if (night) {
-            // win.document.body
-            docElement.classList.add(CSS_CLASS_DARK_THEME);
-        } else {
-            // win.document.body
-            docElement.classList.remove(CSS_CLASS_DARK_THEME);
-        }
+    // readium-advanced-on | readium-advanced-off
+    docElement.style.setProperty("--USER__advancedSettings",
+        needsAdvanced ? "readium-advanced-on" : "readium-advanced-off");
 
-        const needsAdvanced = true; // textAlign, bodyHyphens, fontSize, etc.
-
-        // readium-advanced-on | readium-advanced-off
-        docElement.style.setProperty("--USER__advancedSettings",
-            needsAdvanced ? "readium-advanced-on" : "readium-advanced-off");
-
-        // readium-darken-on | readium-darken-off
+    // readium-darken-on | readium-darken-off
+    if (typeof setCSS.darken === "undefined") {
+        docElement.style.removeProperty("--USER__darkenFilter");
+    } else {
         docElement.style.setProperty("--USER__darkenFilter",
-            darken ? "readium-darken-on" : "readium-darken-off");
+            setCSS.darken ? "readium-darken-on" : "readium-darken-off");
+    }
 
-        // readium-invert-on | readium-invert-off
+    // readium-invert-on | readium-invert-off
+    if (typeof setCSS.invert === "undefined") {
+        docElement.style.removeProperty("--USER__invertFilter");
+    } else {
         docElement.style.setProperty("--USER__invertFilter",
-            invert ? "readium-invert-on" : "readium-invert-off");
+            setCSS.invert ? "readium-invert-on" : "readium-invert-off");
+    }
 
-        // readium-default-on | readium-sepia-on | readium-night-on
-        docElement.style.setProperty("--USER__appearance",
-            sepia ? "readium-sepia-on" : (night ? "readium-night-on" : "readium-default-on"));
+    // readium-default-on | readium-sepia-on | readium-night-on
+    docElement.style.setProperty("--USER__appearance",
+        setCSS.sepia ? "readium-sepia-on" :
+        (setCSS.night ? "readium-night-on" : "readium-default-on"));
 
-        // readium-paged-on | readium-scroll-on
-        docElement.style.setProperty("--USER__view",
-            paged ? "readium-paged-on" : "readium-scroll-on");
-        if (paged) {
-            docElement.style.overflow = "hidden";
-            docElement.classList.add("readium-paginated");
-        } else {
-            docElement.classList.remove("readium-paginated");
+    // readium-paged-on | readium-scroll-on
+    docElement.style.setProperty("--USER__view",
+        setCSS.paged ? "readium-paged-on" : "readium-scroll-on");
+    if (setCSS.paged) {
+        docElement.style.overflow = "hidden";
+        docElement.classList.add("readium-paginated");
+    } else {
+        docElement.classList.remove("readium-paginated");
+    }
+
+    const defaultPublisherFont = !setCSS.font || setCSS.font === "DEFAULT";
+
+    const a11yNormalize = ((typeof setCSS.a11yNormalize !== "undefined") ?
+        (setCSS.a11yNormalize ? "readium-a11y-on" : "readium-a11y-off") :
+        "readium-a11y-off" // will remove, because undefined
+        );
+
+    const needsFontOverride = a11yNormalize === "readium-a11y-on" || !defaultPublisherFont;
+
+    // readium-font-on | readium-font-off
+    docElement.style.setProperty("--USER__fontOverride",
+        needsFontOverride ? "readium-font-on" : "readium-font-off");
+
+    // readium-a11y-on | readium-a11y-off
+    if (typeof setCSS.a11yNormalize === "undefined") {
+        docElement.style.removeProperty("--USER__a11yNormalize");
+    } else {
+        docElement.style.setProperty("--USER__a11yNormalize", a11yNormalize);
+    }
+
+    if (defaultPublisherFont) {
+        docElement.style.removeProperty("--USER__fontFamily");
+    } else {
+        const font = setCSS.font;
+        let fontValue = "";
+        if (font === "DUO" || font === "IA Writer Duospace") {
+            fontValue = "IA Writer Duospace";
+        } else if (font === "DYS" || font === "AccessibleDfa") {
+            fontValue = "AccessibleDfa";
+        } else if (font === "OLD" || font === "oldStyleTf") {
+            fontValue = "var(--RS__oldStyleTf)";
+        } else if (font === "MODERN" || font === "modernTf") {
+            fontValue = "var(--RS__modernTf)";
+        } else if (font === "SANS" || font === "sansTf") {
+            fontValue = "var(--RS__sansTf)";
+        } else if (font === "HUMAN" || font === "humanistTf") {
+            fontValue = "var(--RS__humanistTf)";
+        } else if (font === "MONO" || font === "monospaceTf") {
+            fontValue = "var(--RS__monospaceTf)";
+        } else if (font === "JA" || font === "serif-ja") {
+            fontValue = "var(--RS__serif-ja)";
+        } else if (font === "JA-SANS" || font === "sans-serif-ja") {
+            fontValue = "var(--RS__sans-serif-ja)";
+        } else if (font === "JA-V" || font === "serif-ja-v") {
+            fontValue = "var(--RS__serif-ja-v)";
+        } else if (font === "JA-V-SANS" || font === "sans-serif-ja-v") {
+            fontValue = "var(--RS__sans-serif-ja-v)";
+        } else if (typeof font === "string") {
+            fontValue = font;
         }
-
-        const defaultPublisherFont = !font || font === "DEFAULT";
-        const needsFontOverride = a11yNormalize || !defaultPublisherFont;
-        // readium-font-on | readium-font-off
-        docElement.style.setProperty("--USER__fontOverride",
-            needsFontOverride ? "readium-font-on" : "readium-font-off");
-
-        // readium-a11y-on | readium-a11y-off
-        docElement.style.setProperty("--USER__a11yNormalize",
-            a11yNormalize ? "readium-a11y-on" : "readium-a11y-off");
-
-        // tslint:disable-next-line:max-line-length
-        // var(--RS__oldStyleTf) | var(--RS__modernTf) | var(--RS__sansTf) | var(--RS__humanistTf) | AccessibleDfa | "IA Writer Duospace"
-        // What about --RS__baseFontFamily??
-        if (defaultPublisherFont) {
+        if (fontValue) {
+            docElement.style.setProperty("--USER__fontFamily", fontValue);
+        } else {
             docElement.style.removeProperty("--USER__fontFamily");
-        } else {
-            let fontValue = "";
-            if (font === "DUO" || font === "IA Writer Duospace") {
-                fontValue = "IA Writer Duospace";
-            } else if (font === "DYS" || font === "AccessibleDfa") {
-                fontValue = "AccessibleDfa";
-            } else if (font === "OLD" || font === "oldStyleTf") {
-                fontValue = "var(--RS__oldStyleTf)";
-            } else if (font === "MODERN" || font === "modernTf") {
-                fontValue = "var(--RS__modernTf)";
-            } else if (font === "SANS" || font === "sansTf") {
-                fontValue = "var(--RS__sansTf)";
-            } else if (font === "HUMAN" || font === "humanistTf") {
-                fontValue = "var(--RS__humanistTf)";
-            } else if (font === "MONO" || font === "monospaceTf") {
-                fontValue = "var(--RS__monospaceTf)";
-            } else if (font === "JA" || font === "serif-ja") {
-                fontValue = "var(--RS__serif-ja)";
-            } else if (font === "JA-SANS" || font === "sans-serif-ja") {
-                fontValue = "var(--RS__sans-serif-ja)";
-            } else if (font === "JA-V" || font === "serif-ja-v") {
-                fontValue = "var(--RS__serif-ja-v)";
-            } else if (font === "JA-V-SANS" || font === "sans-serif-ja-v") {
-                fontValue = "var(--RS__sans-serif-ja-v)";
-            } else if (typeof font === "string") {
-                fontValue = font;
-            }
-            if (fontValue) {
-                docElement.style.setProperty("--USER__fontFamily", fontValue);
-            } else {
-                docElement.style.removeProperty("--USER__fontFamily");
-            }
         }
+    }
 
-        // 75% | 87.5% | 100% | 112.5% | 137.5% | 150% | 162.5% | 175% | 200% | 225% | 250%
-        docElement.style.setProperty("--USER__fontSize", fontSize ? fontSize : "100%");
+    if (setCSS.fontSize) {
+        docElement.style.setProperty("--USER__fontSize", setCSS.fontSize);
+    } else {
+        docElement.style.removeProperty("--USER__fontSize");
+    }
 
-        // 1 | 1.125 | 1.25 | 1.35 | 1.5 | 1.65 | 1.75 | 2
-        docElement.style.setProperty("--USER__lineHeight", lineHeight ? lineHeight : "2");
+    if (setCSS.lineHeight) {
+        docElement.style.setProperty("--USER__lineHeight", setCSS.lineHeight);
+    } else {
+        docElement.style.removeProperty("--USER__lineHeight");
+    }
 
-        // 1 | 1.067 | 1.125 | 1.2 (suggested default) | 1.25 | 1.333 | 1.414 | 1.5 | 1.618
-        docElement.style.setProperty("--USER__typeScale", typeScale ? typeScale : "1.2");
+    if (setCSS.typeScale) {
+        docElement.style.setProperty("--USER__typeScale", setCSS.typeScale);
+    } else {
+        docElement.style.removeProperty("--USER__typeScale");
+    }
 
-        // 0 | 0.375rem | 0.75rem | 1rem | 1.125rem | 1.25rem | 1.35rem | 1.5rem | 1.65rem | 1.75rem | 2rem
-        docElement.style.setProperty("--USER__paraSpacing", paraSpacing ? paraSpacing : "1rem");
+    if (setCSS.paraSpacing) {
+        docElement.style.setProperty("--USER__paraSpacing", setCSS.paraSpacing);
+    } else {
+        docElement.style.removeProperty("--USER__paraSpacing");
+    }
 
-        const isCJK = false; // TODO, lang tag?
-        if (_isVerticalWritingMode || (isRTL || isCJK)) {
-            docElement.style.removeProperty("--USER__bodyHyphens");
+    const isCJK = false; // TODO, lang tag?
+    if (_isVerticalWritingMode || (isRTL || isCJK)) {
+        docElement.style.removeProperty("--USER__bodyHyphens");
 
-            docElement.style.removeProperty("--USER__wordSpacing");
+        docElement.style.removeProperty("--USER__wordSpacing");
 
-            docElement.style.removeProperty("--USER__letterSpacing");
+        docElement.style.removeProperty("--USER__letterSpacing");
 
-            if (_isVerticalWritingMode || isCJK) {
-                if (_isVerticalWritingMode) {
-                    docElement.style.removeProperty("--USER__colCount");
-                }
-
-                docElement.style.removeProperty("--USER__paraIndent");
-
-                docElement.style.removeProperty("--USER__textAlign");
-
-            } else if (isRTL) {
-                // none | common-ligatures (for Arabic RTL)
-                docElement.style.setProperty("--USER__ligatures", ligatures ? ligatures : "none");
+        if (_isVerticalWritingMode || isCJK) {
+            if (_isVerticalWritingMode) {
+                docElement.style.removeProperty("--USER__colCount");
             }
-        } else {
-            // auto | none
-            docElement.style.setProperty("--USER__bodyHyphens", bodyHyphens ? bodyHyphens : "auto");
 
-            // 0.125rem | 0.25rem | 0.375rem | 0.5rem | ... 1rem
-            docElement.style.setProperty("--USER__wordSpacing", wordSpacing ? wordSpacing : "0.5rem");
+            docElement.style.removeProperty("--USER__paraIndent");
 
-            // 0.0675rem | 0.125rem | 0.1875rem | 0.25rem | ... 0.5rem
-            docElement.style.setProperty("--USER__letterSpacing", letterSpacing ? letterSpacing : "0.1875rem");
+            docElement.style.removeProperty("--USER__textAlign");
 
-            if (!_isVerticalWritingMode) {
-                // 1 | 2 | auto
-                docElement.style.setProperty("--USER__colCount", colCount ? colCount : "auto");
-
-                // 0 | 0.5rem | 1rem | 1.25rem | 1.5rem | 2rem | 2.5rem | 3rem
-                docElement.style.setProperty("--USER__paraIndent", paraIndent ? paraIndent : "1rem");
-
-                // left (LTR) or right (RTL) | justify AND start (auto left-right based on dir)
-                docElement.style.setProperty("--USER__textAlign",
-                    textAlign === "justify" ? "justify" :
-                        (textAlign === "right" ? "right" :
-                            (textAlign === "left" ? "left" :
-                                (textAlign === "center" ? "center" :
-                                    (textAlign === "initial" ? "initial" : "inherit")
-                                )
-                            )
-                        ));
-            } else if (!isRTL) {
+        } else if (isRTL) {
+            if (setCSS.ligatures) {
+                docElement.style.setProperty("--USER__ligatures", setCSS.ligatures);
+            } else {
                 docElement.style.removeProperty("--USER__ligatures");
             }
         }
-
-        // 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2
-        docElement.style.setProperty("--USER__pageMargins", pageMargins ? pageMargins : "1");
-
-        if (backgroundColor) {
-            docElement.style.setProperty("--USER__backgroundColor", backgroundColor);
+    } else {
+        if (setCSS.bodyHyphens) {
+            docElement.style.setProperty("--USER__bodyHyphens", setCSS.bodyHyphens);
         } else {
-            docElement.style.removeProperty("--USER__backgroundColor");
+            docElement.style.removeProperty("--USER__bodyHyphens");
         }
-        if (textColor) {
-            docElement.style.setProperty("--USER__textColor", textColor);
+
+        if (setCSS.wordSpacing) {
+            docElement.style.setProperty("--USER__wordSpacing", setCSS.wordSpacing);
         } else {
-            docElement.style.removeProperty("--USER__textColor");
+            docElement.style.removeProperty("--USER__wordSpacing");
         }
+
+        if (setCSS.letterSpacing) {
+            docElement.style.setProperty("--USER__letterSpacing", setCSS.letterSpacing);
+        } else {
+            docElement.style.removeProperty("--USER__letterSpacing");
+        }
+
+        if (!_isVerticalWritingMode) {
+            if (setCSS.colCount) {
+                docElement.style.setProperty("--USER__colCount", setCSS.colCount);
+            } else {
+                docElement.style.removeProperty("--USER__colCount");
+            }
+
+            if (setCSS.paraIndent) {
+                docElement.style.setProperty("--USER__paraIndent", setCSS.paraIndent);
+            } else {
+                docElement.style.removeProperty("--USER__paraIndent");
+            }
+
+            if (setCSS.textAlign) {
+                docElement.style.setProperty("--USER__textAlign", setCSS.textAlign);
+            } else {
+                docElement.style.removeProperty("--USER__textAlign");
+            }
+        } else if (!isRTL) {
+            docElement.style.removeProperty("--USER__ligatures");
+        }
+    }
+
+    if (setCSS.pageMargins) {
+        docElement.style.setProperty("--USER__pageMargins", setCSS.pageMargins);
+    } else {
+        docElement.style.removeProperty("--USER__pageMargins");
+    }
+
+    if (setCSS.backgroundColor) {
+        docElement.style.setProperty("--USER__backgroundColor", setCSS.backgroundColor);
+    } else {
+        docElement.style.removeProperty("--USER__backgroundColor");
+    }
+    if (setCSS.textColor) {
+        docElement.style.setProperty("--USER__textColor", setCSS.textColor);
+    } else {
+        docElement.style.removeProperty("--USER__textColor");
     }
 }
 
 export const readiumCSS = (messageJson: IEventPayload_R2_EVENT_READIUMCSS) => {
-    readiumCSSInject(messageJson);
     readiumCSSSet(messageJson);
 };
 

@@ -5,19 +5,18 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { debounce } from "debounce";
-
-import URI = require("urijs");
-
+import { Locator, LocatorLocations } from "@models/locator";
 import { Publication } from "@models/publication";
 import { Link } from "@models/publication-link";
 import { encodeURIComponent_RFC3986 } from "@utils/http/UrlUtils";
+import { debounce } from "debounce";
 import { ipcRenderer, shell } from "electron";
 
 import {
     IEventPayload_R2_EVENT_LINK,
     IEventPayload_R2_EVENT_PAGE_TURN,
     IEventPayload_R2_EVENT_READING_LOCATION,
+    IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO,
     IEventPayload_R2_EVENT_READIUMCSS,
     IEventPayload_R2_EVENT_SCROLLTO,
     IEventPayload_R2_EVENT_WEBVIEW_READY,
@@ -38,6 +37,8 @@ import {
 import { URL_PARAM_CSS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS } from "./common/url-params";
 import { INameVersion } from "./webview/epubReadingSystem";
 import { IElectronWebviewTag } from "./webview/state";
+
+import URI = require("urijs");
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -92,30 +93,53 @@ export function setEpubReadingSystemJsonGetter(func: () => INameVersion) {
 function __computeReadiumCssJsonMessage(link: Link | undefined): IEventPayload_R2_EVENT_READIUMCSS {
 
     if (isFixedLayout(link)) {
-        return { injectCSS: "rollback", setCSS: "rollback", isFixedLayout: true };
+        return { setCSS: undefined, isFixedLayout: true };
     }
 
     if (!_computeReadiumCssJsonMessage) {
-        return { injectCSS: "rollback", setCSS: "rollback", isFixedLayout: false };
+        return { setCSS: undefined, isFixedLayout: false };
     }
 
     const readiumCssJsonMessage = _computeReadiumCssJsonMessage();
     return readiumCssJsonMessage;
 }
 let _computeReadiumCssJsonMessage: () => IEventPayload_R2_EVENT_READIUMCSS = () => {
-    return { injectCSS: "rollback", setCSS: "rollback", isFixedLayout: false };
+    return { setCSS: undefined, isFixedLayout: false };
 };
 export function setReadiumCssJsonGetter(func: () => IEventPayload_R2_EVENT_READIUMCSS) {
     _computeReadiumCssJsonMessage = func;
 }
 
-let _saveReadingLocation: (docHref: string, locator: IEventPayload_R2_EVENT_READING_LOCATION)
-    => void = (_docHref: string, _locator: IEventPayload_R2_EVENT_READING_LOCATION) => {
-    return;
+export interface LocatorExtended {
+    locator: Locator;
+    paginationInfo: IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO | undefined;
+}
+
+let _lastSavedReadingLocation: LocatorExtended | undefined;
+export function getCurrentReadingLocation(): LocatorExtended | undefined {
+    return _lastSavedReadingLocation;
+}
+let _readingLocationSaver: ((locator: LocatorExtended) => void) | undefined;
+const _saveReadingLocation: (docHref: string, locator: IEventPayload_R2_EVENT_READING_LOCATION)
+    => void = (docHref: string, locator: IEventPayload_R2_EVENT_READING_LOCATION) => {
+    _lastSavedReadingLocation = {
+        locator: {
+            href: docHref,
+            locations: {
+                cfi: locator.cfi ? locator.cfi : undefined,
+                cssSelector: locator.cssSelector ? locator.cssSelector : undefined,
+                position: locator.position ? locator.position : undefined,
+                progression: locator.progression ? locator.progression : undefined,
+            },
+        },
+        paginationInfo: locator.paginationInfo,
+    };
+    if (_readingLocationSaver) {
+        _readingLocationSaver(_lastSavedReadingLocation);
+    }
 };
-export function setReadingLocationSaver(func:
-    (docHref: string, locator: IEventPayload_R2_EVENT_READING_LOCATION) => void) {
-    _saveReadingLocation = func;
+export function setReadingLocationSaver(func: (locator: LocatorExtended) => void) {
+    _readingLocationSaver = func;
 }
 
 export function readiumCssOnOff() {
@@ -155,13 +179,65 @@ export function handleLink(href: string, previous: boolean | undefined, useGoto:
     }
 }
 
+export function handleLinkUrl(href: string) {
+    handleLink(href, undefined, false);
+}
+
+export function handleLinkLocator(location: Locator) {
+
+    // installNavigatorDOM() should have initiated the state
+    if (!_publication || !_publicationJsonUrl) {
+        return;
+    }
+
+    let linkToLoad: Link | undefined;
+    let linkToLoadGoto: LocatorLocations | undefined;
+    if (location && location.href) {
+        if (_publication.Spine && _publication.Spine.length) {
+            linkToLoad = _publication.Spine.find((spineLink) => {
+                return spineLink.Href === location.href;
+            });
+            if (linkToLoad && location.locations) {
+                linkToLoadGoto = location.locations;
+            }
+        }
+        if (!linkToLoad &&
+            _publication.Resources && _publication.Resources.length) {
+            linkToLoad = _publication.Resources.find((resLink) => {
+                return resLink.Href === location.href;
+            });
+            if (linkToLoad && location.locations) {
+                linkToLoadGoto = location.locations;
+            }
+        }
+    }
+    if (!linkToLoad) {
+        if (_publication.Spine && _publication.Spine.length) {
+            const firstLinear = _publication.Spine[0];
+            if (firstLinear) {
+                linkToLoad = firstLinear;
+            }
+        }
+    }
+
+    if (linkToLoad) {
+        const useGoto = typeof linkToLoadGoto !== "undefined" &&
+            typeof linkToLoadGoto.cssSelector !== "undefined";
+        const hrefToLoad = _publicationJsonUrl + "/../" + linkToLoad.Href +
+            ((useGoto && linkToLoadGoto && linkToLoadGoto.cssSelector) ? // for TypeScript compiler
+                ("?" + URL_PARAM_GOTO + "=" +
+                encodeURIComponent_RFC3986(linkToLoadGoto.cssSelector)) : "");
+        // TODO: linkToLoadGoto.cfi? linkToLoadGoto.progression?
+        handleLink(hrefToLoad, undefined, useGoto);
+    }
+}
+
 export function installNavigatorDOM(
     publication: Publication,
     publicationJsonUrl: string,
     rootHtmlElementID: string,
     preloadScriptPath: string,
-    pubDocHrefToLoad: string | undefined,
-    location: IEventPayload_R2_EVENT_READING_LOCATION | undefined) {
+    location: Locator | undefined) {
 
     _publication = publication;
     _publicationJsonUrl = publicationJsonUrl;
@@ -214,23 +290,23 @@ export function installNavigatorDOM(
     }
 
     let linkToLoad: Link | undefined;
-    let linkToLoadGoto: IEventPayload_R2_EVENT_READING_LOCATION | undefined;
-    if (pubDocHrefToLoad) {
+    let linkToLoadGoto: LocatorLocations | undefined;
+    if (location && location.href) {
         if (_publication.Spine && _publication.Spine.length) {
             linkToLoad = _publication.Spine.find((spineLink) => {
-                return spineLink.Href === pubDocHrefToLoad;
+                return spineLink.Href === location.href;
             });
-            if (linkToLoad && location) {
-                linkToLoadGoto = location;
+            if (linkToLoad && location.locations) {
+                linkToLoadGoto = location.locations;
             }
         }
         if (!linkToLoad &&
             _publication.Resources && _publication.Resources.length) {
             linkToLoad = _publication.Resources.find((resLink) => {
-                return resLink.Href === pubDocHrefToLoad;
+                return resLink.Href === location.href;
             });
-            if (linkToLoad && location) {
-                linkToLoadGoto = location;
+            if (linkToLoad && location.locations) {
+                linkToLoadGoto = location.locations;
             }
         }
     }
@@ -245,11 +321,14 @@ export function installNavigatorDOM(
 
     setTimeout(() => {
         if (linkToLoad) {
+            const useGoto = typeof linkToLoadGoto !== "undefined" &&
+                typeof linkToLoadGoto.cssSelector !== "undefined";
             const hrefToLoad = _publicationJsonUrl + "/../" + linkToLoad.Href +
-                (linkToLoadGoto ? ("?" + URL_PARAM_GOTO + "=" +
+                ((useGoto && linkToLoadGoto && linkToLoadGoto.cssSelector) ? // for TypeScript compiler
+                    ("?" + URL_PARAM_GOTO + "=" +
                     encodeURIComponent_RFC3986(linkToLoadGoto.cssSelector)) : "");
-            // TODO: linkToLoadGoto.cfi
-            handleLink(hrefToLoad, undefined, true);
+            // TODO: linkToLoadGoto.cfi? linkToLoadGoto.progression?
+            handleLink(hrefToLoad, undefined, useGoto);
         }
     }, 100);
 }
@@ -563,7 +642,7 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
 
         if (event.channel === R2_EVENT_LINK) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_LINK;
-            handleLink(payload.url, undefined, false);
+            handleLinkUrl(payload.url);
         } else if (event.channel === R2_EVENT_WEBVIEW_READY) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_WEBVIEW_READY;
             console.log("WEBVIEW READY: " + payload.href);
@@ -574,6 +653,20 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
         } else if (event.channel === R2_EVENT_READING_LOCATION) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_READING_LOCATION;
             if (webview.READIUM2.link && _saveReadingLocation) {
+                // TODO: position metrics, based on arbitrary number of characters (1034)
+                // https://github.com/readium/architecture/tree/master/positions
+                // https://github.com/readium/architecture/tree/master/locators#about-the-notion-of-position
+                // https://github.com/readium/architecture/blob/master/locators/locator-api.md
+                // if (typeof payload.progression !== "undefined" && _publication && webview.READIUM2.link) {
+                //     const totalPositions = _publication.getTotalPositions(webview.READIUM2.link);
+                //     if (totalPositions) {
+                //         payload.position = totalPositions * payload.progression;
+                //         const totalSpinePositions = _publication.getTotalSpinePositions();
+                //         if (totalSpinePositions) {
+                //             payload.globalProgression = payload.position / totalSpinePositions;
+                //         }
+                //     }
+                // }
                 _saveReadingLocation(webview.READIUM2.link.Href, payload);
             }
         } else if (event.channel === R2_EVENT_PAGE_TURN_RES) {
@@ -658,5 +751,5 @@ window.addEventListener("resize", () => {
 ipcRenderer.on(R2_EVENT_LINK, (_event: any, payload: IEventPayload_R2_EVENT_LINK) => {
     console.log("R2_EVENT_LINK");
     console.log(payload.url);
-    handleLink(payload.url, undefined, false);
+    handleLinkUrl(payload.url);
 });

@@ -6,6 +6,9 @@
 // ==LICENSE-END==
 
 import { Link } from "@models/publication-link";
+import {
+    IEventPayload_R2_EVENT_READING_LOCATION,
+} from "../../common/events";
 import { IStringMap } from "../common/querystring";
 
 export interface IReadium2State {
@@ -15,8 +18,8 @@ export interface IReadium2State {
 
     hashElement: Element | null;
     locationHashOverride: Element | undefined;
-    locationHashOverrideCSSselector: string | undefined;
-    locationHashOverrideCFI: string | undefined;
+    locationHashOverrideInfo: IEventPayload_R2_EVENT_READING_LOCATION | undefined;
+
     readyPassDone: boolean;
     readyEventSent: boolean;
 
