@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.0...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.1...develop
 
 Changes:
 * TODO
+
+# 1.0.1
+
+> Build environment: NodeJS `8.14.0`, NPM `6.5.0`
+
+Changes:
+* Disabled debug mode (visuals)
+* Added missing license header
+* Removed unnecessary import aliases
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.1/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.1/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.1
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.0...v1.0.1
 
 # 1.0.0
 
