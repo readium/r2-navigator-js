@@ -5,7 +5,8 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { Link } from "@models/publication-link";
+import { Link } from "@r2-shared-js/models/publication-link";
+
 import {
     IEventPayload_R2_EVENT_READING_LOCATION,
 } from "../../common/events";

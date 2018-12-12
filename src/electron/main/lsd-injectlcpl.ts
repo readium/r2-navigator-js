@@ -7,9 +7,9 @@
 
 import * as fs from "fs";
 
-import { Publication } from "@models/publication";
 import { LCP } from "@r2-lcp-js/parser/epub/lcp";
-import { injectBufferInZip } from "@utils/zip/zipInjector";
+import { Publication } from "@r2-shared-js/models/publication";
+import { injectBufferInZip } from "@r2-utils-js/_utils/zip/zipInjector";
 import * as debug_ from "debug";
 import { JSON as TAJSON } from "ta-json-x";
 

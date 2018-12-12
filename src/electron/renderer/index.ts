@@ -5,10 +5,10 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { Locator, LocatorLocations } from "@models/locator";
-import { Publication } from "@models/publication";
-import { Link } from "@models/publication-link";
-import { encodeURIComponent_RFC3986 } from "@utils/http/UrlUtils";
+import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
+import { Publication } from "@r2-shared-js/models/publication";
+import { Link } from "@r2-shared-js/models/publication-link";
+import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
 import { debounce } from "debounce";
 import { ipcRenderer, shell } from "electron";
 
