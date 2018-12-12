@@ -27,7 +27,7 @@ import {
 } from "../../common/events";
 // import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../../common/sessions";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
-import { fullQualifiedSelector } from "../common/cssselector";
+import { uniqueCssSelector } from "../common/cssselector2";
 import { easings } from "../common/easings";
 import { getURLQueryParams } from "../common/querystring";
 import { URL_PARAM_CSS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS } from "../common/url-params";
@@ -473,8 +473,6 @@ const scrollToHashRaw = (firstCall: boolean) => {
     } else if (win.READIUM2.hashElement) {
 
         win.READIUM2.locationHashOverride = win.READIUM2.hashElement;
-        // win.READIUM2.locationHashOverrideCSSselector =
-        // fullQualifiedSelector(win.READIUM2.locationHashOverride, false);
 
         notifyReady();
 
@@ -924,7 +922,7 @@ const notifyReadingLocationRaw = () => {
 
     let progressionData: IProgressionData | undefined;
 
-    const cssSelector = fullQualifiedSelector(win.READIUM2.locationHashOverride, false);
+    const cssSelector = uniqueCssSelector(win.READIUM2.locationHashOverride, win.document);
     const cfi = computeCFI(win.READIUM2.locationHashOverride);
     let progression = 0;
     if (win.READIUM2.isFixedLayout) {
