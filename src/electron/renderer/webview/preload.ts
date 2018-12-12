@@ -401,7 +401,6 @@ const notifyReady = () => {
 
 function scrollElementIntoView(element: Element) {
 
-    console.log("scrollElementIntoView ---");
     if (DEBUG_VISUALS) {
         const existings = document.querySelectorAll(`*[${readPosCssStylesAttr3}]`);
         existings.forEach((existing) => {
@@ -466,7 +465,6 @@ const scrollToHashRaw = (firstCall: boolean) => {
 
         notifyReady();
 
-        console.log("scrollElementIntoView 1");
         _ignoreScrollEvent = true;
         scrollElementIntoView(win.READIUM2.locationHashOverride);
 
@@ -479,7 +477,6 @@ const scrollToHashRaw = (firstCall: boolean) => {
         notifyReady();
 
         if (!firstCall) {
-            console.log("scrollElementIntoView 2");
             _ignoreScrollEvent = true;
             scrollElementIntoView(win.READIUM2.hashElement);
         }
@@ -574,7 +571,6 @@ const scrollToHashRaw = (firstCall: boolean) => {
 
                         notifyReady();
 
-                        console.log("scrollElementIntoView 3");
                         _ignoreScrollEvent = true;
                         scrollElementIntoView(selected);
 
@@ -706,7 +702,6 @@ win.addEventListener("DOMContentLoaded", () => {
             setTimeout(() => {
                 win.READIUM2.locationHashOverride = ev.target;
                 if (win.READIUM2.locationHashOverride) {
-                    console.log("scrollElementIntoView 4");
                     scrollElementIntoView(win.READIUM2.locationHashOverride);
                 }
             }, 30);

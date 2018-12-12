@@ -40,7 +40,7 @@ const urlRootReadiumCSS = origin + "/readium-css/";
 console.log(urlRootReadiumCSS);
 // const urlResizeSensor = win.location.origin + "/resize-sensor.js";
 
-export const DEBUG_VISUALS = true;
+export const DEBUG_VISUALS = false;
 
 export const configureFixedLayout = (isFixedLayout: boolean) => {
     if (!win.document || !win.document.head || !win.document.body) {
