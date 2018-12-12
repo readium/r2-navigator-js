@@ -276,7 +276,7 @@ function notEmpty<T>(value: T | null | undefined): value is T {
     return value !== null && value !== undefined;
 }
 
-function* combinations(stack: CSSNode[][], path: CSSNode[] = []): Iterable<CSSNode[]> {
+function* combinations(stack: CSSNode[][], path: CSSNode[] = []): IterableIterator<CSSNode[]> {
     if (stack.length > 0) {
         for (const node of stack[0]) {
             yield* combinations(stack.slice(1, stack.length), path.concat(node));
@@ -286,11 +286,11 @@ function* combinations(stack: CSSNode[][], path: CSSNode[] = []): Iterable<CSSNo
     }
 }
 
-function sort(paths: Iterable<CSSNode[]>): CSSNode[][] {
+function sort(paths: IterableIterator<CSSNode[]>): CSSNode[][] {
     return Array.from(paths).sort((a, b) => penalty(a) - penalty(b));
 }
 
-function* optimize(path: CSSNode[], input: Element): Iterable<CSSNode[]> {
+function* optimize(path: CSSNode[], input: Element): IterableIterator<CSSNode[]> {
     if (path.length > 2 && path.length > config.optimizedMinLength) {
         for (let i = 1; i < path.length - 1; i++) {
             const newPath = [...path];

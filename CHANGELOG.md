@@ -1,10 +1,35 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.0-alpha.7...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.0...develop
 
 Changes:
 * TODO
+
+# 1.0.0
+
+> Build environment: NodeJS `8.14.0`, NPM `6.5.0`
+
+Changes:
+* Locator support (CFI, CSS Selectors, Progression(percent ratio), Position(placeholder))
+* Various fixes in reflow column-based pagination and scroll view, LTR and RTL (arabic), due to box-model and offsetTop innaccuracy (now getBoundingClientRect() with floating point accuracy)
+* ReadiumCSS added missing parameters, complete review of model + default values, based on current doc
+* Fixed disappearing scroll view scrollbar when switching modes
+* Adjusted focus and target CSS styles to transient display (timeout outline)
+* CSS Selector lib replacement (more robust uniqueness strategy)
+* NPM updates (minor)
+* ReadiumCSS updated to latest (minor)
+* Git revision JSON info now includes NodeJS and NPM version (build environment)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.0-alpha.7...v1.0.0
 
 # 1.0.0-alpha.7
 
