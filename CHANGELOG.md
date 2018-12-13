@@ -11,7 +11,7 @@ Changes:
 > Build environment: NodeJS `8.14.0`, NPM `6.5.0`
 
 Changes:
-* 
+* Fixed code typo which was breaking some ReadiumCSS functionality.
 
 Git revision info:
 * https://unpkg.com/r2-navigator-js@1.0.2/dist/gitrev.json
