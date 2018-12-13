@@ -8,6 +8,7 @@
 import {
     IEventPayload_R2_EVENT_READIUMCSS,
 } from "../../common/events";
+import { READIUM_CSS_URL_PATH } from "../../common/readium-css-settings";
 import {
     focusCssStyles,
     readPosCssStyles,
@@ -169,31 +170,46 @@ export function readiumCSSSet(
         docElement.setAttribute("data-readiumcss", "yes");
 
         let needsDefaultCSS = true;
-        if (document.head && document.head.childElementCount) {
-            let elem = document.head.firstElementChild;
-            while (elem) {
-                if ((elem.localName && elem.localName.toLowerCase() === "style") ||
-                    (elem.getAttribute &&
-                        (elem.getAttribute("rel") === "stylesheet" ||
-                            elem.getAttribute("type") === "text/css" ||
-                            (elem.getAttribute("src") &&
-                                (elem.getAttribute("src") as string).endsWith(".css"))))) {
-                    needsDefaultCSS = false;
-                    break;
+
+        // Not in XMLDOM :(
+        // if (document.head && document.head.childElementCount) {
+        //     let elem = document.head.firstElementChild;
+        //     while (elem) {
+        //         // ...
+        //         elem = elem.nextElementSibling;
+        //     }
+        // }
+        if (document.head && document.head.childNodes && document.head.childNodes.length) {
+            // tslint:disable-next-line: prefer-for-of
+            for (let i = 0; i < document.head.childNodes.length; i++) {
+                const child = document.head.childNodes[i];
+                if (child.nodeType === Node.ELEMENT_NODE) {
+                    const element = child as Element;
+                    if ((element.localName && element.localName.toLowerCase() === "style") ||
+                        (element.getAttribute &&
+                            (element.getAttribute("rel") === "stylesheet" ||
+                                element.getAttribute("type") === "text/css" ||
+                                (element.getAttribute("src") &&
+                                    (element.getAttribute("src") as string).endsWith(".css"))))) {
+                        needsDefaultCSS = false;
+                        break;
+                    }
                 }
-                elem = elem.nextElementSibling;
             }
         }
+
         if (needsDefaultCSS && document.body) {
-            const styleAttr = document.body.querySelector("*[style]");
+            // Not in XMLDOM :(
+            // querySelector("*[style]");
+            const styleAttr = document.body.getAttribute("style");
             if (styleAttr) {
                 needsDefaultCSS = false;
             }
         }
 
         const urlRoot = messageJson.urlRoot ?
-            messageJson.urlRoot + "/readium-css/" :
-            urlRootReadiumCSS;
+            messageJson.urlRoot + "/" + READIUM_CSS_URL_PATH + "/" :
+            (urlRootReadiumCSS ? urlRootReadiumCSS : "");
 
         appendCSS(document, "before", urlRoot);
         if (needsDefaultCSS) {
@@ -441,7 +457,27 @@ export function configureFixedLayout(
     let height: number = fxlViewportHeight;
 
     if (!width || !height) {
-        const metaViewport = document.head.querySelector("meta[name=viewport]");
+        let metaViewport: Element | null = null;
+        // Not in XMLDOM :(
+        if (document.head.querySelector) {
+            metaViewport = document.head.querySelector("meta[name=viewport]");
+        } else {
+            if (document.head.childNodes && document.head.childNodes.length) {
+                // tslint:disable-next-line: prefer-for-of
+                for (let i = 0; i < document.head.childNodes.length; i++) {
+                    const child = document.head.childNodes[i];
+                    if (child.nodeType === Node.ELEMENT_NODE) {
+                        const element = child as Element;
+                        if (element.localName && element.localName.toLowerCase() === "meta") {
+                            if (element.getAttribute("name") === "viewport") {
+                                metaViewport = element;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         if (!metaViewport) {
             console.log("configureFixedLayout NO meta[name=viewport]");
             return undefined;
@@ -485,7 +521,7 @@ export function configureFixedLayout(
         }
     }
 
-    if (width && height && isFixedLayout
+    if (innerWidth && innerHeight && width && height && isFixedLayout
         && document && document.documentElement && document.body) {
         document.documentElement.style.overflow = "hidden";
 
@@ -571,8 +607,30 @@ export function appendCSS(document: Document, mod: string, urlRoot: string) {
     linkElement.setAttribute("rel", "stylesheet");
     linkElement.setAttribute("type", "text/css");
     linkElement.setAttribute("href", urlRoot + "ReadiumCSS-" + mod + ".css");
-    if (mod === "before" && document.head.childElementCount) {
-        document.head.insertBefore(linkElement, document.head.firstElementChild);
+
+    // Not in XMLDOM :(
+    let childElementCount = 0;
+    let firstElementChild: Element | null = null;
+    if (typeof document.head.childElementCount !== "undefined") {
+        childElementCount = document.head.childElementCount;
+        firstElementChild = document.head.firstElementChild;
+    } else {
+        if (document.head && document.head.childNodes && document.head.childNodes.length) {
+            // tslint:disable-next-line: prefer-for-of
+            for (let i = 0; i < document.head.childNodes.length; i++) {
+                const child = document.head.childNodes[i];
+                if (child.nodeType === Node.ELEMENT_NODE) {
+                    childElementCount++;
+                    if (!firstElementChild) {
+                        firstElementChild = child as Element;
+                    }
+                }
+            }
+        }
+    }
+
+    if (mod === "before" && childElementCount && firstElementChild) {
+        document.head.insertBefore(linkElement, firstElementChild);
     } else {
         document.head.appendChild(linkElement);
     }

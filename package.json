@@ -58,7 +58,8 @@
     "ta-json-x": "^2.5.0",
     "tslib": "^1.9.3",
     "urijs": "^1.19.1",
-    "uuid": "^3.3.2"
+    "uuid": "^3.3.2",
+    "xmldom": "^0.1.27"
   },
   "devDependencies": {
     "@types/debounce": "^3.0.0",
@@ -67,6 +68,7 @@
     "@types/node": "^8.10.38",
     "@types/urijs": "^1.15.38",
     "@types/uuid": "^3.4.4",
+    "@types/xmldom": "^0.1.29",
     "cpy-cli": "^2.0.0",
     "cross-env": "^5.2.0",
     "cson": "^5.1.0",
