@@ -290,6 +290,7 @@ function computeVerticalRTL() {
             }
         }
     }
+
     console.log("_isVerticalWritingMode: " + _isVerticalWritingMode);
     console.log("_isRTL: " + _isRTL);
 }
@@ -404,6 +405,12 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
     }
 
     const setCSS = messageJson.setCSS;
+
+    if (DEBUG_VISUALS) {
+        console.log("---- setCSS -----");
+        console.log(setCSS);
+        console.log("-----");
+    }
 
     if (setCSS.night) {
         // win.document.body
@@ -533,7 +540,7 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
     }
 
     const isCJK = false; // TODO, lang tag?
-    if (_isVerticalWritingMode || (isRTL || isCJK)) {
+    if (_isVerticalWritingMode || (_isRTL || isCJK)) {
         docElement.style.removeProperty("--USER__bodyHyphens");
 
         docElement.style.removeProperty("--USER__wordSpacing");
@@ -549,7 +556,7 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
 
             docElement.style.removeProperty("--USER__textAlign");
 
-        } else if (isRTL) {
+        } else if (_isRTL) {
             if (setCSS.ligatures) {
                 docElement.style.setProperty("--USER__ligatures", setCSS.ligatures);
             } else {
@@ -593,7 +600,7 @@ function readiumCSSSet(messageJson: IEventPayload_R2_EVENT_READIUMCSS) {
             } else {
                 docElement.style.removeProperty("--USER__textAlign");
             }
-        } else if (!isRTL) {
+        } else if (!_isRTL) {
             docElement.style.removeProperty("--USER__ligatures");
         }
     }
