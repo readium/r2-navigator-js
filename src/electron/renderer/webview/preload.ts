@@ -16,6 +16,7 @@ import {
     IEventPayload_R2_EVENT_PAGE_TURN,
     IEventPayload_R2_EVENT_READING_LOCATION,
     IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO,
+    IEventPayload_R2_EVENT_READIUMCSS,
     IEventPayload_R2_EVENT_SCROLLTO,
     IEventPayload_R2_EVENT_WEBVIEW_READY,
     R2_EVENT_LINK,
@@ -32,21 +33,24 @@ import { easings } from "../common/easings";
 import { getURLQueryParams } from "../common/querystring";
 import { URL_PARAM_CSS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS } from "../common/url-params";
 import { consoleRedirect } from "../console-redirect";
-import { setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
+import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
-    DEBUG_VISUALS,
     calculateColumnDimension,
     calculateMaxScrollShift,
     calculateTotalColumns,
-    configureFixedLayout,
-    injectDefaultCSS,
-    injectReadPosCSS,
-    isPaginated,
+    computeVerticalRTL,
     isRTL,
     isTwoPageSpread,
     isVerticalWritingMode,
     readiumCSS,
 } from "./readium-css";
+import {
+    DEBUG_VISUALS,
+    configureFixedLayout,
+    injectDefaultCSS,
+    injectReadPosCSS,
+    isPaginated,
+} from "./readium-css-inject";
 import { IElectronWebviewTagWindow } from "./state";
 import {
     readPosCssStylesAttr1,
@@ -90,7 +94,7 @@ win.READIUM2 = {
 win.READIUM2.urlQueryParams = win.location.search ? getURLQueryParams(win.location.search) : undefined;
 
 if (win.READIUM2.urlQueryParams) {
-    let readiumEpubReadingSystemJson: any = {};
+    let readiumEpubReadingSystemJson: INameVersion | undefined;
 
     // tslint:disable-next-line:no-string-literal
     const base64EpubReadingSystem = win.READIUM2.urlQueryParams[URL_PARAM_EPUBREADINGSYSTEM];
@@ -184,7 +188,7 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
         return;
     }
 
-    const isPaged = isPaginated();
+    const isPaged = isPaginated(win.document);
 
     const maxScrollShift = calculateMaxScrollShift();
 
@@ -322,7 +326,13 @@ const checkReadyPass = () => {
 
     // assumes debounced from outside (Electron's webview object embedded in main renderer process HTML)
     win.addEventListener("resize", () => {
-        configureFixedLayout(win.READIUM2.isFixedLayout);
+        const wh = configureFixedLayout(win.document, win.READIUM2.isFixedLayout,
+            win.READIUM2.fxlViewportWidth, win.READIUM2.fxlViewportHeight,
+            win.innerWidth, win.innerHeight);
+        if (wh) {
+            win.READIUM2.fxlViewportWidth = wh.width;
+            win.READIUM2.fxlViewportHeight = wh.height;
+        }
 
         scrollToHashRaw(false);
         // scrollToHash(); // debounced
@@ -409,7 +419,7 @@ function scrollElementIntoView(element: Element) {
         element.setAttribute(readPosCssStylesAttr3, "scrollElementIntoView");
     }
 
-    const isPaged = isPaginated();
+    const isPaged = isPaginated(win.document);
     if (isPaged) {
         scrollIntoView(element as HTMLElement);
     } else {
@@ -428,7 +438,7 @@ function scrollElementIntoView(element: Element) {
 // TODO: vertical writing mode
 function scrollIntoView(element: HTMLElement) {
 
-    if (!win.document || !win.document.documentElement || !win.document.body || !isPaginated()) {
+    if (!win.document || !win.document.documentElement || !win.document.body || !isPaginated(win.document)) {
         return;
     }
 
@@ -455,7 +465,7 @@ const scrollToHashRaw = (firstCall: boolean) => {
         return;
     }
 
-    const isPaged = isPaginated();
+    const isPaged = isPaginated(win.document);
 
     if (win.READIUM2.locationHashOverride) {
 
@@ -605,19 +615,6 @@ const scrollToHash = debounce(() => {
 
 let _ignoreScrollEvent = false;
 
-// const injectResizeSensor = () => {
-//     ensureHead();
-//     const scriptElement = win.document.createElement("script");
-//     scriptElement.setAttribute("id", "Readium2-ResizeSensor");
-//     scriptElement.setAttribute("type", "application/javascript");
-//     scriptElement.setAttribute("src", urlResizeSensor);
-//     scriptElement.appendChild(win.document.createTextNode(" "));
-//     win.document.head.appendChild(scriptElement);
-//     scriptElement.addEventListener("load", () => {
-//         console.log("ResizeSensor LOADED");
-//     });
-// };
-
 // after DOMContentLoaded
 win.addEventListener("load", () => {
     checkReadyPass();
@@ -641,7 +638,7 @@ win.addEventListener("DOMContentLoaded", () => {
     win.READIUM2.readyPassDone = false;
     win.READIUM2.readyEventSent = false;
 
-    let readiumcssJson: any = {};
+    let readiumcssJson: IEventPayload_R2_EVENT_READIUMCSS | undefined;
     if (win.READIUM2.urlQueryParams) {
         // tslint:disable-next-line:no-string-literal
         const base64ReadiumCSS = win.READIUM2.urlQueryParams[URL_PARAM_CSS];
@@ -668,16 +665,22 @@ win.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    win.READIUM2.isFixedLayout = readiumcssJson && readiumcssJson.isFixedLayout;
-    configureFixedLayout(win.READIUM2.isFixedLayout);
+    if (readiumcssJson) {
+        win.READIUM2.isFixedLayout = (typeof readiumcssJson.isFixedLayout !== "undefined") ?
+            readiumcssJson.isFixedLayout : false;
+    }
+    // const _wh =
+    configureFixedLayout(win.document, win.READIUM2.isFixedLayout,
+        win.READIUM2.fxlViewportWidth, win.READIUM2.fxlViewportHeight,
+        win.innerWidth, win.innerHeight);
     if (win.READIUM2.isFixedLayout) {
         notifyReady();
     }
 
-    injectDefaultCSS();
+    injectDefaultCSS(win.document);
 
     if (DEBUG_VISUALS) {
-        injectReadPosCSS();
+        injectReadPosCSS(win.document);
     }
 
     // // DEBUG
@@ -697,7 +700,7 @@ win.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const isPaged = isPaginated();
+        const isPaged = isPaginated(win.document);
         if (isPaged) {
             setTimeout(() => {
                 win.READIUM2.locationHashOverride = ev.target;
@@ -726,10 +729,16 @@ win.addEventListener("DOMContentLoaded", () => {
 
     // injectResizeSensor();
 
+    computeVerticalRTL();
     if (readiumcssJson) {
         readiumCSS(readiumcssJson);
     }
 });
+
+// // after DOMContentLoaded
+// win.addEventListener("load", () => {
+//     // computeVerticalRTL();
+// });
 
 // relative to fixed window top-left corner
 const processXYRaw = (x: number, y: number) => {
@@ -790,7 +799,7 @@ interface IProgressionData {
 }
 export const computeProgressionData = (): IProgressionData => {
 
-    const isPaged = isPaginated();
+    const isPaged = isPaginated(win.document);
 
     const isTwoPage = isTwoPageSpread();
 

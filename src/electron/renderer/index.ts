@@ -67,6 +67,23 @@ const ELEMENT_ID_SLIDING_VIEWPORT = "r2_navigator_sliding_viewport";
 // // tslint:disable-next-line:no-string-literal
 // const lcpHint = queryParams["lcpHint"];
 
+function isRTL(/* link: Link | undefined */): boolean {
+    // if (link && link.Properties) {
+    //     if (link.Properties.Direction === "rtl") {
+    //         return true;
+    //     }
+    //     if (typeof link.Properties.Direction !== "undefined") {
+    //         return false;
+    //     }
+    // }
+    if (_publication &&
+        _publication.Metadata &&
+        _publication.Metadata.Direction) {
+        return _publication.Metadata.Direction.toLowerCase() === "rtl"; //  any other value is LTR
+    }
+    return false;
+}
+
 function isFixedLayout(link: Link | undefined): boolean {
     if (link && link.Properties) {
         if (link.Properties.Layout === "fixed") {
@@ -76,11 +93,12 @@ function isFixedLayout(link: Link | undefined): boolean {
             return false;
         }
     }
-    const isFXL = _publication &&
+    if (_publication &&
         _publication.Metadata &&
-        _publication.Metadata.Rendition &&
-        _publication.Metadata.Rendition.Layout === "fixed";
-    return isFXL as boolean;
+        _publication.Metadata.Rendition) {
+        return _publication.Metadata.Rendition.Layout === "fixed";
+    }
+    return false;
 }
 
 let _getEpubReadingSystem: () => INameVersion = () => {
@@ -278,10 +296,7 @@ export function installNavigatorDOM(
 
     _rootHtmlElement.appendChild(slidingViewport);
 
-    const isRTL = _publication.Metadata &&
-        _publication.Metadata.Direction &&
-        _publication.Metadata.Direction.toLowerCase() === "rtl"; //  any other value is LTR
-    if (isRTL) {
+    if (isRTL()) {
         _webview1.classList.add("posRight");
         _webview1.style.left = "50%";
     } else {
@@ -338,12 +353,10 @@ export function navLeftOrRight(left: boolean) {
         return;
     }
     const activeWebView = getActiveWebView();
-    const isRTL = _publication.Metadata &&
-        _publication.Metadata.Direction &&
-        _publication.Metadata.Direction.toLowerCase() === "rtl"; //  any other value is LTR
-    const goPREVIOUS = left ? !isRTL : isRTL;
+    const rtl = isRTL();
+    const goPREVIOUS = left ? !rtl : rtl;
     const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-        direction: isRTL ? "RTL" : "LTR",
+        direction: rtl ? "RTL" : "LTR",
         go: goPREVIOUS ? "PREVIOUS" : "NEXT",
     };
     activeWebView.send(R2_EVENT_PAGE_TURN, payload); // .getWebContents()
@@ -673,13 +686,9 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
             if (!_publication) {
                 return;
             }
-            // const isRTL = _publication.Metadata &&
-            // _publication.Metadata.Direction &&
-            // _publication.Metadata.Direction.toLowerCase() === "rtl"; //  any other value is LTR
 
             const payload = event.args[0] as IEventPayload_R2_EVENT_PAGE_TURN;
 
-            // const isRTL = messageJson.direction === "RTL"; //  any other value is LTR
             const goPREVIOUS = payload.go === "PREVIOUS"; // any other value is NEXT
 
             if (!webview.READIUM2.link) {
