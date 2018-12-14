@@ -985,11 +985,13 @@ const notifyReadingLocationRaw = () => {
         progression = progressionData.percentRatio;
     }
 
+    const pinfo = (progressionData && progressionData.paginationInfo) ?
+        progressionData.paginationInfo : undefined;
+
     win.READIUM2.locationHashOverrideInfo = {
         cfi,
         cssSelector,
-        paginationInfo: (progressionData && progressionData.paginationInfo) ?
-            progressionData.paginationInfo : undefined,
+        paginationInfo: pinfo,
         position: undefined, // calculated in host index.js renderer, where publication object is available
         progression,
     };
@@ -1002,11 +1004,11 @@ const notifyReadingLocationRaw = () => {
             existing.removeAttribute(`${readPosCssStylesAttr4}`);
         });
         win.READIUM2.locationHashOverride.setAttribute(readPosCssStylesAttr4, "notifyReadingLocationRaw");
-
-        console.log("notifyReadingLocation CSS SELECTOR: " + cssSelector);
-        console.log("notifyReadingLocation CFI: " + cfi);
-        console.log("notifyReadingLocation PROGRESSION: " + progression);
     }
+
+    // console.log("notifyReadingLocation CSS SELECTOR: " + cssSelector);
+    // console.log("notifyReadingLocation CFI: " + cfi);
+    // console.log("notifyReadingLocation PROGRESSION: " + progression);
 };
 const notifyReadingLocationDebounced = debounce(() => {
     notifyReadingLocationRaw();

@@ -146,8 +146,8 @@ const _saveReadingLocation: (docHref: string, locator: IEventPayload_R2_EVENT_RE
             locations: {
                 cfi: locator.cfi ? locator.cfi : undefined,
                 cssSelector: locator.cssSelector ? locator.cssSelector : undefined,
-                position: locator.position ? locator.position : undefined,
-                progression: locator.progression ? locator.progression : undefined,
+                position: (typeof locator.position !== "undefined") ? locator.position : undefined,
+                progression: (typeof locator.progression !== "undefined") ? locator.progression : undefined,
             },
         },
         paginationInfo: locator.paginationInfo,
