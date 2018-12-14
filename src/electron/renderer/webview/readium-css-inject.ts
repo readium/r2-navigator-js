@@ -5,6 +5,8 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import * as xmldom from "xmldom";
+
 import {
     IEventPayload_R2_EVENT_READIUMCSS,
 } from "../../common/events";
@@ -17,7 +19,7 @@ import {
     targetCssStyles,
 } from "./styles";
 
-export const DEBUG_VISUALS = true;
+export const DEBUG_VISUALS = false;
 
 // TODO DARK THEME
 const CSS_CLASS_DARK_THEME = "mdc-theme--dark";
@@ -116,6 +118,11 @@ export function isPaginated(document: Document): boolean {
         document.documentElement.classList.contains("readium-paginated");
 }
 
+export interface IVerticalRTL {
+    isRTL: boolean;
+    isVerticalWritingMode: boolean;
+}
+
 // tslint:disable-next-line:max-line-length
 // https://github.com/readium/readium-css/blob/develop/docs/CSS12-user_prefs.md
 // tslint:disable-next-line:max-line-length
@@ -125,7 +132,7 @@ export function isPaginated(document: Document): boolean {
 export function readiumCSSSet(
     document: Document,
     messageJson: IEventPayload_R2_EVENT_READIUMCSS,
-    urlRootReadiumCSS: string,
+    urlRootReadiumCSS: string | undefined,
     isVerticalWritingMode: boolean, isRTL: boolean) {
 
     if (!messageJson) {
@@ -183,7 +190,7 @@ export function readiumCSSSet(
             // tslint:disable-next-line: prefer-for-of
             for (let i = 0; i < document.head.childNodes.length; i++) {
                 const child = document.head.childNodes[i];
-                if (child.nodeType === Node.ELEMENT_NODE) {
+                if (child.nodeType === 1) { // Node.ELEMENT_NODE
                     const element = child as Element;
                     if ((element.localName && element.localName.toLowerCase() === "style") ||
                         (element.getAttribute &&
@@ -208,8 +215,8 @@ export function readiumCSSSet(
         }
 
         const urlRoot = messageJson.urlRoot ?
-            messageJson.urlRoot + "/" + READIUM_CSS_URL_PATH + "/" :
-            (urlRootReadiumCSS ? urlRootReadiumCSS : "");
+            (messageJson.urlRoot + "/" + READIUM_CSS_URL_PATH + "/") :
+            (urlRootReadiumCSS ? urlRootReadiumCSS : ("/" + READIUM_CSS_URL_PATH + "/"));
 
         appendCSS(document, "before", urlRoot);
         if (needsDefaultCSS) {
@@ -466,7 +473,7 @@ export function configureFixedLayout(
                 // tslint:disable-next-line: prefer-for-of
                 for (let i = 0; i < document.head.childNodes.length; i++) {
                     const child = document.head.childNodes[i];
-                    if (child.nodeType === Node.ELEMENT_NODE) {
+                    if (child.nodeType === 1) { // Node.ELEMENT_NODE
                         const element = child as Element;
                         if (element.localName && element.localName.toLowerCase() === "meta") {
                             if (element.getAttribute("name") === "viewport") {
@@ -619,7 +626,7 @@ export function appendCSS(document: Document, mod: string, urlRoot: string) {
             // tslint:disable-next-line: prefer-for-of
             for (let i = 0; i < document.head.childNodes.length; i++) {
                 const child = document.head.childNodes[i];
-                if (child.nodeType === Node.ELEMENT_NODE) {
+                if (child.nodeType === 1) { // Node.ELEMENT_NODE
                     childElementCount++;
                     if (!firstElementChild) {
                         firstElementChild = child as Element;
@@ -692,3 +699,319 @@ export function injectReadPosCSS(document: Document) {
 //         console.log("ResizeSensor LOADED");
 //     });
 // };
+
+function definePropertyGetterSetter_DocHeadBody(docu: Document, elementName: string) {
+
+    Object.defineProperty(docu, elementName, {
+        get() {
+            const doc = this as Document;
+
+            const key = elementName + "_";
+            if ((doc as any)[key]) {
+                return (doc as any)[key]; // cached
+            }
+            if (doc.documentElement.childNodes && doc.documentElement.childNodes.length) {
+                // tslint:disable-next-line: prefer-for-of
+                for (let i = 0; i < doc.documentElement.childNodes.length; i++) {
+                    const child = doc.documentElement.childNodes[i];
+                    if (child.nodeType === 1) { // Node.ELEMENT_NODE
+                        const element = child as Element;
+                        if (element.localName && element.localName.toLowerCase() === elementName) {
+                            (doc as any)[key] = element; // cache
+                            if (DEBUG_VISUALS) {
+                                console.log(`XMLDOM - cached document.${elementName}`);
+                            }
+                            return element;
+                        }
+                    }
+                }
+            }
+            return undefined;
+        },
+        set(_val) {
+            console.log("document." + elementName + " CANNOT BE SET!!");
+        },
+    });
+}
+function cssSetProperty(this: any, cssProperty: string, val: string) {
+    const style = this;
+    const elem = style.element;
+
+    // console.log(`XMLDOM - cssSetProperty: ${cssProperty}: ${val};`);
+    cssStyleSet(cssProperty, val, elem);
+}
+function cssRemoveProperty(this: any, cssProperty: string) {
+    const style = this;
+    const elem = style.element;
+
+    // console.log(`XMLDOM - cssRemoveProperty: ${cssProperty}`);
+    cssStyleSet(cssProperty, undefined, elem);
+}
+function cssStyleItem(this: any, i: number): string | undefined {
+    const style = this;
+    const elem = style.element;
+    if (DEBUG_VISUALS) {
+        console.log(`XMLDOM - cssStyleItem: ${i}`);
+    }
+    const styleAttr = elem.getAttribute("style");
+    if (!styleAttr) {
+        return undefined;
+    }
+    let count = -1;
+    const cssProps = styleAttr.split(";");
+    for (const cssProp of cssProps) {
+        const trimmed = cssProp.trim();
+        if (trimmed.length) {
+            count++;
+            if (count === i) {
+                const regExStr = `(.+)[\s]*:[\s]*(.+)`;
+                const regex = new RegExp(regExStr, "g");
+                const regexMatch = regex.exec(trimmed);
+                if (regexMatch) {
+                    if (DEBUG_VISUALS) {
+                        console.log(`XMLDOM - cssStyleItem: ${i} => ${regexMatch[1]}`);
+                    }
+                    return regexMatch[1];
+                }
+            }
+        }
+    }
+    return undefined;
+}
+function cssStyleGet(cssProperty: string, elem: Element): string | undefined {
+    if (DEBUG_VISUALS) {
+        console.log(`XMLDOM - cssStyleGet: ${cssProperty}`);
+    }
+
+    const styleAttr = elem.getAttribute("style");
+    if (!styleAttr) {
+        return undefined;
+    }
+    const regExStr = `${cssProperty}[\s]*:[\s]*(.+)`;
+    const cssProps = styleAttr.split(";");
+    let cssPropertyValue: string | undefined;
+    for (const cssProp of cssProps) {
+        const regex = new RegExp(regExStr, "g");
+        const regexMatch = regex.exec(cssProp.trim());
+        if (regexMatch) {
+            cssPropertyValue = regexMatch[1];
+            if (DEBUG_VISUALS) {
+                console.log(`XMLDOM - cssStyleGet: ${cssProperty} => ${cssPropertyValue}`);
+            }
+            break;
+        }
+    }
+    return cssPropertyValue ? cssPropertyValue : undefined;
+}
+function cssStyleSet(cssProperty: string, val: string | undefined, elem: Element) {
+    if (DEBUG_VISUALS) {
+        console.log(`XMLDOM - cssStyleSet: ${cssProperty}: ${val};`);
+    }
+
+    const str = val ? `${cssProperty}: ${val}` : undefined;
+
+    const styleAttr = elem.getAttribute("style");
+    if (!styleAttr) {
+        if (str) {
+            elem.setAttribute("style", str);
+        }
+    } else {
+        const regExStr = `${cssProperty}[\s]*:[\s]*(.+)`;
+        const regex = new RegExp(regExStr, "g");
+        const regexMatch = regex.exec(styleAttr);
+        if (regexMatch) {
+            elem.setAttribute("style", styleAttr.replace(regex, str ? `${str}` : ""));
+        } else {
+            if (str) {
+                elem.setAttribute("style", `${styleAttr}; ${str}`);
+            }
+        }
+    }
+}
+function definePropertyGetterSetter_ElementStyle(element: Element) {
+    const styleObj: any = {};
+    styleObj.element = element;
+
+    styleObj.setProperty = cssSetProperty.bind(styleObj);
+    styleObj.removeProperty = cssRemoveProperty.bind(styleObj);
+
+    styleObj.item = cssStyleItem.bind(styleObj);
+    Object.defineProperty(styleObj, "length", {
+        get() {
+            const style = this as any;
+            const elem = style.element;
+
+            if (DEBUG_VISUALS) {
+                console.log(`XMLDOM - style.length`);
+            }
+
+            const styleAttr = elem.getAttribute("style");
+            if (!styleAttr) {
+                return 0;
+            }
+            let count = 0;
+            const cssProps = styleAttr.split(";");
+            for (const cssProp of cssProps) {
+                if (cssProp.trim().length) {
+                    count++;
+                }
+            }
+            if (DEBUG_VISUALS) {
+                console.log(`XMLDOM - style.length: ${count}`);
+            }
+            return count;
+        },
+        set(_val) {
+            console.log("style.length CANNOT BE SET!!");
+        },
+    });
+
+    const cssProperties = ["overflow", "width", "height", "margin", "transformOrigin", "transform"];
+    cssProperties.forEach((cssProperty) => {
+
+        Object.defineProperty(styleObj, cssProperty, {
+            get() {
+                const style = this as any;
+                const elem = style.element;
+
+                return cssStyleGet(cssProperty, elem);
+            },
+            set(val) {
+                const style = this as any;
+                const elem = style.element;
+
+                cssStyleSet(cssProperty, val, elem);
+            },
+        });
+    });
+
+    (element as any).style = styleObj;
+}
+function classListContains(this: any, className: string): boolean {
+    const style = this;
+    const elem = style.element;
+    if (DEBUG_VISUALS) {
+        console.log(`XMLDOM - classListContains: ${className}`);
+    }
+
+    const classAttr = elem.getAttribute("class");
+    if (!classAttr) {
+        return false;
+    }
+    const classes = classAttr.split(" ");
+    for (const clazz of classes) {
+        if (clazz === className) {
+            if (DEBUG_VISUALS) {
+                console.log(`XMLDOM - classListContains TRUE: ${className}`);
+            }
+            return true;
+        }
+    }
+    return false;
+}
+function classListAdd(this: any, className: string) {
+    const style = this;
+    const elem = style.element;
+
+    if (DEBUG_VISUALS) {
+        console.log(`XMLDOM - classListAdd: ${className}`);
+    }
+
+    const classAttr = elem.getAttribute("class");
+    if (!classAttr) {
+        elem.setAttribute("class", className);
+        return;
+    }
+    let needsAdding = true;
+    const classes = classAttr.split(" ");
+    for (const clazz of classes) {
+        if (clazz === className) {
+            needsAdding = false;
+            break;
+        }
+    }
+    if (needsAdding) {
+        elem.setAttribute("class", `${classAttr} ${className}`);
+    }
+}
+function classListRemove(this: any, className: string) {
+    const style = this;
+    const elem = style.element;
+
+    if (DEBUG_VISUALS) {
+        console.log(`XMLDOM - classListRemove: ${className}`);
+    }
+
+    const classAttr = elem.getAttribute("class");
+    if (!classAttr) {
+        return;
+    }
+    const arr: string[] = [];
+    const classes = classAttr.split(" ");
+    for (const clazz of classes) {
+        if (clazz !== className) {
+            arr.push(clazz);
+        }
+    }
+    elem.setAttribute("class", arr.join(" "));
+}
+function definePropertyGetterSetter_ElementClassList(element: Element) {
+    const classListObj: any = {};
+    classListObj.element = element;
+
+    classListObj.contains = classListContains.bind(classListObj);
+    classListObj.add = classListAdd.bind(classListObj);
+    classListObj.remove = classListRemove.bind(classListObj);
+
+    (element as any).classList = classListObj;
+}
+
+export function transformHTML(
+    htmlStr: string,
+    readiumcssJson: IEventPayload_R2_EVENT_READIUMCSS | undefined,
+    mediaType: string | undefined): string {
+
+    const doc = typeof mediaType === "string" ?
+        new xmldom.DOMParser().parseFromString(htmlStr, mediaType) :
+        new xmldom.DOMParser().parseFromString(htmlStr);
+
+    if (!doc.head) {
+        definePropertyGetterSetter_DocHeadBody(doc, "head");
+    }
+    if (!doc.body) {
+        definePropertyGetterSetter_DocHeadBody(doc, "body");
+    }
+    if (!doc.documentElement.style) {
+        definePropertyGetterSetter_ElementStyle(doc.documentElement);
+    }
+    if (!doc.body.style) {
+        definePropertyGetterSetter_ElementStyle(doc.body);
+    }
+    if (!doc.documentElement.classList) {
+        definePropertyGetterSetter_ElementClassList(doc.documentElement);
+    }
+
+    // const wh = configureFixedLayout(doc, win.READIUM2.isFixedLayout,
+    //     win.READIUM2.fxlViewportWidth, win.READIUM2.fxlViewportHeight,
+    //     win.innerWidth, win.innerHeight);
+    // if (wh) {
+    //     win.READIUM2.fxlViewportWidth = wh.width;
+    //     win.READIUM2.fxlViewportHeight = wh.height;
+    // }
+
+    injectDefaultCSS(doc);
+    if (DEBUG_VISUALS) {
+        injectReadPosCSS(doc);
+    }
+
+    const rtl = isDocRTL(doc);
+    const vertical = isDocVertical(doc);
+    if (readiumcssJson) {
+        readiumCSSSet(doc, readiumcssJson,
+            undefined, // urlRootReadiumCSS
+            vertical,
+            rtl);
+    }
+
+    return new xmldom.XMLSerializer().serializeToString(doc);
+}

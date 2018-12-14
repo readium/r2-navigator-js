@@ -108,7 +108,7 @@ export function setEpubReadingSystemJsonGetter(func: () => INameVersion) {
     _getEpubReadingSystem = func;
 }
 
-function __computeReadiumCssJsonMessage(link: Link | undefined): IEventPayload_R2_EVENT_READIUMCSS {
+export function __computeReadiumCssJsonMessage(link: Link | undefined): IEventPayload_R2_EVENT_READIUMCSS {
 
     if (isFixedLayout(link)) {
         return { setCSS: undefined, isFixedLayout: true };

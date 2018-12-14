@@ -171,19 +171,6 @@ export function computeVerticalRTL() {
     _isRTL = rtl;
 }
 
-export function computeVerticalRTL_(document: Document) {
-
-    if (!document) {
-        return;
-    }
-
-    const rtl = isDocRTL(document);
-    const vertical = isDocVertical(document);
-
-    _isVerticalWritingMode = vertical;
-    _isRTL = rtl;
-}
-
 ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVENT_READIUMCSS) => {
     readiumCSS(win.document, payload);
 });
