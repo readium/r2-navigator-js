@@ -1,15 +1,15 @@
-Downloaded from DEVELOP:
-https://github.com/readium/readium-css/tree/develop
+Downloaded from MASTER:
+https://github.com/readium/readium-css/tree/master
 
-commit:
-7bb7119c412e274724dc0e882df807199b94b31d
+...at commit hash:
+051e3d2d18423c1433964a02816f5d93364ec124
 =>
-https://github.com/readium/readium-css/commit/7bb7119c412e274724dc0e882df807199b94b31d
-https://github.com/readium/readium-css/commits/7bb7119c412e274724dc0e882df807199b94b31d
-https://github.com/readium/readium-css/tree/7bb7119c412e274724dc0e882df807199b94b31d
+https://github.com/readium/readium-css/commit/051e3d2d18423c1433964a02816f5d93364ec124
+https://github.com/readium/readium-css/commits/051e3d2d18423c1433964a02816f5d93364ec124
+https://github.com/readium/readium-css/tree/051e3d2d18423c1433964a02816f5d93364ec124
 
-Diff with DEVELOP:
-https://github.com/readium/readium-css/compare/develop...7bb7119c412e274724dc0e882df807199b94b31d
+Diff with current DEVELOP:
+https://github.com/readium/readium-css/compare/develop...051e3d2d18423c1433964a02816f5d93364ec124
 
-Diff with MASTER:
-https://github.com/readium/readium-css/compare/master...7bb7119c412e274724dc0e882df807199b94b31d
+Diff with current MASTER:
+https://github.com/readium/readium-css/compare/master...051e3d2d18423c1433964a02816f5d93364ec124
