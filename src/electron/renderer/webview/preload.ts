@@ -472,7 +472,6 @@ const scrollToHashRaw = () => {
     const isPaged = isPaginated(win.document);
 
     if (win.READIUM2.locationHashOverride) {
-        console.log("_2");
         if (win.READIUM2.locationHashOverride === win.document.body) {
             return;
         }
@@ -485,7 +484,6 @@ const scrollToHashRaw = () => {
         notifyReadingLocationDebounced();
         return;
     } else if (win.READIUM2.hashElement) {
-        console.log("_3");
         win.READIUM2.locationHashOverride = win.READIUM2.hashElement;
 
         notifyReady();
@@ -512,7 +510,6 @@ const scrollToHashRaw = () => {
                 const previous = win.READIUM2.urlQueryParams[URL_PARAM_PREVIOUS];
                 const isPreviousNavDirection = previous === "true";
                 if (isPreviousNavDirection) {
-                    console.log("_4");
                     const maxScrollShift = calculateMaxScrollShift();
 
                     _ignoreScrollEvent = true;
@@ -565,7 +562,6 @@ const scrollToHashRaw = () => {
                 let gotoCssSelector = win.READIUM2.urlQueryParams[URL_PARAM_GOTO];
                 if (gotoCssSelector) {
                     gotoCssSelector = gotoCssSelector.replace(/\+/g, " ");
-                    console.log("_5");
                     let selected: Element | null = null;
                     try {
                         selected = document.querySelector(gotoCssSelector);
@@ -593,7 +589,7 @@ const scrollToHashRaw = () => {
                     }
                 }
             }
-            console.log("_6");
+
             win.READIUM2.locationHashOverride = win.document.body;
             win.READIUM2.locationHashOverrideInfo = {
                 cfi: undefined,
@@ -653,7 +649,6 @@ win.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // resetInitialState();
     win.READIUM2.locationHashOverride = undefined;
     win.READIUM2.readyPassDone = false;
     win.READIUM2.readyEventSent = false;
@@ -767,16 +762,11 @@ win.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// // after DOMContentLoaded
-// win.addEventListener("load", () => {
-//     // computeVerticalRTL();
-// });
-
 // after DOMContentLoaded
 win.addEventListener("load", () => {
+    // computeVerticalRTL();
 
     if (!win.READIUM2.isFixedLayout) {
-        console.log("_1");
         scrollToHashRaw();
     }
     checkReadyPass();
@@ -784,7 +774,6 @@ win.addEventListener("load", () => {
 
 // // does not occur when re-using same webview (src="href")
 // win.addEventListener("unload", () => {
-//     resetInitialState();
 // });
 
 // relative to fixed window top-left corner
@@ -861,10 +850,14 @@ export const computeProgressionData = (): IProgressionData => {
     let spreadIndex = 0;
 
     if (isPaged) {
-        if (isVerticalWritingMode()) {
-            progressionRatio = win.document.body.scrollTop / maxScrollShift;
+        if (maxScrollShift <= 0) {
+            progressionRatio = 0;
         } else {
-            progressionRatio = ((isRTL() ? -1 : 1) * win.document.body.scrollLeft) / maxScrollShift;
+            if (isVerticalWritingMode()) {
+                progressionRatio = win.document.body.scrollTop / maxScrollShift;
+            } else {
+                progressionRatio = ((isRTL() ? -1 : 1) * win.document.body.scrollLeft) / maxScrollShift;
+            }
         }
 
         // because maxScrollShift excludes whole viewport width of content (0%-100% scroll but minus last page/spread)
@@ -874,10 +867,14 @@ export const computeProgressionData = (): IProgressionData => {
 
         currentColumn = Math.round(currentColumn);
     } else {
-        if (isVerticalWritingMode()) {
-            progressionRatio = ((isRTL() ? -1 : 1) * win.document.body.scrollLeft) / maxScrollShift;
+        if (maxScrollShift <= 0) {
+            progressionRatio = 0;
         } else {
-            progressionRatio = win.document.body.scrollTop / maxScrollShift;
+            if (isVerticalWritingMode()) {
+                progressionRatio = ((isRTL() ? -1 : 1) * win.document.body.scrollLeft) / maxScrollShift;
+            } else {
+                progressionRatio = win.document.body.scrollTop / maxScrollShift;
+            }
         }
     }
 
