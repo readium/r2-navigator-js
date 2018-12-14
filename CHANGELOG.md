@@ -6,7 +6,26 @@ Git diff:
 Changes:
 * TODO
 
-# 1.0.1
+# 1.0.3
+
+> Build environment: NodeJS `8.14.0`, NPM `6.5.0`
+
+Changes:
+* Performance improvements in layout/rendering logic, now ReadiumCSS injected at streamer level (optionally, still works with regular DOM injection too)
+* Fixed scroll view bug: fast-switching was making document jump up
+* Fixed issue with back-navigation inside spine (delay in resynchronizing document position, in both scroll and paginated view modes)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.2...v1.0.3
+
+# 1.0.2
 
 > Build environment: NodeJS `8.14.0`, NPM `6.5.0`
 
