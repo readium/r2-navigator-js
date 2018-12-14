@@ -13,8 +13,8 @@ import { Server } from "@r2-streamer-js/http/server";
 import * as express from "express";
 
 import { IEventPayload_R2_EVENT_READIUMCSS } from "../common/events";
+import { transformHTML } from "../common/readium-css-inject";
 import { READIUM_CSS_URL_PATH } from "../common/readium-css-settings";
-import { transformHTML } from "../renderer/webview/readium-css-inject";
 
 export function setupReadiumCSS(
     server: Server, folderPath: string,

@@ -26,6 +26,13 @@ import {
     R2_EVENT_SCROLLTO,
     R2_EVENT_WEBVIEW_READY,
 } from "../../common/events";
+import {
+    DEBUG_VISUALS,
+    configureFixedLayout,
+    injectDefaultCSS,
+    injectReadPosCSS,
+    isPaginated,
+} from "../../common/readium-css-inject";
 // import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../../common/sessions";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector2";
@@ -44,13 +51,6 @@ import {
     isVerticalWritingMode,
     readiumCSS,
 } from "./readium-css";
-import {
-    DEBUG_VISUALS,
-    configureFixedLayout,
-    injectDefaultCSS,
-    injectReadPosCSS,
-    isPaginated,
-} from "./readium-css-inject";
 import { IElectronWebviewTagWindow } from "./state";
 import {
     readPosCssStylesAttr1,

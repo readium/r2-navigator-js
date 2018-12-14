@@ -11,12 +11,12 @@ import {
     IEventPayload_R2_EVENT_READIUMCSS,
     R2_EVENT_READIUMCSS,
 } from "../../common/events";
+import { isDocRTL, isDocVertical, isPaginated, readiumCSSSet } from "../../common/readium-css-inject";
 import { READIUM_CSS_URL_PATH } from "../../common/readium-css-settings";
 import {
     READIUM2_ELECTRON_HTTP_PROTOCOL,
     convertCustomSchemeToHttpUrl,
 } from "../../common/sessions";
-import { isDocRTL, isDocVertical, isPaginated, readiumCSSSet } from "./readium-css-inject";
 import { IElectronWebviewTagWindow } from "./state";
 
 const win = (global as any).window as IElectronWebviewTagWindow;

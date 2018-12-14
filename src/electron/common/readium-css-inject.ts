@@ -8,16 +8,16 @@
 import * as xmldom from "xmldom";
 
 import {
-    IEventPayload_R2_EVENT_READIUMCSS,
-} from "../../common/events";
-import { READIUM_CSS_URL_PATH } from "../../common/readium-css-settings";
-import {
     focusCssStyles,
     readPosCssStyles,
     scrollBarCssStyles,
     selectionCssStyles,
     targetCssStyles,
-} from "./styles";
+} from "../renderer/webview/styles";
+import {
+    IEventPayload_R2_EVENT_READIUMCSS,
+} from "./events";
+import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
 
 export const DEBUG_VISUALS = false;
 
