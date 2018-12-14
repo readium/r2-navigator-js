@@ -141,6 +141,15 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
     let delayScrollIntoView = false;
     if (payload.hash) {
         win.READIUM2.hashElement = win.document.getElementById(payload.hash);
+        if (DEBUG_VISUALS) {
+            if (win.READIUM2.hashElement) {
+                // const existings = document.querySelectorAll(`*[${readPosCssStylesAttr1}]`);
+                // existings.forEach((existing) => {
+                //     existing.removeAttribute(`${readPosCssStylesAttr1}`);
+                // });
+                win.READIUM2.hashElement.setAttribute(readPosCssStylesAttr1, "R2_EVENT_SCROLLTO hashElement");
+            }
+        }
 
         win.location.href = "#" + payload.hash;
         delayScrollIntoView = true;
@@ -163,17 +172,17 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
 
     if (delayScrollIntoView) {
         setTimeout(() => {
-            scrollToHashRaw(false);
+            scrollToHashRaw();
         }, 100);
     } else {
-        scrollToHashRaw(false);
+        scrollToHashRaw();
     }
 
     // const payload: IEventPayload_R2_EVENT_WEBVIEW_READY = {
     //     href: win.location.href,
     // };
     // ipcRenderer.sendToHost(R2_EVENT_WEBVIEW_READY, payload);
-    // notifyReadingLocation();
+    // notifyReadingLocationDebounced();
 });
 
 let _lastAnimState: IPropertyAnimationState | undefined;
@@ -314,17 +323,7 @@ const checkReadyPass = () => {
     }
     win.READIUM2.readyPassDone = true;
 
-    if (DEBUG_VISUALS) {
-        if (win.READIUM2.hashElement) {
-            // const existings = document.querySelectorAll(`*[${readPosCssStylesAttr1}]`);
-            // existings.forEach((existing) => {
-            //     existing.removeAttribute(`${readPosCssStylesAttr1}`);
-            // });
-            win.READIUM2.hashElement.setAttribute(readPosCssStylesAttr1, "checkReadyPass hashElement");
-        }
-    }
-
-    // assumes debounced from outside (Electron's webview object embedded in main renderer process HTML)
+    // assumes debounced from outside (Electron's webview object embedded in original renderer process HTML)
     win.addEventListener("resize", () => {
         const wh = configureFixedLayout(win.document, win.READIUM2.isFixedLayout,
             win.READIUM2.fxlViewportWidth, win.READIUM2.fxlViewportHeight,
@@ -334,7 +333,7 @@ const checkReadyPass = () => {
             win.READIUM2.fxlViewportHeight = wh.height;
         }
 
-        scrollToHashRaw(false);
+        scrollToHashRaw();
         // scrollToHash(); // debounced
     });
 
@@ -343,9 +342,9 @@ const checkReadyPass = () => {
     // let skipFirstScroll = skipFirstResize;
 
     setTimeout(() => {
-        if (!win.READIUM2.isFixedLayout) {
-            scrollToHashRaw(true);
-        }
+        // if (!win.READIUM2.isFixedLayout) {
+        //     scrollToHashRaw();
+        // }
 
         win.addEventListener("scroll", (_ev: Event) => {
 
@@ -363,7 +362,7 @@ const checkReadyPass = () => {
             }
 
             const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
-            processXY(x, 0);
+            processXYDebounced(x, 0);
         });
 
     }, 800);
@@ -377,14 +376,13 @@ const checkReadyPass = () => {
                 new ResizeSensor(win.document.body, () => {
 
                     console.log("ResizeSensor");
-                    scrollToHash();
+                    scrollToHashDebounced();
                 });
             });
         }, 2000);
     }
 
     if (win.document.body) {
-
         win.document.body.addEventListener("click", (ev: MouseEvent) => {
 
             // relative to fixed window top-left corner
@@ -392,7 +390,7 @@ const checkReadyPass = () => {
             const x = ev.clientX;
             const y = ev.clientY;
 
-            processXY(x, y);
+            processXYDebounced(x, y);
         });
     }
 };
@@ -459,7 +457,13 @@ function scrollIntoView(element: HTMLElement) {
         (spreadIndex * (columnDimension * (isTwoPage ? 2 : 1)));
 }
 
-const scrollToHashRaw = (firstCall: boolean) => {
+// let scrollToHashRawFirstCall = true;
+const scrollToHashRaw = () => {
+    // let first = false;
+    // if (scrollToHashRawFirstCall) {
+    //     scrollToHashRawFirstCall = false;
+    //     first = true;
+    // }
 
     if (!win.document || !win.document.documentElement) {
         return;
@@ -468,7 +472,7 @@ const scrollToHashRaw = (firstCall: boolean) => {
     const isPaged = isPaginated(win.document);
 
     if (win.READIUM2.locationHashOverride) {
-
+        console.log("_2");
         if (win.READIUM2.locationHashOverride === win.document.body) {
             return;
         }
@@ -478,18 +482,18 @@ const scrollToHashRaw = (firstCall: boolean) => {
         _ignoreScrollEvent = true;
         scrollElementIntoView(win.READIUM2.locationHashOverride);
 
-        notifyReadingLocation();
+        notifyReadingLocationDebounced();
         return;
     } else if (win.READIUM2.hashElement) {
-
+        console.log("_3");
         win.READIUM2.locationHashOverride = win.READIUM2.hashElement;
 
         notifyReady();
 
-        if (!firstCall) {
-            _ignoreScrollEvent = true;
-            scrollElementIntoView(win.READIUM2.hashElement);
-        }
+        // if (!first) {
+        _ignoreScrollEvent = true;
+        scrollElementIntoView(win.READIUM2.hashElement);
+        // }
 
         // win.READIUM2.hashElement.classList.add("readium2-hash");
         // setTimeout(() => {
@@ -498,7 +502,7 @@ const scrollToHashRaw = (firstCall: boolean) => {
         //     }
         // }, 1000);
 
-        notifyReadingLocation();
+        notifyReadingLocationDebounced();
         return;
     } else {
         if (win.document.body) {
@@ -508,7 +512,7 @@ const scrollToHashRaw = (firstCall: boolean) => {
                 const previous = win.READIUM2.urlQueryParams[URL_PARAM_PREVIOUS];
                 const isPreviousNavDirection = previous === "true";
                 if (isPreviousNavDirection) {
-
+                    console.log("_4");
                     const maxScrollShift = calculateMaxScrollShift();
 
                     _ignoreScrollEvent = true;
@@ -552,7 +556,7 @@ const scrollToHashRaw = (firstCall: boolean) => {
 
                     notifyReady();
                     if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
-                        notifyReadingLocation();
+                        notifyReadingLocationDebounced();
                     }
                     return;
                 }
@@ -561,7 +565,7 @@ const scrollToHashRaw = (firstCall: boolean) => {
                 let gotoCssSelector = win.READIUM2.urlQueryParams[URL_PARAM_GOTO];
                 if (gotoCssSelector) {
                     gotoCssSelector = gotoCssSelector.replace(/\+/g, " ");
-
+                    console.log("_5");
                     let selected: Element | null = null;
                     try {
                         selected = document.querySelector(gotoCssSelector);
@@ -584,12 +588,12 @@ const scrollToHashRaw = (firstCall: boolean) => {
                         _ignoreScrollEvent = true;
                         scrollElementIntoView(selected);
 
-                        notifyReadingLocation();
+                        notifyReadingLocationDebounced();
                         return;
                     }
                 }
             }
-
+            console.log("_6");
             win.READIUM2.locationHashOverride = win.document.body;
             win.READIUM2.locationHashOverrideInfo = {
                 cfi: undefined,
@@ -606,11 +610,11 @@ const scrollToHashRaw = (firstCall: boolean) => {
     }
 
     notifyReady();
-    notifyReadingLocation();
+    notifyReadingLocationDebounced();
 };
 
-const scrollToHash = debounce(() => {
-    scrollToHashRaw(false);
+const scrollToHashDebounced = debounce(() => {
+    scrollToHashRaw();
 }, 500);
 
 let _ignoreScrollEvent = false;
@@ -638,6 +642,15 @@ win.addEventListener("DOMContentLoaded", () => {
 
     if (win.location.hash && win.location.hash.length > 1) {
         win.READIUM2.hashElement = win.document.getElementById(win.location.hash.substr(1));
+        if (DEBUG_VISUALS) {
+            if (win.READIUM2.hashElement) {
+                // const existings = document.querySelectorAll(`*[${readPosCssStylesAttr1}]`);
+                // existings.forEach((existing) => {
+                //     existing.removeAttribute(`${readPosCssStylesAttr1}`);
+                // });
+                win.READIUM2.hashElement.setAttribute(readPosCssStylesAttr1, "DOMContentLoaded hashElement");
+            }
+        }
     }
 
     // resetInitialState();
@@ -747,7 +760,8 @@ win.addEventListener("DOMContentLoaded", () => {
     computeVerticalRTL();
     if (readiumcssJson) {
         // ReadiumCSS already injected at the streamer level?
-        if (!win.document.documentElement.hasAttribute("data-readiumcss")) {
+        if (isVerticalWritingMode() || // force update, because needs getComputedStyle()
+            !win.document.documentElement.hasAttribute("data-readiumcss")) {
             readiumCSS(win.document, readiumcssJson);
         }
     }
@@ -760,6 +774,11 @@ win.addEventListener("DOMContentLoaded", () => {
 
 // after DOMContentLoaded
 win.addEventListener("load", () => {
+
+    if (!win.READIUM2.isFixedLayout) {
+        console.log("_1");
+        scrollToHashRaw();
+    }
     checkReadyPass();
 });
 
@@ -806,7 +825,7 @@ const processXYRaw = (x: number, y: number) => {
 
     if (element) {
         win.READIUM2.locationHashOverride = element;
-        notifyReadingLocation();
+        notifyReadingLocationDebounced();
 
         if (DEBUG_VISUALS) {
             const existings = document.querySelectorAll(`*[${readPosCssStylesAttr2}]`);
@@ -817,7 +836,7 @@ const processXYRaw = (x: number, y: number) => {
         }
     }
 };
-const processXY = debounce((x: number, y: number) => {
+const processXYDebounced = debounce((x: number, y: number) => {
     processXYRaw(x, y);
 }, 300);
 
@@ -992,6 +1011,6 @@ const notifyReadingLocationRaw = () => {
         console.log("notifyReadingLocation PROGRESSION: " + progression);
     }
 };
-const notifyReadingLocation = debounce(() => {
+const notifyReadingLocationDebounced = debounce(() => {
     notifyReadingLocationRaw();
 }, 500);

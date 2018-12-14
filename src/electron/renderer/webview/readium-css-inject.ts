@@ -118,11 +118,6 @@ export function isPaginated(document: Document): boolean {
         document.documentElement.classList.contains("readium-paginated");
 }
 
-export interface IVerticalRTL {
-    isRTL: boolean;
-    isVerticalWritingMode: boolean;
-}
-
 // tslint:disable-next-line:max-line-length
 // https://github.com/readium/readium-css/blob/develop/docs/CSS12-user_prefs.md
 // tslint:disable-next-line:max-line-length
