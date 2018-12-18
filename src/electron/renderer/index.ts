@@ -57,7 +57,7 @@ const ELEMENT_ID_SLIDING_VIEWPORT = "r2_navigator_sliding_viewport";
 // console.log(publicationJsonUrl_);
 // const pathBase64 = publicationJsonUrl_.replace(/.*\/pub\/(.*)\/manifest.json/, "$1");
 // console.log(pathBase64);
-// const pathDecoded = window.atob(pathBase64);
+// const pathDecoded = new Buffer(decodeURIComponent(pathBase64), "base64").toString("utf8");
 // console.log(pathDecoded);
 // const pathFileName = pathDecoded.substr(
 //     pathDecoded.replace(/\\/g, "/").lastIndexOf("/") + 1,
@@ -443,13 +443,11 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
 
     const rcssJson = __computeReadiumCssJsonMessage(pubLink);
     const rcssJsonstr = JSON.stringify(rcssJson, null, "");
-    // const str = window.atob(base64);
-    const rcssJsonstrBase64 = window.btoa(rcssJsonstr);
+    const rcssJsonstrBase64 = encodeURIComponent_RFC3986(new Buffer(rcssJsonstr).toString("base64"));
 
     const rersJson = _getEpubReadingSystem();
     const rersJsonstr = JSON.stringify(rersJson, null, "");
-    // const str = window.atob(base64);
-    const rersJsonstrBase64 = window.btoa(rersJsonstr);
+    const rersJsonstrBase64 = encodeURIComponent_RFC3986(new Buffer(rersJsonstr).toString("base64"));
 
     linkUri.search((data: any) => {
         // overrides existing (leaves others intact)
