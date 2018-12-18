@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.5...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.6...develop
 
 Changes:
 * TODO
+
+# 1.0.6
+
+> Build environment: NodeJS `8.14.0`, NPM `6.5.0`
+
+Changes:
+* Fixed regression bug due to the previous base64 pub ID encoding bugfix (slashes). Depending on what lib is used, URLs and URLs components do not necessarilly get automatically decoded/encoded (percent escape for base64 chars, e.g. `=` and `/`). We must be very careful because we pass around both full URLs, and URLs components that require encoding (thus the double-encoding issues). In the navigator component we also have the compound issue of URI authority/domain/origin (derived from the based64 encoding of the pub ID).
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.6/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.6/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.6
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.5...v1.0.6
 
 # 1.0.5
 

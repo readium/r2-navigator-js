@@ -186,6 +186,7 @@ export function handleLink(href: string, previous: boolean | undefined, useGoto:
     let okay = href.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
     if (!okay && _publicationJsonUrl) {
         const prefix = _publicationJsonUrl.replace("manifest.json", "");
+        console.log("handleLink: ", href, " -- ", prefix);
         okay = decodeURIComponent(href).startsWith(decodeURIComponent(prefix));
     }
     if (okay) {
@@ -441,13 +442,15 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         return;
     }
 
+    // no need for encodeURIComponent_RFC3986, auto-encoded by URI class
+
     const rcssJson = __computeReadiumCssJsonMessage(pubLink);
     const rcssJsonstr = JSON.stringify(rcssJson, null, "");
-    const rcssJsonstrBase64 = encodeURIComponent_RFC3986(new Buffer(rcssJsonstr).toString("base64"));
+    const rcssJsonstrBase64 = new Buffer(rcssJsonstr).toString("base64");
 
     const rersJson = _getEpubReadingSystem();
     const rersJsonstr = JSON.stringify(rersJson, null, "");
-    const rersJsonstrBase64 = encodeURIComponent_RFC3986(new Buffer(rersJsonstr).toString("base64"));
+    const rersJsonstrBase64 = new Buffer(rersJsonstr).toString("base64");
 
     linkUri.search((data: any) => {
         // overrides existing (leaves others intact)
@@ -549,12 +552,15 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     console.log("####### >>> ---");
     console.log(activeWebView.READIUM2.id);
     console.log(pubLink.Href);
+    console.log(uriStr);
     console.log(linkUri.hash()); // with #
     console.log(linkUri.fragment()); // without #
     // tslint:disable-next-line:no-string-literal
     console.log(linkUri.search(true)[URL_PARAM_GOTO]);
     // tslint:disable-next-line:no-string-literal
     console.log(linkUri.search(true)[URL_PARAM_PREVIOUS]);
+    // tslint:disable-next-line:no-string-literal
+    console.log(linkUri.search(true)[URL_PARAM_CSS]);
     console.log("####### >>> ---");
     activeWebView.READIUM2.link = pubLink;
 

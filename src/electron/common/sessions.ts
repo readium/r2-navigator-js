@@ -7,22 +7,23 @@
 
 export const R2_SESSION_WEBVIEW = "persist:readium2pubwebview";
 
+import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
+
 export const READIUM2_ELECTRON_HTTP_PROTOCOL = "httpsr2";
 
 export const convertHttpUrlToCustomScheme = (url: string): string => {
     const matches = url.match(/(http[s]?):\/\/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?::([0-9]+))?\/pub\/([^\/]+)(\/.*)?/);
     if (matches && matches.length > 1) {
-        const pubID = matches[4].replace(/([A-Z])/g, "_$1").replace(/=/g, "-");
+        const idMatch = matches[4];
+        const decoded = decodeURIComponent(idMatch);
+        const pubID =  decoded.replace(/([A-Z])/g, "_$1").replace(/=/g, "-").replace(/\//g, ".");
         const url_ = READIUM2_ELECTRON_HTTP_PROTOCOL + "://" +
             "id" + pubID +
             "/x" + matches[1] +
             "/ip" + matches[2] +
             "/p" + matches[3] +
             matches[5];
-        // console.log("convertHttpUrlToCustomScheme:");
-        // console.log(url);
-        // console.log("===>");
-        // console.log(url_);
+        // console.log("convertHttpUrlToCustomScheme: ", url, " ===> ", url_);
         return url_;
     }
     return url;
@@ -31,22 +32,21 @@ export const convertHttpUrlToCustomScheme = (url: string): string => {
 export const convertCustomSchemeToHttpUrl = (url: string): string => {
     let url_ = url.replace(READIUM2_ELECTRON_HTTP_PROTOCOL + "://", "");
     // const matches = url_.match(/(http[s]?)\.ip([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\.p([0-9]+)?\.id([^\/]+)(\/.*)?/);
+    // tslint:disable-next-line:max-line-length
     const matches = url_.match(/id([^\/]+)\/x(http[s]?)\/ip([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\/p([0-9]+)?(\/.*)?/);
     if (matches && matches.length > 1) {
-        const pubID = matches[1].replace(/-/g, "=").replace(/(_[a-zA-Z])/g, (match) => {
+        const pubID = encodeURIComponent_RFC3986(
+            matches[1].replace(/-/g, "=").replace(/\./g, "\/").replace(/(_[a-zA-Z])/g, (match) => {
             // console.log(match);
             const ret = match.substr(1).toUpperCase();
             // console.log(ret);
             return ret;
-        });
+        }));
         url_ = matches[2] + "://" +
         matches[3] + ":" + matches[4] +
         "/pub/" + pubID +
         matches[5];
-        // console.log("convertCustomSchemeToHttpUrl:");
-        // console.log(url);
-        // console.log("===>");
-        // console.log(url_);
+        // console.log("convertCustomSchemeToHttpUrl: ", url, " ===> ", url_);
         return url_;
     }
     return url;

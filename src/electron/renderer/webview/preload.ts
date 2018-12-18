@@ -100,7 +100,7 @@ if (win.READIUM2.urlQueryParams) {
     const base64EpubReadingSystem = win.READIUM2.urlQueryParams[URL_PARAM_EPUBREADINGSYSTEM];
     if (base64EpubReadingSystem) {
         try {
-            const str = new Buffer(decodeURIComponent(base64EpubReadingSystem), "base64").toString("utf8");
+            const str = new Buffer(base64EpubReadingSystem, "base64").toString("utf8");
             readiumEpubReadingSystemJson = JSON.parse(str);
         } catch (err) {
             console.log(err);
@@ -657,25 +657,16 @@ win.addEventListener("DOMContentLoaded", () => {
     if (win.READIUM2.urlQueryParams) {
         // tslint:disable-next-line:no-string-literal
         const base64ReadiumCSS = win.READIUM2.urlQueryParams[URL_PARAM_CSS];
-        // if (!base64ReadiumCSS) {
-        //     console.log("!readiumcss BASE64 ??!");
-        //     const token = URL_PARAM_CSS + "=";
-        //     const i = win.location.search.indexOf(token);
-        //     if (i > 0) {
-        //         base64ReadiumCSS = win.location.search.substr(i + token.length);
-        //         const j = base64ReadiumCSS.indexOf("&");
-        //         if (j > 0) {
-        //             base64ReadiumCSS = base64ReadiumCSS.substr(0, j);
-        //         }
-        //         base64ReadiumCSS = decodeURIComponent(base64ReadiumCSS);
-        //     }
-        // }
         if (base64ReadiumCSS) {
+            let str: string | undefined;
             try {
-                const str = new Buffer(decodeURIComponent(base64ReadiumCSS), "base64").toString("utf8");
+                str = new Buffer(base64ReadiumCSS, "base64").toString("utf8");
                 readiumcssJson = JSON.parse(str);
             } catch (err) {
+                console.log("################## READIUM CSS PARSE ERROR?!");
+                console.log(base64ReadiumCSS);
                 console.log(err);
+                console.log(str);
             }
         }
     }
