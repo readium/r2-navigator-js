@@ -16,6 +16,23 @@ import { IEventPayload_R2_EVENT_READIUMCSS } from "../common/events";
 import { transformHTML } from "../common/readium-css-inject";
 import { READIUM_CSS_URL_PATH } from "../common/readium-css-settings";
 
+function isFixedLayout(publication: Publication, link: Link | undefined): boolean {
+    if (link && link.Properties) {
+        if (link.Properties.Layout === "fixed") {
+            return true;
+        }
+        if (typeof link.Properties.Layout !== "undefined") {
+            return false;
+        }
+    }
+    if (publication &&
+        publication.Metadata &&
+        publication.Metadata.Rendition) {
+        return publication.Metadata.Rendition.Layout === "fixed";
+    }
+    return false;
+}
+
 export function setupReadiumCSS(
     server: Server, folderPath: string,
     readiumCssGetter: (publication: Publication, link: Link) => IEventPayload_R2_EVENT_READIUMCSS) {
@@ -47,8 +64,12 @@ export function setupReadiumCSS(
                 mediaType = link.TypeLink;
             }
 
-            const readiumcssJson = readiumCssGetter(publication, link);
+            const readiumcssJson: IEventPayload_R2_EVENT_READIUMCSS =
+                isFixedLayout(publication, link) ?
+                { setCSS: undefined, isFixedLayout: true } :
+                readiumCssGetter(publication, link);
             if (readiumcssJson) {
+                readiumcssJson.urlRoot = server.serverUrl();
                 return transformHTML(str, readiumcssJson, mediaType);
             } else {
                 return str;
