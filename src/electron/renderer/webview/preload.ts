@@ -41,11 +41,11 @@ import {
 } from "../../common/styles";
 // import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../../common/sessions";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
+import { consoleRedirect } from "../common/console-redirect";
 import { uniqueCssSelector } from "../common/cssselector2";
 import { easings } from "../common/easings";
 import { getURLQueryParams } from "../common/querystring";
 import { URL_PARAM_CSS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS } from "../common/url-params";
-import { consoleRedirect } from "../console-redirect";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
     calculateColumnDimension,

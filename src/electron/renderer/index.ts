@@ -34,6 +34,7 @@ import {
     convertCustomSchemeToHttpUrl,
     convertHttpUrlToCustomScheme,
 } from "../common/sessions";
+import { consoleRedirect } from "./common/console-redirect";
 import { URL_PARAM_CSS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS } from "./common/url-params";
 import { INameVersion } from "./webview/epubReadingSystem";
 import { IElectronWebviewTag } from "./webview/state";
@@ -46,6 +47,9 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 // export const DOM_EVENT_SHOW_VIEWPORT = "r2:show-content-viewport";
 
 const ELEMENT_ID_SLIDING_VIEWPORT = "r2_navigator_sliding_viewport";
+
+// const releaseConsoleRedirect =
+consoleRedirect("r2:navigator#electron/renderer/index", process.stdout, process.stderr, true);
 
 // const queryParams = getURLQueryParams();
 
