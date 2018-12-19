@@ -42,8 +42,8 @@ import URI = require("urijs");
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-export const DOM_EVENT_HIDE_VIEWPORT = "r2:hide-content-viewport";
-export const DOM_EVENT_SHOW_VIEWPORT = "r2:show-content-viewport";
+// export const DOM_EVENT_HIDE_VIEWPORT = "r2:hide-content-viewport";
+// export const DOM_EVENT_SHOW_VIEWPORT = "r2:show-content-viewport";
 
 const ELEMENT_ID_SLIDING_VIEWPORT = "r2_navigator_sliding_viewport";
 
@@ -542,11 +542,11 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         return;
     }
 
-    if (!isFixedLayout(pubLink)) {
-        if (_rootHtmlElement) {
-            _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_HIDE_VIEWPORT));
-        }
-    }
+    // if (!isFixedLayout(pubLink)) {
+    //     if (_rootHtmlElement) {
+    //         _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_HIDE_VIEWPORT));
+    //     }
+    // }
 
     const uriStr = linkUri.toString();
     console.log("####### >>> ---");
@@ -664,9 +664,9 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
             const payload = event.args[0] as IEventPayload_R2_EVENT_WEBVIEW_READY;
             console.log("WEBVIEW READY: " + payload.href);
 
-            if (_rootHtmlElement) {
-                _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_SHOW_VIEWPORT));
-            }
+            // if (_rootHtmlElement) {
+            //     _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_SHOW_VIEWPORT));
+            // }
         } else if (event.channel === R2_EVENT_READING_LOCATION) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_READING_LOCATION;
             if (webview.READIUM2.link && _saveReadingLocation) {
@@ -749,19 +749,19 @@ const onResizeDebounced = debounce(() => {
     adjustResize(_webview1);
     adjustResize(_webview2);
 
-    setTimeout(() => {
-        if (_rootHtmlElement) {
-            _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_SHOW_VIEWPORT));
-        }
-    }, 1000);
+    // setTimeout(() => {
+    //     if (_rootHtmlElement) {
+    //         _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_SHOW_VIEWPORT));
+    //     }
+    // }, 1000);
 }, 200);
 
 window.addEventListener("resize", () => {
-    if (!isFixedLayout(_webview1.READIUM2.link)) {
-        if (_rootHtmlElement) {
-            _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_HIDE_VIEWPORT));
-        }
-    }
+    // if (!isFixedLayout(_webview1.READIUM2.link)) {
+    //     if (_rootHtmlElement) {
+    //         _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_HIDE_VIEWPORT));
+    //     }
+    // }
     onResizeDebounced();
 });
 
