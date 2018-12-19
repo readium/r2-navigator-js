@@ -101,11 +101,9 @@ function isFixedLayout(link: Link | undefined): boolean {
     return false;
 }
 
-let _getEpubReadingSystem: () => INameVersion = () => {
-    return { name: "Readium2", version: "0.0.0" };
-};
-export function setEpubReadingSystemJsonGetter(func: () => INameVersion) {
-    _getEpubReadingSystem = func;
+let _epubReadingSystemNameVersion: INameVersion = { name: "Readium2", version: "0.0.0" };
+export function setEpubReadingSystemInfo(nv: INameVersion) {
+    _epubReadingSystemNameVersion = nv;
 }
 
 export function __computeReadiumCssJsonMessage(link: Link | undefined): IEventPayload_R2_EVENT_READIUMCSS {
@@ -448,7 +446,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     const rcssJsonstr = JSON.stringify(rcssJson, null, "");
     const rcssJsonstrBase64 = new Buffer(rcssJsonstr).toString("base64");
 
-    const rersJson = _getEpubReadingSystem();
+    const rersJson = _epubReadingSystemNameVersion;
     const rersJsonstr = JSON.stringify(rersJson, null, "");
     const rersJsonstrBase64 = new Buffer(rersJsonstr).toString("base64");
 
