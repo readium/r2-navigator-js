@@ -33,6 +33,12 @@ import {
     injectReadPosCSS,
     isPaginated,
 } from "../../common/readium-css-inject";
+import {
+    readPosCssStylesAttr1,
+    readPosCssStylesAttr2,
+    readPosCssStylesAttr3,
+    readPosCssStylesAttr4,
+} from "../../common/styles";
 // import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../../common/sessions";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector2";
@@ -52,12 +58,6 @@ import {
     readiumCSS,
 } from "./readium-css";
 import { IElectronWebviewTagWindow } from "./state";
-import {
-    readPosCssStylesAttr1,
-    readPosCssStylesAttr2,
-    readPosCssStylesAttr3,
-    readPosCssStylesAttr4,
-} from "./styles";
 
 // const releaseConsoleRedirect =
 consoleRedirect("r2:navigator#electron/renderer/webview/preload", process.stdout, process.stderr, true);
