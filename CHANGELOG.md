@@ -1,10 +1,33 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.6...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.7...develop
 
 Changes:
 * TODO
+
+# 1.0.7
+
+> Build environment: NodeJS `8.14.0`, NPM `6.5.0`
+
+Changes:
+* NPM updates
+* API to provide epubReadingSystem info (name and version) changed slightly, now push-once rather than pull-many design pattern
+* Improved documentation (in progress)
+* Moved ReadiumCSS boilerplate code to here
+* Removed unused DOM event code (legacy mechanism to cater for slow rendering performance)
+* Console logging redirect for renderer process (not just webview isolated process)
+* Minor internal code reorganisation
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.7/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.7/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.7
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.6...v1.0.7
 
 # 1.0.6
 
