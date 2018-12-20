@@ -109,6 +109,24 @@ Command line steps (NPM, but similar with YARN):
 
 ## Documentation
 
+An Electron app has one `main` process, and potentially several `renderer` processes (one per `BrowserWindow`).
+In addition, there is a separate runtime for each `webview` embedded inside each `BrowserWindow`
+(this qualifies as a `renderer` process too).
+Communication between processes occurs via Electron's IPC asynchronous messaging system,
+as the runtime contexts are otherwise isolated from each other.
+Each process launches its own Javascript code bundle. There may be identical / shared code between bundles,
+but the current state of a given context may differ from the state of another.
+Internally, state synchronisation between isolated runtimes is performed using IPC,
+or sometimes by passing URL parameters as this achieves a more instant / synchronous behaviour.
+
+Most of the navigator API surface (i.e. exposed functions) relies on the fact that each process is effectively
+a runtime "singleton", with a ongoing state during its lifecycle. For example, from the moment a `BrowserWindow`
+is opened (e.g. the "reader" view for a given publication), a `renderer` process is spawned,
+and this singleton runtime maintains the internal state of the navigator "instance"
+(this includes the DOM `window` itself).
+This explains why there is no object model in the navigator design pattern,
+i.e. no `const nav = new Navigator()` calls.
+
 ### Electron main process
 
 ```javascript
@@ -186,7 +204,6 @@ app.on("ready", () => {
 ```javascript
 import { IEventPayload_R2_EVENT_READIUMCSS } from "@r2-navigator-js/electron/common/events";
 import {
-    IReadiumCSS,
     readiumCSSDefaults,
 } from "@r2-navigator-js/electron/common/readium-css-settings";
 import { setupReadiumCSS } from "@r2-navigator-js/electron/main/readium-css";
@@ -200,15 +217,16 @@ app.on("ready", () => {
   // ReadiumCSS assets can be found. `path.join(process.cwd(), ...)` or `path.join(__dirname, ...)`
   // can be used depending on integration / bundling context. The HTTP server will create a static hosting
   // route to this folder.
-  setupReadiumCSS(streamerServer, readiumCSSPath, getReadiumCssJson);
-  // `getReadiumCssJson` is a function "pointer" that will be called when the navigator
+  setupReadiumCSS(streamerServer, readiumCSSPath, getReadiumCss);
+  // `getReadiumCss` is a function "pointer" that will be called when the navigator
   // needs to obtain an up-to-date ReadiumCSS configuration (this is for initial injection in HTML documents,
-  // subsequent requests will originate from the renderer process, whenever the webview needs to, see further below):
-  const getReadiumCssJson = (publication: Publication, link: Link | undefined): IEventPayload_R2_EVENT_READIUMCSS => {
+  // via the streamer/server). Note that subsequent requests will originate from the renderer process,
+  // whenever the webview needs to (see further below):
+  const getReadiumCss = (publication: Publication, link: Link | undefined): IEventPayload_R2_EVENT_READIUMCSS => {
 
     // The built-in default values.
     // The ReadiumCSS app-level settings would typically be persistent in a store.
-    const readiumCssKeys = Object.keys(readiumCSSDefaults); // IReadiumCSS
+    const readiumCssKeys = Object.keys(readiumCSSDefaults);
     readiumCssKeys.forEach((key: string) => {
         const value = (readiumCSSDefaults as any)[key];
         console.log(key, " => ", value);
@@ -224,66 +242,200 @@ app.on("ready", () => {
         ...
         textAlign: readiumCSSDefaults.textAlign,
         ...
-      },
-      urlRoot: streamerServer.serverUrl() // in a future API revision this will be moved inside `setupReadiumCSS()`
+      } // setCSS can actually be undefined, in which case this disables ReadiumCSS completely.
     };
-
-    // Note that `setCSS` can be `undefined`, in which case ReadiumCSS is totally deactivated.
-    // Typically, fixed-layout publications / documents are left alone (see function `isFixedLayout()` below)
-    if (isFixedLayout(publication, link)) {
-        return { setCSS: undefined, isFixedLayout: true };
-    }
   };
-
-  // in a future API revision this may be moved inside `setupReadiumCSS()` (boilerplate)
-  function isFixedLayout(publication: Publication, link: Link | undefined): boolean {
-      if (link && link.Properties) {
-          if (link.Properties.Layout === "fixed") {
-              return true;
-          }
-          if (typeof link.Properties.Layout !== "undefined") {
-              return false;
-          }
-      }
-      if (publication &&
-          publication.Metadata &&
-          publication.Metadata.Rendition) {
-          return publication.Metadata.Rendition.Layout === "fixed";
-      }
-      return false;
-  }
 }
 ```
 
+### Electron renderer process(es), for each Electron BrowserWindow
+
 ```javascript
-// TODO
+import {
+    installNavigatorDOM,
+} from "@r2-navigator-js/electron/renderer/index";
+
+// This function attaches the navigator HTML DOM and associated functionality
+// to the app-controlled Electron `BrowserWindow`.
+installNavigatorDOM(
+    publication, // Publication object (see below for an example of how to create it)
+    publicationURL, // For example: "https://127.0.0.1:3000/PUB_ID/manifest.json"
+    rootHtmlElementID, // For example: "rootdiv", assuming <div id="rootdiv"></div> in the BrowserWindow HTML
+    preloadPath, // See below.
+    location); // A `Locator` object representing the initial reading bookmark (can be undefined/null)
+
+// The string parameter `preloadPath` is the path to the JavaScript bundle created for
+// `r2-navigator-js/src/electron/renderer/webview/preload.ts`,
+// for example in development mode this could be (assuming EcmaScript-6 / ES-2015 is used):
+// "node_modules/r2-navigator-js/dist/es6-es2015/src/electron/renderer/webview/preload.js",
+// whereas in production mode this would be the copied JavaScript bundle inside the Electron app's ASAR:
+// `"file://" + path.normalize(path.join((global as any).__dirname, preload.js))`
+// (typically, the final application package contains the following JavaScript bundles:
+// `main.js` alonside `renderer.js` and `preload.js`)
+
+// Here is a typical example of how the Publication object (passed as first parameter) is created:
+import { Publication } from "@r2-shared-js/models/publication";
+import { JSON as TAJSON } from "ta-json-x";
+
+const response = await fetch(publicationURL);
+const publicationJSON = await response.json();
+const publication = TAJSON.deserialize<Publication>(publicationJSON, Publication);
+```
+
+```javascript
+import {
+    setReadiumCssJsonGetter
+} from "@r2-navigator-js/electron/renderer/index";
+import {
+    readiumCSSDefaults
+} from "@r2-navigator-js/electron/common/readium-css-settings";
+import {
+    IEventPayload_R2_EVENT_READIUMCSS,
+} from "@r2-navigator-js/electron/common/events";
+
+// `getReadiumCss` is a function "pointer" (callback) that will be called when the navigator
+// needs to obtain an up-to-date ReadiumCSS configuration ("pull" design pattern).
+// Unlike the equivalent function in the main process
+// (which is used for the initial injection in HTML documents, via the streamer/server), this one handles
+// requests by the actual content viewport, in an on-demand fashion:
+const getReadiumCss = (publication: Publication, link: Link | undefined): IEventPayload_R2_EVENT_READIUMCSS => {
+
+  // The built-in default values.
+  // The ReadiumCSS app-level settings would typically be persistent in a store.
+  const readiumCssKeys = Object.keys(readiumCSSDefaults);
+  readiumCssKeys.forEach((key: string) => {
+      const value = (readiumCSSDefaults as any)[key];
+      console.log(key, " => ", value);
+      // fetch values from app store ...
+  });
+
+  // See `electron/common/readium-css-settings.ts` for more information,
+  // including links to the ReadiumCSS exhaustive documentation.
+  return {
+
+    // `streamerServer` is an instance of the Server class, see:
+    // https://github.com/readium/r2-streamer-js/blob/develop/README.md
+    // This is actually an optional field (i.e. can be undefined/null),
+    // if not provided, `urlRoot` defaults to `window.location.origin`
+    // (typically, https://127.0.0.1:3000 or whatever the port number happens to be):
+    urlRoot: streamerServer.serverUrl(),
+
+    setCSS: {
+      ...
+      fontSize: "100%",
+      ...
+      textAlign: readiumCSSDefaults.textAlign,
+      ...
+    } // setCSS can actually be undefined, in which case this disables ReadiumCSS completely.
+  };
+};
+setReadiumCssJsonGetter(getReadiumCss);
+```
+
+```javascript
+import {
+    readiumCssOnOff,
+} from "@r2-navigator-js/electron/renderer/index";
+
+// This function simply tells the navigator that the ReadiumCSS settings have changed
+// (for example when the user used the configuration panel to choose a font size).
+// Following this call (in an asynchronous manner) the navigator will trigger a call
+// to the function previously registered via `setReadiumCssJsonGetter()` (see above).
+readiumCssOnOff();
+```
+
+```javascript
+import {
+    setEpubReadingSystemInfo
+} from "@r2-navigator-js/electron/renderer/index";
+
+// This sets the EPUB3 `navigator.epubReadingSystem` object with the provided `name` and `version` values:
+setEpubReadingSystemInfo({ name: "My R2 Application", version: "0.0.1-alpha.1" });
+```
+
+```javascript
+// This should not be called explicitly on the application side,
+// as this is already handled inside the navigator context! (this is currently not configurable)
+// This automatically copies web console messages from the renderer process
+// into the shell ouput (where logging messages from the main process are emitted):
+import { consoleRedirect } from "@r2-navigator-js/electron/renderer/console-redirect";
+
+// By default, the navigator calls the console redirector in both embedded webviews (iframes)
+// and the central index (renderer process):
+const releaseConsoleRedirect = consoleRedirect(loggingTag, process.stdout, process.stderr, true);
+// loggingTag ===
+// "r2:navigator#electron/renderer/webview/preload"
+// and
+// "r2:navigator#electron/renderer/index"
+```
+
+```javascript
+import {
+    LocatorExtended,
+    setReadingLocationSaver
+} from "@r2-navigator-js/electron/renderer/index";
+
+// `saveReadingLocation` is a function "pointer" (callback) that will be called when the navigator
+// needs to notify the host app that the user's reading location has changed ("push" design pattern).
+// This function call is debounced inside the navigator, to avoid flooding the application with
+// many calls (and consequently putting unnecessary strain on the store/messaging system required to
+// handle the renderer/main process communication).
+// A typical example of when this function is called is when the user scrolls the viewport using the mouse
+// (debouncing is every 500ms on the trailing edge,
+// so there is always a 500ms delay before the first notification).
+const saveReadingLocation = (location: LocatorExtended) => {
+  // Use an application store to make `location` persistent
+  // ...
+};
+setReadingLocationSaver(saveReadingLocation);
+```
+
+```javascript
+import {
+    handleLinkUrl
+} from "@r2-navigator-js/electron/renderer/index";
+
+// The `handleLinkUrl` function is used to instruct the navigator to load
+// an absolute URL, either internal to the current publication,
+// or external. For example:
+// const href = "https://127.0.0.1:3000/PUB_ID/contents/chapter1.html";
+// or:
+// const href = "https://external-domain.org/out-link";
+handleLinkUrl(href);
+
+// A typical use-case is the publication's Table Of Contents.
+// Each spine/readingOrder item is a `Link` object with a relative href (see `r2-shared-js` models).
+// The final absolute URL can be computed simply by concatenating the publication's manifest.json URL:
+const href = publicationURL + "/../" + link.Href;
+// For example:
+// publicationURL === "https://127.0.0.1:3000/PUB_ID/manifest.json"
+// link.Href === "contents/chapter1.html"
+```
+
+```javascript
+import {
+    navLeftOrRight
+} from "@r2-navigator-js/electron/renderer/index";
+
+// This function instructs the navigator to "turn the page" left or right.
+// This is litterally in relation to the left-side or right-side of the display.
+// In other words, the navigator automatically handles the fact that with Right-To-Left content,
+// the left-hand-side "page turn" button (or associated left arrow keyboard key) means "progress forward".
+// For example (no need to explicitly handle RTL conditions in this app code):
+window.document.addEventListener("keydown", (ev: KeyboardEvent) => {
+    if (ev.keyCode === 37) { // left
+        navLeftOrRight(true);
+    } else if (ev.keyCode === 39) { // right
+        navLeftOrRight(false);
+    }
+});
+```
+
+```javascript
+// TODO LCP
 import { lsdLcpUpdateInject } from "@r2-navigator-js/electron/main/lsd-injectlcpl";
 import { doTryLcpPass } from "@r2-navigator-js/electron/main/lcp";
 import { IDeviceIDManager } from "@r2-lcp-js/lsd/deviceid-manager";
 import { doLsdRenew } from "@r2-navigator-js/electron/main/lsd";
 import { doLsdReturn } from "@r2-navigator-js/electron/main/lsd";
-// ---
-import {
-    IReadiumCSS,
-    readiumCSSDefaults,
-} from "@r2-navigator-js/electron/common/readium-css-settings";
-import {
-    READIUM2_ELECTRON_HTTP_PROTOCOL,
-    convertCustomSchemeToHttpUrl,
-} from "@r2-navigator-js/electron/common/sessions";
-import { getURLQueryParams } from "@r2-navigator-js/electron/renderer/common/querystring";
-import { consoleRedirect } from "@r2-navigator-js/electron/renderer/console-redirect";
-import {
-    LocatorExtended,
-    handleLinkUrl,
-    installNavigatorDOM,
-    navLeftOrRight,
-    readiumCssOnOff,
-    setEpubReadingSystemJsonGetter,
-    setReadingLocationSaver,
-    setReadiumCssJsonGetter,
-} from "@r2-navigator-js/electron/renderer/index";
-import { INameVersion } from "@r2-navigator-js/electron/renderer/webview/epubReadingSystem";
 ```
-
-### Electron renderer process(es), for each browser window
