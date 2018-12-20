@@ -5,6 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import { Publication } from "@r2-shared-js/models/publication";
 import { Link } from "@r2-shared-js/models/publication-link";
 
 import {
@@ -12,7 +13,7 @@ import {
 } from "../../common/events";
 import { IStringMap } from "../common/querystring";
 
-export interface IReadium2State {
+export interface IElectronWebviewTagWindowState {
     // init'ed from  win.location.search immediately in preload.js
     // updated in R2_EVENT_SCROLLTO IPC renderer event
     urlQueryParams: IStringMap | undefined;
@@ -27,17 +28,25 @@ export interface IReadium2State {
     isFixedLayout: boolean;
     fxlViewportWidth: number;
     fxlViewportHeight: number;
+
+    DEBUG_VISUALS: boolean;
+}
+export interface IElectronWebviewTagWindow extends Window {
+    READIUM2: IElectronWebviewTagWindowState;
 }
 
-export interface IWebViewState {
+export interface IElectronWebviewTagState {
     id: number;
     link: Link | undefined;
 }
-
 export interface IElectronWebviewTag extends Electron.WebviewTag {
-    READIUM2: IWebViewState;
+    READIUM2: IElectronWebviewTagState;
 }
 
-export interface IElectronWebviewTagWindow extends Window {
-    READIUM2: IReadium2State;
+export interface IElectronBrowserWindowState {
+    publication: Publication;
+    publicationURL: string;
+}
+export interface IElectronBrowserWindow extends Window {
+    READIUM2: IElectronBrowserWindowState;
 }

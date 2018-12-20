@@ -37,7 +37,7 @@ import {
 import { consoleRedirect } from "./common/console-redirect";
 import { URL_PARAM_CSS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS } from "./common/url-params";
 import { INameVersion } from "./webview/epubReadingSystem";
-import { IElectronWebviewTag } from "./webview/state";
+import { IElectronBrowserWindow, IElectronWebviewTag } from "./webview/state";
 
 import URI = require("urijs");
 
@@ -169,14 +169,14 @@ export function readiumCssOnOff() {
         _webview1.send(R2_EVENT_READIUMCSS, payload1); // .getWebContents()
     }
 
-    if (_webview2) {
-        const payload2 = __computeReadiumCssJsonMessage(_webview2.READIUM2.link);
-        _webview2.send(R2_EVENT_READIUMCSS, payload2); // .getWebContents()
-    }
+    // if (_webview2) {
+    //     const payload2 = __computeReadiumCssJsonMessage(_webview2.READIUM2.link);
+    //     _webview2.send(R2_EVENT_READIUMCSS, payload2); // .getWebContents()
+    // }
 }
 
 let _webview1: IElectronWebviewTag;
-let _webview2: IElectronWebviewTag;
+// let _webview2: IElectronWebviewTag;
 
 let _publication: Publication | undefined;
 let _publicationJsonUrl: string | undefined;
@@ -204,7 +204,7 @@ export function handleLinkUrl(href: string) {
     handleLink(href, undefined, false);
 }
 
-export function handleLinkLocator(location: Locator) {
+export function handleLinkLocator(location: Locator | undefined) {
 
     // installNavigatorDOM() should have initiated the state
     if (!_publication || !_publicationJsonUrl) {
@@ -264,9 +264,10 @@ export function installNavigatorDOM(
     _publicationJsonUrl = publicationJsonUrl;
 
     if (IS_DEV) {
-        // quick debugging from the console
-        (window as any).READIUM2_PUB = _publication;
-        (window as any).READIUM2_PUBURL = _publicationJsonUrl;
+        (window as IElectronBrowserWindow).READIUM2 = {
+            publication: _publication,
+            publicationURL: _publicationJsonUrl,
+        };
     }
 
     _rootHtmlElement = document.getElementById(rootHtmlElementID) as HTMLElement;
@@ -287,67 +288,29 @@ export function installNavigatorDOM(
     };
     _webview1.setAttribute("id", "webview1");
 
-    _webview2 = createWebView(preloadScriptPath);
-    _webview2.READIUM2 = {
-        id: 2,
-        link: undefined,
-    };
-    _webview2.setAttribute("id", "webview2");
+    // _webview2 = createWebView(preloadScriptPath);
+    // _webview2.READIUM2 = {
+    //     id: 2,
+    //     link: undefined,
+    // };
+    // _webview2.setAttribute("id", "webview2");
 
     slidingViewport.appendChild(_webview1 as Node);
-    slidingViewport.appendChild(_webview2 as Node);
+    // slidingViewport.appendChild(_webview2 as Node);
 
     _rootHtmlElement.appendChild(slidingViewport);
 
     if (isRTL()) {
         _webview1.classList.add("posRight");
         _webview1.style.left = "50%";
-    } else {
-        _webview2.classList.add("posRight");
-        _webview2.style.left = "50%";
     }
-
-    let linkToLoad: Link | undefined;
-    let linkToLoadGoto: LocatorLocations | undefined;
-    if (location && location.href) {
-        if (_publication.Spine && _publication.Spine.length) {
-            linkToLoad = _publication.Spine.find((spineLink) => {
-                return spineLink.Href === location.href;
-            });
-            if (linkToLoad && location.locations) {
-                linkToLoadGoto = location.locations;
-            }
-        }
-        if (!linkToLoad &&
-            _publication.Resources && _publication.Resources.length) {
-            linkToLoad = _publication.Resources.find((resLink) => {
-                return resLink.Href === location.href;
-            });
-            if (linkToLoad && location.locations) {
-                linkToLoadGoto = location.locations;
-            }
-        }
-    }
-    if (!linkToLoad) {
-        if (_publication.Spine && _publication.Spine.length) {
-            const firstLinear = _publication.Spine[0];
-            if (firstLinear) {
-                linkToLoad = firstLinear;
-            }
-        }
-    }
+    // else {
+    //     _webview2.classList.add("posRight");
+    //     _webview2.style.left = "50%";
+    // }
 
     setTimeout(() => {
-        if (linkToLoad) {
-            const useGoto = typeof linkToLoadGoto !== "undefined" &&
-                typeof linkToLoadGoto.cssSelector !== "undefined";
-            const hrefToLoad = _publicationJsonUrl + "/../" + linkToLoad.Href +
-                ((useGoto && linkToLoadGoto && linkToLoadGoto.cssSelector) ? // for TypeScript compiler
-                    ("?" + URL_PARAM_GOTO + "=" +
-                    encodeURIComponent_RFC3986(linkToLoadGoto.cssSelector)) : "");
-            // TODO: linkToLoadGoto.cfi? linkToLoadGoto.progression?
-            handleLink(hrefToLoad, undefined, useGoto);
-        }
+        handleLinkLocator(location);
     }, 100);
 }
 
@@ -367,24 +330,26 @@ export function navLeftOrRight(left: boolean) {
 
 const getActiveWebView = (): IElectronWebviewTag => {
 
-    let activeWebView: IElectronWebviewTag;
+    return _webview1;
 
-    const slidingViewport = document.getElementById(ELEMENT_ID_SLIDING_VIEWPORT) as HTMLElement;
-    if (slidingViewport.classList.contains("shiftedLeft")) {
-        if (_webview1.classList.contains("posRight")) {
-            activeWebView = _webview1;
-        } else {
-            activeWebView = _webview2;
-        }
-    } else {
-        if (_webview2.classList.contains("posRight")) {
-            activeWebView = _webview1;
-        } else {
-            activeWebView = _webview2;
-        }
-    }
+    // let activeWebView: IElectronWebviewTag;
 
-    return activeWebView;
+    // const slidingViewport = document.getElementById(ELEMENT_ID_SLIDING_VIEWPORT) as HTMLElement;
+    // if (slidingViewport.classList.contains("shiftedLeft")) {
+    //     if (_webview1.classList.contains("posRight")) {
+    //         activeWebView = _webview1;
+    //     } else {
+    //         activeWebView = _webview2;
+    //     }
+    // } else {
+    //     if (_webview2.classList.contains("posRight")) {
+    //         activeWebView = _webview1;
+    //     } else {
+    //         activeWebView = _webview2;
+    //     }
+    // }
+
+    // return activeWebView;
 };
 
 function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: boolean) {
@@ -466,15 +431,18 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
 
     const activeWebView = getActiveWebView();
     const wv1AlreadyLoaded = _webview1.READIUM2.link === pubLink;
-    const wv2AlreadyLoaded = _webview2.READIUM2.link === pubLink;
-    if (wv1AlreadyLoaded || wv2AlreadyLoaded) {
+    // const wv2AlreadyLoaded = _webview2.READIUM2.link === pubLink;
+    if (wv1AlreadyLoaded
+        // || wv2AlreadyLoaded
+        ) {
         const goto = useGoto ? linkUri.search(true)[URL_PARAM_GOTO] as string : undefined;
         const hash = useGoto ? undefined : linkUri.fragment(); // without #
 
         console.log("ALREADY LOADED: " + pubLink.Href);
 
-        const webviewToReuse = wv1AlreadyLoaded ? _webview1 : _webview2;
-        // const otherWebview = webviewToReuse === _webview2 ? _webview1 : _webview2;
+        const webviewToReuse = _webview1;
+        // const webviewToReuse = wv1AlreadyLoaded ? _webview1 : _webview2;
+        // // const otherWebview = webviewToReuse === _webview2 ? _webview1 : _webview2;
         if (webviewToReuse !== activeWebView) {
 
             console.log("INTO VIEW ...");
@@ -749,7 +717,7 @@ const adjustResize = (webview: IElectronWebviewTag) => {
 
 const onResizeDebounced = debounce(() => {
     adjustResize(_webview1);
-    adjustResize(_webview2);
+    // adjustResize(_webview2);
 
     // setTimeout(() => {
     //     if (_rootHtmlElement) {

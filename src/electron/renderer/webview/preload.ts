@@ -27,7 +27,6 @@ import {
     R2_EVENT_WEBVIEW_READY,
 } from "../../common/events";
 import {
-    DEBUG_VISUALS,
     configureFixedLayout,
     injectDefaultCSS,
     injectReadPosCSS,
@@ -59,6 +58,8 @@ import {
 } from "./readium-css";
 import { IElectronWebviewTagWindow } from "./state";
 
+const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+
 // const releaseConsoleRedirect =
 consoleRedirect("r2:navigator#electron/renderer/webview/preload", process.stdout, process.stderr, true);
 
@@ -74,6 +75,7 @@ consoleRedirect("r2:navigator#electron/renderer/webview/preload", process.stdout
 
 const win = (global as any).window as IElectronWebviewTagWindow;
 win.READIUM2 = {
+    DEBUG_VISUALS: false,
     fxlViewportHeight: 0,
     fxlViewportWidth: 0,
     hashElement: null,
@@ -110,6 +112,8 @@ if (win.READIUM2.urlQueryParams) {
     if (readiumEpubReadingSystemJson) {
         setWindowNavigatorEpubReadingSystem(win, readiumEpubReadingSystemJson);
     }
+
+    // TODO: const debug = win.READIUM2.urlQueryParams[DEBUG_VISUALS];
 }
 
 ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_SCROLLTO) => {
@@ -141,7 +145,7 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
     let delayScrollIntoView = false;
     if (payload.hash) {
         win.READIUM2.hashElement = win.document.getElementById(payload.hash);
-        if (DEBUG_VISUALS) {
+        if (win.READIUM2.DEBUG_VISUALS) {
             if (win.READIUM2.hashElement) {
                 // const existings = document.querySelectorAll(`*[${readPosCssStylesAttr1}]`);
                 // existings.forEach((existing) => {
@@ -409,7 +413,7 @@ const notifyReady = () => {
 
 function scrollElementIntoView(element: Element) {
 
-    if (DEBUG_VISUALS) {
+    if (win.READIUM2.DEBUG_VISUALS) {
         const existings = document.querySelectorAll(`*[${readPosCssStylesAttr3}]`);
         existings.forEach((existing) => {
             existing.removeAttribute(`${readPosCssStylesAttr3}`);
@@ -638,7 +642,7 @@ win.addEventListener("DOMContentLoaded", () => {
 
     if (win.location.hash && win.location.hash.length > 1) {
         win.READIUM2.hashElement = win.document.getElementById(win.location.hash.substr(1));
-        if (DEBUG_VISUALS) {
+        if (win.READIUM2.DEBUG_VISUALS) {
             if (win.READIUM2.hashElement) {
                 // const existings = document.querySelectorAll(`*[${readPosCssStylesAttr1}]`);
                 // existings.forEach((existing) => {
@@ -689,10 +693,14 @@ win.addEventListener("DOMContentLoaded", () => {
         notifyReady();
     }
 
-    // ReadiumCSS already injected at the streamer level?
-    if (!win.document.documentElement.hasAttribute("data-readiumcss")) {
+    const alreadedInjected = win.document.documentElement.hasAttribute("data-readiumcss");
+    if (alreadedInjected) {
+        console.log(">>>>>> ReadiumCSS already injected by streamer");
+    }
+
+    if (!alreadedInjected) {
         injectDefaultCSS(win.document);
-        if (DEBUG_VISUALS) {
+        if (IS_DEV) { // win.READIUM2.DEBUG_VISUALS
             injectReadPosCSS(win.document);
         }
     }
@@ -747,7 +755,9 @@ win.addEventListener("DOMContentLoaded", () => {
     if (readiumcssJson) {
         // ReadiumCSS already injected at the streamer level?
         if (isVerticalWritingMode() || // force update, because needs getComputedStyle()
-            !win.document.documentElement.hasAttribute("data-readiumcss")) {
+            !alreadedInjected) {
+
+            console.log(">>>>>> ReadiumCSS inject again");
             readiumCSS(win.document, readiumcssJson);
         }
     }
@@ -807,7 +817,7 @@ const processXYRaw = (x: number, y: number) => {
         win.READIUM2.locationHashOverride = element;
         notifyReadingLocationDebounced();
 
-        if (DEBUG_VISUALS) {
+        if (win.READIUM2.DEBUG_VISUALS) {
             const existings = document.querySelectorAll(`*[${readPosCssStylesAttr2}]`);
             existings.forEach((existing) => {
                 existing.removeAttribute(`${readPosCssStylesAttr2}`);
@@ -989,7 +999,7 @@ const notifyReadingLocationRaw = () => {
     const payload: IEventPayload_R2_EVENT_READING_LOCATION = win.READIUM2.locationHashOverrideInfo;
     ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION, payload);
 
-    if (DEBUG_VISUALS) {
+    if (win.READIUM2.DEBUG_VISUALS) {
         const existings = document.querySelectorAll(`*[${readPosCssStylesAttr4}]`);
         existings.forEach((existing) => {
             existing.removeAttribute(`${readPosCssStylesAttr4}`);
