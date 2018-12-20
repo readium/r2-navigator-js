@@ -1,1 +1,1 @@
-See [README](/README.md).
+See [README](/README.md#documentation).
