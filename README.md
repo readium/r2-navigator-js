@@ -370,6 +370,7 @@ const releaseConsoleRedirect = consoleRedirect(loggingTag, process.stdout, proce
 ```javascript
 import {
     LocatorExtended,
+    getCurrentReadingLocation,
     setReadingLocationSaver
 } from "@r2-navigator-js/electron/renderer/index";
 
@@ -386,6 +387,10 @@ const saveReadingLocation = (location: LocatorExtended) => {
   // ...
 };
 setReadingLocationSaver(saveReadingLocation);
+
+// This returns the last reading location as a `LocatorExtended` object (can be undefined).
+// This is equal to the last object received in the `setReadingLocationSaver()` callback (see above)
+const loc = getCurrentReadingLocation();
 ```
 
 ```javascript
