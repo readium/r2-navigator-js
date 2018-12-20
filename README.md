@@ -395,7 +395,8 @@ const loc = getCurrentReadingLocation();
 
 ```javascript
 import {
-    handleLinkUrl
+  handleLinkLocator,
+  handleLinkUrl
 } from "@r2-navigator-js/electron/renderer/index";
 
 // The `handleLinkUrl` function is used to instruct the navigator to load
@@ -413,6 +414,11 @@ const href = publicationURL + "/../" + link.Href;
 // For example:
 // publicationURL === "https://127.0.0.1:3000/PUB_ID/manifest.json"
 // link.Href === "contents/chapter1.html"
+
+// This can be used to restore a bookmark previously saved via `getCurrentReadingLocation()` (see above).
+// Note that in this version of the navigator, only CSS Selectors are supported
+// (not CFI, position or progression, even though they are initially provided by the navigator)
+handleLinkLocator(locator);
 ```
 
 ```javascript
