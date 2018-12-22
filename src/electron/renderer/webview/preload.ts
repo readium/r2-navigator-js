@@ -76,17 +76,10 @@ import {
 } from "./readium-css";
 import { IElectronWebviewTagWindow } from "./state";
 
-const debug = debug_("r2:navigator#electron/renderer/webview/preload");
+// import { registerProtocol } from "@r2-navigator-js/electron/renderer/common/protocol";
+// registerProtocol();
 
-// webFrame.registerURLSchemeAsSecure(READIUM2_ELECTRON_HTTP_PROTOCOL);
-// webFrame.registerURLSchemeAsBypassingCSP(READIUM2_ELECTRON_HTTP_PROTOCOL);
-// webFrame.registerURLSchemeAsPrivileged(READIUM2_ELECTRON_HTTP_PROTOCOL, {
-//     allowServiceWorkers: false,
-//     bypassCSP: false,
-//     corsEnabled: false,
-//     secure: true,
-//     supportFetchAPI: false,
-// });
+const debug = debug_("r2:navigator#electron/renderer/webview/preload");
 
 const win = (global as any).window as IElectronWebviewTagWindow;
 win.READIUM2 = {
