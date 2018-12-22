@@ -7,13 +7,13 @@
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-// // import { consoleRedirect } from "../common/console-redirect";
-// if (IS_DEV) {
-//     // tslint:disable-next-line:no-var-requires
-//     const cr = require("../common/console-redirect");
-//     // const releaseConsoleRedirect =
-//     cr.consoleRedirect("r2:navigator#electron/renderer/webview/preload", process.stdout, process.stderr, true);
-// }
+// import { consoleRedirect } from "../common/console-redirect";
+if (IS_DEV) {
+    // tslint:disable-next-line:no-var-requires
+    const cr = require("../common/console-redirect");
+    // const releaseConsoleRedirect =
+    cr.consoleRedirect("r2:navigator#electron/renderer/webview/preload", process.stdout, process.stderr, true);
+}
 
 import ResizeSensor = require("css-element-queries/src/ResizeSensor");
 // import ResizeSensor = require("resize-sensor/ResizeSensor");

@@ -45,7 +45,10 @@ export function consoleRedirect(
     // process.stderr.write(util.format(...args) + '\n');
     // https://github.com/visionmedia/debug/blob/master/src/node.js#L190
     function debugLog(this: any, ...args: any[]): void {
-        // const prefix = (this === debugNodeInstance) ? "i" : ((this === debugNode) ? "g" : "?");
+        // const prefix = (this === debugNodeInstance) ? "i" :
+        //     ((this === debugNode) ? "g" :
+        //     ((this === debugBrowser) ? "b" : "?"));
+
         outStream.write(// prefix +
             util.format.apply(util, args) + "\n");
 
@@ -56,10 +59,13 @@ export function consoleRedirect(
 
     // https://github.com/visionmedia/debug/blob/master/src/common.js#L113
     // const logFn = self.log || createDebug.log;
-    (debugNode as any).log = debugLog.bind(debugNode); // global
+    // (debugNode as any).log = debugLog.bind(debugNode); // global
     debugNodeInstance.log = debugLog.bind(debugNodeInstance); // takes precedence
 
     function processConsoleFunctionCall(this: Console, ...args: any[]): void {
+
+        // process.stderr.write("PROCESS: " + util.inspect(args,
+        //     { showHidden: false, depth: 1000, colors: true, customInspect: true }) + "\n");
 
         // Attempt to reverse-parse the web console format in the raw message,
         // so it can be dumped into the shell console via the debug instance:
@@ -90,6 +96,9 @@ export function consoleRedirect(
                             }
                         }
 
+                        // process.stderr.write("OK: " + util.inspect(newAr,
+                        //     { showHidden: false, depth: 1000, colors: true, customInspect: true }) + "\n");
+
                         // Temporary debug namespace switch, so that the existing debug instance
                         // can be used to dump the raw message into the shell console:
                         const nsp = debugNodeInstance.namespace;
@@ -104,11 +113,26 @@ export function consoleRedirect(
         // Message cannot be reverse-parsed from web console format
         // => dump it "as is" into the shell console:
         if (!processed) {
+            // process.stderr.write("FAIL: " + util.inspect(args,
+            //     { showHidden: false, depth: 1000, colors: true, customInspect: true }) + "\n");
+
             debugNodeInstance.apply(debugNodeInstance, args);
             // outStream.write(util.format.apply(util, args) + "\n");
         }
     }
-    (debugBrowser as any).log = processConsoleFunctionCall.bind(console);
+    // processConsoleFunctionCall.bind(console);
+    (debugBrowser as any).log = (...args: any[]): void => {
+        processConsoleFunctionCall.apply(console, args);
+
+        if (printInOriginalConsole) {
+            const consoleFunctionName = "log";
+            const originalConsoleFunction =
+                ((originalConsole as any)[consoleFunctionName] as ((...args: any[]) => void));
+            // process.stderr.write(consoleFunctionName + " -- " + util.inspect(originalConsoleFunction,
+            //     { showHidden: false, depth: 1000, colors: true, customInspect: true }) + "\n");
+            originalConsoleFunction.apply(console, args);
+        }
+    };
 
     const originalConsole = {};
 
@@ -129,12 +153,14 @@ export function consoleRedirect(
             //     writeStream.write("\n################# DEBUG:\n" + args.join("\n---\n") + "\n#################\n");
             // }
 
-            processConsoleFunctionCall.apply(console, args);
+            processConsoleFunctionCall.apply(this, args);
 
             if (printInOriginalConsole) {
                 const originalConsoleFunction =
                     ((originalConsole as any)[consoleFunctionName] as ((...args: any[]) => void));
-                return  originalConsoleFunction.apply(console, args);
+                // process.stderr.write(consoleFunctionName + " -- " + util.inspect(originalConsoleFunction,
+                //     { showHidden: false, depth: 1000, colors: true, customInspect: true }) + "\n");
+                originalConsoleFunction.apply(this, args);
             }
         }
         (console as any)[consoleFunctionName] = newConsoleFunction.bind(console);

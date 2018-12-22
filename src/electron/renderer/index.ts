@@ -7,13 +7,13 @@
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-// // import { consoleRedirect } from "../common/console-redirect";
-// if (IS_DEV) {
-//     // tslint:disable-next-line:no-var-requires
-//     const cr = require("./common/console-redirect");
-//     // const releaseConsoleRedirect =
-//     cr.consoleRedirect("r2:navigator#electron/renderer/index", process.stdout, process.stderr, true);
-// }
+// import { consoleRedirect } from "../common/console-redirect";
+if (IS_DEV) {
+    // tslint:disable-next-line:no-var-requires
+    const cr = require("./common/console-redirect");
+    // const releaseConsoleRedirect =
+    cr.consoleRedirect("r2:navigator#electron/renderer/index", process.stdout, process.stderr, true);
+}
 
 import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
 import { Publication } from "@r2-shared-js/models/publication";
@@ -473,7 +473,8 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         data[URL_PARAM_EPUBREADINGSYSTEM] = rersJsonstrBase64;
 
         // tslint:disable-next-line:no-string-literal
-        data[URL_PARAM_DEBUG_VISUALS] = (window as IElectronBrowserWindow).READIUM2.DEBUG_VISUALS ? "true" : "false";
+        data[URL_PARAM_DEBUG_VISUALS] = (IS_DEV && (window as IElectronBrowserWindow).READIUM2.DEBUG_VISUALS) ?
+            "true" : "false";
     });
 
     const activeWebView = getActiveWebView();
