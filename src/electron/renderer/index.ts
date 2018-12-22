@@ -58,6 +58,11 @@ import { IElectronBrowserWindow, IElectronWebviewTag } from "./webview/state";
 
 import URI = require("urijs");
 
+// import { registerProtocol } from "@r2-navigator-js/electron/renderer/common/protocol";
+// registerProtocol();
+
+const ENABLE_WEBVIEW_RESIZE = true;
+
 const CLASS_POS_RIGHT = "r2_posRight";
 const CLASS_SHIFT_LEFT = "r2_shiftedLeft";
 const CLASS_ANIMATED = "r2_animated";
@@ -667,6 +672,8 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
     // into EPUB content documents? (preload is good for isolating app code)
 
     const wv = document.createElement("webview");
+    // tslint:disable-next-line:max-line-length
+    // https://github.com/electron/electron/blob/master/docs/tutorial/security.md#3-enable-context-isolation-for-remote-content
     wv.setAttribute("webpreferences",
         "nodeIntegration=0, nodeIntegrationInWorker=0, sandbox=0, javascript=1, " +
         "contextIsolation=0, webSecurity=1, allowRunningInsecureContent=0");
@@ -679,13 +686,19 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
     wv.setAttribute("style", "display: flex; margin: 0; padding: 0; box-sizing: border-box; " +
         "position: absolute; left: 0; width: 50%; bottom: 0; top: 0;");
     wv.setAttribute("preload", preloadScriptPath); // "file://"
-    wv.setAttribute("disableguestresize", "");
+
+    // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webview
+    if (ENABLE_WEBVIEW_RESIZE) {
+        wv.setAttribute("disableguestresize", "");
+    }
+
     setTimeout(() => {
         wv.removeAttribute("tabindex");
     }, 500);
 
     wv.addEventListener("dom-ready", () => {
-        // wv.openDevTools();
+        // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webcontents
+        // wc.openDevTools({ mode: "detach" });
         wv.clearHistory();
     });
 
@@ -765,44 +778,46 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
 
     return wv as IElectronWebviewTag;
 }
+if (ENABLE_WEBVIEW_RESIZE) {
+    // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webcontents
+    // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webview
+    // wv.setAttribute("disableguestresize", "");
+    const adjustResize = (webview: IElectronWebviewTag) => {
+        // https://javascript.info/size-and-scroll
+        // offsetW/H: excludes margin, includes border, scrollbar, padding.
+        // clientW/H: excludes margin, border, scrollbar, includes padding.
+        // scrollW/H: like client, but includes hidden (overflow) areas
+        const width = webview.clientWidth;
+        const height = webview.clientHeight;
+        const wc = webview.getWebContents();
+        if (wc && (wc as any).setSize && width && height) {
+            (wc as any).setSize({ // wc is WebContents, works in Electron < 3.0
+                normal: {
+                    height,
+                    width,
+                },
+            });
+        }
+    };
+    const onResizeDebounced = debounce(() => {
+        adjustResize(_webview1);
+        // adjustResize(_webview2);
 
-const adjustResize = (webview: IElectronWebviewTag) => {
-    // https://javascript.info/size-and-scroll
-    // offsetW/H: excludes margin, includes border, scrollbar, padding.
-    // clientW/H: excludes margin, border, scrollbar, includes padding.
-    // scrollW/H: like client, but includes hidden (overflow) areas
-    const width = webview.clientWidth;
-    const height = webview.clientHeight;
-    const wc = webview.getWebContents();
-    if (wc && width && height) {
-        wc.setSize({
-            normal: {
-                height,
-                width,
-            },
-        });
-    }
-};
-
-const onResizeDebounced = debounce(() => {
-    adjustResize(_webview1);
-    // adjustResize(_webview2);
-
-    // setTimeout(() => {
-    //     if (_rootHtmlElement) {
-    //         _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_SHOW_VIEWPORT));
-    //     }
-    // }, 1000);
-}, 200);
-
-window.addEventListener("resize", () => {
-    // if (!isFixedLayout(_webview1.READIUM2.link)) {
-    //     if (_rootHtmlElement) {
-    //         _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_HIDE_VIEWPORT));
-    //     }
-    // }
-    onResizeDebounced();
-});
+        // setTimeout(() => {
+        //     if (_rootHtmlElement) {
+        //         _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_SHOW_VIEWPORT));
+        //     }
+        // }, 1000);
+    }, 200);
+    window.addEventListener("resize", () => {
+        // if (!isFixedLayout(_webview1.READIUM2.link)) {
+        //     if (_rootHtmlElement) {
+        //         _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_HIDE_VIEWPORT));
+        //     }
+        // }
+        onResizeDebounced();
+    });
+}
 
 ipcRenderer.on(R2_EVENT_LINK, (_event: any, payload: IEventPayload_R2_EVENT_LINK) => {
     debug("R2_EVENT_LINK");
