@@ -22,6 +22,19 @@ export function secureSessions(server: Server) {
 
     const filter = { urls: ["*", "*://*/*"] };
 
+    // https://github.com/electron/electron/blob/master/docs/tutorial/security.md#csp-http-header
+    const onHeadersReceivedCB = (details: any, callback: any) => {
+        // debug("onHeadersReceived");
+        // debug(details);
+
+        callback({ responseHeaders: {
+            ...details.responseHeaders,
+            "Content-Security-Policy":
+                // tslint:disable-next-line:max-line-length
+                [`default-src 'self' 'unsafe-inline' 'unsafe-eval' ${READIUM2_ELECTRON_HTTP_PROTOCOL}: ${server.serverUrl()}`],
+        } });
+    };
+
     const onBeforeSendHeadersCB = (details: any, callback: any) => {
         // debug("onBeforeSendHeaders");
         // debug(details);
@@ -37,6 +50,7 @@ export function secureSessions(server: Server) {
         callback({ cancel: false, requestHeaders: details.requestHeaders });
     };
 
+    // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#session
     const setCertificateVerifyProcCB = (
         request: CertificateVerifyProcRequest,
         callback: (verificationResult: number) => void) => {
@@ -58,12 +72,14 @@ export function secureSessions(server: Server) {
     };
 
     if (session.defaultSession) {
+        session.defaultSession.webRequest.onHeadersReceived(onHeadersReceivedCB);
         session.defaultSession.webRequest.onBeforeSendHeaders(filter, onBeforeSendHeadersCB);
         session.defaultSession.setCertificateVerifyProc(setCertificateVerifyProcCB);
     }
 
     const webViewSession = getWebViewSession();
     if (webViewSession) {
+        webViewSession.webRequest.onHeadersReceived(onHeadersReceivedCB);
         webViewSession.webRequest.onBeforeSendHeaders(filter, onBeforeSendHeadersCB);
         webViewSession.setCertificateVerifyProc(setCertificateVerifyProcCB);
     }
@@ -135,12 +151,15 @@ const httpProtocolHandler = (
 
 export function initSessions() {
 
+    // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webframe
     protocol.registerStandardSchemes([READIUM2_ELECTRON_HTTP_PROTOCOL], { secure: true });
 
     app.on("ready", () => {
         debug("app ready");
 
         clearSessions(undefined, undefined);
+
+        // registered below (session.defaultSession.protocol === protocol)
         // protocol.registerHttpProtocol(
         //     READIUM2_ELECTRON_HTTP_PROTOCOL,
         //     httpProtocolHandler,
