@@ -134,6 +134,18 @@ if (win.READIUM2.urlQueryParams) {
 if (IS_DEV) {
     ipcRenderer.on(R2_EVENT_DEBUG_VISUALS, (_event: any, payload: string) => {
         win.READIUM2.DEBUG_VISUALS = payload === "true";
+
+        if (!win.READIUM2.DEBUG_VISUALS) {
+            const existings = document.querySelectorAll(
+                // tslint:disable-next-line:max-line-length
+                `*[${readPosCssStylesAttr1}], *[${readPosCssStylesAttr2}], *[${readPosCssStylesAttr3}], *[${readPosCssStylesAttr4}]`);
+            existings.forEach((existing) => {
+                existing.removeAttribute(`${readPosCssStylesAttr1}`);
+                existing.removeAttribute(`${readPosCssStylesAttr2}`);
+                existing.removeAttribute(`${readPosCssStylesAttr3}`);
+                existing.removeAttribute(`${readPosCssStylesAttr4}`);
+            });
+        }
     });
 }
 
@@ -1037,9 +1049,7 @@ const notifyReadingLocationRaw = () => {
         win.READIUM2.locationHashOverride.setAttribute(readPosCssStylesAttr4, "notifyReadingLocationRaw");
     }
 
-    // debug("notifyReadingLocation CSS SELECTOR: " + cssSelector);
-    // debug("notifyReadingLocation CFI: " + cfi);
-    // debug("notifyReadingLocation PROGRESSION: " + progression);
+    debug("|||||||||||||| notifyReadingLocation: ", JSON.stringify(payload));
 };
 const notifyReadingLocationDebounced = debounce(() => {
     notifyReadingLocationRaw();

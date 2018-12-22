@@ -282,7 +282,7 @@ export function installNavigatorDOM(
     _publicationJsonUrl = publicationJsonUrl;
 
     if (IS_DEV) {
-        debug("|||||||||||||| installNavigatorDOM loc: ", JSON.stringify(location));
+        debug("|||||||||||||| installNavigatorDOM: ", JSON.stringify(location));
 
         const debugVisuals = (window.localStorage &&
             window.localStorage.getItem(URL_PARAM_DEBUG_VISUALS) === "true") ? true : false;
@@ -306,7 +306,7 @@ export function installNavigatorDOM(
             }
             setTimeout(() => {
                 const loc = getCurrentReadingLocation();
-                debug("|||||||||||||| getCurrentReadingLocation loc: ", JSON.stringify(loc));
+                debug("|||||||||||||| getCurrentReadingLocation: ", JSON.stringify(loc));
                 if (loc) {
                     handleLinkLocator(loc.locator);
                 }
