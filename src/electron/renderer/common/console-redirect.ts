@@ -64,7 +64,7 @@ export function consoleRedirect(
 
     function processConsoleFunctionCall(this: Console, ...args: any[]): void {
 
-        // process.stderr.write("PROCESS: " + util.inspect(args,
+        // process.stderr.write("PROCESSING... " + util.inspect(args,
         //     { showHidden: false, depth: 1000, colors: true, customInspect: true }) + "\n");
 
         // Attempt to reverse-parse the web console format in the raw message,
@@ -82,7 +82,7 @@ export function consoleRedirect(
                         const d = c2i + 3;
                         const l = lci - d; // args[0].length - d - (args[0].length - lci)
                         const msg = args[0].substr(d, l);
-                        const count = (msg.replace(/%%/g, "").match(/%/g) || []).length;
+                        const count = (msg.replace(/%%/g, "").match(/%[Oosdjc]/g) || []).length;
                         const newAr = [ msg ];
                         if (count > 0) {
                             for (let j = 0; j < count; j++) {
@@ -96,7 +96,7 @@ export function consoleRedirect(
                             }
                         }
 
-                        // process.stderr.write("OK: " + util.inspect(newAr,
+                        // process.stderr.write("PARSED: " + util.inspect(newAr,
                         //     { showHidden: false, depth: 1000, colors: true, customInspect: true }) + "\n");
 
                         // Temporary debug namespace switch, so that the existing debug instance
@@ -113,7 +113,7 @@ export function consoleRedirect(
         // Message cannot be reverse-parsed from web console format
         // => dump it "as is" into the shell console:
         if (!processed) {
-            // process.stderr.write("FAIL: " + util.inspect(args,
+            // process.stderr.write("FALLBACK: " + util.inspect(args,
             //     { showHidden: false, depth: 1000, colors: true, customInspect: true }) + "\n");
 
             debugNodeInstance.apply(debugNodeInstance, args);
@@ -189,7 +189,7 @@ export function consoleRedirect(
 // console.log("%%xxx %d %s", 2, "y%%yy");
 // debug("xxx %d %s%%", 2, "yyy", 3, true);
 // console.log("xxx %d %s%%", 2, "yyy", 3, true);
-// debug("xxx %d %s %% daniel", 2, "yyy", 3, false);
-// console.log("xxx %d %s %% daniel", 2, "yyy", 3, false);
+// debug("xxx %d %s %% da%3Dniel%3D", 2, "yyy", 3, false);
+// console.log("xxx %d %s %% da%3Dniel%3D", 2, "yyy", 3, false);
 // debug("xxx %d %s %c daniel", 2, "yyy", "color: red", 3, true);
 // console.log("xxx %d %s %c daniel", 2, "yyy", "color: red", 3, true);
