@@ -40,8 +40,8 @@ app.on("web-contents-created", (_evt, wc) => {
     wc.on("will-attach-webview", (event, webPreferences, params) => {
         debug("WEBVIEW will-attach-webview: " + params.src);
 
-        delete webPreferences.preload;
-        delete webPreferences.preloadURL;
+        // delete webPreferences.preload;
+        // delete webPreferences.preloadURL;
 
         webPreferences.contextIsolation = false;
         webPreferences.javascript = true;
