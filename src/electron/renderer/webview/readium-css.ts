@@ -27,7 +27,7 @@ if (origin.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
     origin = origin.replace(/\/pub\/.*/, "");
 }
 const urlRootReadiumCSS = origin + "/" + READIUM_CSS_URL_PATH + "/";
-console.log(urlRootReadiumCSS);
+
 // const urlResizeSensor = win.location.origin + "/resize-sensor.js";
 
 export const calculateMaxScrollShift = (): number => {
@@ -176,6 +176,8 @@ ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVEN
 });
 
 export const readiumCSS = (document: Document, messageJson: IEventPayload_R2_EVENT_READIUMCSS) => {
+    console.log("urlRootReadiumCSS: ", urlRootReadiumCSS);
+    console.log("messageJson.urlRoot: ", messageJson.urlRoot);
     readiumCSSSet(document, messageJson, urlRootReadiumCSS, _isVerticalWritingMode, _isRTL);
 };
 

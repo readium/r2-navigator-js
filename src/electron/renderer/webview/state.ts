@@ -46,6 +46,8 @@ export interface IElectronWebviewTag extends Electron.WebviewTag {
 export interface IElectronBrowserWindowState {
     publication: Publication;
     publicationURL: string;
+
+    DEBUG_VISUALS: boolean;
 }
 export interface IElectronBrowserWindow extends Window {
     READIUM2: IElectronBrowserWindowState;

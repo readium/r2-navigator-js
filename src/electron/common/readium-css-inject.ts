@@ -5,6 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import * as debug_ from "debug";
 import * as xmldom from "xmldom";
 
 import {
@@ -22,12 +23,16 @@ import {
 // TODO DARK THEME
 const CSS_CLASS_DARK_THEME = "mdc-theme--dark";
 
+const CLASS_PAGINATED = "r2-css-paginated";
+
 // tslint:disable-next-line:max-line-length
 // https://github.com/readium/readium-css/blob/develop/docs/CSS16-internationalization.md
 // tslint:disable-next-line:max-line-length
 // https://github.com/readium/readium-css/blob/develop/docs/CSS12-user_prefs.md#user-settings-can-be-language-specific
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+
+const debug = debug_("r2:navigator#electron/common/readium-css-inject");
 
 // import { IElectronWebviewTagWindow } from "../renderer/webview/state";
 // ((global as any).window as IElectronWebviewTagWindow).READIUM2.DEBUG_VISUALS
@@ -128,7 +133,7 @@ export function isDocRTL(documant: Document): boolean {
 
 export function isPaginated(documant: Document): boolean {
     return documant && documant.documentElement &&
-        documant.documentElement.classList.contains("readium-paginated");
+        documant.documentElement.classList.contains(CLASS_PAGINATED);
 }
 
 // tslint:disable-next-line:max-line-length
@@ -236,9 +241,9 @@ export function readiumCSSSet(
     const setCSS = messageJson.setCSS;
 
     if (isDEBUG_VISUALS(documant)) {
-        console.log("---- setCSS -----");
-        console.log(setCSS);
-        console.log("-----");
+        debug("---- setCSS -----");
+        debug(setCSS);
+        debug("-----");
     }
 
     if (setCSS.night) {
@@ -281,10 +286,10 @@ export function readiumCSSSet(
         setCSS.paged ? "readium-paged-on" : "readium-scroll-on");
     if (setCSS.paged) {
         docElement.style.overflow = "hidden";
-        docElement.classList.add("readium-paginated");
+        docElement.classList.add(CLASS_PAGINATED);
     } else {
         docElement.style.overflow = "auto";
-        docElement.classList.remove("readium-paginated");
+        docElement.classList.remove(CLASS_PAGINATED);
     }
 
     const defaultPublisherFont = !setCSS.font || setCSS.font === "DEFAULT";
@@ -494,12 +499,16 @@ export function configureFixedLayout(
             }
         }
         if (!metaViewport) {
-            console.log("configureFixedLayout NO meta[name=viewport]");
+            if (isDEBUG_VISUALS(documant)) {
+                debug("configureFixedLayout NO meta[name=viewport]");
+            }
             return undefined;
         }
         const attr = metaViewport.getAttribute("content");
         if (!attr) {
-            console.log("configureFixedLayout NO meta[name=viewport && content]");
+            if (isDEBUG_VISUALS(documant)) {
+                debug("configureFixedLayout NO meta[name=viewport && content]");
+            }
             return undefined;
         }
         const wMatch = attr.match(/\s*width\s*=\s*([0-9]+)/);
@@ -507,27 +516,33 @@ export function configureFixedLayout(
             try {
                 width = parseInt(wMatch[1], 10);
             } catch (err) {
-                console.log(err);
+                debug(err);
                 // ignore
             }
         } else {
-            console.log("configureFixedLayout NO meta[name=viewport && content WIDTH]");
+            if (isDEBUG_VISUALS(documant)) {
+                debug("configureFixedLayout NO meta[name=viewport && content WIDTH]");
+            }
         }
         const hMatch = attr.match(/\s*height\s*=\s*([0-9]+)/);
         if (hMatch && hMatch.length >= 2) {
             try {
                 height = parseInt(hMatch[1], 10);
             } catch (err) {
-                console.log(err);
+                debug(err);
                 // ignore
             }
         } else {
-            console.log("configureFixedLayout NO meta[name=viewport && content HEIGHT]");
+            if (isDEBUG_VISUALS(documant)) {
+                debug("configureFixedLayout NO meta[name=viewport && content HEIGHT]");
+            }
         }
 
         if (width && height) {
-            console.log("READIUM_FXL_VIEWPORT_WIDTH: " + width);
-            console.log("READIUM_FXL_VIEWPORT_HEIGHT: " + height);
+            if (isDEBUG_VISUALS(documant)) {
+                debug("READIUM_FXL_VIEWPORT_WIDTH: " + width);
+                debug("READIUM_FXL_VIEWPORT_HEIGHT: " + height);
+            }
 
             wh = {
                 height,
@@ -546,13 +561,17 @@ export function configureFixedLayout(
         documant.body.style.overflow = "hidden";
         documant.body.style.margin = "0"; // 8px by default!
 
-        console.log("FXL width: " + width);
-        console.log("FXL height: " + height);
+        if (isDEBUG_VISUALS(documant)) {
+            debug("FXL width: " + width);
+            debug("FXL height: " + height);
+        }
 
         const visibleWidth = innerWidth;
         const visibleHeight = innerHeight;
-        console.log("FXL visible width: " + visibleWidth);
-        console.log("FXL visible height: " + visibleHeight);
+        if (isDEBUG_VISUALS(documant)) {
+            debug("FXL visible width: " + visibleWidth);
+            debug("FXL visible height: " + visibleHeight);
+        }
 
         const ratioX = visibleWidth / width;
         const ratioY = visibleHeight / height;
@@ -560,8 +579,10 @@ export function configureFixedLayout(
 
         const tx = (visibleWidth - (width * ratio)) / 2;
         const ty = (visibleHeight - (height * ratio)) / 2;
-        console.log("FXL trans X: " + tx);
-        console.log("FXL trans Y: " + ty);
+        if (isDEBUG_VISUALS(documant)) {
+            debug("FXL trans X: " + tx);
+            debug("FXL trans Y: " + ty);
+        }
 
         documant.documentElement.style.transformOrigin = "0 0";
         documant.documentElement.style.transform = `translateX(${tx}px) translateY(${ty}px) scale(${ratio})`;
@@ -704,7 +725,7 @@ export function injectReadPosCSS(documant: Document) {
 //     scriptElement.appendChild(docu.createTextNode(" "));
 //     docu.head.appendChild(scriptElement);
 //     scriptElement.addEventListener("load", () => {
-//         console.log("ResizeSensor LOADED");
+//         debug("ResizeSensor LOADED");
 //     });
 // };
 
@@ -727,7 +748,7 @@ function definePropertyGetterSetter_DocHeadBody(documant: Document, elementName:
                         if (element.localName && element.localName.toLowerCase() === elementName) {
                             (doc as any)[key] = element; // cache
                             // if (isDEBUG_VISUALS(documant)) {
-                            //     console.log(`XMLDOM - cached documant.${elementName}`);
+                            //     debug(`XMLDOM - cached documant.${elementName}`);
                             // }
                             return element;
                         }
@@ -737,7 +758,7 @@ function definePropertyGetterSetter_DocHeadBody(documant: Document, elementName:
             return undefined;
         },
         set(_val) {
-            console.log("documant." + elementName + " CANNOT BE SET!!");
+            debug("documant." + elementName + " CANNOT BE SET!!");
         },
     });
 }
@@ -745,21 +766,21 @@ function cssSetProperty(this: any, cssProperty: string, val: string) {
     const style = this;
     const elem = style.element;
 
-    // console.log(`XMLDOM - cssSetProperty: ${cssProperty}: ${val};`);
+    // debug(`XMLDOM - cssSetProperty: ${cssProperty}: ${val};`);
     cssStyleSet(cssProperty, val, elem);
 }
 function cssRemoveProperty(this: any, cssProperty: string) {
     const style = this;
     const elem = style.element;
 
-    // console.log(`XMLDOM - cssRemoveProperty: ${cssProperty}`);
+    // debug(`XMLDOM - cssRemoveProperty: ${cssProperty}`);
     cssStyleSet(cssProperty, undefined, elem);
 }
 function cssStyleItem(this: any, i: number): string | undefined {
     const style = this;
     const elem = style.element;
     // if (isDEBUG_VISUALS(documant)) {
-    //     console.log(`XMLDOM - cssStyleItem: ${i}`);
+    //     debug(`XMLDOM - cssStyleItem: ${i}`);
     // }
     const styleAttr = elem.getAttribute("style");
     if (!styleAttr) {
@@ -777,7 +798,7 @@ function cssStyleItem(this: any, i: number): string | undefined {
                 const regexMatch = regex.exec(trimmed);
                 if (regexMatch) {
                     // if (isDEBUG_VISUALS(documant)) {
-                    //     console.log(`XMLDOM - cssStyleItem: ${i} => ${regexMatch[1]}`);
+                    //     debug(`XMLDOM - cssStyleItem: ${i} => ${regexMatch[1]}`);
                     // }
                     return regexMatch[1];
                 }
@@ -788,7 +809,7 @@ function cssStyleItem(this: any, i: number): string | undefined {
 }
 function cssStyleGet(cssProperty: string, elem: Element): string | undefined {
     // if (isDEBUG_VISUALS(documant)) {
-    //     console.log(`XMLDOM - cssStyleGet: ${cssProperty}`);
+    //     debug(`XMLDOM - cssStyleGet: ${cssProperty}`);
     // }
 
     const styleAttr = elem.getAttribute("style");
@@ -804,7 +825,7 @@ function cssStyleGet(cssProperty: string, elem: Element): string | undefined {
         if (regexMatch) {
             cssPropertyValue = regexMatch[1];
             // if (isDEBUG_VISUALS(documant)) {
-            //     console.log(`XMLDOM - cssStyleGet: ${cssProperty} => ${cssPropertyValue}`);
+            //     debug(`XMLDOM - cssStyleGet: ${cssProperty} => ${cssPropertyValue}`);
             // }
             break;
         }
@@ -813,7 +834,7 @@ function cssStyleGet(cssProperty: string, elem: Element): string | undefined {
 }
 function cssStyleSet(cssProperty: string, val: string | undefined, elem: Element) {
     // if (isDEBUG_VISUALS(documant)) {
-    //     console.log(`XMLDOM - cssStyleSet: ${cssProperty}: ${val};`);
+    //     debug(`XMLDOM - cssStyleSet: ${cssProperty}: ${val};`);
     // }
 
     const str = val ? `${cssProperty}: ${val}` : undefined;
@@ -850,7 +871,7 @@ function definePropertyGetterSetter_ElementStyle(element: Element) {
             const elem = style.element;
 
             // if (isDEBUG_VISUALS(documant)) {
-            //     console.log(`XMLDOM - style.length`);
+            //     debug(`XMLDOM - style.length`);
             // }
 
             const styleAttr = elem.getAttribute("style");
@@ -865,12 +886,12 @@ function definePropertyGetterSetter_ElementStyle(element: Element) {
                 }
             }
             // if (isDEBUG_VISUALS(documant)) {
-            //     console.log(`XMLDOM - style.length: ${count}`);
+            //     debug(`XMLDOM - style.length: ${count}`);
             // }
             return count;
         },
         set(_val) {
-            console.log("style.length CANNOT BE SET!!");
+            debug("style.length CANNOT BE SET!!");
         },
     });
 
@@ -899,7 +920,7 @@ function classListContains(this: any, className: string): boolean {
     const style = this;
     const elem = style.element;
     // if (isDEBUG_VISUALS(documant)) {
-    //     console.log(`XMLDOM - classListContains: ${className}`);
+    //     debug(`XMLDOM - classListContains: ${className}`);
     // }
 
     const classAttr = elem.getAttribute("class");
@@ -910,7 +931,7 @@ function classListContains(this: any, className: string): boolean {
     for (const clazz of classes) {
         if (clazz === className) {
             // if (isDEBUG_VISUALS(documant)) {
-            //     console.log(`XMLDOM - classListContains TRUE: ${className}`);
+            //     debug(`XMLDOM - classListContains TRUE: ${className}`);
             // }
             return true;
         }
@@ -922,7 +943,7 @@ function classListAdd(this: any, className: string) {
     const elem = style.element;
 
     // if (isDEBUG_VISUALS(documant)) {
-    //     console.log(`XMLDOM - classListAdd: ${className}`);
+    //     debug(`XMLDOM - classListAdd: ${className}`);
     // }
 
     const classAttr = elem.getAttribute("class");
@@ -947,7 +968,7 @@ function classListRemove(this: any, className: string) {
     const elem = style.element;
 
     // if (isDEBUG_VISUALS(documant)) {
-    //     console.log(`XMLDOM - classListRemove: ${className}`);
+    //     debug(`XMLDOM - classListRemove: ${className}`);
     // }
 
     const classAttr = elem.getAttribute("class");

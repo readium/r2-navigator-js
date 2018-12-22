@@ -5,6 +5,8 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import { LocatorLocations } from "@r2-shared-js/models/locator";
+
 import { IReadiumCSS } from "./readium-css-settings";
 
 // in RENDERER: webview.send()
@@ -16,6 +18,10 @@ export interface IEventPayload_R2_EVENT_READIUMCSS {
     isFixedLayout?: boolean;
     urlRoot?: string;
 }
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_DEBUG_VISUALS = "R2_EVENT_DEBUG_VISUALS";
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
@@ -50,12 +56,19 @@ export interface IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO {
     isTwoPageSpread: boolean | undefined;
     spreadIndex: number | undefined;
 }
+
 // tslint:disable-next-line:class-name
-export interface IEventPayload_R2_EVENT_READING_LOCATION {
-    cfi: string | undefined;
-    cssSelector: string | undefined;
-    progression: number | undefined;
-    position: number | undefined;
+export interface IEventPayload_R2_EVENT_READING_LOCATION extends LocatorLocations {
+    // interface LocatorLocations {
+    //     cfi?: string;
+    //     cssSelector?: string;
+    //     position?: number;
+    //     progression?: number;
+    // }
+    // cfi: string | undefined;
+    // cssSelector: string | undefined;
+    // progression: number | undefined;
+    // position: number | undefined;
 
     paginationInfo: IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO | undefined;
 }

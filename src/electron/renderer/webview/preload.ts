@@ -5,10 +5,22 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+
+// // import { consoleRedirect } from "../common/console-redirect";
+// if (IS_DEV) {
+//     // tslint:disable-next-line:no-var-requires
+//     const cr = require("../common/console-redirect");
+//     // const releaseConsoleRedirect =
+//     cr.consoleRedirect("r2:navigator#electron/renderer/webview/preload", process.stdout, process.stderr, true);
+// }
+
 import ResizeSensor = require("css-element-queries/src/ResizeSensor");
 // import ResizeSensor = require("resize-sensor/ResizeSensor");
 
+import { LocatorLocations } from "@r2-shared-js/models/locator";
 import { debounce } from "debounce";
+import * as debug_ from "debug";
 import { ipcRenderer } from "electron";
 
 import {
@@ -19,6 +31,7 @@ import {
     IEventPayload_R2_EVENT_READIUMCSS,
     IEventPayload_R2_EVENT_SCROLLTO,
     IEventPayload_R2_EVENT_WEBVIEW_READY,
+    R2_EVENT_DEBUG_VISUALS,
     R2_EVENT_LINK,
     R2_EVENT_PAGE_TURN,
     R2_EVENT_PAGE_TURN_RES,
@@ -40,11 +53,16 @@ import {
 } from "../../common/styles";
 // import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../../common/sessions";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
-import { consoleRedirect } from "../common/console-redirect";
 import { uniqueCssSelector } from "../common/cssselector2";
 import { easings } from "../common/easings";
 import { getURLQueryParams } from "../common/querystring";
-import { URL_PARAM_CSS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS } from "../common/url-params";
+import {
+    URL_PARAM_CSS,
+    URL_PARAM_DEBUG_VISUALS,
+    URL_PARAM_EPUBREADINGSYSTEM,
+    URL_PARAM_GOTO,
+    URL_PARAM_PREVIOUS,
+} from "../common/url-params";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
     calculateColumnDimension,
@@ -58,10 +76,7 @@ import {
 } from "./readium-css";
 import { IElectronWebviewTagWindow } from "./state";
 
-const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
-
-// const releaseConsoleRedirect =
-consoleRedirect("r2:navigator#electron/renderer/webview/preload", process.stdout, process.stderr, true);
+const debug = debug_("r2:navigator#electron/renderer/webview/preload");
 
 // webFrame.registerURLSchemeAsSecure(READIUM2_ELECTRON_HTTP_PROTOCOL);
 // webFrame.registerURLSchemeAsBypassingCSP(READIUM2_ELECTRON_HTTP_PROTOCOL);
@@ -105,7 +120,7 @@ if (win.READIUM2.urlQueryParams) {
             const str = new Buffer(base64EpubReadingSystem, "base64").toString("utf8");
             readiumEpubReadingSystemJson = JSON.parse(str);
         } catch (err) {
-            console.log(err);
+            debug(err);
         }
     }
 
@@ -113,7 +128,13 @@ if (win.READIUM2.urlQueryParams) {
         setWindowNavigatorEpubReadingSystem(win, readiumEpubReadingSystemJson);
     }
 
-    // TODO: const debug = win.READIUM2.urlQueryParams[DEBUG_VISUALS];
+    win.READIUM2.DEBUG_VISUALS = win.READIUM2.urlQueryParams[URL_PARAM_DEBUG_VISUALS] === "true";
+}
+
+if (IS_DEV) {
+    ipcRenderer.on(R2_EVENT_DEBUG_VISUALS, (_event: any, payload: string) => {
+        win.READIUM2.DEBUG_VISUALS = payload === "true";
+    });
 }
 
 ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_SCROLLTO) => {
@@ -133,7 +154,7 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
     }
     if (payload.goto) {
         // tslint:disable-next-line:no-string-literal
-        win.READIUM2.urlQueryParams[URL_PARAM_GOTO] = payload.goto;
+        win.READIUM2.urlQueryParams[URL_PARAM_GOTO] = payload.goto; // decodeURIComponent
     } else {
         // tslint:disable-next-line:no-string-literal
         if (typeof win.READIUM2.urlQueryParams[URL_PARAM_GOTO] !== "undefined") {
@@ -223,7 +244,7 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
                     win.cancelAnimationFrame,
                     undefined,
                     // (cancelled: boolean) => {
-                    //     console.log(cancelled);
+                    //     debug(cancelled);
                     // },
                     isVerticalWritingMode() ? "scrollTop" : "scrollLeft",
                     300,
@@ -249,7 +270,7 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
                     win.cancelAnimationFrame,
                     undefined,
                     // (cancelled: boolean) => {
-                    //     console.log(cancelled);
+                    //     debug(cancelled);
                     // },
                     isVerticalWritingMode() ? "scrollLeft" : "scrollTop",
                     300,
@@ -277,7 +298,7 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
                     win.cancelAnimationFrame,
                     undefined,
                     // (cancelled: boolean) => {
-                    //     console.log(cancelled);
+                    //     debug(cancelled);
                     // },
                     isVerticalWritingMode() ? "scrollTop" : "scrollLeft",
                     300,
@@ -303,7 +324,7 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
                     win.cancelAnimationFrame,
                     undefined,
                     // (cancelled: boolean) => {
-                    //     console.log(cancelled);
+                    //     debug(cancelled);
                     // },
                     isVerticalWritingMode() ? "scrollLeft" : "scrollTop",
                     300,
@@ -379,7 +400,7 @@ const checkReadyPass = () => {
                 // tslint:disable-next-line:no-unused-expression
                 new ResizeSensor(win.document.body, () => {
 
-                    console.log("ResizeSensor");
+                    debug("ResizeSensor");
                     scrollToHashDebounced();
                 });
             });
@@ -563,14 +584,22 @@ const scrollToHashRaw = () => {
                 }
 
                 // tslint:disable-next-line:no-string-literal
-                let gotoCssSelector = win.READIUM2.urlQueryParams[URL_PARAM_GOTO];
+                const gto = win.READIUM2.urlQueryParams[URL_PARAM_GOTO];
+                let gotoCssSelector: string | undefined;
+                if (gto) {
+                    // decodeURIComponent
+                    const s = new Buffer(gto, "base64").toString("utf8");
+                    const js = JSON.parse(s);
+                    gotoCssSelector = (js as LocatorLocations).cssSelector;
+                    // TODO: CFI, etc.?
+                }
                 if (gotoCssSelector) {
                     gotoCssSelector = gotoCssSelector.replace(/\+/g, " ");
                     let selected: Element | null = null;
                     try {
                         selected = document.querySelector(gotoCssSelector);
                     } catch (err) {
-                        console.log(err);
+                        debug(err);
                     }
                     if (selected) {
 
@@ -622,18 +651,18 @@ let _ignoreScrollEvent = false;
 // function testReadiumCSS(readiumcssJson: IEventPayload_R2_EVENT_READIUMCSS | undefined) {
 //     const oldHTML = win.document.documentElement.outerHTML;
 //     const iBody = oldHTML.indexOf("<body");
-//     console.log(oldHTML.substr(0, iBody + 100));
+//     debug(oldHTML.substr(0, iBody + 100));
 
 //     let newHTML: string | undefined;
 //     try {
 //         newHTML = transformHTML(oldHTML, readiumcssJson, "application/xhtml+xml");
 //     } catch (err) {
-//         console.log(err);
+//         debug(err);
 //         return;
 //     }
 
 //     const iBody_ = newHTML.indexOf("<body");
-//     console.log(newHTML.substr(0, iBody_ + 100));
+//     debug(newHTML.substr(0, iBody_ + 100));
 // }
 
 win.addEventListener("DOMContentLoaded", () => {
@@ -667,10 +696,10 @@ win.addEventListener("DOMContentLoaded", () => {
                 str = new Buffer(base64ReadiumCSS, "base64").toString("utf8");
                 readiumcssJson = JSON.parse(str);
             } catch (err) {
-                console.log("################## READIUM CSS PARSE ERROR?!");
-                console.log(base64ReadiumCSS);
-                console.log(err);
-                console.log(str);
+                debug("################## READIUM CSS PARSE ERROR?!");
+                debug(base64ReadiumCSS);
+                debug(err);
+                debug(str);
             }
         }
     }
@@ -695,7 +724,8 @@ win.addEventListener("DOMContentLoaded", () => {
 
     const alreadedInjected = win.document.documentElement.hasAttribute("data-readiumcss");
     if (alreadedInjected) {
-        console.log(">>>>>> ReadiumCSS already injected by streamer");
+        debug(">>>>>1 ReadiumCSS already injected by streamer");
+        console.log(">>>>>2 ReadiumCSS already injected by streamer");
     }
 
     if (!alreadedInjected) {
@@ -707,12 +737,12 @@ win.addEventListener("DOMContentLoaded", () => {
 
     // // DEBUG
     // win.document.body.addEventListener("focus", (ev: any) => {
-    //     console.log("focus:");
-    //     console.log(ev.target);
+    //     debug("focus:");
+    //     debug(ev.target);
     // }, true);
     // win.document.body.addEventListener("focusin", (ev: any) => {
-    //     console.log("focusin:");
-    //     console.log(ev.target);
+    //     debug("focusin:");
+    //     debug(ev.target);
     // });
     // // DEBUG
 
@@ -757,7 +787,7 @@ win.addEventListener("DOMContentLoaded", () => {
         if (isVerticalWritingMode() || // force update, because needs getComputedStyle()
             !alreadedInjected) {
 
-            console.log(">>>>>> ReadiumCSS inject again");
+            debug(">>>>>> ReadiumCSS inject again");
             readiumCSS(win.document, readiumcssJson);
         }
     }
@@ -1007,9 +1037,9 @@ const notifyReadingLocationRaw = () => {
         win.READIUM2.locationHashOverride.setAttribute(readPosCssStylesAttr4, "notifyReadingLocationRaw");
     }
 
-    // console.log("notifyReadingLocation CSS SELECTOR: " + cssSelector);
-    // console.log("notifyReadingLocation CFI: " + cfi);
-    // console.log("notifyReadingLocation PROGRESSION: " + progression);
+    // debug("notifyReadingLocation CSS SELECTOR: " + cssSelector);
+    // debug("notifyReadingLocation CFI: " + cfi);
+    // debug("notifyReadingLocation PROGRESSION: " + progression);
 };
 const notifyReadingLocationDebounced = debounce(() => {
     notifyReadingLocationRaw();
