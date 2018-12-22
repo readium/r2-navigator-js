@@ -1,10 +1,30 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.8...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.9...develop
 
 Changes:
 * TODO
+
+# 1.0.9
+
+> Build environment: NodeJS `8.14.1`, NPM `6.4.1`
+
+Changes:
+* Updated documentation
+* Web console logging + shell output redirection
+* Added window-attached debug(true/false) function to switch visual debugging (setting is persistent in localStorage)
+* Code cleanup, better debug messages
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.9/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.9/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.9
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.8...v1.0.9
 
 # 1.0.8
 
