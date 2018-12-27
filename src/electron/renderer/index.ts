@@ -182,15 +182,15 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
         _readingLocationSaver(_lastSavedReadingLocation);
     }
 
-    // tslint:disable-next-line:no-floating-promises
-    (async () => {
-        try {
-            const visible = await isLocatorVisible(_lastSavedReadingLocation.locator);
-            debug(`isLocatorVisible: ${visible}`);
-        } catch (err) {
-            debug(err);
-        }
-    })();
+    // // tslint:disable-next-line:no-floating-promises
+    // (async () => {
+    //     try {
+    //         const visible = await isLocatorVisible(_lastSavedReadingLocation.locator);
+    //         debug(`isLocatorVisible async: ${visible}`);
+    //     } catch (err) {
+    //         debug(err);
+    //     }
+    // })();
 };
 export function setReadingLocationSaver(func: (locator: LocatorExtended) => void) {
     _readingLocationSaver = func;

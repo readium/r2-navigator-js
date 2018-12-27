@@ -423,6 +423,24 @@ handleLinkLocator(locator);
 
 ```javascript
 import {
+  getCurrentReadingLocation,
+  isLocatorVisible
+} from "@r2-navigator-js/electron/renderer/index";
+
+const locEx = getCurrentReadingLocation();
+
+// This function returns true (async promise) if the locator
+// is fully or partially visible inside the viewport (scrolled or paginated).
+// Always returns true for fixed layout publications / documents.
+try {
+    const visible = await isLocatorVisible(locEx.locator);
+} catch (err) {
+    console.log(err); // promise rejection
+}
+```
+
+```javascript
+import {
     navLeftOrRight
 } from "@r2-navigator-js/electron/renderer/index";
 
