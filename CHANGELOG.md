@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.9...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.10...develop
 
 Changes:
 * TODO
+
+# 1.0.10
+
+> Build environment: NodeJS `8.14.1`, NPM `6.4.1`
+
+Changes:
+* Added visibility testing for locators (updated README documentation)
+* Improved timing of reading location restore, in case of layout delay due to heavy font faces, etc.
+* Fixed issues related to Electron4 support (webview resizing, Content Security Policy via HTTP headers, security params in webview creation interceptor, priviledged URL scheme / protocol for fetch in renderer process)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.10/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.10/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.10
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.9...v1.0.10
 
 # 1.0.9
 
