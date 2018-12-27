@@ -25,6 +25,7 @@ import { ipcRenderer, shell } from "electron";
 
 import {
     IEventPayload_R2_EVENT_LINK,
+    IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
     IEventPayload_R2_EVENT_PAGE_TURN,
     IEventPayload_R2_EVENT_READING_LOCATION,
     IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO,
@@ -33,6 +34,7 @@ import {
     IEventPayload_R2_EVENT_WEBVIEW_READY,
     R2_EVENT_DEBUG_VISUALS,
     R2_EVENT_LINK,
+    R2_EVENT_LOCATOR_VISIBLE,
     R2_EVENT_PAGE_TURN,
     R2_EVENT_PAGE_TURN_RES,
     R2_EVENT_READING_LOCATION,
@@ -163,8 +165,7 @@ export function getCurrentReadingLocation(): LocatorExtended | undefined {
     return _lastSavedReadingLocation;
 }
 let _readingLocationSaver: ((locator: LocatorExtended) => void) | undefined;
-const _saveReadingLocation: (docHref: string, locator: IEventPayload_R2_EVENT_READING_LOCATION)
-    => void = (docHref: string, locator: IEventPayload_R2_EVENT_READING_LOCATION) => {
+const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_READING_LOCATION) => {
     _lastSavedReadingLocation = {
         locator: {
             href: docHref,
@@ -180,6 +181,16 @@ const _saveReadingLocation: (docHref: string, locator: IEventPayload_R2_EVENT_RE
     if (_readingLocationSaver) {
         _readingLocationSaver(_lastSavedReadingLocation);
     }
+
+    // tslint:disable-next-line:no-floating-promises
+    (async () => {
+        try {
+            const visible = await isLocatorVisible(_lastSavedReadingLocation.locator);
+            debug(`isLocatorVisible: ${visible}`);
+        } catch (err) {
+            debug(err);
+        }
+    })();
 };
 export function setReadingLocationSaver(func: (locator: LocatorExtended) => void) {
     _readingLocationSaver = func;
@@ -196,6 +207,48 @@ export function readiumCssOnOff() {
     //     const payload2 = __computeReadiumCssJsonMessage(_webview2.READIUM2.link);
     //     _webview2.send(R2_EVENT_READIUMCSS, payload2); // .getWebContents()
     // }
+}
+
+export async function isLocatorVisible(locator: Locator): Promise<boolean> {
+    return new Promise<boolean>((resolve, reject) => {
+        if (!_webview1) {
+            reject("No navigator webview?!");
+            return;
+        }
+        if (!_webview1.READIUM2.link) {
+            reject("No navigator webview link?!");
+            return;
+        }
+        if (_webview1.READIUM2.link.Href !== locator.href) {
+            debug(`isLocatorVisible FALSE: ${_webview1.READIUM2.link.Href} !== ${locator.href}`);
+            resolve(false);
+            return;
+        }
+
+        // const cb = (_event: any, payload: IEventPayload_R2_EVENT_LOCATOR_VISIBLE) => {
+        //     debug("R2_EVENT_LOCATOR_VISIBLE");
+        //     debug(payload.visible);
+        // };
+        // ipcRenderer.once(R2_EVENT_LOCATOR_VISIBLE, cb);
+
+        const cb = (event: Electron.IpcMessageEvent) => {
+            if (event.channel === R2_EVENT_LOCATOR_VISIBLE) {
+                const webview = event.currentTarget as IElectronWebviewTag;
+                // const activeWebView = getActiveWebView();
+                if (webview !== _webview1) {
+                    reject("Wrong navigator webview?!");
+                    return;
+                }
+                const payload_ = event.args[0] as IEventPayload_R2_EVENT_LOCATOR_VISIBLE;
+                debug(`isLocatorVisible: ${payload_.visible}`);
+                _webview1.removeEventListener("ipc-message", cb);
+                resolve(payload_.visible);
+            }
+        };
+        _webview1.addEventListener("ipc-message", cb);
+        const payload: IEventPayload_R2_EVENT_LOCATOR_VISIBLE = { location: locator.locations, visible: false };
+        _webview1.send(R2_EVENT_LOCATOR_VISIBLE, payload);
+    });
 }
 
 let _webview1: IElectronWebviewTag;
@@ -710,6 +763,7 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
         }
 
         if (event.channel === R2_EVENT_LINK) {
+            debug("R2_EVENT_LINK (webview.addEventListener('ipc-message')");
             const payload = event.args[0] as IEventPayload_R2_EVENT_LINK;
             handleLinkUrl(payload.url);
         } else if (event.channel === R2_EVENT_WEBVIEW_READY) {
@@ -819,8 +873,10 @@ if (ENABLE_WEBVIEW_RESIZE) {
     });
 }
 
+// see webview.addEventListener("ipc-message", ...)
+// needed for main process browserWindow.webContents.send()
 ipcRenderer.on(R2_EVENT_LINK, (_event: any, payload: IEventPayload_R2_EVENT_LINK) => {
-    debug("R2_EVENT_LINK");
+    debug("R2_EVENT_LINK (ipcRenderer.on)");
     debug(payload.url);
     handleLinkUrl(payload.url);
 });
