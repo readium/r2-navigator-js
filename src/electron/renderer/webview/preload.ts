@@ -25,6 +25,7 @@ import { ipcRenderer } from "electron";
 
 import {
     IEventPayload_R2_EVENT_LINK,
+    IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
     IEventPayload_R2_EVENT_PAGE_TURN,
     IEventPayload_R2_EVENT_READING_LOCATION,
     IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO,
@@ -33,6 +34,7 @@ import {
     IEventPayload_R2_EVENT_WEBVIEW_READY,
     R2_EVENT_DEBUG_VISUALS,
     R2_EVENT_LINK,
+    R2_EVENT_LOCATOR_VISIBLE,
     R2_EVENT_PAGE_TURN,
     R2_EVENT_PAGE_TURN_RES,
     R2_EVENT_READING_LOCATION,
@@ -141,6 +143,12 @@ if (IS_DEV) {
         }
     });
 }
+
+ipcRenderer.on(R2_EVENT_LOCATOR_VISIBLE, (_event: any, payload: IEventPayload_R2_EVENT_LOCATOR_VISIBLE) => {
+    // payload.location.cssSelector
+    payload.visible = true; // TODO
+    ipcRenderer.sendToHost(R2_EVENT_LOCATOR_VISIBLE, payload);
+});
 
 ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_SCROLLTO) => {
 

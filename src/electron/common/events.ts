@@ -11,6 +11,17 @@ import { IReadiumCSS } from "./readium-css-settings";
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_LOCATOR_VISIBLE = "R2_EVENT_LOCATOR_VISIBLE";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_LOCATOR_VISIBLE {
+    visible: boolean;
+    location: LocatorLocations;
+}
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_READIUMCSS = "R2_EVENT_READIUMCSS";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_READIUMCSS {
@@ -73,7 +84,7 @@ export interface IEventPayload_R2_EVENT_READING_LOCATION extends LocatorLocation
     paginationInfo: IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO | undefined;
 }
 
-// in MAIN: browserWindow.webContents.send(()
+// in MAIN: browserWindow.webContents.send()
 // in RENDERER: ipcRenderer.on()
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
