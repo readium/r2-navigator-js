@@ -27,12 +27,25 @@ export function secureSessions(server: Server) {
         // debug("onHeadersReceived");
         // debug(details);
 
-        callback({ responseHeaders: {
-            ...details.responseHeaders,
-            "Content-Security-Policy":
-                // tslint:disable-next-line:max-line-length
-                [`default-src 'self' 'unsafe-inline' 'unsafe-eval' ${READIUM2_ELECTRON_HTTP_PROTOCOL}: ${server.serverUrl()}`],
-        } });
+        if (!details.url) {
+            callback({});
+            return;
+        }
+
+        const serverUrl = server.serverUrl();
+
+        if ((serverUrl && details.url.startsWith(serverUrl)) ||
+            details.url.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+
+            callback({ responseHeaders: {
+                ...details.responseHeaders,
+                "Content-Security-Policy":
+                    // tslint:disable-next-line:max-line-length
+                    [`default-src 'self' 'unsafe-inline' 'unsafe-eval' ${READIUM2_ELECTRON_HTTP_PROTOCOL}: ${serverUrl}`],
+            } });
+        } else {
+            callback({});
+        }
     };
 
     const onBeforeSendHeadersCB = (details: any, callback: any) => {
@@ -41,13 +54,25 @@ export function secureSessions(server: Server) {
 
         // details.requestHeaders["User-Agent"] = "R2 Electron";
 
-        if (server.isSecured()) {
+        if (!details.url) {
+            callback({});
+            return;
+        }
+
+        const serverUrl = server.serverUrl();
+
+        if (server.isSecured() &&
+            ((serverUrl && details.url.startsWith(serverUrl)) ||
+            details.url.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://"))) {
+
             const header = server.getSecureHTTPHeader(details.url);
             if (header) {
                 details.requestHeaders[header.name] = header.value;
             }
+            callback({ cancel: false, requestHeaders: details.requestHeaders });
+        } else {
+            callback({ cancel: false });
         }
-        callback({ cancel: false, requestHeaders: details.requestHeaders });
     };
 
     // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#session
@@ -72,14 +97,14 @@ export function secureSessions(server: Server) {
     };
 
     if (session.defaultSession) {
-        session.defaultSession.webRequest.onHeadersReceived(onHeadersReceivedCB);
+        session.defaultSession.webRequest.onHeadersReceived(filter, onHeadersReceivedCB);
         session.defaultSession.webRequest.onBeforeSendHeaders(filter, onBeforeSendHeadersCB);
         session.defaultSession.setCertificateVerifyProc(setCertificateVerifyProcCB);
     }
 
     const webViewSession = getWebViewSession();
     if (webViewSession) {
-        webViewSession.webRequest.onHeadersReceived(onHeadersReceivedCB);
+        webViewSession.webRequest.onHeadersReceived(filter, onHeadersReceivedCB);
         webViewSession.webRequest.onBeforeSendHeaders(filter, onBeforeSendHeadersCB);
         webViewSession.setCertificateVerifyProc(setCertificateVerifyProcCB);
     }
