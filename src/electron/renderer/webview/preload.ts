@@ -15,9 +15,6 @@ if (IS_DEV) {
     cr.consoleRedirect("r2:navigator#electron/renderer/webview/preload", process.stdout, process.stderr, true);
 }
 
-import ResizeSensor = require("css-element-queries/src/ResizeSensor");
-// import ResizeSensor = require("resize-sensor/ResizeSensor");
-
 import { LocatorLocations } from "@r2-shared-js/models/locator";
 import { debounce } from "debounce";
 import * as debug_ from "debug";
@@ -48,6 +45,7 @@ import {
     isPaginated,
 } from "../../common/readium-css-inject";
 import {
+    ROOT_CLASS_NO_FOOTNOTES,
     readPosCssStylesAttr1,
     readPosCssStylesAttr2,
     readPosCssStylesAttr3,
@@ -77,6 +75,10 @@ import {
     readiumCSS,
 } from "./readium-css";
 import { IElectronWebviewTagWindow } from "./state";
+import ResizeSensor = require("css-element-queries/src/ResizeSensor");
+// import ResizeSensor = require("resize-sensor/ResizeSensor");
+
+
 
 // import { registerProtocol } from "@r2-navigator-js/electron/renderer/common/protocol";
 // registerProtocol();
@@ -858,7 +860,9 @@ win.addEventListener("DOMContentLoaded", () => {
     });
 
     win.document.addEventListener("click", (e) => {
+        // TODO? xlink:href
         const href = (e.target as any).href;
+        // const href = (e.target as Element).getAttribute("href");
         if (!href) {
             return;
         }
@@ -866,10 +870,14 @@ win.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         e.stopPropagation();
 
-        const payload: IEventPayload_R2_EVENT_LINK = {
-            url: href,
-        };
-        ipcRenderer.sendToHost(R2_EVENT_LINK, payload);
+        const done = popupFootNote(e.target as HTMLElement, href);
+        if (!done) {
+            const payload: IEventPayload_R2_EVENT_LINK = {
+                url: href,
+            };
+            ipcRenderer.sendToHost(R2_EVENT_LINK, payload);
+        }
+
         return false;
     }, true);
 
@@ -886,6 +894,58 @@ win.addEventListener("DOMContentLoaded", () => {
         }
     }
 });
+
+function popupFootNote(element: HTMLElement, href: string): boolean {
+
+    if (!win.document || !win.document.documentElement ||
+        win.document.documentElement.classList.contains(ROOT_CLASS_NO_FOOTNOTES)) {
+        return false;
+    }
+    let epubType = element.getAttribute("epub:type");
+    if (!epubType) {
+        epubType = element.getAttributeNS("http://www.idpf.org/2007/ops", "type");
+    }
+    if (!epubType) {
+        return false;
+    }
+    const isNoteref = epubType.indexOf("noteref") >= 0 ||
+        epubType.indexOf("biblioref") >= 0 ||
+        epubType.indexOf("glossref") >= 0 ||
+        epubType.indexOf("biblannorefioref") >= 0;
+    if (!isNoteref) {
+        return false;
+    }
+
+    const url = new URL(href); // includes #
+    if (!url.hash) {
+        return false;
+    }
+    // const targetElement = win.document.getElementById(url.hash.substr(1));
+    const targetElement = win.document.querySelector(url.hash);
+    if (!targetElement || !targetElement.outerHTML) {
+        return false;
+    }
+
+    const outerHTML = targetElement.outerHTML;
+    debug(outerHTML);
+
+    // outerHTML = outerHTML.replace(/xmlns=["|']http:\/\/www.w3.org\/1999\/xhtml["|']/g, " ");
+    // outerHTML = outerHTML.replace(/xmlns=["|']http:\/\/www.idpf.org\/2007\/ops["|']/g, " ");
+    // outerHTML = outerHTML.replace(/click=["|']javascript:.+["|']/g, " ");
+    // outerHTML = outerHTML.replace(/<script>.+<\/script>/g, " ");
+
+    // import * as xmldom from "xmldom";
+    // const dom = new xmldom.DOMParser().parseFromString(outerHTML, "application/xhtml+xml");
+
+    // const payload_: IEventPayload_R2_EVENT_LINK_FOOTNOTE = {
+    //     hash: url.hash,
+    //     html: outerHTML,
+    //     url: href,
+    // };
+    // ipcRenderer.sendToHost(R2_EVENT_LINK_FOOTNOTE, payload_);
+
+    return true;
+}
 
 let _cancelInitialScrollCheck = false;
 // after DOMContentLoaded

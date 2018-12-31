@@ -5,8 +5,30 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+export const ROOT_CLASS_NO_FOOTNOTES = "r2-no-popup-foonotes";
+// 'a' element: noteref biblioref glossref annoref
+//
+// @namespace epub "http://www.idpf.org/2007/ops";
+// [epub|type~="footnote"]
+// VS.
+// *[epub\\:type~="footnote"]
+export const footnotesCssStyles = `
+@namespace epub "http://www.idpf.org/2007/ops";
+
+:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="footnote"],
+:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="note"],
+:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="endnote"],
+:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="rearnote"],
+:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="biblioentry"],
+:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="annotation"] {
+    display: none;
+}
+`;
+
 export const focusCssStyles = `
 @keyframes readium2ElectronAnimation_FOCUS {
+    0% {
+    }
     100% {
         outline: inherit;
     }
@@ -15,16 +37,22 @@ export const focusCssStyles = `
     outline-color: blue !important;
     outline-style: solid !important;
     outline-width: 2px !important;
-    outline-offset: 0px !important;
-    animation: readium2ElectronAnimation_FOCUS 3s forwards;
+    outline-offset: 2px !important;
+
+    animation-name: readium2ElectronAnimation_FOCUS;
+    animation-duration: 3s;
+    animation-fill-mode: forwards;
+    animation-timing-function: linear;
 }
-*.no-focus-outline:focus {
+*.r2-no-focus-outline:focus {
     outline: inherit !important;
 }
 `;
 
 export const targetCssStyles = `
 @keyframes readium2ElectronAnimation_TARGET {
+    0% {
+    }
     100% {
         outline: inherit;
     }
@@ -34,9 +62,13 @@ export const targetCssStyles = `
     outline-style: solid !important;
     outline-width: 2px !important;
     outline-offset: 2px !important;
-    animation: readium2ElectronAnimation_TARGET 3s forwards;
+
+    animation-name: readium2ElectronAnimation_TARGET;
+    animation-duration: 3s;
+    animation-fill-mode: forwards;
+    animation-timing-function: linear;
 }
-*.no-target-outline:target {
+*.r2-no-target-outline:target {
     outline: inherit !important;
 }
 `;
@@ -47,7 +79,7 @@ background-color: rgb(155, 179, 240) !important;
 color: black !important;
 }
 
-:root.mdc-theme--dark ::selection {
+:root[style*="readium-night-on"] ::selection {
 background-color: rgb(100, 122, 177) !important;
 color: white !important;
 }
@@ -56,7 +88,7 @@ color: white !important;
     color: black !important;
     background-color: rgb(185, 207, 255) !important;
 }
-:root.mdc-theme--dark .readium2-hash {
+:root[style*="readium-night-on"] .readium2-hash {
     color: white !important;
     background-color: rgb(67, 64, 125) !important;
 }
@@ -106,23 +138,23 @@ border-top: 1px solid silver;
 border-left: 1px solid silver;
 }
 
-:root.mdc-theme--dark ::-webkit-scrollbar-thumb {
+:root[style*="readium-night-on"] ::-webkit-scrollbar-thumb {
 background: #a4a4a4;
 border: 3px solid #545454;
 }
 
-:root.mdc-theme--dark ::-webkit-scrollbar-thumb:hover {
+:root[style*="readium-night-on"] ::-webkit-scrollbar-thumb:hover {
 background: #dedede;
 }
 
-:root.mdc-theme--dark ::-webkit-scrollbar-track {
+:root[style*="readium-night-on"] ::-webkit-scrollbar-track {
 background: #545454;
 }
 
-:root.mdc-theme--dark ::-webkit-scrollbar-track:horizontal {
+:root[style*="readium-night-on"] ::-webkit-scrollbar-track:horizontal {
 border-top: 1px solid black;
 }
-:root.mdc-theme--dark ::-webkit-scrollbar-track:vertical {
+:root[style*="readium-night-on"] ::-webkit-scrollbar-track:vertical {
 border-left: 1px solid black;
 }`;
 

@@ -14,14 +14,15 @@ import {
 import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
 import {
     focusCssStyles,
+    footnotesCssStyles,
     readPosCssStyles,
     scrollBarCssStyles,
     selectionCssStyles,
     targetCssStyles,
 } from "./styles";
 
-// TODO DARK THEME
-const CSS_CLASS_DARK_THEME = "mdc-theme--dark";
+// now match with :root[style*="readium-night-on"]
+// const CSS_CLASS_DARK_THEME = "mdc-theme--dark";
 
 const CLASS_PAGINATED = "r2-css-paginated";
 
@@ -181,7 +182,7 @@ export function readiumCSSSet(
             docElement.style.removeProperty(item);
         });
 
-        docElement.classList.remove(CSS_CLASS_DARK_THEME);
+        // docElement.classList.remove(CSS_CLASS_DARK_THEME);
 
         return;
     }
@@ -246,13 +247,13 @@ export function readiumCSSSet(
         debug("-----");
     }
 
-    if (setCSS.night) {
-        // documant.body
-        docElement.classList.add(CSS_CLASS_DARK_THEME);
-    } else {
-        // documant.body
-        docElement.classList.remove(CSS_CLASS_DARK_THEME);
-    }
+    // if (setCSS.night) {
+    //     // documant.body
+    //     docElement.classList.add(CSS_CLASS_DARK_THEME);
+    // } else {
+    //     // documant.body
+    //     docElement.classList.remove(CSS_CLASS_DARK_THEME);
+    // }
 
     const needsAdvanced = true; // textAlign, bodyHyphens, fontSize, etc.
 
@@ -703,6 +704,7 @@ export function removeAllCSS(documant: Document) {
 }
 
 export function injectDefaultCSS(documant: Document) {
+    appendCSSInline(documant, "electron-footnotes", footnotesCssStyles);
     appendCSSInline(documant, "electron-selection", selectionCssStyles);
     appendCSSInline(documant, "electron-focus", focusCssStyles);
     appendCSSInline(documant, "electron-target", targetCssStyles);
