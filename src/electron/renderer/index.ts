@@ -497,9 +497,9 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     const normPath = decodeURIComponent(linkUri.normalizePath().path());
     const linkPath = normPath.replace(pathPrefix, "");
 
-    let pubLink = _publication.Spine.find((spineLink) => {
+    let pubLink = _publication.Spine ? _publication.Spine.find((spineLink) => {
         return spineLink.Href === linkPath;
-    });
+    }) : undefined;
     if (!pubLink) {
         pubLink = _publication.Resources.find((spineLink) => {
             return spineLink.Href === linkPath;
@@ -807,14 +807,16 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
             }
 
             let nextOrPreviousSpineItem: Link | undefined;
-            for (let i = 0; i < _publication.Spine.length; i++) {
-                if (_publication.Spine[i] === webview.READIUM2.link) {
-                    if (goPREVIOUS && (i - 1) >= 0) {
-                        nextOrPreviousSpineItem = _publication.Spine[i - 1];
-                    } else if (!goPREVIOUS && (i + 1) < _publication.Spine.length) {
-                        nextOrPreviousSpineItem = _publication.Spine[i + 1];
+            if (_publication.Spine) {
+                for (let i = 0; i < _publication.Spine.length; i++) {
+                    if (_publication.Spine[i] === webview.READIUM2.link) {
+                        if (goPREVIOUS && (i - 1) >= 0) {
+                            nextOrPreviousSpineItem = _publication.Spine[i - 1];
+                        } else if (!goPREVIOUS && (i + 1) < _publication.Spine.length) {
+                            nextOrPreviousSpineItem = _publication.Spine[i + 1];
+                        }
+                        break;
                     }
-                    break;
                 }
             }
             if (!nextOrPreviousSpineItem) {
