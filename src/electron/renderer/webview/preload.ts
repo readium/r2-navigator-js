@@ -266,6 +266,7 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
         // unfortunately, does not sync CSS :target pseudo-class :(
         // win.history.replaceState({}, undefined, "#" + payload.hash);
     } else {
+        win.location.href = "#";
         win.READIUM2.hashElement = null;
     }
 
