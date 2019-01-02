@@ -13,6 +13,7 @@ import {
 } from "./events";
 import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
 import {
+    ROOT_CLASS_NO_FOOTNOTES,
     focusCssStyles,
     footnotesCssStyles,
     readPosCssStyles,
@@ -161,6 +162,8 @@ export function readiumCSSSet(
 
     if (!messageJson.setCSS) {
 
+        docElement.classList.remove(ROOT_CLASS_NO_FOOTNOTES);
+
         docElement.removeAttribute("data-readiumcss");
         removeAllCSS(documant);
         // removeAllCSSInline(documant);
@@ -245,6 +248,12 @@ export function readiumCSSSet(
         debug("---- setCSS -----");
         debug(setCSS);
         debug("-----");
+    }
+
+    if (setCSS.noFootnotes) {
+        docElement.classList.add(ROOT_CLASS_NO_FOOTNOTES);
+    } else {
+        docElement.classList.remove(ROOT_CLASS_NO_FOOTNOTES);
     }
 
     // if (setCSS.night) {

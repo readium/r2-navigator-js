@@ -45,6 +45,7 @@ import {
     isPaginated,
 } from "../../common/readium-css-inject";
 import {
+    FOOTNOTES_DIALOG_CLASS,
     ROOT_CLASS_NO_FOOTNOTES,
     readPosCssStylesAttr1,
     readPosCssStylesAttr2,
@@ -55,6 +56,7 @@ import {
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector2";
 import { easings } from "../common/easings";
+import { PopupDialog } from "../common/popup-dialog";
 import { getURLQueryParams } from "../common/querystring";
 import {
     URL_PARAM_CSS,
@@ -75,10 +77,9 @@ import {
     readiumCSS,
 } from "./readium-css";
 import { IElectronWebviewTagWindow } from "./state";
+
 import ResizeSensor = require("css-element-queries/src/ResizeSensor");
 // import ResizeSensor = require("resize-sensor/ResizeSensor");
-
-
 
 // import { registerProtocol } from "@r2-navigator-js/electron/renderer/common/protocol";
 // registerProtocol();
@@ -88,6 +89,7 @@ const debug = debug_("r2:navigator#electron/renderer/webview/preload");
 const win = (global as any).window as IElectronWebviewTagWindow;
 win.READIUM2 = {
     DEBUG_VISUALS: false,
+    // dialogs = [],
     fxlViewportHeight: 0,
     fxlViewportWidth: 0,
     hashElement: null,
@@ -908,10 +910,11 @@ function popupFootNote(element: HTMLElement, href: string): boolean {
     if (!epubType) {
         return false;
     }
-    const isNoteref = epubType.indexOf("noteref") >= 0 ||
-        epubType.indexOf("biblioref") >= 0 ||
-        epubType.indexOf("glossref") >= 0 ||
-        epubType.indexOf("biblannorefioref") >= 0;
+
+    // epubType.indexOf("biblioref") >= 0 ||
+    // epubType.indexOf("glossref") >= 0 ||
+    // epubType.indexOf("annoref") >= 0
+    const isNoteref = epubType.indexOf("noteref") >= 0;
     if (!isNoteref) {
         return false;
     }
@@ -922,17 +925,29 @@ function popupFootNote(element: HTMLElement, href: string): boolean {
     }
     // const targetElement = win.document.getElementById(url.hash.substr(1));
     const targetElement = win.document.querySelector(url.hash);
-    if (!targetElement || !targetElement.outerHTML) {
+    if (!targetElement) {
         return false;
     }
 
-    const outerHTML = targetElement.outerHTML;
-    debug(outerHTML);
+    const ID_PREFIX = "r2-footnote-popup-dialog-for_";
+    const id = ID_PREFIX + targetElement.id;
+    const existingDialog = win.document.getElementById(id);
+    if (existingDialog) {
+        ((existingDialog as any).popDialog as PopupDialog).show();
+        return true;
+    }
 
-    // outerHTML = outerHTML.replace(/xmlns=["|']http:\/\/www.w3.org\/1999\/xhtml["|']/g, " ");
-    // outerHTML = outerHTML.replace(/xmlns=["|']http:\/\/www.idpf.org\/2007\/ops["|']/g, " ");
+    let outerHTML = targetElement.outerHTML;
+    if (!outerHTML) {
+        return false;
+    }
+
+    outerHTML = outerHTML.replace(/xmlns=["|']http:\/\/www.w3.org\/1999\/xhtml["|']/g, " ");
+    outerHTML = outerHTML.replace(/xmlns:epub=["|']http:\/\/www.idpf.org\/2007\/ops["|']/g, " ");
+    outerHTML = outerHTML.replace(/epub:type=["|'][^"&^']+["|']/g, " ");
+    outerHTML = outerHTML.replace(/<script>.+<\/script>/g, " ");
     // outerHTML = outerHTML.replace(/click=["|']javascript:.+["|']/g, " ");
-    // outerHTML = outerHTML.replace(/<script>.+<\/script>/g, " ");
+    // debug(outerHTML);
 
     // import * as xmldom from "xmldom";
     // const dom = new xmldom.DOMParser().parseFromString(outerHTML, "application/xhtml+xml");
@@ -944,6 +959,44 @@ function popupFootNote(element: HTMLElement, href: string): boolean {
     // };
     // ipcRenderer.sendToHost(R2_EVENT_LINK_FOOTNOTE, payload_);
 
+    const dialog = win.document.createElement("dialog");
+    dialog.setAttribute("class", FOOTNOTES_DIALOG_CLASS);
+    dialog.setAttribute("id", id);
+
+    dialog.addEventListener("close", (_ev) => {
+        ((dialog as any).popDialog as PopupDialog).hide();
+    });
+
+    const button = win.document.createElement("button");
+    button.setAttribute("aria-label", "close");
+    button.setAttribute("style", "border: none; float: right;");
+    const txtClose = win.document.createTextNode("X");
+    button.appendChild(txtClose);
+    button.addEventListener("click", (_ev: Event) => {
+        dialog.close();
+        // ((dialog as any).popDialog as PopupDialog).hide();
+    });
+    dialog.appendChild(button);
+
+    try {
+        dialog.insertAdjacentHTML("beforeend", outerHTML);
+    } catch (err) {
+        debug(err);
+        try {
+            dialog.innerHTML = outerHTML;
+            dialog.insertAdjacentHTML("afterbegin", button.outerHTML);
+        } catch (err) {
+            debug(err);
+        }
+    }
+
+    win.document.body.appendChild(dialog);
+    // debug(dialog.outerHTML);
+
+    const pop = new PopupDialog(dialog as HTMLDialogElement);
+    (dialog as any).popDialog = pop;
+
+    pop.show();
     return true;
 }
 

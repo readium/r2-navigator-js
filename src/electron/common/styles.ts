@@ -6,22 +6,50 @@
 // ==LICENSE-END==
 
 export const ROOT_CLASS_NO_FOOTNOTES = "r2-no-popup-foonotes";
+export const FOOTNOTES_DIALOG_CLASS = "r2-footnote-dialog";
 // 'a' element: noteref biblioref glossref annoref
 //
 // @namespace epub "http://www.idpf.org/2007/ops";
 // [epub|type~="footnote"]
 // VS.
 // *[epub\\:type~="footnote"]
+//
+// :root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="biblioentry"],
+// :root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="annotation"]
 export const footnotesCssStyles = `
 @namespace epub "http://www.idpf.org/2007/ops";
 
 :root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="footnote"],
 :root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="note"],
 :root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="endnote"],
-:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="rearnote"],
-:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="biblioentry"],
-:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="annotation"] {
+:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="rearnote"] {
     display: none;
+}
+
+dialog.${FOOTNOTES_DIALOG_CLASS}::backdrop {
+    background-color: rgba(0, 0, 0, 0.66);
+}
+dialog.${FOOTNOTES_DIALOG_CLASS} {
+    z-index: 3;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+
+    padding: 1em;
+    max-width: 90%;
+    max-width: 600px;
+    border-radius: 10px;
+    border-width: 3px;
+
+    background-color: white;
+    border-color: black;
+}
+
+:root[style*="readium-night-on"] dialog.${FOOTNOTES_DIALOG_CLASS} {
+    background-color: black !important;
+    border-color: white !important;
 }
 `;
 
