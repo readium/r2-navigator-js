@@ -102,6 +102,9 @@ export class PopupDialog {
         // this.fire("show");
     }
 
+    public cancelRefocus() {
+        _focusedBeforeDialog = null;
+    }
     public refocus() {
         if (!_focusedBeforeDialog) {
             return;
