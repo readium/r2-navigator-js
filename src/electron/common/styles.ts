@@ -27,24 +27,29 @@ export const footnotesCssStyles = `
 }
 
 dialog.${FOOTNOTES_DIALOG_CLASS}::backdrop {
-    background-color: rgba(0, 0, 0, 0.66);
+    background-color: rgba(0, 0, 0, 0.3);
 }
 dialog.${FOOTNOTES_DIALOG_CLASS} {
     z-index: 3;
+
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    margin: 0;
 
-    padding: 1em;
     max-width: 90%;
     max-width: 600px;
-    border-radius: 10px;
-    border-width: 3px;
+
+    margin: 0;
+    padding: 1em;
+
+    border-radius: 6px;
+    border-width: 2px;
 
     background-color: white;
     border-color: black;
+
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
 :root[style*="readium-night-on"] dialog.${FOOTNOTES_DIALOG_CLASS} {

@@ -135,7 +135,7 @@ if (IS_DEV) {
         win.READIUM2.DEBUG_VISUALS = payload === "true";
 
         if (!win.READIUM2.DEBUG_VISUALS) {
-            const existings = document.querySelectorAll(
+            const existings = win.document.querySelectorAll(
                 // tslint:disable-next-line:max-line-length
                 `*[${readPosCssStylesAttr1}], *[${readPosCssStylesAttr2}], *[${readPosCssStylesAttr3}], *[${readPosCssStylesAttr4}]`);
             existings.forEach((existing) => {
@@ -206,7 +206,7 @@ function computeVisibility(location: LocatorLocations): boolean {
         // payload.location.cssSelector = payload.location.cssSelector.replace(/\+/g, " ");
         let selected: Element | null = null;
         try {
-            selected = document.querySelector(location.cssSelector);
+            selected = win.document.querySelector(location.cssSelector);
         } catch (err) {
             debug(err);
         }
@@ -224,6 +224,8 @@ ipcRenderer.on(R2_EVENT_LOCATOR_VISIBLE, (_event: any, payload: IEventPayload_R2
 });
 
 ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_SCROLLTO) => {
+
+    destroyPopupFootnotesDialogs();
 
     _cancelInitialScrollCheck = true;
 
@@ -256,7 +258,7 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
         win.READIUM2.hashElement = win.document.getElementById(payload.hash);
         if (win.READIUM2.DEBUG_VISUALS) {
             if (win.READIUM2.hashElement) {
-                // const existings = document.querySelectorAll(`*[${readPosCssStylesAttr1}]`);
+                // const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr1}]`);
                 // existings.forEach((existing) => {
                 //     existing.removeAttribute(`${readPosCssStylesAttr1}`);
                 // });
@@ -302,6 +304,9 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
 let _lastAnimState: IPropertyAnimationState | undefined;
 
 ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT_PAGE_TURN) => {
+
+    destroyPopupFootnotesDialogs();
+
     if (win.READIUM2.isFixedLayout || !win.document.body) {
         ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
         return;
@@ -524,7 +529,7 @@ const notifyReady = () => {
 function scrollElementIntoView(element: Element) {
 
     if (win.READIUM2.DEBUG_VISUALS) {
-        const existings = document.querySelectorAll(`*[${readPosCssStylesAttr3}]`);
+        const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr3}]`);
         existings.forEach((existing) => {
             existing.removeAttribute(`${readPosCssStylesAttr3}`);
         });
@@ -693,7 +698,7 @@ const scrollToHashRaw = () => {
                     gotoCssSelector = gotoCssSelector.replace(/\+/g, " ");
                     let selected: Element | null = null;
                     try {
-                        selected = document.querySelector(gotoCssSelector);
+                        selected = win.document.querySelector(gotoCssSelector);
                     } catch (err) {
                         debug(err);
                     }
@@ -771,7 +776,7 @@ win.addEventListener("DOMContentLoaded", () => {
         win.READIUM2.hashElement = win.document.getElementById(win.location.hash.substr(1));
         if (win.READIUM2.DEBUG_VISUALS) {
             if (win.READIUM2.hashElement) {
-                // const existings = document.querySelectorAll(`*[${readPosCssStylesAttr1}]`);
+                // const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr1}]`);
                 // existings.forEach((existing) => {
                 //     existing.removeAttribute(`${readPosCssStylesAttr1}`);
                 // });
@@ -897,6 +902,17 @@ win.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+function destroyPopupFootnotesDialogs() {
+    const dialogs = win.document.querySelectorAll(`dialog[open]`);
+    dialogs.forEach((dialog) => {
+        if ((dialog as any).popDialog) {
+            // ((dialog as any).popDialog as PopupDialog).hide();
+            ((dialog as any).popDialog as PopupDialog).cancelRefocus();
+            (dialog as HTMLDialogElement).close();
+        }
+    });
+}
+
 function popupFootNote(element: HTMLElement, href: string): boolean {
 
     if (!win.document || !win.document.documentElement ||
@@ -942,11 +958,16 @@ function popupFootNote(element: HTMLElement, href: string): boolean {
         return false;
     }
 
-    outerHTML = outerHTML.replace(/xmlns=["|']http:\/\/www.w3.org\/1999\/xhtml["|']/g, " ");
-    outerHTML = outerHTML.replace(/xmlns:epub=["|']http:\/\/www.idpf.org\/2007\/ops["|']/g, " ");
-    outerHTML = outerHTML.replace(/epub:type=["|'][^"&^']+["|']/g, " ");
+    outerHTML = outerHTML.replace(/xmlns=["']http:\/\/www.w3.org\/1999\/xhtml["']/g, " ");
+    outerHTML = outerHTML.replace(/xmlns:epub=["']http:\/\/www.idpf.org\/2007\/ops["']/g, " ");
+    outerHTML = outerHTML.replace(/epub:type=["'][^"']+["']/g, " ");
     outerHTML = outerHTML.replace(/<script>.+<\/script>/g, " ");
-    // outerHTML = outerHTML.replace(/click=["|']javascript:.+["|']/g, " ");
+
+    const ID_PREFIX_ = "r2-footnote-content-of_";
+    const id_ = ID_PREFIX_ + targetElement.id;
+    outerHTML = outerHTML.replace(/id=["'][^"']+["']/, `id="${id_}"`);
+
+    // outerHTML = outerHTML.replace(/click=["']javascript:.+["']/g, " ");
     // debug(outerHTML);
 
     // import * as xmldom from "xmldom";
@@ -963,13 +984,27 @@ function popupFootNote(element: HTMLElement, href: string): boolean {
     dialog.setAttribute("class", FOOTNOTES_DIALOG_CLASS);
     dialog.setAttribute("id", id);
 
+    dialog.addEventListener("click", (ev) => {
+        if (ev.target !== dialog) {
+            return;
+        }
+        const rect = dialog.getBoundingClientRect();
+        const inside = rect.top <= ev.clientY &&
+            ev.clientY <= rect.top + rect.height &&
+            rect.left <= ev.clientX &&
+            ev.clientX <= rect.left + rect.width;
+        if (!inside) {
+            dialog.close();
+        }
+    });
+
     dialog.addEventListener("close", (_ev) => {
         ((dialog as any).popDialog as PopupDialog).hide();
     });
 
     const button = win.document.createElement("button");
     button.setAttribute("aria-label", "close");
-    button.setAttribute("style", "border: none; float: right;");
+    button.setAttribute("style", "border: none; float: right; cursor: pointer;");
     const txtClose = win.document.createTextNode("X");
     button.appendChild(txtClose);
     button.addEventListener("click", (_ev: Event) => {
@@ -1038,22 +1073,22 @@ win.addEventListener("load", () => {
 // relative to fixed window top-left corner
 const processXYRaw = (x: number, y: number) => {
 
-    // const elems = document.elementsFromPoint(x, y);
+    // const elems = win.document.elementsFromPoint(x, y);
 
     // let element: Element | undefined = elems && elems.length ? elems[0] : undefined;
     let element: Element | undefined;
 
-    // if ((document as any).caretPositionFromPoint) {
-    //     const range = (document as any).caretPositionFromPoint(x, y);
+    // if ((win.document as any).caretPositionFromPoint) {
+    //     const range = (win.document as any).caretPositionFromPoint(x, y);
     //     const node = range.offsetNode;
     //     const offset = range.offset;
-    // } else if (document.caretRangeFromPoint) {
+    // } else if (win.document.caretRangeFromPoint) {
     // }
 
     // let textNode: Node | undefined;
     // let textNodeOffset = 0;
 
-    const range = document.caretRangeFromPoint(x, y);
+    const range = win.document.caretRangeFromPoint(x, y);
     if (range) {
         const node = range.startContainer;
         // const offset = range.startOffset;
@@ -1076,7 +1111,7 @@ const processXYRaw = (x: number, y: number) => {
         notifyReadingLocationDebounced();
 
         if (win.READIUM2.DEBUG_VISUALS) {
-            const existings = document.querySelectorAll(`*[${readPosCssStylesAttr2}]`);
+            const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr2}]`);
             existings.forEach((existing) => {
                 existing.removeAttribute(`${readPosCssStylesAttr2}`);
             });
@@ -1258,7 +1293,7 @@ const notifyReadingLocationRaw = () => {
     ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION, payload);
 
     if (win.READIUM2.DEBUG_VISUALS) {
-        const existings = document.querySelectorAll(`*[${readPosCssStylesAttr4}]`);
+        const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr4}]`);
         existings.forEach((existing) => {
             existing.removeAttribute(`${readPosCssStylesAttr4}`);
         });
