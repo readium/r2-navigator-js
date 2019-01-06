@@ -175,10 +175,10 @@ ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVEN
     readiumCSS(win.document, payload);
 });
 
-export const readiumCSS = (document: Document, messageJson: IEventPayload_R2_EVENT_READIUMCSS) => {
+export const readiumCSS = (documant: Document, messageJson: IEventPayload_R2_EVENT_READIUMCSS) => {
     console.log("urlRootReadiumCSS: ", urlRootReadiumCSS);
     console.log("messageJson.urlRoot: ", messageJson.urlRoot);
-    readiumCSSSet(document, messageJson, urlRootReadiumCSS, _isVerticalWritingMode, _isRTL);
+    readiumCSSSet(documant, messageJson, urlRootReadiumCSS, _isVerticalWritingMode, _isRTL);
 };
 
 // // // https://javascript.info/size-and-scroll
