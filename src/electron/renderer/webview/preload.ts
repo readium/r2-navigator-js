@@ -45,7 +45,6 @@ import {
     isPaginated,
 } from "../../common/readium-css-inject";
 import {
-    FOOTNOTES_DIALOG_CLASS,
     ROOT_CLASS_INVISIBLE_MASK,
     ROOT_CLASS_NO_FOOTNOTES,
     readPosCssStylesAttr1,
@@ -466,7 +465,23 @@ const checkReadyPass = () => {
         //     scrollToHashRaw();
         // }
 
+        // win.addEventListener("scroll", (ev: Event) => {
+        //     debug("scroll ########### 1");
+        //     debug(ev.target);
+
+        //     if (!win.document || !win.document.documentElement) {
+        //         return;
+        //     }
+
+        //     // const isPaged = isPaginated(win.document);
+        //     // if (isPaged) {
+        //     //     ev.preventDefault();
+        //     // }
+        // }, true);
+
         win.addEventListener("scroll", (_ev: Event) => {
+            // debug("scroll ########### 2");
+            // debug(ev.target);
 
             if (_ignoreScrollEvent) {
                 _ignoreScrollEvent = false;
@@ -862,31 +877,57 @@ win.addEventListener("DOMContentLoaded", () => {
 
     // // DEBUG
     // win.document.body.addEventListener("focus", (ev: any) => {
-    //     debug("focus:");
+    //     debug("focus ########### 1");
     //     debug(ev.target);
     // }, true);
-    // win.document.body.addEventListener("focusin", (ev: any) => {
-    //     debug("focusin:");
+    // win.document.body.addEventListener("focus", (ev: any) => {
+    //     debug("focus ########### 2");
     //     debug(ev.target);
     // });
     // // DEBUG
 
+    // win.document.body.addEventListener("focusin", (ev: any) => {
+    //     debug("focusin ########### 1");
+    //     debug(ev.target);
+    //     ev.stopPropagation(); // prevents event below (without capture)
+    //     ev.preventDefault(); // does not prevent subsequent scroll
+    // }, true);
     win.document.body.addEventListener("focusin", (ev: any) => {
+        // debug("focusin ########### 2");
+        // debug(ev.target.outerHTML);
+        // debug(uniqueCssSelector(ev.target, win.document));
 
         if (!win.document || !win.document.documentElement) {
             return;
         }
-
         const isPaged = isPaginated(win.document);
         if (isPaged) {
             setTimeout(() => {
                 win.READIUM2.locationHashOverride = ev.target;
                 if (win.READIUM2.locationHashOverride) {
                     scrollElementIntoView(win.READIUM2.locationHashOverride);
+                    // setTimeout(() => {
+                    //     showHideContentMask(false);
+                    // }, 20);
                 }
             }, 30);
         }
     });
+
+    // win.document.documentElement.addEventListener("keydown", (ev: any) => {
+    //     debug(ev.which);
+    //     if (!win.document || !win.document.documentElement) {
+    //         return;
+    //     }
+
+    //     const isPaged = isPaginated(win.document);
+    //     if (isPaged) {
+    //         const TAB_KEY = 9;
+    //         if (ev.which === TAB_KEY) {
+    //             showHideContentMask(true);
+    //         }
+    //     }
+    // }, true);
 
     win.document.addEventListener("click", (e) => {
         // TODO? xlink:href
@@ -1002,56 +1043,7 @@ function popupFootNote(element: HTMLElement, href: string): boolean {
     // };
     // ipcRenderer.sendToHost(R2_EVENT_LINK_FOOTNOTE, payload_);
 
-    const dialog = win.document.createElement("dialog");
-    dialog.setAttribute("class", FOOTNOTES_DIALOG_CLASS);
-    dialog.setAttribute("id", id);
-
-    dialog.addEventListener("click", (ev) => {
-        if (ev.target !== dialog) {
-            return;
-        }
-        const rect = dialog.getBoundingClientRect();
-        const inside = rect.top <= ev.clientY &&
-            ev.clientY <= rect.top + rect.height &&
-            rect.left <= ev.clientX &&
-            ev.clientX <= rect.left + rect.width;
-        if (!inside) {
-            dialog.close();
-        }
-    });
-
-    dialog.addEventListener("close", (_ev) => {
-        ((dialog as any).popDialog as PopupDialog).hide();
-    });
-
-    const button = win.document.createElement("button");
-    button.setAttribute("aria-label", "close");
-    button.setAttribute("style", "border: none; float: right; cursor: pointer;");
-    const txtClose = win.document.createTextNode("X");
-    button.appendChild(txtClose);
-    button.addEventListener("click", (_ev: Event) => {
-        dialog.close();
-        // ((dialog as any).popDialog as PopupDialog).hide();
-    });
-    dialog.appendChild(button);
-
-    try {
-        dialog.insertAdjacentHTML("beforeend", outerHTML);
-    } catch (err) {
-        debug(err);
-        try {
-            dialog.innerHTML = outerHTML;
-            dialog.insertAdjacentHTML("afterbegin", button.outerHTML);
-        } catch (err) {
-            debug(err);
-        }
-    }
-
-    win.document.body.appendChild(dialog);
-    // debug(dialog.outerHTML);
-
-    const pop = new PopupDialog(dialog as HTMLDialogElement);
-    (dialog as any).popDialog = pop;
+    const pop = new PopupDialog(win.document, outerHTML, id);
 
     pop.show();
     return true;

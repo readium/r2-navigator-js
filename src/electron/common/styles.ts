@@ -26,6 +26,10 @@ export const footnotesCssStyles = `
     display: none;
 }
 
+:root.${FOOTNOTES_DIALOG_CLASS} {
+    overflow: hidden !important;
+}
+
 dialog.${FOOTNOTES_DIALOG_CLASS}::backdrop {
     background-color: rgba(0, 0, 0, 0.3);
 }

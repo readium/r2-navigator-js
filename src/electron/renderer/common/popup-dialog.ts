@@ -5,6 +5,8 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import { FOOTNOTES_DIALOG_CLASS } from "../../common/styles";
+
 function getFocusables(rootElement: Element): HTMLOrSVGElement[] {
     const FOCUSABLE_ELEMENTS = [
         "a[href]:not([tabindex^=\"-\"]):not([inert])",
@@ -45,14 +47,67 @@ let _focusedBeforeDialog: HTMLOrSVGElement | null;
 
 export class PopupDialog {
     private readonly role: string;
-    // private shown: boolean;
-    private readonly documant: Document;
+    private readonly dialog: HTMLDialogElement;
 
+    // private shown: boolean;
     // private listeners: IEventMap;
 
-    constructor(readonly dialog: HTMLDialogElement) {
+    constructor(readonly documant: Document, outerHTML: string, id: string) {
 
-        this.documant = dialog.ownerDocument as Document;
+        const that = this;
+
+        this.dialog = documant.createElement("dialog");
+        (this.dialog as any).popDialog = this;
+
+        this.dialog.setAttribute("class", FOOTNOTES_DIALOG_CLASS);
+        this.dialog.setAttribute("id", id);
+
+        const button = documant.createElement("button");
+        button.setAttribute("aria-label", "close");
+        button.setAttribute("style", "border: none; float: right; cursor: pointer;");
+        const txtClose = documant.createTextNode("X");
+        button.appendChild(txtClose);
+        button.addEventListener("click", (_ev: Event) => {
+            that.dialog.close();
+            // ((dialog as any).popDialog as PopupDialog).hide();
+        });
+        this.dialog.appendChild(button);
+
+        try {
+            this.dialog.insertAdjacentHTML("beforeend", outerHTML);
+        } catch (err) {
+            console.log(err);
+            try {
+                this.dialog.innerHTML = outerHTML;
+                this.dialog.insertAdjacentHTML("afterbegin", button.outerHTML);
+            } catch (err) {
+                console.log(err);
+            }
+        }
+
+        documant.body.appendChild(this.dialog);
+        // debug(this.dialog.outerHTML);
+
+        this.dialog.addEventListener("click", (ev) => {
+            if (ev.target !== that.dialog) {
+                return;
+            }
+            const rect = that.dialog.getBoundingClientRect();
+            const inside = rect.top <= ev.clientY &&
+                ev.clientY <= rect.top + rect.height &&
+                rect.left <= ev.clientX &&
+                ev.clientX <= rect.left + rect.width;
+            if (!inside) {
+                that.dialog.close();
+            }
+        });
+
+        this.dialog.addEventListener("close", (_ev) => {
+            // ((that.dialog as any).popDialog as PopupDialog)
+            that.hide();
+        });
+
+        this.documant = this.dialog.ownerDocument as Document;
 
         this.role = this.dialog.getAttribute("role") || "dialog";
 
@@ -84,6 +139,11 @@ export class PopupDialog {
         //     return;
         // }
         // this.shown = true;
+
+        const el = this.documant.documentElement;
+        el.classList.add(FOOTNOTES_DIALOG_CLASS);
+        // (el as any).style_overflow_before_dialog = el.style.overflow;
+        // el.style.overflow = "hidden";
 
         if (this.dialog.hasAttribute("open")) {
             return;
@@ -122,6 +182,11 @@ export class PopupDialog {
         //     return;
         // }
         // this.shown = false;
+
+        const el = this.documant.documentElement;
+        el.classList.remove(FOOTNOTES_DIALOG_CLASS);
+        // const val = (el as any).style_overflow_before_dialog;
+        // el.style.overflow = val ? val : null;
 
         this.documant.body.removeEventListener("focus", this.maintainFocus, true);
         this.documant.body.removeEventListener("keyup", this.bindKeyUp, true);
