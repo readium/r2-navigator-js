@@ -58,6 +58,13 @@ dialog.${FOOTNOTES_DIALOG_CLASS} {
 }
 `;
 
+export const ROOT_CLASS_INVISIBLE_MASK = "r2-visibility-mask";
+export const visibilityMaskCssStyles = `
+*.${ROOT_CLASS_INVISIBLE_MASK} {
+    visibility: hidden !important;
+}
+`;
+
 export const focusCssStyles = `
 @keyframes readium2ElectronAnimation_FOCUS {
     0% {

@@ -46,6 +46,7 @@ import {
 } from "../../common/readium-css-inject";
 import {
     FOOTNOTES_DIALOG_CLASS,
+    ROOT_CLASS_INVISIBLE_MASK,
     ROOT_CLASS_NO_FOOTNOTES,
     readPosCssStylesAttr1,
     readPosCssStylesAttr2,
@@ -677,6 +678,8 @@ const scrollToHashRaw = () => {
                     - 1;
                     processXYRaw(0, y);
 
+                    showHideContentMask(false);
+
                     notifyReady();
                     if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
                         notifyReadingLocationDebounced();
@@ -766,7 +769,26 @@ let _ignoreScrollEvent = false;
 //     debug(newHTML.substr(0, iBody_ + 100));
 // }
 
+function showHideContentMask(doHide: boolean) {
+    if (win.document.body) {
+        if (win.READIUM2.urlQueryParams) {
+            // tslint:disable-next-line:no-string-literal
+            const previous = win.READIUM2.urlQueryParams[URL_PARAM_PREVIOUS];
+            const isPreviousNavDirection = previous === "true";
+            if (isPreviousNavDirection) {
+                if (doHide) {
+                    win.document.body.classList.add(ROOT_CLASS_INVISIBLE_MASK);
+                } else {
+                    win.document.body.classList.remove(ROOT_CLASS_INVISIBLE_MASK);
+                }
+            }
+        }
+    }
+}
+
 win.addEventListener("DOMContentLoaded", () => {
+
+    showHideContentMask(true);
 
     _cancelInitialScrollCheck = true;
 
