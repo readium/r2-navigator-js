@@ -69,6 +69,7 @@ export const visibilityMaskCssStyles = `
 }
 `;
 
+export const ROOT_CLASS_KEYBOARD_INTERACT = "r2-keyboard-interact";
 export const focusCssStyles = `
 @keyframes readium2ElectronAnimation_FOCUS {
     0% {
@@ -82,9 +83,11 @@ export const focusCssStyles = `
     outline-style: solid !important;
     outline-width: 2px !important;
     outline-offset: 2px !important;
-
+}
+:root:not(.${ROOT_CLASS_KEYBOARD_INTERACT}) *:focus {
     animation-name: readium2ElectronAnimation_FOCUS;
     animation-duration: 3s;
+    animation-delay: 1s;
     animation-fill-mode: forwards;
     animation-timing-function: linear;
 }
@@ -109,6 +112,7 @@ export const targetCssStyles = `
 
     animation-name: readium2ElectronAnimation_TARGET;
     animation-duration: 3s;
+    animation-delay: 1s;
     animation-fill-mode: forwards;
     animation-timing-function: linear;
 }

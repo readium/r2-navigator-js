@@ -5,34 +5,56 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import * as tabbable from "tabbable";
+
 import { FOOTNOTES_DIALOG_CLASS } from "../../common/styles";
 
-function getFocusables(rootElement: Element): HTMLOrSVGElement[] {
-    const FOCUSABLE_ELEMENTS = [
-        "a[href]:not([tabindex^=\"-\"]):not([inert])",
-        "area[href]:not([tabindex^=\"-\"]):not([inert])",
-        "input:not([disabled]):not([inert])",
-        "select:not([disabled]):not([inert])",
-        "textarea:not([disabled]):not([inert])",
-        "button:not([disabled]):not([inert])",
-        "iframe:not([tabindex^=\"-\"]):not([inert])",
-        "audio:not([tabindex^=\"-\"]):not([inert])",
-        "video:not([tabindex^=\"-\"]):not([inert])",
-        "[contenteditable]:not([tabindex^=\"-\"]):not([inert])",
-        "[tabindex]:not([tabindex^=\"-\"]):not([inert])",
-    ];
+export function isElementInsideFootNotePopupDialog(el: Element): boolean {
 
-    const focusables: HTMLOrSVGElement[] = [];
-    const focusableElements = rootElement.querySelectorAll(FOCUSABLE_ELEMENTS.join(","));
-    focusableElements.forEach((focusableElement) => {
-        if ((focusableElement as HTMLElement).offsetWidth ||
-            (focusableElement as HTMLElement).offsetHeight ||
-            focusableElement.getClientRects().length) {
+    let currentElement = el;
 
-            focusables.push((focusableElement as unknown) as HTMLOrSVGElement); // weird TypeScript!
+    while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
+        if (currentElement.tagName && currentElement.classList &&
+            currentElement.tagName.toLowerCase() === "dialog" &&
+            currentElement.classList.contains(FOOTNOTES_DIALOG_CLASS)) {
+            return true;
         }
-    });
-    return focusables;
+        currentElement = currentElement.parentNode as Element;
+    }
+
+    return false;
+}
+
+function getFocusables(rootElement: Element): HTMLOrSVGElement[] {
+    // const FOCUSABLE_ELEMENTS = [
+    //     "a[href]:not([tabindex^=\"-\"]):not([inert])",
+    //     "area[href]:not([tabindex^=\"-\"]):not([inert])",
+    //     "input:not([disabled]):not([inert])",
+    //     "select:not([disabled]):not([inert])",
+    //     "textarea:not([disabled]):not([inert])",
+    //     "button:not([disabled]):not([inert])",
+    //     "iframe:not([tabindex^=\"-\"]):not([inert])",
+    //     "audio:not([tabindex^=\"-\"]):not([inert])",
+    //     "video:not([tabindex^=\"-\"]):not([inert])",
+    //     "[contenteditable]:not([tabindex^=\"-\"]):not([inert])",
+    //     "[tabindex]:not([tabindex^=\"-\"]):not([inert])",
+    // ];
+
+    // const focusables: HTMLOrSVGElement[] = [];
+    // const focusableElements = rootElement.querySelectorAll(FOCUSABLE_ELEMENTS.join(","));
+    // focusableElements.forEach((focusableElement) => {
+
+    //     if ((focusableElement as HTMLElement).offsetWidth ||
+    //         (focusableElement as HTMLElement).offsetHeight ||
+    //         focusableElement.getClientRects().length) {
+
+    //         focusables.push((focusableElement as unknown) as HTMLOrSVGElement); // weird TypeScript!
+    //     }
+    // });
+    // return focusables;
+
+    const tabbables = tabbable(rootElement);
+    return tabbables;
 }
 function focusInside(rootElement: Element) {
     const toFocus = rootElement.querySelector("[autofocus]") || getFocusables(rootElement)[0];
@@ -45,16 +67,91 @@ function focusInside(rootElement: Element) {
 
 let _focusedBeforeDialog: HTMLOrSVGElement | null;
 
+function onKeyUp(this: PopupDialog, ev: KeyboardEvent) {
+    // if (!this.shown) {
+    //     return;
+    // }
+
+    const ESCAPE_KEY = 27;
+    if (ev.which === ESCAPE_KEY) {
+        if (this.role !== "alertdialog") {
+            ev.preventDefault();
+            this.hide();
+            return;
+        }
+    }
+}
+
+function onKeyDown(this: PopupDialog, ev: KeyboardEvent) {
+    // if (!this.shown) {
+    //     return;
+    // }
+
+    const TAB_KEY = 9;
+    if (ev.which === TAB_KEY) {
+
+        // if (ev.shiftKey && _focusedBeforeDialog) {
+        //     this.focusScroll(_focusedBeforeDialog, false);
+        // }
+
+        const focusables = getFocusables(this.dialog);
+
+        const focusedItemIndex = this.documant.activeElement ?
+            focusables.indexOf((this.documant.activeElement as unknown) as HTMLOrSVGElement) : // weird TypeScript!
+            -1;
+
+        const isLast = focusedItemIndex === focusables.length - 1;
+        const isFirst = focusedItemIndex === 0;
+
+        let toFocus: HTMLOrSVGElement | undefined;
+
+        if (ev.shiftKey && isFirst) {
+            toFocus = focusables[focusables.length - 1];
+        } else if (!ev.shiftKey && isLast) {
+            toFocus = focusables[0];
+        }
+
+        if (toFocus) {
+            ev.preventDefault();
+            toFocus.focus();
+        }
+    }
+}
+
+// function onFocus(this: PopupDialog, ev: Event) {
+//     // if (!this.shown) {
+//     //     return;
+//     // }
+
+//     if (!this.dialog.contains(ev.target as Node)) {
+//         ev.preventDefault();
+//         focusInside(this.dialog);
+//     }
+// }
+
 export class PopupDialog {
-    private readonly role: string;
-    private readonly dialog: HTMLDialogElement;
+
+    public readonly role: string;
+    public readonly dialog: HTMLDialogElement;
+
+    private readonly _onKeyUp: () => void;
+    private readonly _onKeyDown: () => void;
+    // private readonly _onFocus: () => void;
 
     // private shown: boolean;
     // private listeners: IEventMap;
 
-    constructor(readonly documant: Document, outerHTML: string, id: string) {
+    constructor(
+        public readonly documant: Document,
+        outerHTML: string,
+        id: string,
+        public readonly focusScroll: (el: HTMLOrSVGElement, doFocus: boolean) => void) {
 
         const that = this;
+
+        this._onKeyUp = onKeyUp.bind(this);
+        this._onKeyDown = onKeyDown.bind(this);
+        // this._onFocus = onFocus.bind(this);
 
         this.dialog = documant.createElement("dialog");
         (this.dialog as any).popDialog = this;
@@ -84,6 +181,15 @@ export class PopupDialog {
                 console.log(err);
             }
         }
+
+        // const butt = documant.createElement("button");
+        // butt.appendChild(documant.createTextNode("TEST FOCUS CYCLE"));
+        // this.dialog.appendChild(butt);
+
+        // const buttx = documant.createElement("a");
+        // buttx.setAttribute("href", "http://domain.org");
+        // buttx.appendChild(documant.createTextNode("TEST OTHER"));
+        // this.dialog.appendChild(buttx);
 
         documant.body.appendChild(this.dialog);
         // debug(this.dialog.outerHTML);
@@ -155,9 +261,9 @@ export class PopupDialog {
 
         focusInside(this.dialog);
 
-        this.documant.body.addEventListener("focus", this.maintainFocus, true);
-        this.documant.body.addEventListener("keyup", this.bindKeyUp, true);
-        this.documant.addEventListener("keydown", this.bindKeyDown);
+        // this.documant.body.addEventListener("focus", this._onFocus, true);
+        this.documant.body.addEventListener("keyup", this._onKeyUp, true);
+        this.documant.body.addEventListener("keydown", this._onKeyDown, true);
 
         // this.fire("show");
     }
@@ -169,12 +275,8 @@ export class PopupDialog {
         if (!_focusedBeforeDialog) {
             return;
         }
-        const toFocus = _focusedBeforeDialog;
-        setTimeout(() => {
-            // console.log("_focusedBeforeDialog");
-            // console.log((toFocus as HTMLElement).outerHTML);
-            toFocus.focus();
-        }, 200);
+        this.focusScroll(_focusedBeforeDialog, true);
+        _focusedBeforeDialog = null;
     }
 
     public hide() {
@@ -188,9 +290,9 @@ export class PopupDialog {
         // const val = (el as any).style_overflow_before_dialog;
         // el.style.overflow = val ? val : null;
 
-        this.documant.body.removeEventListener("focus", this.maintainFocus, true);
-        this.documant.body.removeEventListener("keyup", this.bindKeyUp, true);
-        this.documant.removeEventListener("keydown", this.bindKeyDown);
+        // this.documant.body.removeEventListener("focus", this._onFocus, true);
+        this.documant.body.removeEventListener("keyup", this._onKeyUp, true);
+        this.documant.body.removeEventListener("keydown", this._onKeyDown, true);
 
         this.refocus();
         _focusedBeforeDialog = null;
@@ -219,62 +321,4 @@ export class PopupDialog {
     //         listener();
     //     });
     // }
-
-    private bindKeyUp(ev: KeyboardEvent) {
-        // if (!this.shown) {
-        //     return;
-        // }
-
-        const ESCAPE_KEY = 27;
-        if (ev.which === ESCAPE_KEY) {
-            if (this.role !== "alertdialog") {
-                ev.preventDefault();
-                this.hide();
-                return;
-            }
-        }
-    }
-
-    private bindKeyDown(ev: KeyboardEvent) {
-        // if (!this.shown) {
-        //     return;
-        // }
-
-        const TAB_KEY = 9;
-        if (ev.which === TAB_KEY) {
-
-            const focusables = getFocusables(this.dialog);
-
-            const focusedItemIndex = this.documant.activeElement ?
-                focusables.indexOf((this.documant.activeElement as unknown) as HTMLOrSVGElement) : // weird TypeScript!
-                -1;
-
-            const isLast = focusedItemIndex === focusables.length - 1;
-            const isFirst = focusedItemIndex === 0;
-
-            let toFocus: HTMLOrSVGElement | undefined;
-
-            if (ev.shiftKey && isFirst) {
-                toFocus = focusables[focusables.length - 1];
-            } else if (!ev.shiftKey && isLast) {
-                toFocus = focusables[0];
-            }
-
-            if (toFocus) {
-                ev.preventDefault();
-                toFocus.focus();
-            }
-        }
-    }
-
-    private maintainFocus(ev: Event) {
-        // if (!this.shown) {
-        //     return;
-        // }
-
-        if (!this.dialog.contains(ev.target as Node)) {
-            ev.preventDefault();
-            focusInside(this.dialog);
-        }
-    }
 }
