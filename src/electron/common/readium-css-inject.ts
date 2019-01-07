@@ -20,6 +20,7 @@ import {
     scrollBarCssStyles,
     selectionCssStyles,
     targetCssStyles,
+    visibilityMaskCssStyles,
 } from "./styles";
 
 // now match with :root[style*="readium-night-on"]
@@ -718,6 +719,7 @@ export function injectDefaultCSS(documant: Document) {
     appendCSSInline(documant, "electron-focus", focusCssStyles);
     appendCSSInline(documant, "electron-target", targetCssStyles);
     appendCSSInline(documant, "electron-scrollbars", scrollBarCssStyles);
+    appendCSSInline(documant, "electron-visibility-mask", visibilityMaskCssStyles);
 }
 
 export function injectReadPosCSS(documant: Document) {
@@ -1011,9 +1013,39 @@ export function transformHTML(
     readiumcssJson: IEventPayload_R2_EVENT_READIUMCSS | undefined,
     mediaType: string | undefined): string {
 
+    // debug(mediaType);
+    // debug(htmlStr);
+
+    // let's remove the DOCTYPE (which can contain entities)
+    // let's replace the body with empty txt (we only need the body start tag, not the element contents)
+
+    const iHtmlStart = htmlStr.indexOf("<html");
+    if (iHtmlStart < 0) {
+        return htmlStr;
+    }
+    const iBodyStart = htmlStr.indexOf("<body");
+    if (iBodyStart < 0) {
+        return htmlStr;
+    }
+    const iBodyEnd = htmlStr.indexOf(">", iBodyStart);
+    if (iBodyEnd <= 0) {
+        return htmlStr;
+    }
+
+    const parseableChunk = htmlStr.substr(iHtmlStart, iBodyEnd - iHtmlStart + 1);
+    // debug(chunk);
+    const htmlStrToParse = `<?xml version="1.0" encoding="utf-8"?>${parseableChunk}TXT</body></html>`;
+    // debug(htmlStrToParse);
+
+    // import * as xmldom from "xmldom";
     const documant = typeof mediaType === "string" ?
-        new xmldom.DOMParser().parseFromString(htmlStr, mediaType) :
-        new xmldom.DOMParser().parseFromString(htmlStr);
+        new xmldom.DOMParser().parseFromString(htmlStrToParse, mediaType) :
+        new xmldom.DOMParser().parseFromString(htmlStrToParse);
+
+    // import * as parse5 from "parse5";
+    // const documant = parse5.parse(htmlStrToParse);
+
+    // debug(documant.doctype);
 
     if (!documant.head) {
         definePropertyGetterSetter_DocHeadBody(documant, "head");
@@ -1053,5 +1085,39 @@ export function transformHTML(
             rtl);
     }
 
-    return new xmldom.XMLSerializer().serializeToString(documant);
+    // import * as xmldom from "xmldom";
+    const serialized = new xmldom.XMLSerializer().serializeToString(documant);
+    // debug("serialized:");
+    // debug(serialized);
+
+    // import * as parse5 from "parse5";
+    // const newStr = parse5.serialize(documant);
+
+    const prefix = htmlStr.substr(0, iHtmlStart);
+    // debug("prefix:");
+    // debug(prefix);
+    const suffix = htmlStr.substr(iBodyEnd + 1);
+    // debug("suffix:");
+    // debug(suffix);
+
+    const iHtmlStart_ = serialized.indexOf("<html");
+    if (iHtmlStart_ < 0) {
+        return htmlStr;
+    }
+    const iBodyStart_ = serialized.indexOf("<body");
+    if (iBodyStart_ < 0) {
+        return htmlStr;
+    }
+    const iBodyEnd_ = serialized.indexOf(">", iBodyStart_);
+    if (iBodyEnd_ <= 0) {
+        return htmlStr;
+    }
+
+    const middle = serialized.substr(iHtmlStart_, iBodyEnd_ - iHtmlStart_ + 1);
+    // debug("chunk_:");
+    // debug(chunk_);
+    const newStr = `${prefix}${middle}${suffix}`;
+    // debug("newStr:");
+    // debug(newStr);
+    return newStr;
 }
