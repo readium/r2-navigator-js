@@ -182,6 +182,10 @@ export class PopupDialog {
             }
         }
 
+        // const input = documant.createElement("input");
+        // input.setAttribute("type", "text");
+        // this.dialog.appendChild(input);
+
         // const butt = documant.createElement("button");
         // butt.appendChild(documant.createTextNode("TEST FOCUS CYCLE"));
         // this.dialog.appendChild(butt);

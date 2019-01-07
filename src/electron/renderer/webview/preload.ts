@@ -306,7 +306,41 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
 
 let _lastAnimState: IPropertyAnimationState | undefined;
 
-ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT_PAGE_TURN) => {
+function elementCapturesKeyboardArrowKeys(target: Element): boolean {
+
+    if (target.nodeType !== Node.ELEMENT_NODE) {
+        return false;
+    }
+
+    const editable = target.getAttribute("contenteditable");
+    if (editable) {
+        return true;
+    }
+
+    const arrayOfKeyboardCaptureElements = [ "input", "textarea" ];
+    if (arrayOfKeyboardCaptureElements.indexOf(target.tagName.toLowerCase()) >= 0) {
+        return true;
+    }
+
+    return false;
+}
+
+function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
+
+    let leftRightKeyWasUsedInsideKeyboardCapture = false;
+    if (win.document.activeElement && elementCapturesKeyboardArrowKeys(win.document.activeElement)) {
+        const oldDate = (win.document.activeElement as any).r2_leftrightKeyboardTimeStamp;
+        if (oldDate) {
+            const newDate = new Date();
+            const msDiff = newDate.getTime() - oldDate.getTime();
+            if (msDiff <= 300) {
+                leftRightKeyWasUsedInsideKeyboardCapture = true;
+            }
+        }
+    }
+    if (leftRightKeyWasUsedInsideKeyboardCapture) {
+        return;
+    }
 
     destroyPopupFootnotesDialogs();
 
@@ -436,6 +470,12 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
     }
 
     ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+}
+ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT_PAGE_TURN) => {
+    // Because 'r2_leftrightKeyboardTimeStamp' is set AFTER the main window left/right keyboard handler!
+    setTimeout(() => { // we could debounce too?
+        onEventPageTurn(payload);
+    }, 100);
 });
 
 // window load event, after DOMContentLoaded
@@ -873,9 +913,6 @@ function handleTab(target: HTMLElement, evt: KeyboardEvent | undefined) {
 
 win.addEventListener("DOMContentLoaded", () => {
 
-    // only applies to previous nav spine item reading order
-    showHideContentMask(true);
-
     _cancelInitialScrollCheck = true;
 
     // const linkUri = new URI(win.location.href);
@@ -920,6 +957,11 @@ win.addEventListener("DOMContentLoaded", () => {
             readiumcssJson.isFixedLayout : false;
     }
 
+    if (!win.READIUM2.isFixedLayout) {
+        // only applies to previous nav spine item reading order
+        showHideContentMask(true);
+    }
+
     // testReadiumCSS(readiumcssJson);
 
     const wh = configureFixedLayout(win.document, win.READIUM2.isFixedLayout,
@@ -929,9 +971,9 @@ win.addEventListener("DOMContentLoaded", () => {
         win.READIUM2.fxlViewportWidth = wh.width;
         win.READIUM2.fxlViewportHeight = wh.height;
     }
-    if (win.READIUM2.isFixedLayout) {
-        notifyReady();
-    }
+    // if (win.READIUM2.isFixedLayout) {
+    //     notifyReady();
+    // }
 
     const alreadedInjected = win.document.documentElement.hasAttribute("data-readiumcss");
     if (alreadedInjected) {
@@ -991,10 +1033,15 @@ win.addEventListener("DOMContentLoaded", () => {
         }
     }, true);
 
-    win.document.documentElement.addEventListener("keydown", (_ev: KeyboardEvent) => {
+    win.document.documentElement.addEventListener("keydown", (ev: KeyboardEvent) => {
 
         if (win.document && win.document.documentElement) {
             win.document.documentElement.classList.add(ROOT_CLASS_KEYBOARD_INTERACT);
+        }
+        if (ev.keyCode === 37 || ev.keyCode === 39) { // left / right
+            if (ev.target && elementCapturesKeyboardArrowKeys(ev.target as Element)) {
+                (ev.target as any).r2_leftrightKeyboardTimeStamp = new Date();
+            }
         }
     }, true);
 
@@ -1156,7 +1203,11 @@ win.addEventListener("load", () => {
                 scrollToHashRaw();
             }
         }, 500);
+    } else {
+        processXYDebounced(0, 0);
+        notifyReady();
     }
+
     checkReadyPass();
 });
 
