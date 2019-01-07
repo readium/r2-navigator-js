@@ -110,6 +110,36 @@ win.READIUM2 = {
     urlQueryParams: undefined,
 };
 
+// const _winAlert = win.alert;
+win.alert = (...args: any[]) => {
+    console.log.apply(win, args);
+};
+// const _winConfirm = win.confirm;
+win.confirm = (...args: any[]): boolean => {
+    console.log.apply(win, args);
+    return false;
+};
+// const _winPrompt = win.prompt;
+win.prompt = (...args: any[]): string => {
+    console.log.apply(win, args);
+    return "";
+};
+
+// setTimeout(() => {
+//     if (window.alert) {
+//         window.alert("window.alert!");
+//     }
+//     if (window.confirm) {
+//         const ok = window.confirm("window.confirm?");
+//         console.log(ok);
+//     }
+//     // NOT SUPPORTED: fatal error in console.
+//     if (window.prompt) {
+//         const str = window.prompt("window.prompt:");
+//         console.log(str);
+//     }
+// }, 2000);
+
 win.READIUM2.urlQueryParams = win.location.search ? getURLQueryParams(win.location.search) : undefined;
 
 if (win.READIUM2.urlQueryParams) {
