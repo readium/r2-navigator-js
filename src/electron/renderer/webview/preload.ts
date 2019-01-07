@@ -19,6 +19,7 @@ import { LocatorLocations } from "@r2-shared-js/models/locator";
 import { debounce } from "debounce";
 import * as debug_ from "debug";
 import { ipcRenderer } from "electron";
+import * as tabbable from "tabbable";
 
 import {
     IEventPayload_R2_EVENT_LINK,
@@ -530,6 +531,9 @@ const checkReadyPass = () => {
     }
 };
 
+// function isElementInsideDialog(el: HTMLElement): boolean {
+// }
+
 const notifyReady = () => {
     if (win.READIUM2.readyEventSent) {
         return;
@@ -803,6 +807,7 @@ function showHideContentMask(doHide: boolean) {
 
 win.addEventListener("DOMContentLoaded", () => {
 
+    // only applies to previous nav spine item reading order
     showHideContentMask(true);
 
     _cancelInitialScrollCheck = true;
@@ -875,7 +880,77 @@ win.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // // DEBUG
+    function focusScrollRaw(tab: HTMLElement, doFocus: boolean) {
+        win.READIUM2.locationHashOverride = tab;
+        scrollElementIntoView(win.READIUM2.locationHashOverride);
+        if (doFocus) {
+            setTimeout(() => {
+                tab.focus();
+            }, 10);
+        }
+    }
+    const focusScrollDebounced = debounce((tab: HTMLElement, doFocus: boolean) => {
+        focusScrollRaw(tab, doFocus);
+    }, 20);
+
+    function handleTab(target: HTMLElement, evt: KeyboardEvent | undefined) {
+        if (!target || !win.document.body) {
+            return;
+        }
+
+        _ignoreFocusInEvent = false;
+
+        const tabbables = tabbable(win.document.body);
+        // debug(tabbables);
+        const i = tabbables.indexOf(target);
+        if (i === 0) {
+            // debug("FIRST TABBABLE");
+            if (!evt || evt.shiftKey) { // prevent the webview from cycling scroll (yet focus leaves)
+                _ignoreFocusInEvent = true;
+                focusScrollDebounced(target as HTMLElement, false);
+                return;
+            }
+            if (i < (tabbables.length - 1)) {
+                // debug("TABBABLE FORWARD >>");
+                evt.preventDefault();
+                const nextTabbable = tabbables[i + 1];
+                focusScrollDebounced(nextTabbable as HTMLElement, true);
+                return;
+            }
+        } else if (i === (tabbables.length - 1)) {
+            // debug("LAST TABBABLE");
+            if (!evt || !evt.shiftKey) { // prevent the webview from cycling scroll (yet focus leaves)
+                _ignoreFocusInEvent = true;
+                focusScrollDebounced(target as HTMLElement, false);
+                return;
+            }
+            if (i > 0) {
+                // debug("TABBABLE BACKWARD <<");
+                evt.preventDefault();
+                const previousTabbable = tabbables[i - 1];
+                focusScrollDebounced(previousTabbable as HTMLElement, true);
+                return;
+            }
+        } else if (i > 0) {
+            // debug("TABBABLE: " + i);
+            if (evt) {
+                if (evt.shiftKey) {
+                    // debug("TABBABLE BACKWARD <<");
+                    evt.preventDefault();
+                    const previousTabbable = tabbables[i - 1];
+                    focusScrollDebounced(previousTabbable as HTMLElement, true);
+                    return;
+                } else {
+                    // debug("TABBABLE FORWARD >>");
+                    evt.preventDefault();
+                    const nextTabbable = tabbables[i + 1];
+                    focusScrollDebounced(nextTabbable as HTMLElement, true);
+                    return;
+                }
+            }
+        }
+    }
+
     // win.document.body.addEventListener("focus", (ev: any) => {
     //     debug("focus ########### 1");
     //     debug(ev.target);
@@ -884,7 +959,6 @@ win.addEventListener("DOMContentLoaded", () => {
     //     debug("focus ########### 2");
     //     debug(ev.target);
     // });
-    // // DEBUG
 
     // win.document.body.addEventListener("focusin", (ev: any) => {
     //     debug("focusin ########### 1");
@@ -892,42 +966,46 @@ win.addEventListener("DOMContentLoaded", () => {
     //     ev.stopPropagation(); // prevents event below (without capture)
     //     ev.preventDefault(); // does not prevent subsequent scroll
     // }, true);
+    let _ignoreFocusInEvent = false;
     win.document.body.addEventListener("focusin", (ev: any) => {
+
+        if (_ignoreFocusInEvent) {
+            _ignoreFocusInEvent = false;
+            return;
+        }
+
         // debug("focusin ########### 2");
         // debug(ev.target.outerHTML);
         // debug(uniqueCssSelector(ev.target, win.document));
+        // debug(win.document.activeElement);
 
-        if (!win.document || !win.document.documentElement) {
+        if (!win.document) {
             return;
         }
         const isPaged = isPaginated(win.document);
         if (isPaged) {
-            setTimeout(() => {
-                win.READIUM2.locationHashOverride = ev.target;
-                if (win.READIUM2.locationHashOverride) {
-                    scrollElementIntoView(win.READIUM2.locationHashOverride);
-                    // setTimeout(() => {
-                    //     showHideContentMask(false);
-                    // }, 20);
-                }
-            }, 30);
+            if (ev.target) {
+                handleTab(ev.target as HTMLElement, undefined);
+            }
         }
     });
 
-    // win.document.documentElement.addEventListener("keydown", (ev: any) => {
-    //     debug(ev.which);
-    //     if (!win.document || !win.document.documentElement) {
-    //         return;
-    //     }
+    win.document.documentElement.addEventListener("keydown", (ev: KeyboardEvent) => {
+        // debug(ev.which);
+        if (!win.document || !win.document.documentElement) {
+            return;
+        }
 
-    //     const isPaged = isPaginated(win.document);
-    //     if (isPaged) {
-    //         const TAB_KEY = 9;
-    //         if (ev.which === TAB_KEY) {
-    //             showHideContentMask(true);
-    //         }
-    //     }
-    // }, true);
+        const isPaged = isPaginated(win.document);
+        if (isPaged) {
+            const TAB_KEY = 9;
+            if (ev.which === TAB_KEY) {
+                if (ev.target) {
+                    handleTab(ev.target as HTMLElement, ev);
+                }
+            }
+        }
+    }, true);
 
     win.document.addEventListener("click", (e) => {
         // TODO? xlink:href

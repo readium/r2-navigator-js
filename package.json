@@ -58,6 +58,7 @@
     "r2-utils-js": "^1.0.4",
     "resize-sensor": "github:normanzb/resize-sensor#semver:^0.0.7",
     "ta-json-x": "^2.5.0",
+    "tabbable": "^3.1.2",
     "tslib": "^1.9.3",
     "urijs": "^1.19.1",
     "uuid": "^3.3.2",

@@ -15,3 +15,5 @@ declare module "debug/src/browser";
 declare module "debug/src/common";
 
 declare module "cssesc";
+
+declare module "tabbable";
