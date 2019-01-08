@@ -174,11 +174,13 @@ export class PopupDialog {
             this.dialog.insertAdjacentHTML("beforeend", outerHTML);
         } catch (err) {
             console.log(err);
+            console.log(outerHTML);
             try {
                 this.dialog.innerHTML = outerHTML;
                 this.dialog.insertAdjacentHTML("afterbegin", button.outerHTML);
             } catch (err) {
                 console.log(err);
+                console.log(outerHTML);
             }
         }
 
@@ -244,7 +246,7 @@ export class PopupDialog {
     //     return this;
     // }
 
-    public show() {
+    public show(toRefocus: Element | undefined) {
         // if (this.shown) {
         //     return;
         // }
@@ -259,7 +261,9 @@ export class PopupDialog {
             return;
         }
 
-        _focusedBeforeDialog = (this.documant.activeElement as unknown) as HTMLOrSVGElement; // weird TypeScript
+        _focusedBeforeDialog = toRefocus ?
+            toRefocus as HTMLElement :
+            (this.documant.activeElement as unknown) as HTMLOrSVGElement; // weird TypeScript
 
         this.dialog.showModal();
 

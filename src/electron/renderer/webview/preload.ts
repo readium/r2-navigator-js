@@ -623,15 +623,26 @@ function scrollElementIntoView(element: Element) {
     if (isPaged) {
         scrollIntoView(element as HTMLElement);
     } else {
-        element.scrollIntoView({
-            // TypeScript lib.dom.d.ts difference in 3.2.1
-            // ScrollBehavior = "auto" | "instant" | "smooth" VS ScrollBehavior = "auto" | "smooth"
-            behavior: "auto",
-            // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
-            block: "start",
-            // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
-            inline: "start",
-        } as ScrollIntoViewOptions);
+        const rect = element.getBoundingClientRect();
+        // calculateMaxScrollShift()
+        // TODO: vertical writing mode
+        const scrollTopMax = win.document.body.scrollHeight - win.document.documentElement.clientHeight;
+        let offset = win.document.body.scrollTop + (rect.top - (win.document.documentElement.clientHeight / 2));
+        if (offset > scrollTopMax) {
+            offset = scrollTopMax;
+        } else if (offset < 0) {
+            offset = 0;
+        }
+        win.document.body.scrollTop = offset;
+        // element.scrollIntoView({
+        //     // TypeScript lib.dom.d.ts difference in 3.2.1
+        //     // ScrollBehavior = "auto" | "instant" | "smooth" VS ScrollBehavior = "auto" | "smooth"
+        //     behavior: "auto",
+        //     // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
+        //     block: "center",
+        //     // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
+        //     inline: "nearest",
+        // } as ScrollIntoViewOptions);
     }
 }
 
@@ -1030,15 +1041,15 @@ win.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        if (!win.document) {
-            return;
+        if (ev.target) {
+            handleTab(ev.target as HTMLElement, undefined);
         }
-        const isPaged = isPaginated(win.document);
-        if (isPaged) {
-            if (ev.target) {
-                handleTab(ev.target as HTMLElement, undefined);
-            }
-        }
+        // if (!win.document) {
+        //     return;
+        // }
+        // const isPaged = isPaginated(win.document);
+        // if (isPaged) {
+        // }
     });
 
     win.document.body.addEventListener("keydown", (ev: KeyboardEvent) => {
@@ -1048,19 +1059,18 @@ win.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        if (!win.document) {
-            return;
-        }
-
-        const isPaged = isPaginated(win.document);
-        if (isPaged) {
-            const TAB_KEY = 9;
-            if (ev.which === TAB_KEY) {
-                if (ev.target) {
-                    handleTab(ev.target as HTMLElement, ev);
-                }
+        const TAB_KEY = 9;
+        if (ev.which === TAB_KEY) {
+            if (ev.target) {
+                handleTab(ev.target as HTMLElement, ev);
             }
         }
+        // if (!win.document) {
+        //     return;
+        // }
+        // const isPaged = isPaginated(win.document);
+        // if (isPaged) {
+        // }
     }, true);
 
     win.document.documentElement.addEventListener("keydown", (ev: KeyboardEvent) => {
@@ -1166,7 +1176,7 @@ function popupFootNote(element: HTMLElement, href: string): boolean {
     const id = ID_PREFIX + targetElement.id;
     const existingDialog = win.document.getElementById(id);
     if (existingDialog) {
-        ((existingDialog as any).popDialog as PopupDialog).show();
+        ((existingDialog as any).popDialog as PopupDialog).show(element);
         return true;
     }
 
@@ -1202,7 +1212,7 @@ function popupFootNote(element: HTMLElement, href: string): boolean {
     }
     const pop = new PopupDialog(win.document, outerHTML, id, focusScroll);
 
-    pop.show();
+    pop.show(element);
     return true;
 }
 
@@ -1447,7 +1457,7 @@ function ttsPlayback(elem: Element) {
     if (!txt) {
         return;
     }
-    txt = txt.trim().replace(/\n/g, " ");
+    txt = txt.trim().replace(/\n/g, " ").replace(/&/g, "&amp;");
 
     // debug("SpeechSynthesisUtterance:");
     // debug(txt);
@@ -1464,7 +1474,9 @@ function ttsPlayback(elem: Element) {
 
     const idTtsTxt = "r2-tts-txt";
     // tslint:disable-next-line:max-line-length
-    const outerHTML = `<textarea id="${idTtsTxt}" onselectstart="return false;" style="font-family: inherit; font-size: inherit; height: 400px; width: 600px; overflow: auto;">${txt}</textarea>`;
+    // const outerHTML = `<textarea id="${idTtsTxt}" style="font-family: inherit; font-size: inherit; height: 400px; width: 600px; overflow: auto;">${txt}</textarea>`;
+    // tslint:disable-next-line:max-line-length
+    const outerHTML = `<div id="${idTtsTxt}">${txt}</div>`;
 
     const idTtsDialog = "r2-tts-dialog";
     let existingDialog = win.document.getElementById(idTtsDialog) as HTMLDialogElement;
@@ -1475,13 +1487,20 @@ function ttsPlayback(elem: Element) {
 
     function focusScroll(el: HTMLOrSVGElement, doFocus: boolean) {
         focusScrollRaw(el, doFocus);
+
+        setTimeout(() => {
+            // if (win.speechSynthesis.speaking) {
+            //     win.speechSynthesis.pause();
+            // }
+            win.speechSynthesis.cancel();
+        }, 0);
     }
     const pop = new PopupDialog(win.document, outerHTML, idTtsDialog, focusScroll);
-    pop.show();
+    pop.show(elem);
 
-    const txtarea = win.document.getElementById(idTtsTxt) as HTMLTextAreaElement;
-    txtarea.readOnly = true;
-    // txtarea.disabled = true;
+    // const txtarea = win.document.getElementById(idTtsTxt) as HTMLTextAreaElement;
+    // txtarea.readOnly = true;
+    // // txtarea.disabled = true;
 
     const utterance = new SpeechSynthesisUtterance(txt);
     existingDialog = win.document.getElementById(idTtsDialog) as HTMLDialogElement;
@@ -1493,12 +1512,6 @@ function ttsPlayback(elem: Element) {
     // utterance.volume
     // utterance.lang
     utterance.onboundary = (ev: SpeechSynthesisEvent) => {
-        // debug("SpeechSynthesisEvent onboundary:");
-        // debug(ev.name);
-        // debug(ev.elapsedTime);
-        // debug(ev.charIndex);
-        // debug(ev);
-
         if (ev.name !== "word") {
             return;
         }
@@ -1506,38 +1519,66 @@ function ttsPlayback(elem: Element) {
         if (!ttsDialog.open) {
             return;
         }
-        const textarea = win.document.getElementById(idTtsTxt) as HTMLTextAreaElement;
-        if (!textarea || !textarea.value) {
+        // const textarea = win.document.getElementById(idTtsTxt) as HTMLTextAreaElement;
+        // if (!textarea || !textarea.value) {
+        //     return;
+        // }
+        const textP = win.document.getElementById(idTtsTxt) as HTMLElement;
+        if (!textP) {
             return;
         }
 
-        const left = textarea.value.slice(0, ev.charIndex + 1).search(/\S+$/);
-        const right = textarea.value.slice(ev.charIndex).search(/\s/);
-        const word = right < 0 ? textarea.value.slice(left) : textarea.value.slice(left, right + ev.charIndex);
+        const text = utterance.text;
+        const start = text.slice(0, ev.charIndex + 1).search(/\S+$/);
+        const right = text.slice(ev.charIndex).search(/\s/);
+        const word = right < 0 ? text.slice(start) : text.slice(start, right + ev.charIndex);
+        const end = start + word.length;
         // debug(word);
-        const end = left + word.length;
 
-        const fullTxt = textarea.value;
-        textarea.value = fullTxt.substring(0, end);
-        textarea.scrollTop = textarea.scrollHeight;
-        textarea.value = fullTxt;
+        const prefix = "<span id=\"r2-tts-active-word\">";
+        const suffix = "</span>";
 
-        textarea.focus();
-        textarea.setSelectionRange(left, end);
+        const fullTxt = `${text.substr(0, start)}${prefix}${word}${suffix}${text.substr(end)}`;
+        // textarea.value = fullTxt.substring(0, end);
+        // textarea.scrollTop = textarea.scrollHeight;
+        // textarea.value = fullTxt;
+        // textarea.focus();
+        // const offset = prefix.length;
+        // textarea.setSelectionRange(start + offset, end + offset);
+        textP.innerHTML = fullTxt;
+        setTimeout(() => {
+            const span = win.document.getElementById("r2-tts-active-word") as HTMLElement;
+            if (span) {
+                const rect = span.getBoundingClientRect();
+                const rect2 = textP.getBoundingClientRect();
+                const scrollTopMax = textP.scrollHeight - textP.clientHeight;
+                let offset = textP.scrollTop + (rect.top - rect2.top - (textP.clientHeight / 2));
+                if (offset > scrollTopMax) {
+                    offset = scrollTopMax;
+                } else if (offset < 0) {
+                    offset = 0;
+                }
+                textP.scrollTop = offset;
+
+                // span.focus();
+                // span.scrollIntoView({
+                //     // TypeScript lib.dom.d.ts difference in 3.2.1
+                //     // ScrollBehavior = "auto" | "instant" | "smooth" VS ScrollBehavior = "auto" | "smooth"
+                //     behavior: "auto",
+                //     // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
+                //     block: "center",
+                //     // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
+                //     inline: "nearest",
+                // } as ScrollIntoViewOptions);
+            }
+        }, 100);
     };
-    // utterance.onstart = (ev: SpeechSynthesisEvent) => {
-    //     debug("SpeechSynthesisEvent onstart:");
-    //     debug(ev.name);
-    //     debug(ev.elapsedTime);
-    //     debug(ev.charIndex);
-    // };
     utterance.onend = (ev: SpeechSynthesisEvent) => {
-        // debug("SpeechSynthesisEvent onend:");
-        // debug(ev.name);
-        // debug(ev.elapsedTime);
-        // debug(ev.charIndex);
         const dialogEl = win.document.getElementById(idTtsDialog) as HTMLDialogElement;
         if (dialogEl && (dialogEl as any).ttsUtterance === ev.utterance) {
+            // if ((dialogEl as any).popDialog) {
+            //     ((dialogEl as any).popDialog as PopupDialog).cancelRefocus();
+            // }
             dialogEl.close();
         }
     };

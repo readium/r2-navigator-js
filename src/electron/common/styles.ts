@@ -41,7 +41,7 @@ dialog.${FOOTNOTES_DIALOG_CLASS} {
     left: 50%;
     transform: translate(-50%, -50%);
 
-    max-height: 100%;
+    max-height: 400px;
     max-width: 600px;
 
     margin: 0;
@@ -56,9 +56,49 @@ dialog.${FOOTNOTES_DIALOG_CLASS} {
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
+:root[style*="readium-night-on"] dialog.${FOOTNOTES_DIALOG_CLASS}::backdrop {
+    background-color: rgba(0, 0, 0, 0.65) !important;
+}
 :root[style*="readium-night-on"] dialog.${FOOTNOTES_DIALOG_CLASS} {
-    background-color: black !important;
+    background-color: #333333 !important;
     border-color: white !important;
+}
+/*
+outline-color: magenta;
+outline-style: solid;
+outline-width: 2px;
+outline-offset: 1px;
+
+text-decoration: underline;
+
+height: 300px;
+width: 600px;
+*/
+#r2-tts-txt {
+    color: #aaaaaa;
+
+    overflow: auto;
+
+    max-height: 350px;
+
+    padding: 0;
+    margin: 0;
+
+    padding-right: 1em;
+}
+#r2-tts-active-word {
+    color: black;
+    border-bottom: 2px solid magenta;
+
+    padding: 0;
+    margin: 0;
+}
+:root[style*="readium-night-on"] #r2-tts-txt {
+    color: #bbbbbb !important;
+}
+:root[style*="readium-night-on"] #r2-tts-active-word {
+    color: white !important;
+    border-bottom: 2px solid magenta !important;
 }
 `;
 
