@@ -41,7 +41,7 @@ dialog.${FOOTNOTES_DIALOG_CLASS} {
     left: 50%;
     transform: translate(-50%, -50%);
 
-    max-width: 90%;
+    max-height: 100%;
     max-width: 600px;
 
     margin: 0;

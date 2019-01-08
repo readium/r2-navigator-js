@@ -1282,6 +1282,10 @@ const processXYRaw = (x: number, y: number) => {
     }
 
     if (element) {
+        if (x !== 0 && y !== 0) {
+            ttsPlayback(element);
+        }
+
         win.READIUM2.locationHashOverride = element;
         notifyReadingLocationDebounced();
 
@@ -1434,6 +1438,114 @@ export const computeCFI = (node: Node): string | undefined => {
 
     return "/" + cfi;
 };
+
+function ttsPlayback(elem: Element) {
+    // Paragraphs split:
+    // .split(/(?:\s*\r?\n\s*){2,}/)
+    const txtSelection = win.getSelection().toString().trim();
+    let txt = txtSelection || elem.textContent;
+    if (!txt) {
+        return;
+    }
+    txt = txt.trim().replace(/\n/g, " ");
+
+    // debug("SpeechSynthesisUtterance:");
+    // debug(txt);
+
+    // if (win.speechSynthesis.speaking) {
+    //     win.speechSynthesis.pause();
+    // }
+    // if (win.speechSynthesis.pending) {
+    //     win.speechSynthesis.cancel();
+    // }
+    win.speechSynthesis.cancel();
+
+    destroyPopupFootnotesDialogs();
+
+    const idTtsTxt = "r2-tts-txt";
+    // tslint:disable-next-line:max-line-length
+    const outerHTML = `<textarea id="${idTtsTxt}" onselectstart="return false;" style="font-family: inherit; font-size: inherit; height: 400px; width: 600px; overflow: auto;">${txt}</textarea>`;
+
+    const idTtsDialog = "r2-tts-dialog";
+    let existingDialog = win.document.getElementById(idTtsDialog) as HTMLDialogElement;
+    if (existingDialog) {
+        (existingDialog as any).popDialog = undefined;
+        existingDialog.remove();
+    }
+
+    function focusScroll(el: HTMLOrSVGElement, doFocus: boolean) {
+        focusScrollRaw(el, doFocus);
+    }
+    const pop = new PopupDialog(win.document, outerHTML, idTtsDialog, focusScroll);
+    pop.show();
+
+    const txtarea = win.document.getElementById(idTtsTxt) as HTMLTextAreaElement;
+    txtarea.readOnly = true;
+    // txtarea.disabled = true;
+
+    const utterance = new SpeechSynthesisUtterance(txt);
+    existingDialog = win.document.getElementById(idTtsDialog) as HTMLDialogElement;
+    (existingDialog as any).ttsUtterance = utterance;
+    // utterance.text
+    // utterance.voice
+    // utterance.rate
+    // utterance.pitch
+    // utterance.volume
+    // utterance.lang
+    utterance.onboundary = (ev: SpeechSynthesisEvent) => {
+        // debug("SpeechSynthesisEvent onboundary:");
+        // debug(ev.name);
+        // debug(ev.elapsedTime);
+        // debug(ev.charIndex);
+        // debug(ev);
+
+        if (ev.name !== "word") {
+            return;
+        }
+        const ttsDialog = win.document.getElementById(idTtsDialog) as HTMLDialogElement;
+        if (!ttsDialog.open) {
+            return;
+        }
+        const textarea = win.document.getElementById(idTtsTxt) as HTMLTextAreaElement;
+        if (!textarea || !textarea.value) {
+            return;
+        }
+
+        const left = textarea.value.slice(0, ev.charIndex + 1).search(/\S+$/);
+        const right = textarea.value.slice(ev.charIndex).search(/\s/);
+        const word = right < 0 ? textarea.value.slice(left) : textarea.value.slice(left, right + ev.charIndex);
+        // debug(word);
+        const end = left + word.length;
+
+        const fullTxt = textarea.value;
+        textarea.value = fullTxt.substring(0, end);
+        textarea.scrollTop = textarea.scrollHeight;
+        textarea.value = fullTxt;
+
+        textarea.focus();
+        textarea.setSelectionRange(left, end);
+    };
+    // utterance.onstart = (ev: SpeechSynthesisEvent) => {
+    //     debug("SpeechSynthesisEvent onstart:");
+    //     debug(ev.name);
+    //     debug(ev.elapsedTime);
+    //     debug(ev.charIndex);
+    // };
+    utterance.onend = (ev: SpeechSynthesisEvent) => {
+        // debug("SpeechSynthesisEvent onend:");
+        // debug(ev.name);
+        // debug(ev.elapsedTime);
+        // debug(ev.charIndex);
+        const dialogEl = win.document.getElementById(idTtsDialog) as HTMLDialogElement;
+        if (dialogEl && (dialogEl as any).ttsUtterance === ev.utterance) {
+            dialogEl.close();
+        }
+    };
+
+    setTimeout(() => {
+        win.speechSynthesis.speak(utterance);
+    }, 0);
+}
 
 const notifyReadingLocationRaw = () => {
     if (!win.READIUM2.locationHashOverride) {
