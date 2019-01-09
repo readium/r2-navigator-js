@@ -67,9 +67,9 @@ import URI = require("urijs");
 
 const ENABLE_WEBVIEW_RESIZE = true;
 
-const CLASS_POS_RIGHT = "r2_posRight";
-const CLASS_SHIFT_LEFT = "r2_shiftedLeft";
-const CLASS_ANIMATED = "r2_animated";
+// const CLASS_POS_RIGHT = "r2_posRight";
+// const CLASS_SHIFT_LEFT = "r2_shiftedLeft";
+// const CLASS_ANIMATED = "r2_animated";
 
 // export const DOM_EVENT_HIDE_VIEWPORT = "r2:hide-content-viewport";
 // export const DOM_EVENT_SHOW_VIEWPORT = "r2:show-content-viewport";
@@ -406,10 +406,10 @@ export function installNavigatorDOM(
 
     _rootHtmlElement.appendChild(slidingViewport);
 
-    if (isRTL()) {
-        _webview1.classList.add(CLASS_POS_RIGHT);
-        _webview1.style.left = "50%";
-    }
+    // if (isRTL()) {
+    //     _webview1.classList.add(CLASS_POS_RIGHT);
+    //     _webview1.style.left = "50%";
+    // }
     // else {
     //     _webview2.classList.add(CLASS_POS_RIGHT);
     //     _webview2.style.left = "50%";
@@ -581,54 +581,54 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         const webviewToReuse = _webview1;
         // const webviewToReuse = wv1AlreadyLoaded ? _webview1 : _webview2;
         // // const otherWebview = webviewToReuse === _webview2 ? _webview1 : _webview2;
-        if (webviewToReuse !== activeWebView) {
+        // if (webviewToReuse !== activeWebView) {
 
-            debug("INTO VIEW ...");
+        //     debug("INTO VIEW ...");
 
-            const slidingView = document.getElementById(ELEMENT_ID_SLIDING_VIEWPORT) as HTMLElement;
-            if (slidingView) {
-                let animate = true;
-                if (goto || hash) {
-                    debug("DISABLE ANIM");
-                    animate = false;
-                } else if (previous) {
-                    if (!slidingView.classList.contains(CLASS_SHIFT_LEFT)) {
-                        debug("DISABLE ANIM");
-                        animate = false;
-                    }
-                }
-                if (animate) {
-                    if (!slidingView.classList.contains(CLASS_ANIMATED)) {
-                        slidingView.classList.add(CLASS_ANIMATED);
-                        slidingView.style.transition = "left 500ms ease-in-out";
-                    }
-                } else {
-                    if (slidingView.classList.contains(CLASS_ANIMATED)) {
-                        slidingView.classList.remove(CLASS_ANIMATED);
-                        slidingView.style.transition = "none";
-                    }
-                }
-                if (slidingView.classList.contains(CLASS_SHIFT_LEFT)) {
-                    slidingView.classList.remove(CLASS_SHIFT_LEFT);
-                    slidingView.style.left = "0";
+        //     const slidingView = document.getElementById(ELEMENT_ID_SLIDING_VIEWPORT) as HTMLElement;
+        //     if (slidingView) {
+        //         let animate = true;
+        //         if (goto || hash) {
+        //             debug("DISABLE ANIM");
+        //             animate = false;
+        //         } else if (previous) {
+        //             if (!slidingView.classList.contains(CLASS_SHIFT_LEFT)) {
+        //                 debug("DISABLE ANIM");
+        //                 animate = false;
+        //             }
+        //         }
+        //         if (animate) {
+        //             if (!slidingView.classList.contains(CLASS_ANIMATED)) {
+        //                 slidingView.classList.add(CLASS_ANIMATED);
+        //                 slidingView.style.transition = "left 500ms ease-in-out";
+        //             }
+        //         } else {
+        //             if (slidingView.classList.contains(CLASS_ANIMATED)) {
+        //                 slidingView.classList.remove(CLASS_ANIMATED);
+        //                 slidingView.style.transition = "none";
+        //             }
+        //         }
+        //         if (slidingView.classList.contains(CLASS_SHIFT_LEFT)) {
+        //             slidingView.classList.remove(CLASS_SHIFT_LEFT);
+        //             slidingView.style.left = "0";
 
-                    // if (_webview1.classList.contains(CLASS_POS_RIGHT)) {
-                    //     // activeWebView === _webview1;
-                    // } else {
-                    //     // activeWebView === _webview2;
-                    // }
-                } else {
-                    slidingView.classList.add(CLASS_SHIFT_LEFT);
-                    slidingView.style.left = "-100%";
+        //             // if (_webview1.classList.contains(CLASS_POS_RIGHT)) {
+        //             //     // activeWebView === _webview1;
+        //             // } else {
+        //             //     // activeWebView === _webview2;
+        //             // }
+        //         } else {
+        //             slidingView.classList.add(CLASS_SHIFT_LEFT);
+        //             slidingView.style.left = "-100%";
 
-                    // if (_webview2.classList.contains(CLASS_POS_RIGHT)) {
-                    //     // activeWebView === _webview1;
-                    // } else {
-                    //     // activeWebView === _webview2;
-                    // }
-                }
-            }
-        }
+        //             // if (_webview2.classList.contains(CLASS_POS_RIGHT)) {
+        //             //     // activeWebView === _webview1;
+        //             // } else {
+        //             //     // activeWebView === _webview2;
+        //             // }
+        //         }
+        //     }
+        // }
 
         // const msgJson = {
         //     goto: ,
