@@ -20,6 +20,7 @@ import {
     scrollBarCssStyles,
     selectionCssStyles,
     targetCssStyles,
+    ttsCssStyles,
     visibilityMaskCssStyles,
 } from "./styles";
 
@@ -714,6 +715,7 @@ export function removeAllCSS(documant: Document) {
 }
 
 export function injectDefaultCSS(documant: Document) {
+    appendCSSInline(documant, "electron-tts", ttsCssStyles);
     appendCSSInline(documant, "electron-footnotes", footnotesCssStyles);
     appendCSSInline(documant, "electron-selection", selectionCssStyles);
     appendCSSInline(documant, "electron-focus", focusCssStyles);

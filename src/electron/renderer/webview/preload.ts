@@ -46,11 +46,8 @@ import {
     isPaginated,
 } from "../../common/readium-css-inject";
 import {
-    FOOTNOTES_CONTAINER_CLASS,
-    FOOTNOTES_DIALOG_CLASS,
     ROOT_CLASS_INVISIBLE_MASK,
     ROOT_CLASS_KEYBOARD_INTERACT,
-    ROOT_CLASS_NO_FOOTNOTES,
     readPosCssStylesAttr1,
     readPosCssStylesAttr2,
     readPosCssStylesAttr3,
@@ -60,7 +57,7 @@ import {
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector2";
 import { easings } from "../common/easings";
-import { PopupDialog } from "../common/popup-dialog";
+import { destroyPopupDialogs, isPopupDialogOpen } from "../common/popup-dialog";
 import { getURLQueryParams } from "../common/querystring";
 import {
     URL_PARAM_CSS,
@@ -70,6 +67,8 @@ import {
     URL_PARAM_PREVIOUS,
 } from "../common/url-params";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
+import { popupFootNote } from "./popupFootnotes";
+import { ttsPlayback } from "./readaloud";
 import {
     calculateColumnDimension,
     calculateMaxScrollShift,
@@ -259,7 +258,7 @@ ipcRenderer.on(R2_EVENT_LOCATOR_VISIBLE, (_event: any, payload: IEventPayload_R2
 
 ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_SCROLLTO) => {
 
-    destroyPopupFootnotesDialogs();
+    destroyPopupDialogs(win.document);
 
     _cancelInitialScrollCheck = true;
 
@@ -339,18 +338,20 @@ let _lastAnimState: IPropertyAnimationState | undefined;
 
 function elementCapturesKeyboardArrowKeys(target: Element): boolean {
 
-    if (target.nodeType !== Node.ELEMENT_NODE) {
-        return false;
-    }
+    let curElement: Node | null = target;
+    while (curElement && curElement.nodeType === Node.ELEMENT_NODE) {
 
-    const editable = target.getAttribute("contenteditable");
-    if (editable) {
-        return true;
-    }
+        const editable = (curElement as Element).getAttribute("contenteditable");
+        if (editable) {
+            return true;
+        }
 
-    const arrayOfKeyboardCaptureElements = [ "input", "textarea" ];
-    if (arrayOfKeyboardCaptureElements.indexOf(target.tagName.toLowerCase()) >= 0) {
-        return true;
+        const arrayOfKeyboardCaptureElements = [ "input", "textarea", "video", "audio", "select" ];
+        if (arrayOfKeyboardCaptureElements.indexOf((curElement as Element).tagName.toLowerCase()) >= 0) {
+            return true;
+        }
+
+        curElement = curElement.parentNode;
     }
 
     return false;
@@ -359,13 +360,19 @@ function elementCapturesKeyboardArrowKeys(target: Element): boolean {
 function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
 
     let leftRightKeyWasUsedInsideKeyboardCapture = false;
-    if (win.document.activeElement && elementCapturesKeyboardArrowKeys(win.document.activeElement)) {
-        const oldDate = (win.document.activeElement as any).r2_leftrightKeyboardTimeStamp;
-        if (oldDate) {
-            const newDate = new Date();
-            const msDiff = newDate.getTime() - oldDate.getTime();
-            if (msDiff <= 300) {
-                leftRightKeyWasUsedInsideKeyboardCapture = true;
+    if (win.document.activeElement &&
+        elementCapturesKeyboardArrowKeys(win.document.activeElement)) {
+
+        if (win.document.hasFocus()) {
+            leftRightKeyWasUsedInsideKeyboardCapture = true;
+        } else {
+            const oldDate = (win.document.activeElement as any).r2_leftrightKeyboardTimeStamp;
+            if (oldDate) {
+                const newDate = new Date();
+                const msDiff = newDate.getTime() - oldDate.getTime();
+                if (msDiff <= 300) {
+                    leftRightKeyWasUsedInsideKeyboardCapture = true;
+                }
             }
         }
     }
@@ -373,7 +380,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
         return;
     }
 
-    destroyPopupFootnotesDialogs();
+    destroyPopupDialogs(win.document);
 
     if (win.READIUM2.isFixedLayout || !win.document.body) {
         ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
@@ -541,8 +548,7 @@ const checkReadyPass = () => {
 
         win.addEventListener("scroll", (_ev: UIEvent) => {
 
-            if (win.document && win.document.documentElement &&
-                win.document.documentElement.classList.contains(FOOTNOTES_DIALOG_CLASS)) {
+            if (isPopupDialogOpen(win.document)) {
                 return;
             }
 
@@ -583,8 +589,7 @@ const checkReadyPass = () => {
     if (win.document.body) {
         win.document.body.addEventListener("click", (ev: MouseEvent) => {
 
-            if (win.document && win.document.documentElement &&
-                win.document.documentElement.classList.contains(FOOTNOTES_DIALOG_CLASS)) {
+            if (isPopupDialogOpen(win.document)) {
                 return;
             }
 
@@ -1032,8 +1037,7 @@ win.addEventListener("DOMContentLoaded", () => {
 
     win.document.body.addEventListener("focusin", (ev: any) => {
 
-        if (win.document && win.document.documentElement &&
-            win.document.documentElement.classList.contains(FOOTNOTES_DIALOG_CLASS)) {
+        if (isPopupDialogOpen(win.document)) {
             return;
         }
 
@@ -1055,8 +1059,7 @@ win.addEventListener("DOMContentLoaded", () => {
 
     win.document.body.addEventListener("keydown", (ev: KeyboardEvent) => {
 
-        if (win.document && win.document.documentElement &&
-            win.document.documentElement.classList.contains(FOOTNOTES_DIALOG_CLASS)) {
+        if (isPopupDialogOpen(win.document)) {
             return;
         }
 
@@ -1105,7 +1108,7 @@ win.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         e.stopPropagation();
 
-        const done = popupFootNote(e.target as HTMLElement, href);
+        const done = popupFootNote(e.target as HTMLElement, focusScrollRaw, href);
         if (!done) {
             const payload: IEventPayload_R2_EVENT_LINK = {
                 url: href,
@@ -1129,95 +1132,6 @@ win.addEventListener("DOMContentLoaded", () => {
         }
     }
 });
-
-function destroyPopupFootnotesDialogs() {
-    const dialogs = win.document.querySelectorAll(`dialog[open]`);
-    dialogs.forEach((dialog) => {
-        if ((dialog as any).popDialog) {
-            // ((dialog as any).popDialog as PopupDialog).hide();
-            ((dialog as any).popDialog as PopupDialog).cancelRefocus();
-            (dialog as HTMLDialogElement).close();
-        }
-    });
-}
-
-function popupFootNote(element: HTMLElement, href: string): boolean {
-
-    if (!win.document || !win.document.documentElement ||
-        win.document.documentElement.classList.contains(ROOT_CLASS_NO_FOOTNOTES)) {
-        return false;
-    }
-    let epubType = element.getAttribute("epub:type");
-    if (!epubType) {
-        epubType = element.getAttributeNS("http://www.idpf.org/2007/ops", "type");
-    }
-    if (!epubType) {
-        return false;
-    }
-
-    // epubType.indexOf("biblioref") >= 0 ||
-    // epubType.indexOf("glossref") >= 0 ||
-    // epubType.indexOf("annoref") >= 0
-    const isNoteref = epubType.indexOf("noteref") >= 0;
-    if (!isNoteref) {
-        return false;
-    }
-
-    const url = new URL(href); // includes #
-    if (!url.hash) {
-        return false;
-    }
-    // const targetElement = win.document.getElementById(url.hash.substr(1));
-    const targetElement = win.document.querySelector(url.hash);
-    if (!targetElement) {
-        return false;
-    }
-
-    const ID_PREFIX = "r2-footnote-popup-dialog-for_";
-    const id = ID_PREFIX + targetElement.id;
-    const existingDialog = win.document.getElementById(id);
-    if (existingDialog) {
-        ((existingDialog as any).popDialog as PopupDialog).show(element);
-        return true;
-    }
-
-    let outerHTML = targetElement.outerHTML;
-    if (!outerHTML) {
-        return false;
-    }
-
-    outerHTML = outerHTML.replace(/xmlns=["']http:\/\/www.w3.org\/1999\/xhtml["']/g, " ");
-    outerHTML = outerHTML.replace(/xmlns:epub=["']http:\/\/www.idpf.org\/2007\/ops["']/g, " ");
-    outerHTML = outerHTML.replace(/epub:type=["'][^"']+["']/g, " ");
-    outerHTML = outerHTML.replace(/<script>.+<\/script>/g, " ");
-
-    const ID_PREFIX_ = "r2-footnote-content-of_";
-    const id_ = ID_PREFIX_ + targetElement.id;
-    outerHTML = outerHTML.replace(/id=["'][^"']+["']/, `id="${id_}"`);
-
-    outerHTML = `<div class="${FOOTNOTES_CONTAINER_CLASS}">${outerHTML}</div>`;
-
-    // outerHTML = outerHTML.replace(/click=["']javascript:.+["']/g, " ");
-    // debug(outerHTML);
-
-    // import * as xmldom from "xmldom";
-    // const dom = new xmldom.DOMParser().parseFromString(outerHTML, "application/xhtml+xml");
-
-    // const payload_: IEventPayload_R2_EVENT_LINK_FOOTNOTE = {
-    //     hash: url.hash,
-    //     html: outerHTML,
-    //     url: href,
-    // };
-    // ipcRenderer.sendToHost(R2_EVENT_LINK_FOOTNOTE, payload_);
-
-    function focusScroll(el: HTMLOrSVGElement, doFocus: boolean) {
-        focusScrollRaw(el, doFocus);
-    }
-    const pop = new PopupDialog(win.document, outerHTML, id, focusScroll);
-
-    pop.show(element);
-    return true;
-}
 
 let _cancelInitialScrollCheck = false;
 // after DOMContentLoaded
@@ -1295,8 +1209,9 @@ const processXYRaw = (x: number, y: number) => {
     }
 
     if (element) {
+        // TODO: only for testing (mouse click triggers playback)
         if (x !== 0 && y !== 0) {
-            ttsPlayback(element);
+            ttsPlayback(element, focusScrollRaw);
         }
 
         win.READIUM2.locationHashOverride = element;
@@ -1451,145 +1366,6 @@ export const computeCFI = (node: Node): string | undefined => {
 
     return "/" + cfi;
 };
-
-function ttsPlayback(elem: Element) {
-    // Paragraphs split:
-    // .split(/(?:\s*\r?\n\s*){2,}/)
-    const txtSelection = win.getSelection().toString().trim();
-    let txt = txtSelection || elem.textContent;
-    if (!txt) {
-        return;
-    }
-    txt = txt.trim().replace(/\n/g, " ").replace(/&/g, "&amp;");
-
-    // debug("SpeechSynthesisUtterance:");
-    // debug(txt);
-
-    // if (win.speechSynthesis.speaking) {
-    //     win.speechSynthesis.pause();
-    // }
-    // if (win.speechSynthesis.pending) {
-    //     win.speechSynthesis.cancel();
-    // }
-    win.speechSynthesis.cancel();
-
-    destroyPopupFootnotesDialogs();
-
-    const idTtsTxt = "r2-tts-txt";
-    // tslint:disable-next-line:max-line-length
-    // const outerHTML = `<textarea id="${idTtsTxt}" style="font-family: inherit; font-size: inherit; height: 400px; width: 600px; overflow: auto;">${txt}</textarea>`;
-    // tslint:disable-next-line:max-line-length
-    const outerHTML = `<div id="${idTtsTxt}">${txt}</div>`;
-
-    const idTtsDialog = "r2-tts-dialog";
-    let existingDialog = win.document.getElementById(idTtsDialog) as HTMLDialogElement;
-    if (existingDialog) {
-        (existingDialog as any).popDialog = undefined;
-        existingDialog.remove();
-    }
-
-    function focusScroll(el: HTMLOrSVGElement, doFocus: boolean) {
-        focusScrollRaw(el, doFocus);
-
-        setTimeout(() => {
-            // if (win.speechSynthesis.speaking) {
-            //     win.speechSynthesis.pause();
-            // }
-            win.speechSynthesis.cancel();
-        }, 0);
-    }
-    const pop = new PopupDialog(win.document, outerHTML, idTtsDialog, focusScroll);
-    pop.show(elem);
-
-    // const txtarea = win.document.getElementById(idTtsTxt) as HTMLTextAreaElement;
-    // txtarea.readOnly = true;
-    // // txtarea.disabled = true;
-
-    const utterance = new SpeechSynthesisUtterance(txt);
-    existingDialog = win.document.getElementById(idTtsDialog) as HTMLDialogElement;
-    (existingDialog as any).ttsUtterance = utterance;
-    // utterance.text
-    // utterance.voice
-    // utterance.rate
-    // utterance.pitch
-    // utterance.volume
-    // utterance.lang
-    utterance.onboundary = (ev: SpeechSynthesisEvent) => {
-        if (ev.name !== "word") {
-            return;
-        }
-        const ttsDialog = win.document.getElementById(idTtsDialog) as HTMLDialogElement;
-        if (!ttsDialog.open) {
-            return;
-        }
-        // const textarea = win.document.getElementById(idTtsTxt) as HTMLTextAreaElement;
-        // if (!textarea || !textarea.value) {
-        //     return;
-        // }
-        const textP = win.document.getElementById(idTtsTxt) as HTMLElement;
-        if (!textP) {
-            return;
-        }
-
-        const text = utterance.text;
-        const start = text.slice(0, ev.charIndex + 1).search(/\S+$/);
-        const right = text.slice(ev.charIndex).search(/\s/);
-        const word = right < 0 ? text.slice(start) : text.slice(start, right + ev.charIndex);
-        const end = start + word.length;
-        // debug(word);
-
-        const prefix = "<span id=\"r2-tts-active-word\">";
-        const suffix = "</span>";
-
-        const fullTxt = `${text.substr(0, start)}${prefix}${word}${suffix}${text.substr(end)}`;
-        // textarea.value = fullTxt.substring(0, end);
-        // textarea.scrollTop = textarea.scrollHeight;
-        // textarea.value = fullTxt;
-        // textarea.focus();
-        // const offset = prefix.length;
-        // textarea.setSelectionRange(start + offset, end + offset);
-        textP.innerHTML = fullTxt;
-        setTimeout(() => {
-            const span = win.document.getElementById("r2-tts-active-word") as HTMLElement;
-            if (span) {
-                const rect = span.getBoundingClientRect();
-                const rect2 = textP.getBoundingClientRect();
-                const scrollTopMax = textP.scrollHeight - textP.clientHeight;
-                let offset = textP.scrollTop + (rect.top - rect2.top - (textP.clientHeight / 2));
-                if (offset > scrollTopMax) {
-                    offset = scrollTopMax;
-                } else if (offset < 0) {
-                    offset = 0;
-                }
-                textP.scrollTop = offset;
-
-                // span.focus();
-                // span.scrollIntoView({
-                //     // TypeScript lib.dom.d.ts difference in 3.2.1
-                //     // ScrollBehavior = "auto" | "instant" | "smooth" VS ScrollBehavior = "auto" | "smooth"
-                //     behavior: "auto",
-                //     // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
-                //     block: "center",
-                //     // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
-                //     inline: "nearest",
-                // } as ScrollIntoViewOptions);
-            }
-        }, 100);
-    };
-    utterance.onend = (ev: SpeechSynthesisEvent) => {
-        const dialogEl = win.document.getElementById(idTtsDialog) as HTMLDialogElement;
-        if (dialogEl && (dialogEl as any).ttsUtterance === ev.utterance) {
-            // if ((dialogEl as any).popDialog) {
-            //     ((dialogEl as any).popDialog as PopupDialog).cancelRefocus();
-            // }
-            dialogEl.close();
-        }
-    };
-
-    setTimeout(() => {
-        win.speechSynthesis.speak(utterance);
-    }, 0);
-}
 
 const notifyReadingLocationRaw = () => {
     if (!win.READIUM2.locationHashOverride) {

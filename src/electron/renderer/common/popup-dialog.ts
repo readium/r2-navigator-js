@@ -7,16 +7,32 @@
 
 import * as tabbable from "tabbable";
 
-import { FOOTNOTES_DIALOG_CLASS } from "../../common/styles";
+import { POPUP_DIALOG_CLASS } from "../../common/styles";
 
-export function isElementInsideFootNotePopupDialog(el: Element): boolean {
+export function isPopupDialogOpen(documant: Document): boolean {
+    return documant.documentElement &&
+        documant.documentElement.classList.contains(POPUP_DIALOG_CLASS);
+}
+
+export function destroyPopupDialogs(documant: Document) {
+    const dialogs = documant.querySelectorAll(`dialog[open]`);
+    dialogs.forEach((dialog) => {
+        if ((dialog as any).popDialog) {
+            // ((dialog as any).popDialog as PopupDialog).hide();
+            ((dialog as any).popDialog as PopupDialog).cancelRefocus();
+            (dialog as HTMLDialogElement).close();
+        }
+    });
+}
+
+export function isElementInsidePopupDialog(el: Element): boolean {
 
     let currentElement = el;
 
     while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
         if (currentElement.tagName && currentElement.classList &&
             currentElement.tagName.toLowerCase() === "dialog" &&
-            currentElement.classList.contains(FOOTNOTES_DIALOG_CLASS)) {
+            currentElement.classList.contains(POPUP_DIALOG_CLASS)) {
             return true;
         }
         currentElement = currentElement.parentNode as Element;
@@ -156,7 +172,7 @@ export class PopupDialog {
         this.dialog = documant.createElement("dialog");
         (this.dialog as any).popDialog = this;
 
-        this.dialog.setAttribute("class", FOOTNOTES_DIALOG_CLASS);
+        this.dialog.setAttribute("class", POPUP_DIALOG_CLASS);
         this.dialog.setAttribute("id", id);
 
         const button = documant.createElement("button");
@@ -253,7 +269,7 @@ export class PopupDialog {
         // this.shown = true;
 
         const el = this.documant.documentElement;
-        el.classList.add(FOOTNOTES_DIALOG_CLASS);
+        el.classList.add(POPUP_DIALOG_CLASS);
         // (el as any).style_overflow_before_dialog = el.style.overflow;
         // el.style.overflow = "hidden";
 
@@ -294,7 +310,7 @@ export class PopupDialog {
         // this.shown = false;
 
         const el = this.documant.documentElement;
-        el.classList.remove(FOOTNOTES_DIALOG_CLASS);
+        el.classList.remove(POPUP_DIALOG_CLASS);
         // const val = (el as any).style_overflow_before_dialog;
         // el.style.overflow = val ? val : null;
 

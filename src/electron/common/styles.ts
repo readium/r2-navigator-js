@@ -6,7 +6,7 @@
 // ==LICENSE-END==
 
 export const ROOT_CLASS_NO_FOOTNOTES = "r2-no-popup-foonotes";
-export const FOOTNOTES_DIALOG_CLASS = "r2-footnote-dialog";
+export const POPUP_DIALOG_CLASS = "r2-popup-dialog";
 export const FOOTNOTES_CONTAINER_CLASS = "r2-footnote-container";
 
 // 'a' element: noteref biblioref glossref annoref
@@ -28,14 +28,14 @@ export const footnotesCssStyles = `
     display: none;
 }
 
-:root.${FOOTNOTES_DIALOG_CLASS} {
+:root.${POPUP_DIALOG_CLASS} {
     overflow: hidden !important;
 }
 
-dialog.${FOOTNOTES_DIALOG_CLASS}::backdrop {
+dialog.${POPUP_DIALOG_CLASS}::backdrop {
     background-color: rgba(0, 0, 0, 0.3);
 }
-dialog.${FOOTNOTES_DIALOG_CLASS} {
+dialog.${POPUP_DIALOG_CLASS} {
     z-index: 3;
 
     position: fixed;
@@ -66,25 +66,25 @@ dialog.${FOOTNOTES_DIALOG_CLASS} {
     padding: 0;
     margin: 0;
 }
-:root[style*="readium-night-on"] dialog.${FOOTNOTES_DIALOG_CLASS}::backdrop {
+:root[style*="readium-night-on"] dialog.${POPUP_DIALOG_CLASS}::backdrop {
     background-color: rgba(0, 0, 0, 0.65) !important;
 }
-:root[style*="readium-night-on"] dialog.${FOOTNOTES_DIALOG_CLASS} {
+:root[style*="readium-night-on"] dialog.${POPUP_DIALOG_CLASS} {
     background-color: #333333 !important;
     border-color: white !important;
 }
+`;
+
+export const TTS_ID_ACTIVE_WORD = "r2-tts-active-word";
+export const TTS_ID_CONTAINER = "r2-tts-txt";
+export const ttsCssStyles = `
 /*
 outline-color: magenta;
 outline-style: solid;
 outline-width: 2px;
 outline-offset: 1px;
-
-text-decoration: underline;
-
-height: 300px;
-width: 600px;
 */
-#r2-tts-txt {
+#${TTS_ID_CONTAINER} {
     color: #aaaaaa;
 
     overflow: auto;
@@ -96,19 +96,19 @@ width: 600px;
 
     padding-right: 1em;
 }
-#r2-tts-active-word {
+#${TTS_ID_ACTIVE_WORD}  {
     color: black;
-    border-bottom: 2px solid magenta;
+    text-decoration: underline;
 
     padding: 0;
     margin: 0;
 }
-:root[style*="readium-night-on"] #r2-tts-txt {
+:root[style*="readium-night-on"] #${TTS_ID_CONTAINER} {
     color: #bbbbbb !important;
 }
-:root[style*="readium-night-on"] #r2-tts-active-word {
+:root[style*="readium-night-on"] #${TTS_ID_ACTIVE_WORD} {
     color: white !important;
-    border-bottom: 2px solid magenta !important;
+    text-decoration: underline;
 }
 `;
 
