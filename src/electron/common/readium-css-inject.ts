@@ -628,8 +628,13 @@ export function appendCSSInline(documant: Document, id: string, css: string) {
         return;
     }
 
+    const idz = "Readium2-" + id;
+    const s = documant.getElementById(idz);
+    if (s) {
+        return; // already injected via streamer?
+    }
     const styleElement = documant.createElement("style");
-    styleElement.setAttribute("id", "Readium2-" + id);
+    styleElement.setAttribute("id", idz);
     styleElement.setAttribute("type", "text/css");
     styleElement.appendChild(documant.createTextNode(css));
     documant.head.appendChild(styleElement);
@@ -650,8 +655,13 @@ export function appendCSS(documant: Document, mod: string, urlRoot: string) {
         return;
     }
 
+    const idz = "ReadiumCSS-" + mod;
+    const s = documant.getElementById(idz);
+    if (s) {
+        return; // already injected via streamer?
+    }
     const linkElement = documant.createElement("link");
-    linkElement.setAttribute("id", "ReadiumCSS-" + mod);
+    linkElement.setAttribute("id", idz);
     linkElement.setAttribute("rel", "stylesheet");
     linkElement.setAttribute("type", "text/css");
     linkElement.setAttribute("href", urlRoot + "ReadiumCSS-" + mod + ".css");
@@ -1043,6 +1053,8 @@ export function transformHTML(
     const documant = typeof mediaType === "string" ?
         new xmldom.DOMParser().parseFromString(htmlStrToParse, mediaType) :
         new xmldom.DOMParser().parseFromString(htmlStrToParse);
+
+    documant.documentElement.setAttribute("data-readiumcss-injected", "yes");
 
     // import * as parse5 from "parse5";
     // const documant = parse5.parse(htmlStrToParse);

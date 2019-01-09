@@ -39,19 +39,54 @@ function getLanguage(el: Element): string | undefined {
     return undefined;
 }
 
+// interface ITextLang {
+//     lang: string;
+//     text: string;
+// }
+
 export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean) => void) {
+
+    const innerText = (elem as HTMLElement).innerText; // triggers reflow
+
+    console.log("elem.textContent");
+    console.log(elem.textContent);
+    console.log("innerText");
+    console.log(innerText);
+
+    console.log("elem.innerHTML");
+    console.log(elem.innerHTML);
+    console.log("elem.outerHTML");
+    console.log(elem.outerHTML);
+
+    if (/(xml:)?lang=["'][^"']+["']/g.test(elem.innerHTML)) {
+
+        // const clone = elem.cloneNode(true).normalize();
+    }
+
     // Paragraphs split:
     // .split(/(?:\s*\r?\n\s*){2,}/)
     const txtSelection = win.getSelection().toString().trim();
-    let txt = txtSelection || elem.textContent;
+    let txt: string | null = txtSelection;
     if (!txt) {
-        return;
+        if (typeof innerText === "undefined" || innerText === null) {
+            txt = elem.textContent;
+        } else {
+            txt = innerText;
+        }
+        if (!txt) {
+            return;
+        }
     }
 
     txt = txt.trim();
     txt = txt.replace(/\n/g, " "); // TTS without line breaks
     txt = txt.replace(/&/g, "&amp;"); // edge-case with some badly-formatted HTML
-    txt = txt.replace(/</g, "&lt;").replace(/>/g, "&gt;"); // yep, textContent can return markup! (e.g. video)
+
+    // textContent can return markup! (e.g. video fallback / noscript)
+    // innerText takes into account CSS
+    // https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
+    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/innerText
+    txt = txt.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
     // debug("SpeechSynthesisUtterance:");
     // console.log(txt);
@@ -101,14 +136,25 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
 
     const language = getLanguage(elem);
 
-    const utterance = new SpeechSynthesisUtterance(txt);
-    // utterance.text
+    const speechApiTxt = txt;
+    if (language) {
+        // console.log("TTS LANG SSML: " + language);
+
+        // TODO: break markup down into queued sequence of utterances, each with their own language
+        // https://github.com/guest271314/SpeechSynthesisSSMLParser
+        // speechApiTxt = `<?xml version="1.0" encoding="utf-8"?>
+        //     <speak version="1.1" xmlns="http://www.w3.org/2001/10/synthesis"
+        //     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        //     xsi:schemaLocation="http://www.w3.org/2001/10/synthesis
+        //                         http://www.w3.org/TR/speech-synthesis/synthesis.xsd"
+        //     xml:lang="${language}">${txt}</speak>`;
+    }
+    const utterance = new SpeechSynthesisUtterance(speechApiTxt);
     // utterance.voice
     // utterance.rate
     // utterance.pitch
     // utterance.volume
     if (language) {
-        console.log("TTS LANG: " + language);
         utterance.lang = language;
     }
 

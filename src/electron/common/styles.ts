@@ -95,6 +95,10 @@ outline-offset: 1px;
     margin: 0;
 
     padding-right: 1em;
+
+    hyphens: none !important;
+    word-break: keep-all !important;
+    word-wrap: break-word !important;
 }
 #${TTS_ID_ACTIVE_WORD}  {
     color: black;

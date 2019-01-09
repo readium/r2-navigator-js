@@ -548,10 +548,6 @@ const checkReadyPass = () => {
 
         win.addEventListener("scroll", (_ev: UIEvent) => {
 
-            if (isPopupDialogOpen(win.document)) {
-                return;
-            }
-
             if (_ignoreScrollEvent) {
                 _ignoreScrollEvent = false;
                 return;
@@ -565,10 +561,13 @@ const checkReadyPass = () => {
                 return;
             }
 
+            if (isPopupDialogOpen(win.document)) {
+                return;
+            }
+
             const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
             processXYDebounced(x, 0);
         });
-
     }, 800);
 
     const useResizeSensor = !win.READIUM2.isFixedLayout;
@@ -1022,7 +1021,7 @@ win.addEventListener("DOMContentLoaded", () => {
     //     notifyReady();
     // }
 
-    const alreadedInjected = win.document.documentElement.hasAttribute("data-readiumcss");
+    const alreadedInjected = win.document.documentElement.hasAttribute("data-readiumcss-injected");
     if (alreadedInjected) {
         debug(">>>>>1 ReadiumCSS already injected by streamer");
         console.log(">>>>>2 ReadiumCSS already injected by streamer");
@@ -1037,12 +1036,12 @@ win.addEventListener("DOMContentLoaded", () => {
 
     win.document.body.addEventListener("focusin", (ev: any) => {
 
-        if (isPopupDialogOpen(win.document)) {
+        if (_ignoreFocusInEvent) {
+            _ignoreFocusInEvent = false;
             return;
         }
 
-        if (_ignoreFocusInEvent) {
-            _ignoreFocusInEvent = false;
+        if (isPopupDialogOpen(win.document)) {
             return;
         }
 
