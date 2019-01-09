@@ -39,6 +39,23 @@ function getLanguage(el: Element): string | undefined {
     return undefined;
 }
 
+function getDirection(el: Element): string | undefined {
+
+    let currentElement = el;
+
+    while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
+
+        const dir = currentElement.getAttribute("dir");
+        if (dir) {
+            return dir;
+        }
+
+        currentElement = currentElement.parentNode as Element;
+    }
+
+    return undefined;
+}
+
 // interface ITextLang {
 //     lang: string;
 //     text: string;
@@ -88,21 +105,17 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
     // https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/innerText
     txt = txt.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-    // debug("SpeechSynthesisUtterance:");
-    // console.log(txt);
-
-    // if (win.speechSynthesis.speaking) {
-    //     win.speechSynthesis.pause();
-    // }
-    // if (win.speechSynthesis.pending) {
-    //     win.speechSynthesis.cancel();
-    // }
     win.speechSynthesis.cancel();
+
+    const dir = getDirection(elem);
+    const language = getLanguage(elem);
 
     // tslint:disable-next-line:max-line-length
     // const outerHTML = `<textarea id="${idTtsTxt}" style="font-family: inherit; font-size: inherit; height: 400px; width: 600px; overflow: auto;">${txt}</textarea>`;
     // tslint:disable-next-line:max-line-length
-    const outerHTML = `<div id="${TTS_ID_CONTAINER}">${txt}</div>`;
+    const outerHTML = `<div id="${TTS_ID_CONTAINER}" dir="${dir ? dir : "ltr"}" lang="${language ? language : ""}" xml:lang="${language ? language : ""}">${txt}</div>`;
+    console.log("outerHTML");
+    console.log(outerHTML);
 
     let existingDialog = win.document.getElementById(TTS_ID_DIALOG) as HTMLDialogElement;
     if (existingDialog) {
@@ -113,12 +126,15 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
                 (existingDialog as HTMLDialogElement).close();
             }
         }
+        (existingDialog as any).ttsUtterance = undefined;
         (existingDialog as any).popDialog = undefined;
         existingDialog.remove();
     }
 
-    function focusScroll(el: HTMLOrSVGElement, doFocus: boolean) {
-        focusScrollRaw(el, doFocus);
+    function endToScrollAndFocus(el: HTMLOrSVGElement | null, doFocus: boolean) {
+        if (el) {
+            focusScrollRaw(el, doFocus);
+        }
 
         setTimeout(() => {
             // if (win.speechSynthesis.speaking) {
@@ -126,15 +142,22 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
             // }
             win.speechSynthesis.cancel();
         }, 0);
+
+        setTimeout(() => {
+            const dialogEl_ = win.document.getElementById(TTS_ID_DIALOG) as HTMLDialogElement;
+            if (dialogEl_) {
+                (dialogEl_ as any).ttsUtterance = undefined;
+                (dialogEl_ as any).popDialog = undefined;
+                dialogEl_.remove();
+            }
+        }, 100);
     }
-    const pop = new PopupDialog(win.document, outerHTML, TTS_ID_DIALOG, focusScroll);
+    const pop = new PopupDialog(win.document, outerHTML, TTS_ID_DIALOG, endToScrollAndFocus);
     pop.show(elem);
 
     // const txtarea = win.document.getElementById(idTtsTxt) as HTMLTextAreaElement;
     // txtarea.readOnly = true;
     // // txtarea.disabled = true;
-
-    const language = getLanguage(elem);
 
     const speechApiTxt = txt;
     if (language) {
@@ -187,7 +210,10 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
         const prefix = `<span id="${TTS_ID_ACTIVE_WORD}">`;
         const suffix = "</span>";
 
-        const fullTxt = `${text.substr(0, start)}${prefix}${word}${suffix}${text.substr(end)}`;
+        const before = text.substr(0, start);
+        const after = text.substr(end);
+        const l = before.length + word.length + after.length;
+        const fullTxt = (l === text.length) ? `${before}${prefix}${word}${suffix}${after}` : text;
         // textarea.value = fullTxt.substring(0, end);
         // textarea.scrollTop = textarea.scrollHeight;
         // textarea.value = fullTxt;
@@ -222,7 +248,12 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
             }
         }, 100);
     };
+    let _ignoreEndEvent = false;
     utterance.onend = (ev: SpeechSynthesisEvent) => {
+        if (_ignoreEndEvent) {
+            _ignoreEndEvent = false;
+            return;
+        }
         const dialogEl = win.document.getElementById(TTS_ID_DIALOG) as HTMLDialogElement;
         if (dialogEl &&
             dialogEl.hasAttribute("open") &&
@@ -233,6 +264,32 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
             dialogEl.close();
         }
     };
+
+    const textZone = win.document.getElementById(TTS_ID_CONTAINER) as HTMLElement;
+    if (textZone) {
+        textZone.addEventListener("mouseup", (_ev: MouseEvent) => {
+            console.log("mouseup");
+            if (win.speechSynthesis.speaking) {
+                // if (win.speechSynthesis.paused) {
+                //     console.log("resume");
+                //     win.speechSynthesis.resume();
+                // } else {
+                //     console.log("pause");
+                //     win.speechSynthesis.pause();
+                // }
+                _ignoreEndEvent = true; // add/removeEventListener("end") does not work
+                win.speechSynthesis.cancel();
+            } else {
+                setTimeout(() => {
+                    const dialogEl = win.document.getElementById(TTS_ID_DIALOG) as HTMLDialogElement;
+                    if (dialogEl &&
+                        (dialogEl as any).ttsUtterance) {
+                        win.speechSynthesis.speak((dialogEl as any).ttsUtterance);
+                    }
+                }, 0);
+            }
+        });
+    }
 
     setTimeout(() => {
         win.speechSynthesis.speak(utterance);

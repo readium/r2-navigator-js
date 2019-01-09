@@ -85,10 +85,12 @@ export function popupFootNote(
     // };
     // ipcRenderer.sendToHost(R2_EVENT_LINK_FOOTNOTE, payload_);
 
-    function focusScroll(el: HTMLOrSVGElement, doFocus: boolean) {
-        focusScrollRaw(el, doFocus);
+    function endToScrollAndFocus(el: HTMLOrSVGElement | null, doFocus: boolean) {
+        if (el) {
+            focusScrollRaw(el, doFocus);
+        }
     }
-    const pop = new PopupDialog(documant, outerHTML, id, focusScroll);
+    const pop = new PopupDialog(documant, outerHTML, id, endToScrollAndFocus);
 
     pop.show(element);
     return true;

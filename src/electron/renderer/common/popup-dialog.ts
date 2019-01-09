@@ -161,7 +161,7 @@ export class PopupDialog {
         public readonly documant: Document,
         outerHTML: string,
         id: string,
-        public readonly focusScroll: (el: HTMLOrSVGElement, doFocus: boolean) => void) {
+        public readonly endToScrollAndFocus: (el: HTMLOrSVGElement | null, doFocus: boolean) => void) {
 
         const that = this;
 
@@ -174,6 +174,7 @@ export class PopupDialog {
 
         this.dialog.setAttribute("class", POPUP_DIALOG_CLASS);
         this.dialog.setAttribute("id", id);
+        this.dialog.setAttribute("dir", "ltr");
 
         const button = documant.createElement("button");
         button.setAttribute("aria-label", "close");
@@ -297,9 +298,10 @@ export class PopupDialog {
     }
     public refocus() {
         if (!_focusedBeforeDialog) {
+            this.endToScrollAndFocus(null, false);
             return;
         }
-        this.focusScroll(_focusedBeforeDialog, true);
+        this.endToScrollAndFocus(_focusedBeforeDialog, true);
         _focusedBeforeDialog = null;
     }
 
