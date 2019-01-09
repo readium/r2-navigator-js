@@ -15,6 +15,8 @@ if (IS_DEV) {
     cr.consoleRedirect("r2:navigator#electron/renderer/index", process.stdout, process.stderr, true);
 }
 
+import { URL } from "url";
+
 import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
 import { Publication } from "@r2-shared-js/models/publication";
 import { Link } from "@r2-shared-js/models/publication-link";
@@ -261,18 +263,16 @@ let _rootHtmlElement: Element | undefined;
 
 export function handleLink(href: string, previous: boolean | undefined, useGoto: boolean) {
 
-    let okay = href.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
-    if (!okay && _publicationJsonUrl) {
-        const prefix = _publicationJsonUrl.replace("manifest.json", "");
-        debug("handleLink: ", href, " -- ", prefix);
-        okay = decodeURIComponent(href).startsWith(decodeURIComponent(prefix));
-    }
-    if (okay) {
+    const special = href.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
+    if (special) {
         loadLink(href, previous, useGoto);
     } else {
-        debug("EXTERNAL LINK:");
-        debug(href);
-        shell.openExternal(href);
+        const okay = loadLink(href, previous, useGoto);
+        if (!okay) {
+            debug("EXTERNAL LINK:");
+            debug(href);
+            shell.openExternal(href);
+        }
     }
 }
 
@@ -321,7 +321,11 @@ export function handleLinkLocator(location: Locator | undefined) {
         const useGoto = typeof linkToLoadGoto !== "undefined"
             // && typeof linkToLoadGoto.cssSelector !== "undefined"
             ;
-        const hrefToLoad = _publicationJsonUrl + "/../" + linkToLoad.Href +
+        const uri = new URL(linkToLoad.Href, _publicationJsonUrl);
+        uri.hash = "";
+        uri.search = "";
+        const urlNoQueryParams = uri.toString(); // _publicationJsonUrl + "/../" + linkToLoad.Href;
+        const hrefToLoad = urlNoQueryParams +
             ((useGoto) ? ("?" + URL_PARAM_GOTO + "=" +
                 encodeURIComponent_RFC3986(new Buffer(JSON.stringify(linkToLoadGoto, null, "")).toString("base64"))) :
                 "");
@@ -454,14 +458,67 @@ const getActiveWebView = (): IElectronWebviewTag => {
     // return activeWebView;
 };
 
-function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: boolean) {
+function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: boolean): boolean {
 
     if (!_publication || !_publicationJsonUrl) {
-        return;
+        return false;
     }
 
     if (hrefFull.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
         hrefFull = convertCustomSchemeToHttpUrl(hrefFull);
+    }
+
+    const pubJsonUri = _publicationJsonUrl.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ?
+        convertCustomSchemeToHttpUrl(_publicationJsonUrl) : _publicationJsonUrl;
+
+    let linkPath: string | undefined;
+
+    const urlToLink = new URL(hrefFull);
+    urlToLink.hash = "";
+    urlToLink.search = "";
+    const urlPublication = new URL(pubJsonUri);
+    urlPublication.hash = "";
+    urlPublication.search = "";
+    let iBreak = -1;
+    for (let i = 0; i < urlPublication.pathname.length; i++) {
+        const c1 = urlPublication.pathname[i];
+        if (i < urlToLink.pathname.length) {
+            const c2 = urlToLink.pathname[i];
+            if (c1 !== c2) {
+                iBreak = i;
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+    if (iBreak > 0) {
+        linkPath = urlToLink.pathname.substr(iBreak);
+    }
+
+    if (!linkPath) {
+        return false;
+    }
+
+    // const pubUri = new URI(pubJsonUri);
+    // // "/pub/BASE64_PATH/manifest.json" ==> "/pub/BASE64_PATH/"
+    // const pathPrefix = decodeURIComponent(pubUri.path().replace("manifest.json", ""));
+    // // "/pub/BASE64_PATH/epub/chapter.html" ==> "epub/chapter.html"
+    // const normPath = decodeURIComponent(linkUri.normalizePath().path());
+    // const linkPath = normPath.replace(pathPrefix, "");
+
+    let pubLink = _publication.Spine ? _publication.Spine.find((spineLink) => {
+        return spineLink.Href === linkPath;
+    }) : undefined;
+    if (!pubLink) {
+        pubLink = _publication.Resources.find((spineLink) => {
+            return spineLink.Href === linkPath;
+        });
+    }
+
+    if (!pubLink) {
+        debug("FATAL WEBVIEW READIUM2_LINK ??!! " + hrefFull + " ==> " + linkPath);
+        return false;
     }
 
     const linkUri = new URI(hrefFull);
@@ -484,31 +541,6 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     });
     if (useGoto) {
         linkUri.hash("").normalizeHash();
-    }
-
-    const pubJsonUri = _publicationJsonUrl.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ?
-        convertCustomSchemeToHttpUrl(_publicationJsonUrl) : _publicationJsonUrl;
-    const pubUri = new URI(pubJsonUri);
-
-    // "/pub/BASE64_PATH/manifest.json" ==> "/pub/BASE64_PATH/"
-    const pathPrefix = decodeURIComponent(pubUri.path().replace("manifest.json", ""));
-
-    // "/pub/BASE64_PATH/epub/chapter.html" ==> "epub/chapter.html"
-    const normPath = decodeURIComponent(linkUri.normalizePath().path());
-    const linkPath = normPath.replace(pathPrefix, "");
-
-    let pubLink = _publication.Spine ? _publication.Spine.find((spineLink) => {
-        return spineLink.Href === linkPath;
-    }) : undefined;
-    if (!pubLink) {
-        pubLink = _publication.Resources.find((spineLink) => {
-            return spineLink.Href === linkPath;
-        });
-    }
-
-    if (!pubLink) {
-        debug("FATAL WEBVIEW READIUM2_LINK ??!! " + hrefFull + " ==> " + linkPath);
-        return;
     }
 
     // no need for encodeURIComponent_RFC3986, auto-encoded by URI class
@@ -617,7 +649,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
 
         webviewToReuse.send(R2_EVENT_SCROLLTO, payload); // .getWebContents()
 
-        return;
+        return true;
     }
 
     // if (!isFixedLayout(pubLink)) {
@@ -709,6 +741,8 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     //         }
     //     }, 300);
     // }
+
+    return true;
 }
 
 function createWebView(preloadScriptPath: string): IElectronWebviewTag {
@@ -823,8 +857,11 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
                 return;
             }
             if (_publicationJsonUrl) {
-                const linkHref = _publicationJsonUrl + "/../" + nextOrPreviousSpineItem.Href;
-                handleLink(linkHref, goPREVIOUS, false);
+                const uri = new URL(nextOrPreviousSpineItem.Href, _publicationJsonUrl);
+                uri.hash = "";
+                uri.search = "";
+                const urlNoQueryParams = uri.toString(); // _publicationJsonUrl + "/../" + nextOrPreviousSpineItem.Href;
+                handleLink(urlNoQueryParams, goPREVIOUS, false);
             }
         } else {
             debug("webview1 ipc-message");

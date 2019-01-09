@@ -9,17 +9,17 @@ import * as debug_ from "debug";
 import { app } from "electron";
 
 import { IEventPayload_R2_EVENT_LINK, R2_EVENT_LINK } from "../common/events";
-import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../common/sessions";
+// import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../common/sessions";
 
 const debug = debug_("r2:navigator#electron/main/browser-window-tracker");
 
 let _electronBrowserWindows: Electron.BrowserWindow[];
 
-let _serverURL: string | undefined;
+// let _serverURL: string | undefined;
 
-export function trackBrowserWindow(win: Electron.BrowserWindow, serverURL?: string) {
+export function trackBrowserWindow(win: Electron.BrowserWindow, _serverURL?: string) {
 
-    _serverURL = serverURL;
+    // _serverURL = serverURL;
 
     if (!_electronBrowserWindows) {
         _electronBrowserWindows = [];
@@ -37,7 +37,7 @@ export function trackBrowserWindow(win: Electron.BrowserWindow, serverURL?: stri
 
 // https://github.com/electron/electron/blob/master/docs/tutorial/security.md#how-9
 app.on("web-contents-created", (_evt, wc) => {
-    wc.on("will-attach-webview", (event, webPreferences, params) => {
+    wc.on("will-attach-webview", (_event, webPreferences, params) => {
         debug("WEBVIEW will-attach-webview: " + params.src);
 
         // delete webPreferences.preload;
@@ -50,16 +50,17 @@ app.on("web-contents-created", (_evt, wc) => {
         webPreferences.nodeIntegrationInWorker = false;
         webPreferences.allowRunningInsecureContent = false;
 
-        const fail = !params.src.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL) &&
-            (_serverURL ? !params.src.startsWith(_serverURL) :
-                !(/^http[s]?:\/\/127\.0\.0\.1/.test(params.src))
-                // (!params.src.startsWith("https://127.0.0.1") && !params.src.startsWith("http://127.0.0.1"))
-                );
+        // TODO: prevent loading remote publications?
+        // const fail = !params.src.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL) &&
+        //     (_serverURL ? !params.src.startsWith(_serverURL) :
+        //         !(/^http[s]?:\/\/127\.0\.0\.1/.test(params.src))
+        //         // (!params.src.startsWith("https://127.0.0.1") && !params.src.startsWith("http://127.0.0.1"))
+        //         );
 
-        if (fail) {
-            debug("WEBVIEW will-attach-webview FAIL: " + params.src);
-            event.preventDefault();
-        }
+        // if (fail) {
+        //     debug("WEBVIEW will-attach-webview FAIL: " + params.src);
+        //     event.preventDefault();
+        // }
     });
 
     if (!wc.hostWebContents) {
