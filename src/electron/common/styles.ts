@@ -7,6 +7,8 @@
 
 export const ROOT_CLASS_NO_FOOTNOTES = "r2-no-popup-foonotes";
 export const FOOTNOTES_DIALOG_CLASS = "r2-footnote-dialog";
+export const FOOTNOTES_CONTAINER_CLASS = "r2-footnote-container";
+
 // 'a' element: noteref biblioref glossref annoref
 //
 // @namespace epub "http://www.idpf.org/2007/ops";
@@ -56,6 +58,14 @@ dialog.${FOOTNOTES_DIALOG_CLASS} {
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
+.${FOOTNOTES_CONTAINER_CLASS} {
+    overflow: auto;
+
+    max-height: 350px;
+
+    padding: 0;
+    margin: 0;
+}
 :root[style*="readium-night-on"] dialog.${FOOTNOTES_DIALOG_CLASS}::backdrop {
     background-color: rgba(0, 0, 0, 0.65) !important;
 }

@@ -46,6 +46,7 @@ import {
     isPaginated,
 } from "../../common/readium-css-inject";
 import {
+    FOOTNOTES_CONTAINER_CLASS,
     FOOTNOTES_DIALOG_CLASS,
     ROOT_CLASS_INVISIBLE_MASK,
     ROOT_CLASS_KEYBOARD_INTERACT,
@@ -1193,6 +1194,8 @@ function popupFootNote(element: HTMLElement, href: string): boolean {
     const ID_PREFIX_ = "r2-footnote-content-of_";
     const id_ = ID_PREFIX_ + targetElement.id;
     outerHTML = outerHTML.replace(/id=["'][^"']+["']/, `id="${id_}"`);
+
+    outerHTML = `<div class="${FOOTNOTES_CONTAINER_CLASS}">${outerHTML}</div>`;
 
     // outerHTML = outerHTML.replace(/click=["']javascript:.+["']/g, " ");
     // debug(outerHTML);
