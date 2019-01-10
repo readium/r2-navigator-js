@@ -357,18 +357,6 @@ export function ttsPlayback(
         existingDialog.remove();
     }
 
-    // const innerText = (elem as HTMLElement).innerText; // triggers reflow
-
-    // console.log("elem.textContent");
-    // console.log(elem.textContent);
-    // console.log("innerText");
-    // console.log(innerText);
-
-    // console.log("elem.innerHTML");
-    // console.log(elem.innerHTML);
-    // console.log("elem.outerHTML");
-    // console.log(elem.outerHTML);
-
     const flattenedDomText = flattenDomText(rootElem);
     if (!flattenedDomText.length) {
         return;
@@ -378,7 +366,6 @@ export function ttsPlayback(
 
     let startIndex = 0;
     if (startElem) {
-        console.log(startElem.outerHTML);
         let i = 0;
         for (const chunk of flattenedDomText) {
             if (startElem === chunk.parentElement ||
@@ -406,8 +393,6 @@ export function ttsPlayback(
     <button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}">&#x21E0;</button>
     <button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}">&#x21E2;</button>
     <input id="${TTS_ID_SLIDER}" type="range" min="1" max="${nChunks + 1}" value="1" />`;
-    // console.log("outerHTML");
-    // console.log(outerHTML);
 
     function endToScrollAndFocus(el: HTMLOrSVGElement | null, doFocus: boolean) {
         rootElem.classList.remove(TTS_ID_SPEAKING_DOC_ELEMENT);
