@@ -595,6 +595,69 @@ const checkReadyPass = () => {
 
             processXYDebounced(x, y);
         });
+
+        win.document.body.addEventListener("click", (ev: MouseEvent) => {
+
+            if (isPopupDialogOpen(win.document)) {
+                return;
+            }
+
+            // relative to fixed window top-left corner
+            // (unlike pageX/Y which is relative to top-left rendered content area, subject to scrolling)
+            const x = ev.clientX;
+            const y = ev.clientY;
+
+            // const elems = win.document.elementsFromPoint(x, y);
+
+            // let element: Element | undefined = elems && elems.length ? elems[0] : undefined;
+            let element: Element | undefined;
+
+            // if ((win.document as any).caretPositionFromPoint) {
+            //     const range = (win.document as any).caretPositionFromPoint(x, y);
+            //     const node = range.offsetNode;
+            //     const offset = range.offset;
+            // } else if (win.document.caretRangeFromPoint) {
+            // }
+
+            // let textNode: Node | undefined;
+            // let textNodeOffset = 0;
+
+            const range = win.document.caretRangeFromPoint(x, y);
+            if (range) {
+                const node = range.startContainer;
+                // const offset = range.startOffset;
+
+                if (node) {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        element = node as Element;
+                    } else if (node.nodeType === Node.TEXT_NODE) {
+                        // textNode = node;
+                        // textNodeOffset = offset;
+                        if (node.parentNode && node.parentNode.nodeType === Node.ELEMENT_NODE) {
+                            element = node.parentNode as Element;
+                        }
+                    }
+                }
+            }
+
+            if (element) {
+                if (ev.altKey) {
+                    const parent = element.parentElement;
+                    if (parent) {
+                        if (ev.shiftKey) {
+                            const ancestor = parent.parentElement;
+                            if (ancestor) {
+                                ttsPlayback(ancestor, focusScrollRaw);
+                                return;
+                            }
+                        }
+                        ttsPlayback(parent, focusScrollRaw);
+                        return;
+                    }
+                }
+                ttsPlayback(element, focusScrollRaw);
+            }
+        });
     }
 };
 
@@ -1208,11 +1271,6 @@ const processXYRaw = (x: number, y: number) => {
     }
 
     if (element) {
-        // TODO: only for testing (mouse click triggers playback)
-        if (x !== 0 && y !== 0) {
-            ttsPlayback(element, focusScrollRaw);
-        }
-
         win.READIUM2.locationHashOverride = element;
         notifyReadingLocationDebounced();
 
