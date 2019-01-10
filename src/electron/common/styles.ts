@@ -29,9 +29,11 @@ export const footnotesCssStyles = `
     display: none;
 }
 
+/*
 :root.${POPUP_DIALOG_CLASS} {
     overflow: hidden !important;
 }
+*/
 
 dialog.${POPUP_DIALOG_CLASS}::backdrop {
     background-color: rgba(0, 0, 0, 0.3);
@@ -113,14 +115,37 @@ export const TTS_ID_CONTAINER = "r2-tts-txt";
 export const TTS_ID_INFO = "r2-tts-info";
 export const TTS_NAV_BUTTON_CLASS = "r2-tts-button";
 export const TTS_ID_SPEAKING_DOC_ELEMENT = "r2-tts-speaking-el";
+export const TTS_CLASS_INJECTED_SPAN = "r2-tts-speaking-txt";
+export const TTS_ID_INJECTED_PARENT = "r2-tts-speaking-txt-parent";
 
 export const ttsCssStyles = `
 
+.${TTS_CLASS_INJECTED_SPAN} {
+    /* color: black !important; */
+    text-decoration: underline;
+
+    padding: 0;
+    margin: 0;
+}
+/*
+:root[style*="readium-night-on"] .${TTS_CLASS_INJECTED_SPAN} {
+    color: white !important;
+}
+*/
 .${TTS_ID_SPEAKING_DOC_ELEMENT} {
     outline-color: silver;
     outline-style: solid;
     outline-width: 2px;
     outline-offset: 1px;
+}
+.${TTS_ID_INJECTED_PARENT} {
+    outline-color: black;
+    outline-style: solid;
+    outline-width: 2px;
+    outline-offset: 1px;
+}
+:root[style*="readium-night-on"] .${TTS_ID_INJECTED_PARENT} {
+    outline-color: white !important;
 }
 #${TTS_ID_CONTAINER} {
     overflow: auto;
@@ -129,7 +154,7 @@ export const ttsCssStyles = `
     top: 4px;
     left: 4px;
     right: 4px;
-    bottom: 2em;
+    bottom: 30px;
 
     padding: 0;
     padding-left: 1em;
@@ -139,6 +164,9 @@ export const ttsCssStyles = `
     hyphens: none !important;
     word-break: keep-all !important;
     word-wrap: break-word !important;
+
+    font-size: 150% !important;
+    line-height: 1.5em !important;
 
     color: #888888 !important;
 }
@@ -150,7 +178,7 @@ export const ttsCssStyles = `
     margin: 0;
 
     position: absolute;
-    height: 1.2em;
+    height: 26px;
     left: 4px;
     right: 4px;
     bottom: 4px;
@@ -184,7 +212,6 @@ export const ttsCssStyles = `
 }
 :root[style*="readium-night-on"] #${TTS_ID_ACTIVE_WORD} {
     color: white !important;
-    text-decoration: underline;
 }
 `;
 

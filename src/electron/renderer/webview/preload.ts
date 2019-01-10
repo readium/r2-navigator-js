@@ -951,6 +951,7 @@ function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean) {
             el.focus();
         }, 10);
     }
+    notifyReadingLocationDebounced();
 }
 const focusScrollDebounced = debounce((el: HTMLOrSVGElement, doFocus: boolean) => {
     focusScrollRaw(el, doFocus);

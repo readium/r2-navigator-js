@@ -9,9 +9,11 @@ import { debounce } from "debounce";
 import { split } from "sentence-splitter";
 
 import {
+    TTS_CLASS_INJECTED_SPAN,
     TTS_ID_ACTIVE_WORD,
     TTS_ID_CONTAINER,
     TTS_ID_INFO,
+    TTS_ID_INJECTED_PARENT,
     TTS_ID_SPEAKING_DOC_ELEMENT,
     TTS_NAV_BUTTON_CLASS,
 } from "../../common/styles";
@@ -62,26 +64,26 @@ export function getDirection(el: Element): string | undefined {
     return undefined;
 }
 
-function dump(i: ITextLangDir) {
-    console.log("<<----");
-    console.log(i.dir);
-    console.log(i.lang);
-    console.log(i.parentElement.tagName);
-    console.log(i.combinedText);
-    if (i.combinedTextSentences) {
-        console.log(".......");
-        for (const j of i.combinedTextSentences) {
-            console.log(j);
-        }
-        console.log(".......");
-    }
-    console.log("---->>");
-}
-function dumps(f: ITextLangDir[]) {
-    for (const i of f) {
-        dump(i);
-    }
-}
+// function dump(i: ITextLangDir) {
+//     console.log("<<----");
+//     console.log(i.dir);
+//     console.log(i.lang);
+//     console.log(i.parentElement.tagName);
+//     console.log(i.combinedText);
+//     if (i.combinedTextSentences) {
+//         console.log(".......");
+//         for (const j of i.combinedTextSentences) {
+//             console.log(j);
+//         }
+//         console.log(".......");
+//     }
+//     console.log("---->>");
+// }
+// function dumps(f: ITextLangDir[]) {
+//     for (const i of f) {
+//         dump(i);
+//     }
+// }
 
 function normalizeText(str: string): string {
     // tslint:disable-next-line:max-line-length
@@ -100,9 +102,19 @@ function getLength(items: ITextLangDir[]) {
     return l;
 }
 
+function getText(obj: ITextLangDirItem): string {
+    if (obj.subindex === -1) {
+        return obj.item.combinedText;
+    }
+    if (obj.item.combinedTextSentences) {
+        return obj.item.combinedTextSentences[obj.subindex];
+    }
+    return "";
+}
+
 interface ITextLangDirItem {
     item: ITextLangDir;
-    str: string;
+    // str: string;
     index: number;
     subindex: number;
 }
@@ -111,17 +123,17 @@ function getItem(items: ITextLangDir[], index: number): ITextLangDirItem | undef
     for (const it of items) {
         if (it.combinedTextSentences) {
             let j = -1;
-            for (const sent of it.combinedTextSentences) {
+            for (const _sent of it.combinedTextSentences) {
                 j++;
                 i++;
                 if (index === i) {
-                    return { str: sent, item: it, index: i, subindex: j };
+                    return { item: it, index: i, subindex: j }; // str: sent
                 }
             }
         } else {
             i++;
             if (index === i) {
-                return { str: it.combinedText, item: it, index: i, subindex: -1 };
+                return { item: it, index: i, subindex: -1 }; // str: it.combinedText
             }
         }
     }
@@ -241,16 +253,16 @@ export function flattenDomText(rootElement: Element): ITextLangDir[] {
             if (item.combinedTextSentences.length === 0 || item.combinedTextSentences.length === 1) {
                 item.combinedTextSentences = undefined;
             } else {
-                let total = item.combinedTextSentences.length - 1;
-                item.combinedTextSentences.forEach((sent) => {
-                    total += sent.length;
-                });
-                if (total !== item.combinedText.length) {
-                    console.log("total !== item.combinedText.length");
-                    console.log(total);
-                    console.log(item.combinedText.length);
-                    dumps([item]);
-                }
+                // let total = item.combinedTextSentences.length - 1;
+                // item.combinedTextSentences.forEach((sent) => {
+                //     total += sent.length;
+                // });
+                // if (total !== item.combinedText.length) {
+                //     console.log("total !== item.combinedText.length");
+                //     console.log(total);
+                //     console.log(item.combinedText.length);
+                //     dumps([item]);
+                // }
             }
         } catch (err) {
             console.log(err);
@@ -266,6 +278,47 @@ export function flattenDomText(rootElement: Element): ITextLangDir[] {
     trySplitTexts(flattenedText);
 
     return flattenedText;
+}
+
+function wrapHighlight(textChunk: ITextLangDirItem, doHighlight: boolean) {
+    if (textChunk.item.parentElement) {
+        if (doHighlight) {
+            if (textChunk.item.parentElement.classList.contains(TTS_ID_INJECTED_PARENT)) {
+                return;
+            }
+            textChunk.item.parentElement.classList.add(TTS_ID_INJECTED_PARENT);
+        } else {
+            if (!textChunk.item.parentElement.classList.contains(TTS_ID_INJECTED_PARENT)) {
+                return;
+            }
+            textChunk.item.parentElement.classList.remove(TTS_ID_INJECTED_PARENT);
+        }
+    }
+
+    textChunk.item.textNodes.forEach((txtNode) => {
+        if (txtNode.parentElement) {
+            if (doHighlight) {
+                if (txtNode.parentElement.tagName.toLowerCase() === "span" &&
+                    txtNode.parentElement.classList.contains(TTS_CLASS_INJECTED_SPAN)) {
+                    return;
+                }
+                const span = win.document.createElement("span");
+                span.setAttribute("class", TTS_CLASS_INJECTED_SPAN);
+                txtNode.parentElement.replaceChild(span, txtNode);
+                span.appendChild(txtNode);
+            } else {
+                if (txtNode.parentElement.tagName.toLowerCase() !== "span" ||
+                    !txtNode.parentElement.classList.contains(TTS_CLASS_INJECTED_SPAN)) {
+                    return;
+                }
+                const span = txtNode.parentElement;
+                span.removeChild(txtNode);
+                if (span.parentElement) {
+                    span.parentElement.replaceChild(txtNode, span);
+                }
+            }
+        }
+    });
 }
 
 export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean) => void) {
@@ -331,8 +384,14 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
     function endToScrollAndFocus(el: HTMLOrSVGElement | null, doFocus: boolean) {
         elem.classList.remove(TTS_ID_SPEAKING_DOC_ELEMENT);
 
-        if (el) {
-            focusScrollRaw(el, doFocus);
+        let toScrollTo = el;
+
+        const dia = win.document.getElementById(TTS_ID_DIALOG) as HTMLDialogElement;
+        if (dia && (dia as any).ttsChunk && (dia as any).ttsChunk.item.parentElement) {
+            toScrollTo = (dia as any).ttsChunk.item.parentElement;
+        }
+        if (toScrollTo) {
+            focusScrollRaw(toScrollTo, doFocus);
         }
 
         setTimeout(() => {
@@ -348,6 +407,10 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
             if (dialogEl_) {
                 (dialogEl_ as any).ttsUtterance = undefined;
                 (dialogEl_ as any).popDialog = undefined;
+                if ((dialogEl_ as any).ttsChunk) {
+                    wrapHighlight((dialogEl_ as any).ttsChunk, false);
+                    (dialogEl_ as any).ttsChunk = undefined;
+                }
                 dialogEl_.remove();
             }
         }, 100);
@@ -431,6 +494,10 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
         if (dialogEl && !dialogEl.hasAttribute("open")) {
             return;
         }
+        if ((dialogEl as any).ttsChunk) {
+            wrapHighlight((dialogEl as any).ttsChunk, false);
+        }
+
         if (i >= getLength(flattenedDomText) || i < 0) {
             if (dialogEl && dialogEl.hasAttribute("open")) {
                 // if ((dialogEl as any).popDialog) {
@@ -451,9 +518,17 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
             return;
         }
 
+        wrapHighlight(textChunk, true);
+
+        if (textChunk.item.parentElement) {
+            focusScrollRaw(textChunk.item.parentElement as HTMLElement, false);
+        }
+
+        const txtStr = getText(textChunk);
+
         const textContainer = win.document.getElementById(TTS_ID_CONTAINER) as HTMLElement;
         if (textContainer) {
-            textContainer.innerHTML = textChunk.str;
+            textContainer.innerHTML = txtStr;
             if (textChunk.item.dir) {
                 textContainer.setAttribute("dir", textChunk.item.dir as string);
             } else {
@@ -473,7 +548,7 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
             info.innerText = (i + 1) + "/" + getLength(flattenedDomText);
         }
 
-        const utterance = new SpeechSynthesisUtterance(textChunk.str);
+        const utterance = new SpeechSynthesisUtterance(txtStr);
         // utterance.voice
         // utterance.rate
         // utterance.pitch
@@ -485,6 +560,8 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
         existingDialog = win.document.getElementById(TTS_ID_DIALOG) as HTMLDialogElement;
         (existingDialog as any).ttsUtterance = utterance; // previous one gets garbage-collected
         (existingDialog as any).ttsQueueIndex = i;
+        (existingDialog as any).ttsChunk = textChunk;
+
         utterance.onboundary = (ev: SpeechSynthesisEvent) => {
             if (ev.name !== "word") {
                 return;
