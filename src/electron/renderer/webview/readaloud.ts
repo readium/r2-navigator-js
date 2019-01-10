@@ -62,23 +62,26 @@ export function getDirection(el: Element): string | undefined {
     return undefined;
 }
 
-// function dumpFlattenedDomText(f: ITextLangDir[]) {
-//     for (const i of f) {
-//         console.log("<<----");
-//         console.log(i.dir);
-//         console.log(i.lang);
-//         console.log(i.parentElement.tagName);
-//         console.log(i.combinedText);
-//         if (i.combinedTextSentences) {
-//             console.log(".......");
-//             for (const j of i.combinedTextSentences) {
-//                 console.log(j);
-//             }
-//             console.log(".......");
-//         }
-//         console.log("---->>");
-//     }
-// }
+function dump(i: ITextLangDir) {
+    console.log("<<----");
+    console.log(i.dir);
+    console.log(i.lang);
+    console.log(i.parentElement.tagName);
+    console.log(i.combinedText);
+    if (i.combinedTextSentences) {
+        console.log(".......");
+        for (const j of i.combinedTextSentences) {
+            console.log(j);
+        }
+        console.log(".......");
+    }
+    console.log("---->>");
+}
+function dumps(f: ITextLangDir[]) {
+    for (const i of f) {
+        dump(i);
+    }
+}
 
 function normalizeText(str: string): string {
     // tslint:disable-next-line:max-line-length
@@ -237,6 +240,17 @@ export function flattenDomText(rootElement: Element): ITextLangDir[] {
             }
             if (item.combinedTextSentences.length === 0 || item.combinedTextSentences.length === 1) {
                 item.combinedTextSentences = undefined;
+            } else {
+                let total = item.combinedTextSentences.length - 1;
+                item.combinedTextSentences.forEach((sent) => {
+                    total += sent.length;
+                });
+                if (total !== item.combinedText.length) {
+                    console.log("total !== item.combinedText.length");
+                    console.log(total);
+                    console.log(item.combinedText.length);
+                    dumps([item]);
+                }
             }
         } catch (err) {
             console.log(err);
@@ -297,7 +311,7 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
     if (!flattenedDomText.length) {
         return;
     }
-    // dumpFlattenedDomText(flattenedDomText);
+    // dumps(flattenedDomText);
 
     const TTS_ID_PREVIOUS = "r2-tts-previous";
     const TTS_ID_NEXT = "r2-tts-next";
