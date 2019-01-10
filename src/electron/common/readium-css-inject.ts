@@ -27,7 +27,7 @@ import {
 // now match with :root[style*="readium-night-on"]
 // const CSS_CLASS_DARK_THEME = "mdc-theme--dark";
 
-const CLASS_PAGINATED = "r2-css-paginated";
+export const CLASS_PAGINATED = "r2-css-paginated";
 
 // tslint:disable-next-line:max-line-length
 // https://github.com/readium/readium-css/blob/develop/docs/CSS16-internationalization.md

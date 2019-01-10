@@ -40,14 +40,20 @@ import {
     R2_EVENT_WEBVIEW_READY,
 } from "../../common/events";
 import {
+    CLASS_PAGINATED,
     configureFixedLayout,
     injectDefaultCSS,
     injectReadPosCSS,
     isPaginated,
 } from "../../common/readium-css-inject";
 import {
+    POPUP_DIALOG_CLASS,
     ROOT_CLASS_INVISIBLE_MASK,
     ROOT_CLASS_KEYBOARD_INTERACT,
+    ROOT_CLASS_NO_FOOTNOTES,
+    TTS_CLASS_INJECTED_SPAN,
+    TTS_ID_INJECTED_PARENT,
+    TTS_ID_SPEAKING_DOC_ELEMENT,
     readPosCssStylesAttr1,
     readPosCssStylesAttr2,
     readPosCssStylesAttr3,
@@ -1434,7 +1440,18 @@ const notifyReadingLocationRaw = () => {
 
     let progressionData: IProgressionData | undefined;
 
-    const cssSelector = uniqueCssSelector(win.READIUM2.locationHashOverride, win.document);
+    // tslint:disable-next-line:max-line-length
+    const blacklist = [TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
+
+    const options = {
+        className: (str: string) => {
+            return blacklist.indexOf(str) < 0;
+        },
+        idName: (str: string) => {
+            return blacklist.indexOf(str) < 0;
+        },
+    };
+    const cssSelector = uniqueCssSelector(win.READIUM2.locationHashOverride, win.document, options);
     const cfi = computeCFI(win.READIUM2.locationHashOverride);
     let progression = 0;
     if (win.READIUM2.isFixedLayout) {
