@@ -647,7 +647,7 @@ const checkReadyPass = () => {
             }
 
             if (element) {
-                if (ev.shiftKey) {
+                if (ev.altKey) {
                     ttsPlayback(element, undefined, focusScrollRaw);
                     return;
                 }

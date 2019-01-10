@@ -38,35 +38,57 @@ export const footnotesCssStyles = `
 dialog.${POPUP_DIALOG_CLASS}::backdrop {
     background-color: rgba(0, 0, 0, 0.3);
 }
-/*
-top: 50%;
-left: 50%;
-transform: translate(-50%, -50%);
-max-height: 400px;
-max-width: 600px;
-*/
+:root[style*="readium-night-on"] dialog.${POPUP_DIALOG_CLASS}::backdrop {
+    background-color: rgba(0, 0, 0, 0.65) !important;
+}
+
 dialog.${POPUP_DIALOG_CLASS} {
     z-index: 3;
 
     position: fixed;
 
-    width: 80%;
-    max-width: 600px;
+    width: 90%;
+    max-width: 40em;
 
     bottom: 1em;
-    height: 5em;
+    height: 7em;
 
-    margin: 0 auto
+    margin: 0 auto;
     padding: 0;
 
-    border-radius: 6px;
+    border-radius: 0.3em;
     border-width: 1px;
 
     background-color: white;
     border-color: black;
 
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+
+    display: grid;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+
+    grid-template-columns: 1.5em auto 1.5em;
+    grid-template-rows: auto 1.5em;
 }
+:root[style*="readium-night-on"] dialog.${POPUP_DIALOG_CLASS} {
+    background-color: #333333 !important;
+    border-color: white !important;
+}
+
+.${FOOTNOTES_CONTAINER_CLASS} {
+    overflow: auto;
+
+    grid-column-start: 1;
+    grid-column-end: 4;
+    grid-row-start: 1;
+    grid-row-end: 3;
+
+    padding: 0.3em;
+    margin: 0.2em;
+}
+
+/*
 .${FOOTNOTES_CLOSE_BUTTON_CLASS} {
     border: 1px solid black;
     background-color: white;
@@ -87,29 +109,12 @@ dialog.${POPUP_DIALOG_CLASS} {
     background-color: black !important;
     color: white !important;
 }
-.${FOOTNOTES_CONTAINER_CLASS} {
-    overflow: auto;
-
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    right: 4px;
-    bottom: 4px;
-
-    padding: 0;
-    padding-left: 1em;
-    padding-right: 1em;
-    margin: 0;
-}
-:root[style*="readium-night-on"] dialog.${POPUP_DIALOG_CLASS}::backdrop {
-    background-color: rgba(0, 0, 0, 0.65) !important;
-}
-:root[style*="readium-night-on"] dialog.${POPUP_DIALOG_CLASS} {
-    background-color: #333333 !important;
-    border-color: white !important;
-}
+*/
 `;
 
+export const TTS_ID_PREVIOUS = "r2-tts-previous";
+export const TTS_ID_NEXT = "r2-tts-next";
+export const TTS_ID_SLIDER = "r2-tts-slider";
 export const TTS_ID_ACTIVE_WORD = "r2-tts-active-word";
 export const TTS_ID_CONTAINER = "r2-tts-txt";
 export const TTS_ID_INFO = "r2-tts-info";
@@ -120,53 +125,26 @@ export const TTS_ID_INJECTED_PARENT = "r2-tts-speaking-txt-parent";
 
 export const ttsCssStyles = `
 
-.${TTS_CLASS_INJECTED_SPAN} {
-    /* color: black !important; */
-    text-decoration: underline;
-
-    padding: 0;
-    margin: 0;
-}
-/*
-:root[style*="readium-night-on"] .${TTS_CLASS_INJECTED_SPAN} {
-    color: white !important;
-}
-*/
-.${TTS_ID_SPEAKING_DOC_ELEMENT} {
-    outline-color: silver;
-    outline-style: solid;
-    outline-width: 2px;
-    outline-offset: 1px;
-}
-.${TTS_ID_INJECTED_PARENT} {
-    outline-color: black;
-    outline-style: solid;
-    outline-width: 2px;
-    outline-offset: 1px;
-}
-:root[style*="readium-night-on"] .${TTS_ID_INJECTED_PARENT} {
-    outline-color: white !important;
-}
 #${TTS_ID_CONTAINER} {
     overflow: auto;
 
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    right: 4px;
-    bottom: 30px;
+    grid-column-start: 1;
+    grid-column-end: 4;
+    grid-row-start: 1;
+    grid-row-end: 2;
 
-    padding: 0;
-    padding-left: 1em;
-    padding-right: 1em;
+    padding: 0.3em;
     margin: 0;
+    margin-left: 0.2em;
+    margin-top: 0.2em;
+    margin-right: 0.2em;
 
     hyphens: none !important;
     word-break: keep-all !important;
     word-wrap: break-word !important;
 
-    font-size: 150% !important;
-    line-height: 1.5em !important;
+    font-size: 120% !important;
+    line-height: 1.3em !important;
 
     color: #888888 !important;
 }
@@ -174,22 +152,32 @@ export const ttsCssStyles = `
     color: #bbbbbb !important;
 }
 #${TTS_ID_INFO} {
+    display: none;
+
     padding: 0;
     margin: 0;
 
-    position: absolute;
-    height: 26px;
-    left: 4px;
-    right: 4px;
-    bottom: 4px;
-
-    text-align: center;
-    vertical-align: middle;
+    grid-column-start: 2;
+    grid-column-end: 3;
+    grid-row-start: 2;
+    grid-row-end: 3;
 
     font-family: Arial !important;
     font-size: 90% !important;
 }
+
+#${TTS_ID_SLIDER} {
+    padding: 0;
+    margin: 0;
+
+    grid-column-start: 2;
+    grid-column-end: 3;
+    grid-row-start: 2;
+    grid-row-end: 3;
+}
+
 .${TTS_NAV_BUTTON_CLASS} {
+    border-radius: 0.3em;
     border: 1px solid #EEEEEE;
     background-color: white;
     color: black;
@@ -197,12 +185,70 @@ export const ttsCssStyles = `
     font-size: 100% !important;
     font-family: Arial !important;
     cursor: pointer;
+
+    padding: 0;
+    margin-top: 0.2em;
+    margin-bottom: 0.2em;
 }
 :root[style*="readium-night-on"] .${TTS_NAV_BUTTON_CLASS} {
     border: 1px solid white !important;
     background-color: black !important;
     color: white !important;
 }
+#${TTS_ID_PREVIOUS} {
+    margin-left: 0.2em;
+
+    grid-column-start: 1;
+    grid-column-end: 2;
+    grid-row-start: 2;
+    grid-row-end: 3;
+}
+#${TTS_ID_NEXT} {
+    margin-right: 0.2em;
+
+    grid-column-start: 3;
+    grid-column-end: 4;
+    grid-row-start: 2;
+    grid-row-end: 3;
+}
+
+.${TTS_ID_SPEAKING_DOC_ELEMENT} {
+    /*
+    outline-color: silver;
+    outline-style: solid;
+    outline-width: 2px;
+    outline-offset: 1px;
+    */
+}
+.${TTS_CLASS_INJECTED_SPAN} {
+    color: black !important;
+    background-color: #FFFFCC !important;
+
+    /* text-decoration: underline; */
+
+    padding: 0;
+    margin: 0;
+}
+/*
+:root[style*="readium-night-on"] .${TTS_CLASS_INJECTED_SPAN} {
+    color: white !important;
+    background-color: #333300 !important;
+}
+*/
+.${TTS_ID_INJECTED_PARENT} {
+    /*
+    outline-color: black;
+    outline-style: solid;
+    outline-width: 2px;
+    outline-offset: 1px;
+    */
+}
+:root[style*="readium-night-on"] .${TTS_ID_INJECTED_PARENT} {
+    /*
+    outline-color: white !important;
+    */
+}
+
 #${TTS_ID_ACTIVE_WORD}  {
     color: black;
     text-decoration: underline;

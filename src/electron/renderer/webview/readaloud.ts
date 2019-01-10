@@ -14,6 +14,9 @@ import {
     TTS_ID_CONTAINER,
     TTS_ID_INFO,
     TTS_ID_INJECTED_PARENT,
+    TTS_ID_NEXT,
+    TTS_ID_PREVIOUS,
+    TTS_ID_SLIDER,
     TTS_ID_SPEAKING_DOC_ELEMENT,
     TTS_NAV_BUTTON_CLASS,
 } from "../../common/styles";
@@ -64,10 +67,13 @@ export function getDirection(el: Element): string | undefined {
     return undefined;
 }
 
+// import { uniqueCssSelector } from "../common/cssselector2";
 // function dump(i: ITextLangDir) {
 //     console.log("<<----");
 //     console.log(i.dir);
 //     console.log(i.lang);
+//     const cssSelector = uniqueCssSelector(i.parentElement, win.document);
+//     console.log(cssSelector);
 //     console.log(i.parentElement.tagName);
 //     console.log(i.combinedText);
 //     if (i.combinedTextSentences) {
@@ -192,7 +198,7 @@ export function flattenDomText(rootElement: Element): ITextLangDir[] {
         }
 
         // tslint:disable-next-line:max-line-length
-        const isIncluded = first || element.matches("h1, h2, h3, h4, h5, h6, p, th, td, caption, li, blockquote, q, dt, dd, figcaption, div");
+        const isIncluded = first || element.matches("h1, h2, h3, h4, h5, h6, p, th, td, caption, li, blockquote, q, dt, dd, figcaption, div, pre");
         first = false;
         if (isIncluded) {
             elementStack.push(element);
@@ -368,12 +374,19 @@ export function ttsPlayback(
         return;
     }
     // dumps(flattenedDomText);
+    const nChunks = getLength(flattenedDomText);
 
     let startIndex = 0;
     if (startElem) {
+        console.log(startElem.outerHTML);
         let i = 0;
         for (const chunk of flattenedDomText) {
-            if (startElem === chunk.parentElement || chunk.parentElement.contains(startElem)) {
+            if (startElem === chunk.parentElement ||
+                (chunk.parentElement !== win.document.body &&
+                    chunk.parentElement !== rootElem &&
+                    chunk.parentElement.contains(startElem)) ||
+                startElem.contains(chunk.parentElement)) {
+                // dump(chunk);
                 startIndex = i;
                 break;
             }
@@ -384,19 +397,15 @@ export function ttsPlayback(
             }
         }
     }
-
-    const TTS_ID_PREVIOUS = "r2-tts-previous";
-    const TTS_ID_NEXT = "r2-tts-next";
-
-    // tslint:disable-next-line:max-line-length
-    // const outerHTML = `<textarea id="${idTtsTxt}" style="font-family: inherit; font-size: inherit; height: 400px; width: 600px; overflow: auto;">${txt}</textarea>`;
-    // tslint:disable-next-line:max-line-length
-    const outerHTML = `<div id="${TTS_ID_CONTAINER}" dir="${flattenedDomText[0].dir ? flattenedDomText[0].dir : "ltr"}" lang="${flattenedDomText[0].lang ? flattenedDomText[0].lang : ""}" xml:lang="${flattenedDomText[0].lang ? flattenedDomText[0].lang : ""}">${flattenedDomText[0].combinedText}</div>
+    const outerHTML =
+    `<div id="${TTS_ID_CONTAINER}"
+        dir="${flattenedDomText[0].dir ? flattenedDomText[0].dir : "ltr"}"
+        lang="${flattenedDomText[0].lang ? flattenedDomText[0].lang : ""}"
+        xml:lang="${flattenedDomText[0].lang ? flattenedDomText[0].lang : ""}">${flattenedDomText[0].combinedText}</div>
     <div id="${TTS_ID_INFO}"> </div>
-    <button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}"
-        style="position: absolute; left: 4px; bottom: 4px;">&#x21E0;</button>
-    <button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}"
-        style="position: absolute; right: 4px; bottom: 4px;">&#x21E2;</button>`;
+    <button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}">&#x21E0;</button>
+    <button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}">&#x21E2;</button>
+    <input id="${TTS_ID_SLIDER}" type="range" min="1" max="${nChunks + 1}" value="1" />`;
     // console.log("outerHTML");
     // console.log(outerHTML);
 
@@ -437,7 +446,59 @@ export function ttsPlayback(
     const pop = new PopupDialog(win.document, outerHTML, TTS_ID_DIALOG, endToScrollAndFocus);
     pop.show(rootElem);
 
+    function updateChunkInfo(textChunk: ITextLangDirItem | undefined, i: number): string | undefined {
+
+        if (!textChunk) {
+            return undefined;
+        }
+
+        const txtStr = getText(textChunk);
+
+        const textContainer = win.document.getElementById(TTS_ID_CONTAINER) as HTMLElement;
+        if (textContainer) {
+            textContainer.innerHTML = txtStr;
+            if (textChunk.item.dir) {
+                textContainer.setAttribute("dir", textChunk.item.dir as string);
+            } else {
+                textContainer.removeAttribute("dir");
+            }
+            if (textChunk.item.lang) {
+                const str = textChunk.item.lang as string;
+                textContainer.setAttribute("lang", str);
+                textContainer.setAttribute("xml:lang", str);
+                // textContainer.setAttributeNS("http://www.w3.org/XML/1998/", "lang", str);
+            } else {
+                textContainer.removeAttribute("lang");
+            }
+        }
+        const info = win.document.getElementById(TTS_ID_INFO) as HTMLElement;
+        if (info) {
+            info.innerText = (i + 1) + "/" + nChunks;
+        }
+
+        return txtStr;
+    }
+
     let _ignoreEndEvent = false;
+
+    const sliderEl = win.document.getElementById(TTS_ID_SLIDER) as HTMLInputElement;
+    if (sliderEl) {
+        sliderEl.addEventListener("input", (_ev: Event) => {
+            const diag = win.document.getElementById(TTS_ID_DIALOG) as HTMLDialogElement;
+            if (typeof ((diag as any).ttsQueueIndex) !== "undefined") {
+                if (win.speechSynthesis.speaking) {
+                    _ignoreEndEvent = true;
+                    win.speechSynthesis.cancel();
+                }
+                const n = parseInt(sliderEl.value, 10);
+                (diag as any).ttsQueueIndex = n;
+
+                updateChunkInfo(getItem(flattenedDomText, n), n);
+
+                processQueueDebounced(n);
+            }
+        });
+    }
 
     const ttsPrevious = win.document.getElementById(TTS_ID_PREVIOUS) as HTMLElement;
     if (ttsPrevious) {
@@ -446,7 +507,7 @@ export function ttsPlayback(
             const diag = win.document.getElementById(TTS_ID_DIALOG) as HTMLDialogElement;
             if (typeof ((diag as any).ttsQueueIndex) !== "undefined") {
                 const j = (diag as any).ttsQueueIndex - 1;
-                if (j >= getLength(flattenedDomText) || j < 0) {
+                if (j >= nChunks || j < 0) {
                     return;
                 }
                 if (win.speechSynthesis.speaking) {
@@ -465,7 +526,7 @@ export function ttsPlayback(
             const diag = win.document.getElementById(TTS_ID_DIALOG) as HTMLDialogElement;
             if (typeof ((diag as any).ttsQueueIndex) !== "undefined") {
                 const j = (diag as any).ttsQueueIndex + 1;
-                if (j >= getLength(flattenedDomText) || j < 0) {
+                if (j >= nChunks || j < 0) {
                     return;
                 }
                 if (win.speechSynthesis.speaking) {
@@ -517,7 +578,12 @@ export function ttsPlayback(
             wrapHighlight((dialogEl as any).ttsChunk, false);
         }
 
-        if (i >= getLength(flattenedDomText) || i < 0) {
+        const slider = win.document.getElementById(TTS_ID_SLIDER) as HTMLInputElement;
+        if (slider) {
+            slider.value = "" + i;
+        }
+
+        if (i >= nChunks || i < 0) {
             if (dialogEl && dialogEl.hasAttribute("open")) {
                 // if ((dialogEl as any).popDialog) {
                 //     ((dialogEl as any).popDialog as PopupDialog).cancelRefocus();
@@ -543,28 +609,9 @@ export function ttsPlayback(
             focusScrollRaw(textChunk.item.parentElement as HTMLElement, false);
         }
 
-        const txtStr = getText(textChunk);
-
-        const textContainer = win.document.getElementById(TTS_ID_CONTAINER) as HTMLElement;
-        if (textContainer) {
-            textContainer.innerHTML = txtStr;
-            if (textChunk.item.dir) {
-                textContainer.setAttribute("dir", textChunk.item.dir as string);
-            } else {
-                textContainer.removeAttribute("dir");
-            }
-            if (textChunk.item.lang) {
-                const str = textChunk.item.lang as string;
-                textContainer.setAttribute("lang", str);
-                textContainer.setAttribute("xml:lang", str);
-                // textContainer.setAttributeNS("http://www.w3.org/XML/1998/", "lang", str);
-            } else {
-                textContainer.removeAttribute("lang");
-            }
-        }
-        const info = win.document.getElementById(TTS_ID_INFO) as HTMLElement;
-        if (info) {
-            info.innerText = (i + 1) + "/" + getLength(flattenedDomText);
+        const txtStr = updateChunkInfo(textChunk, i);
+        if (!txtStr) {
+            return;
         }
 
         const utterance = new SpeechSynthesisUtterance(txtStr);
@@ -589,10 +636,7 @@ export function ttsPlayback(
             if (!ttsDialog.open) {
                 return;
             }
-            // const textarea = win.document.getElementById(idTtsTxt) as HTMLTextAreaElement;
-            // if (!textarea || !textarea.value) {
-            //     return;
-            // }
+
             const textP = win.document.getElementById(TTS_ID_CONTAINER) as HTMLElement;
             if (!textP) {
                 return;
