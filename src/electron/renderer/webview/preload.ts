@@ -647,21 +647,12 @@ const checkReadyPass = () => {
             }
 
             if (element) {
-                if (ev.altKey) {
-                    const parent = element.parentElement;
-                    if (parent) {
-                        if (ev.shiftKey) {
-                            const ancestor = parent.parentElement;
-                            if (ancestor) {
-                                ttsPlayback(ancestor, focusScrollRaw);
-                                return;
-                            }
-                        }
-                        ttsPlayback(parent, focusScrollRaw);
-                        return;
-                    }
+                if (ev.shiftKey) {
+                    ttsPlayback(element, undefined, focusScrollRaw);
+                    return;
                 }
-                ttsPlayback(element, focusScrollRaw);
+
+                ttsPlayback((element.ownerDocument as Document).body, element, focusScrollRaw);
             }
         });
     }

@@ -321,7 +321,10 @@ function wrapHighlight(textChunk: ITextLangDirItem, doHighlight: boolean) {
     });
 }
 
-export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean) => void) {
+export function ttsPlayback(
+    rootElem: Element,
+    startElem: Element | undefined,
+    focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean) => void) {
 
     // TODO: SSML?
     // https://github.com/guest271314/SpeechSynthesisSSMLParser
@@ -360,11 +363,27 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
     // console.log("elem.outerHTML");
     // console.log(elem.outerHTML);
 
-    const flattenedDomText = flattenDomText(elem);
+    const flattenedDomText = flattenDomText(rootElem);
     if (!flattenedDomText.length) {
         return;
     }
     // dumps(flattenedDomText);
+
+    let startIndex = 0;
+    if (startElem) {
+        let i = 0;
+        for (const chunk of flattenedDomText) {
+            if (startElem === chunk.parentElement || chunk.parentElement.contains(startElem)) {
+                startIndex = i;
+                break;
+            }
+            if (chunk.combinedTextSentences) {
+                i += chunk.combinedTextSentences.length;
+            } else {
+                i++;
+            }
+        }
+    }
 
     const TTS_ID_PREVIOUS = "r2-tts-previous";
     const TTS_ID_NEXT = "r2-tts-next";
@@ -382,7 +401,7 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
     // console.log(outerHTML);
 
     function endToScrollAndFocus(el: HTMLOrSVGElement | null, doFocus: boolean) {
-        elem.classList.remove(TTS_ID_SPEAKING_DOC_ELEMENT);
+        rootElem.classList.remove(TTS_ID_SPEAKING_DOC_ELEMENT);
 
         let toScrollTo = el;
 
@@ -416,7 +435,7 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
         }, 100);
     }
     const pop = new PopupDialog(win.document, outerHTML, TTS_ID_DIALOG, endToScrollAndFocus);
-    pop.show(elem);
+    pop.show(rootElem);
 
     let _ignoreEndEvent = false;
 
@@ -640,6 +659,6 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
         }, 0);
     }
 
-    processQueueRaw(0);
-    elem.classList.add(TTS_ID_SPEAKING_DOC_ELEMENT);
+    processQueueRaw(startIndex);
+    rootElem.classList.add(TTS_ID_SPEAKING_DOC_ELEMENT);
 }
