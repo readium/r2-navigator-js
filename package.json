@@ -57,6 +57,7 @@
     "r2-streamer-js": "^1.0.6",
     "r2-utils-js": "^1.0.4",
     "resize-sensor": "github:normanzb/resize-sensor#semver:^0.0.7",
+    "sentence-splitter": "^3.0.11",
     "ta-json-x": "^2.5.0",
     "tabbable": "^3.1.2",
     "tslib": "^1.9.3",

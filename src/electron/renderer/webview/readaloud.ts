@@ -6,6 +6,7 @@
 // ==LICENSE-END==
 
 import { debounce } from "debounce";
+import { split } from "sentence-splitter";
 
 import {
     TTS_ID_ACTIVE_WORD,
@@ -86,15 +87,15 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
 
     const innerText = (elem as HTMLElement).innerText; // triggers reflow
 
-    console.log("elem.textContent");
-    console.log(elem.textContent);
-    console.log("innerText");
-    console.log(innerText);
+    // console.log("elem.textContent");
+    // console.log(elem.textContent);
+    // console.log("innerText");
+    // console.log(innerText);
 
-    console.log("elem.innerHTML");
-    console.log(elem.innerHTML);
-    console.log("elem.outerHTML");
-    console.log(elem.outerHTML);
+    // console.log("elem.innerHTML");
+    // console.log(elem.innerHTML);
+    // console.log("elem.outerHTML");
+    // console.log(elem.outerHTML);
 
     if (/(xml:)?lang=["'][^"']+["']/g.test(elem.innerHTML)) {
 
@@ -139,19 +140,35 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
     //                         http://www.w3.org/TR/speech-synthesis/synthesis.xsd"
     //     xml:lang="${language}">${txt}</speak>`;
 
-    const queue = txt.split(/\. /).map((q, i, arr) => {
-        const trimmed = q.trim();
-        if (trimmed.length === 0) {
+    let queue: string[] = [];
+
+    try {
+        const sentences = split(txt);
+        // console.log(JSON.stringify(sentences, null, 4));
+        for (const sentence of sentences) {
+            if (sentence.type === "Sentence") {
+                queue.push(sentence.raw);
+            }
+        }
+    } catch (err) {
+        console.log(err);
+    }
+
+    if (!queue.length) {
+        queue = txt.split(/\. /).map((q, i, arr) => {
+            const trimmed = q.trim();
+            if (trimmed.length === 0) {
+                return trimmed;
+            }
+            if (i < (arr.length - 1) && !trimmed.endsWith(".")) {
+                return trimmed + ".";
+            }
             return trimmed;
-        }
-        if (i < (arr.length - 1) && !trimmed.endsWith(".")) {
-            return trimmed + ".";
-        }
-        return trimmed;
-    });
-    console.log("############");
-    console.log(queue.join(". \n\n"));
-    console.log("############ -----");
+        });
+        console.log("############");
+        console.log(queue.join(". \n\n"));
+        console.log("############ -----");
+    }
 
     let iq = 0;
     while (queue[iq].length === 0) {
@@ -176,8 +193,8 @@ export function ttsPlayback(elem: Element, focusScrollRaw: (el: HTMLOrSVGElement
         style="position: absolute; left: 4px; bottom: 4px;">&#x21E0;</button>
     <button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}"
         style="position: absolute; right: 4px; bottom: 4px;">&#x21E2;</button>`;
-    console.log("outerHTML");
-    console.log(outerHTML);
+    // console.log("outerHTML");
+    // console.log(outerHTML);
 
     function endToScrollAndFocus(el: HTMLOrSVGElement | null, doFocus: boolean) {
         elem.classList.remove(TTS_ID_SPEAKING_DOC_ELEMENT);
