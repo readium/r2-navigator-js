@@ -8,6 +8,7 @@
 export const ROOT_CLASS_NO_FOOTNOTES = "r2-no-popup-foonotes";
 export const POPUP_DIALOG_CLASS = "r2-popup-dialog";
 export const FOOTNOTES_CONTAINER_CLASS = "r2-footnote-container";
+export const FOOTNOTES_CLOSE_BUTTON_CLASS = "r2-footnote-close";
 
 // 'a' element: noteref biblioref glossref annoref
 //
@@ -35,35 +36,67 @@ export const footnotesCssStyles = `
 dialog.${POPUP_DIALOG_CLASS}::backdrop {
     background-color: rgba(0, 0, 0, 0.3);
 }
+/*
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+max-height: 400px;
+max-width: 600px;
+*/
 dialog.${POPUP_DIALOG_CLASS} {
     z-index: 3;
 
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
 
-    max-height: 400px;
+    width: 80%;
     max-width: 600px;
 
-    margin: 0;
-    padding: 1em;
+    bottom: 1em;
+    height: 5em;
+
+    margin: 0 auto
+    padding: 0;
 
     border-radius: 6px;
-    border-width: 2px;
+    border-width: 1px;
 
     background-color: white;
     border-color: black;
 
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
+.${FOOTNOTES_CLOSE_BUTTON_CLASS} {
+    border: 1px solid black;
+    background-color: white;
+    color: black;
 
+    border-radius: 0.8em;
+    position: absolute;
+    top: -0.9em;
+    left: -0.9em;
+    width: 1.8em;
+    height: 1.8em;
+    font-size: 1em !important;
+    font-family: Arial !important;
+    cursor: pointer;
+}
+:root[style*="readium-night-on"] .${FOOTNOTES_CLOSE_BUTTON_CLASS} {
+    border: 1px solid white !important;
+    background-color: black !important;
+    color: white !important;
+}
 .${FOOTNOTES_CONTAINER_CLASS} {
     overflow: auto;
 
-    max-height: 350px;
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
 
     padding: 0;
+    padding-left: 1em;
+    padding-right: 1em;
     margin: 0;
 }
 :root[style*="readium-night-on"] dialog.${POPUP_DIALOG_CLASS}::backdrop {
@@ -77,28 +110,70 @@ dialog.${POPUP_DIALOG_CLASS} {
 
 export const TTS_ID_ACTIVE_WORD = "r2-tts-active-word";
 export const TTS_ID_CONTAINER = "r2-tts-txt";
-export const ttsCssStyles = `
-/*
-outline-color: magenta;
-outline-style: solid;
-outline-width: 2px;
-outline-offset: 1px;
-*/
-#${TTS_ID_CONTAINER} {
-    color: #aaaaaa;
+export const TTS_ID_INFO = "r2-tts-info";
+export const TTS_NAV_BUTTON_CLASS = "r2-tts-button";
+export const TTS_ID_SPEAKING_DOC_ELEMENT = "r2-tts-speaking-el";
 
+export const ttsCssStyles = `
+
+.${TTS_ID_SPEAKING_DOC_ELEMENT} {
+    outline-color: silver;
+    outline-style: solid;
+    outline-width: 2px;
+    outline-offset: 1px;
+}
+#${TTS_ID_CONTAINER} {
     overflow: auto;
 
-    max-height: 350px;
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 2em;
 
     padding: 0;
-    margin: 0;
-
+    padding-left: 1em;
     padding-right: 1em;
+    margin: 0;
 
     hyphens: none !important;
     word-break: keep-all !important;
     word-wrap: break-word !important;
+
+    color: #888888 !important;
+}
+:root[style*="readium-night-on"] #${TTS_ID_CONTAINER} {
+    color: #bbbbbb !important;
+}
+#${TTS_ID_INFO} {
+    padding: 0;
+    margin: 0;
+
+    position: absolute;
+    height: 1.2em;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+
+    text-align: center;
+    vertical-align: middle;
+
+    font-family: Arial !important;
+    font-size: 90% !important;
+}
+.${TTS_NAV_BUTTON_CLASS} {
+    border: 1px solid #EEEEEE;
+    background-color: white;
+    color: black;
+
+    font-size: 100% !important;
+    font-family: Arial !important;
+    cursor: pointer;
+}
+:root[style*="readium-night-on"] .${TTS_NAV_BUTTON_CLASS} {
+    border: 1px solid white !important;
+    background-color: black !important;
+    color: white !important;
 }
 #${TTS_ID_ACTIVE_WORD}  {
     color: black;
@@ -106,9 +181,6 @@ outline-offset: 1px;
 
     padding: 0;
     margin: 0;
-}
-:root[style*="readium-night-on"] #${TTS_ID_CONTAINER} {
-    color: #bbbbbb !important;
 }
 :root[style*="readium-night-on"] #${TTS_ID_ACTIVE_WORD} {
     color: white !important;

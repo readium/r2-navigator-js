@@ -176,16 +176,16 @@ export class PopupDialog {
         this.dialog.setAttribute("id", id);
         this.dialog.setAttribute("dir", "ltr");
 
-        const button = documant.createElement("button");
-        button.setAttribute("aria-label", "close");
-        button.setAttribute("style", "border: none; float: right; cursor: pointer;");
-        const txtClose = documant.createTextNode("X");
-        button.appendChild(txtClose);
-        button.addEventListener("click", (_ev: Event) => {
-            that.dialog.close();
-            // ((dialog as any).popDialog as PopupDialog).hide();
-        });
-        this.dialog.appendChild(button);
+        // const button = documant.createElement("button");
+        // button.setAttribute("aria-label", "close");
+        // button.setAttribute("class", FOOTNOTES_CLOSE_BUTTON_CLASS);
+        // const txtClose = documant.createTextNode("X");
+        // button.appendChild(txtClose);
+        // button.addEventListener("click", (_ev: Event) => {
+        //     that.dialog.close();
+        //     // ((dialog as any).popDialog as PopupDialog).hide();
+        // });
+        // this.dialog.appendChild(button);
 
         try {
             this.dialog.insertAdjacentHTML("beforeend", outerHTML);
@@ -194,7 +194,7 @@ export class PopupDialog {
             console.log(outerHTML);
             try {
                 this.dialog.innerHTML = outerHTML;
-                this.dialog.insertAdjacentHTML("afterbegin", button.outerHTML);
+                // this.dialog.insertAdjacentHTML("afterbegin", button.outerHTML);
             } catch (err) {
                 console.log(err);
                 console.log(outerHTML);

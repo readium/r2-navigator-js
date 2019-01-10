@@ -561,10 +561,6 @@ const checkReadyPass = () => {
                 return;
             }
 
-            if (isPopupDialogOpen(win.document)) {
-                return;
-            }
-
             const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
             processXYDebounced(x, 0);
         });
@@ -884,18 +880,18 @@ function showHideContentMask(doHide: boolean) {
     }
 }
 
-function focusScrollRaw(tab: HTMLOrSVGElement, doFocus: boolean) {
-    win.READIUM2.locationHashOverride = tab as HTMLElement;
+function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean) {
+    win.READIUM2.locationHashOverride = el as HTMLElement;
     scrollElementIntoView(win.READIUM2.locationHashOverride);
     if (doFocus) {
         setTimeout(() => {
-            tab.focus();
+            el.focus();
         }, 10);
     }
 }
-const focusScrollDebounced = debounce((tab: HTMLOrSVGElement, doFocus: boolean) => {
-    focusScrollRaw(tab, doFocus);
-}, 20);
+const focusScrollDebounced = debounce((el: HTMLOrSVGElement, doFocus: boolean) => {
+    focusScrollRaw(el, doFocus);
+}, 80);
 
 let _ignoreFocusInEvent = false;
 
@@ -1173,6 +1169,10 @@ win.addEventListener("load", () => {
 
 // relative to fixed window top-left corner
 const processXYRaw = (x: number, y: number) => {
+
+    if (isPopupDialogOpen(win.document)) {
+        return;
+    }
 
     // const elems = win.document.elementsFromPoint(x, y);
 
