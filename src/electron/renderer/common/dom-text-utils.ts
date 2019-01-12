@@ -266,18 +266,18 @@ export function generateTtsQueue(rootElement: Element): ITtsQueueItem[] {
             if (ttsQueueItem.combinedTextSentences.length === 0 || ttsQueueItem.combinedTextSentences.length === 1) {
                 ttsQueueItem.combinedTextSentences = undefined;
             } else {
-                let total = 0;
-                ttsQueueItem.combinedTextSentences.forEach((sent) => {
-                    total += sent.length;
-                });
-                const expectedWhiteSpacesSeparators = ttsQueueItem.combinedTextSentences.length - 1;
-                if (total !== ttsQueueItem.combinedText.length &&
-                    ((ttsQueueItem.combinedText.length - total) !== expectedWhiteSpacesSeparators)) {
-                    console.log("sentences total !== item.combinedText.length");
-                    console.log(total + " !== " + ttsQueueItem.combinedText.length);
-                    consoleLogTtsQueueItem(ttsQueueItem);
-                    console.log(JSON.stringify(sentences, null, 4));
-                }
+                // let total = 0;
+                // ttsQueueItem.combinedTextSentences.forEach((sent) => {
+                //     total += sent.length;
+                // });
+                // const expectedWhiteSpacesSeparators = ttsQueueItem.combinedTextSentences.length - 1;
+                // if (total !== ttsQueueItem.combinedText.length &&
+                //     ((ttsQueueItem.combinedText.length - total) !== expectedWhiteSpacesSeparators)) {
+                //     console.log("sentences total !== item.combinedText.length");
+                //     console.log(total + " !== " + ttsQueueItem.combinedText.length);
+                //     consoleLogTtsQueueItem(ttsQueueItem);
+                //     console.log(JSON.stringify(sentences, null, 4));
+                // }
             }
         } catch (err) {
             console.log(err);
