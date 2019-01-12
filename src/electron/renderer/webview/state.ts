@@ -30,6 +30,8 @@ export interface IElectronWebviewTagWindowState {
     fxlViewportHeight: number;
 
     DEBUG_VISUALS: boolean;
+
+    ttsClickEnabled: boolean;
 }
 export interface IElectronWebviewTagWindow extends Window {
     READIUM2: IElectronWebviewTagWindowState;

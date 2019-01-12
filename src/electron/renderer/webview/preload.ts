@@ -123,6 +123,7 @@ win.READIUM2 = {
     },
     readyEventSent: false,
     readyPassDone: false,
+    ttsClickEnabled: false,
     urlQueryParams: undefined,
 };
 
@@ -658,7 +659,7 @@ const checkReadyPass = () => {
                 }
             }
 
-            if (element) {
+            if (win.READIUM2.ttsClickEnabled && element) {
                 if (ev.altKey) {
                     ttsPlay(focusScrollRaw, element, undefined);
                     return;
@@ -1071,6 +1072,7 @@ win.addEventListener("DOMContentLoaded", () => {
     win.READIUM2.locationHashOverride = undefined;
     win.READIUM2.readyPassDone = false;
     win.READIUM2.readyEventSent = false;
+    win.READIUM2.ttsClickEnabled = false;
 
     let readiumcssJson: IEventPayload_R2_EVENT_READIUMCSS | undefined;
     if (win.READIUM2.urlQueryParams) {
@@ -1561,7 +1563,5 @@ ipcRenderer.on(R2_EVENT_TTS_DO_PREVIOUS, (_event: any) => {
 });
 
 ipcRenderer.on(R2_EVENT_TTS_CLICK_ENABLE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_CLICK_ENABLE) => {
-    if (payload.doEnable) {
-        
-    }
+    win.READIUM2.ttsClickEnabled = payload.doEnable;
 });
