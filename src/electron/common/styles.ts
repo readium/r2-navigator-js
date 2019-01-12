@@ -88,7 +88,7 @@ dialog.${POPUP_DIALOG_CLASS} {
     margin: 0.2em;
 }
 
-.${FOOTNOTES_CONTAINER_CLASS} > * {
+.${FOOTNOTES_CONTAINER_CLASS} > div > * {
     margin: 0 !important;
     padding: 0 !important;
 }
@@ -244,6 +244,8 @@ export const ttsCssStyles = `
 }
 .${TTS_CLASS_INJECTED_SUBSPAN} {
     text-decoration: underline;
+    padding: 0;
+    margin: 0;
 }
 
 */
