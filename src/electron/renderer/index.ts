@@ -33,6 +33,7 @@ import {
     IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO,
     IEventPayload_R2_EVENT_READIUMCSS,
     IEventPayload_R2_EVENT_SCROLLTO,
+    IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
     IEventPayload_R2_EVENT_TTS_DO_PLAY,
     IEventPayload_R2_EVENT_WEBVIEW_READY,
     R2_EVENT_DEBUG_VISUALS,
@@ -43,6 +44,7 @@ import {
     R2_EVENT_READING_LOCATION,
     R2_EVENT_READIUMCSS,
     R2_EVENT_SCROLLTO,
+    R2_EVENT_TTS_CLICK_ENABLE,
     R2_EVENT_TTS_DO_NEXT,
     R2_EVENT_TTS_DO_PAUSE,
     R2_EVENT_TTS_DO_PLAY,
@@ -1006,4 +1008,15 @@ export enum TTSStateEnum {
 let _ttsListener: (ttsState: TTSStateEnum) => void | undefined;
 export function ttsListen(ttsListener: (ttsState: TTSStateEnum) => void) {
     _ttsListener = ttsListener;
+}
+
+export function ttsClickEnable(doEnable: boolean) {
+    const activeWebView = getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+    const payload: IEventPayload_R2_EVENT_TTS_CLICK_ENABLE = {
+        doEnable,
+    };
+    activeWebView.send(R2_EVENT_TTS_CLICK_ENABLE, payload);
 }

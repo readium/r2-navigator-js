@@ -29,6 +29,7 @@ import {
     IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO,
     IEventPayload_R2_EVENT_READIUMCSS,
     IEventPayload_R2_EVENT_SCROLLTO,
+    IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
     IEventPayload_R2_EVENT_TTS_DO_PLAY,
     IEventPayload_R2_EVENT_WEBVIEW_READY,
     R2_EVENT_DEBUG_VISUALS,
@@ -38,6 +39,7 @@ import {
     R2_EVENT_PAGE_TURN_RES,
     R2_EVENT_READING_LOCATION,
     R2_EVENT_SCROLLTO,
+    R2_EVENT_TTS_CLICK_ENABLE,
     R2_EVENT_TTS_DO_NEXT,
     R2_EVENT_TTS_DO_PAUSE,
     R2_EVENT_TTS_DO_PLAY,
@@ -1556,4 +1558,10 @@ ipcRenderer.on(R2_EVENT_TTS_DO_NEXT, (_event: any) => {
 
 ipcRenderer.on(R2_EVENT_TTS_DO_PREVIOUS, (_event: any) => {
     ttsPrevious();
+});
+
+ipcRenderer.on(R2_EVENT_TTS_CLICK_ENABLE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_CLICK_ENABLE) => {
+    if (payload.doEnable) {
+        
+    }
 });

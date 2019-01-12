@@ -104,6 +104,14 @@ export interface IEventPayload_R2_EVENT_WEBVIEW_READY {
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_TTS_CLICK_ENABLE = "R2_EVENT_TTS_CLICK_ENABLE";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_TTS_CLICK_ENABLE {
+    doEnable: boolean;
+}
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_TTS_DO_PLAY = "R2_EVENT_TTS_DO_PLAY";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_TTS_DO_PLAY {
