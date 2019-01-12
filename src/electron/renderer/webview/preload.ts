@@ -74,7 +74,7 @@ import {
 } from "../common/url-params";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import { popupFootNote } from "./popupFootnotes";
-import { ttsPlayback } from "./readaloud";
+import { ttsPlay } from "./readaloud";
 import {
     calculateColumnDimension,
     calculateMaxScrollShift,
@@ -648,11 +648,11 @@ const checkReadyPass = () => {
 
             if (element) {
                 if (ev.altKey) {
-                    ttsPlayback(element, undefined, focusScrollRaw);
+                    ttsPlay(focusScrollRaw, element, undefined);
                     return;
                 }
 
-                ttsPlayback((element.ownerDocument as Document).body, element, focusScrollRaw);
+                ttsPlay(focusScrollRaw, (element.ownerDocument as Document).body, element);
             }
         });
     }
@@ -1391,6 +1391,12 @@ export const computeProgressionData = (): IProgressionData => {
     };
 };
 
+// tslint:disable-next-line:max-line-length
+const _blacklistIdClassForCssSelectors = [TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
+
+// tslint:disable-next-line:max-line-length
+const _blacklistIdClassForCFI = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN];
+
 export const computeCFI = (node: Node): string | undefined => {
 
     // TODO: handle character position inside text node
@@ -1402,19 +1408,36 @@ export const computeCFI = (node: Node): string | undefined => {
 
     let currentElement = node as Element;
     while (currentElement.parentNode && currentElement.parentNode.nodeType === Node.ELEMENT_NODE) {
-        const currentElementChildren = (currentElement.parentNode as Element).children;
-        let currentElementIndex = -1;
-        for (let i = 0; i < currentElementChildren.length; i++) {
-            if (currentElement === currentElementChildren[i]) {
-                currentElementIndex = i;
+        let blacklistedId: string | undefined;
+        const id = currentElement.getAttribute("id");
+        if (id && _blacklistIdClassForCFI.indexOf(id) >= 0) {
+            console.log("CFI BLACKLIST ID: " + id);
+            blacklistedId = id;
+        }
+
+        let blacklistedClass: string | undefined;
+        for (const item of _blacklistIdClassForCFI) {
+            if (currentElement.classList.contains(item)) {
+                console.log("CFI BLACKLIST CLASS: " + blacklistedClass);
+                blacklistedClass = item;
                 break;
             }
         }
-        if (currentElementIndex >= 0) {
-            const cfiIndex = (currentElementIndex + 1) * 2;
-            cfi = cfiIndex +
-                (currentElement.id ? ("[" + currentElement.id + "]") : "") +
-                (cfi.length ? ("/" + cfi) : "");
+        if (!blacklistedId && !blacklistedClass) {
+            const currentElementParentChildren = (currentElement.parentNode as Element).children;
+            let currentElementIndex = -1;
+            for (let i = 0; i < currentElementParentChildren.length; i++) {
+                if (currentElement === currentElementParentChildren[i]) {
+                    currentElementIndex = i;
+                    break;
+                }
+            }
+            if (currentElementIndex >= 0) {
+                const cfiIndex = (currentElementIndex + 1) * 2;
+                cfi = cfiIndex +
+                    (currentElement.id ? ("[" + currentElement.id + "]") : "") +
+                    (cfi.length ? ("/" + cfi) : "");
+            }
         }
         currentElement = currentElement.parentNode as Element;
     }
@@ -1431,15 +1454,12 @@ const notifyReadingLocationRaw = () => {
 
     let progressionData: IProgressionData | undefined;
 
-    // tslint:disable-next-line:max-line-length
-    const blacklist = [TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
-
     const options = {
         className: (str: string) => {
-            return blacklist.indexOf(str) < 0;
+            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
         },
         idName: (str: string) => {
-            return blacklist.indexOf(str) < 0;
+            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
         },
     };
     const cssSelector = uniqueCssSelector(win.READIUM2.locationHashOverride, win.document, options);

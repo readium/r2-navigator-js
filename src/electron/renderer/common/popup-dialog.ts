@@ -161,7 +161,7 @@ export class PopupDialog {
         public readonly documant: Document,
         outerHTML: string,
         id: string,
-        public readonly endToScrollAndFocus: (el: HTMLOrSVGElement | null, doFocus: boolean) => void) {
+        public readonly onDialogClosed: (el: HTMLOrSVGElement | null) => void) {
 
         const that = this;
 
@@ -296,14 +296,6 @@ export class PopupDialog {
     public cancelRefocus() {
         _focusedBeforeDialog = null;
     }
-    public refocus() {
-        if (!_focusedBeforeDialog) {
-            this.endToScrollAndFocus(null, false);
-            return;
-        }
-        this.endToScrollAndFocus(_focusedBeforeDialog, true);
-        _focusedBeforeDialog = null;
-    }
 
     public hide() {
         // if (!this.shown) {
@@ -320,7 +312,7 @@ export class PopupDialog {
         this.documant.body.removeEventListener("keyup", this._onKeyUp, true);
         this.documant.body.removeEventListener("keydown", this._onKeyDown, true);
 
-        this.refocus();
+        this.onDialogClosed(_focusedBeforeDialog);
         _focusedBeforeDialog = null;
 
         // let the above occur even if not open!

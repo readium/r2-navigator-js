@@ -143,8 +143,10 @@ export const ttsCssStyles = `
     word-break: keep-all !important;
     word-wrap: break-word !important;
 
+    /*
     font-size: 120% !important;
     line-height: 1.3em !important;
+    */
 
     color: #888888 !important;
 }
@@ -269,6 +271,7 @@ export const visibilityMaskCssStyles = `
 `;
 
 export const ROOT_CLASS_KEYBOARD_INTERACT = "r2-keyboard-interact";
+export const CSS_CLASS_NO_FOCUS_OUTLINE = "r2-no-focus-outline";
 export const focusCssStyles = `
 @keyframes readium2ElectronAnimation_FOCUS {
     0% {
@@ -290,7 +293,7 @@ export const focusCssStyles = `
     animation-fill-mode: forwards;
     animation-timing-function: linear;
 }
-*.r2-no-focus-outline:focus {
+*.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus {
     outline: inherit !important;
 }
 `;

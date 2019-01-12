@@ -6,6 +6,7 @@
 // ==LICENSE-END==
 
 import {
+    CSS_CLASS_NO_FOCUS_OUTLINE,
     FOOTNOTES_CONTAINER_CLASS,
     ROOT_CLASS_NO_FOOTNOTES,
 } from "../../common/styles";
@@ -70,7 +71,8 @@ export function popupFootNote(
     const id_ = ID_PREFIX_ + targetElement.id;
     outerHTML = outerHTML.replace(/id=["'][^"']+["']/, `id="${id_}"`);
 
-    outerHTML = `<div class="${FOOTNOTES_CONTAINER_CLASS}">${outerHTML}</div>`;
+    outerHTML = `<div class="${FOOTNOTES_CONTAINER_CLASS} ${CSS_CLASS_NO_FOCUS_OUTLINE}"
+        tabindex="0" autofocus="autofocus">${outerHTML}</div>`;
 
     // outerHTML = outerHTML.replace(/click=["']javascript:.+["']/g, " ");
     // debug(outerHTML);
@@ -85,12 +87,12 @@ export function popupFootNote(
     // };
     // ipcRenderer.sendToHost(R2_EVENT_LINK_FOOTNOTE, payload_);
 
-    function endToScrollAndFocus(el: HTMLOrSVGElement | null, doFocus: boolean) {
+    function onDialogClosed(el: HTMLOrSVGElement | null) {
         if (el) {
-            focusScrollRaw(el, doFocus);
+            focusScrollRaw(el, true);
         }
     }
-    const pop = new PopupDialog(documant, outerHTML, id, endToScrollAndFocus);
+    const pop = new PopupDialog(documant, outerHTML, id, onDialogClosed);
 
     pop.show(element);
     return true;
