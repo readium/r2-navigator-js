@@ -126,6 +126,7 @@ export const TTS_ID_INFO = "r2-tts-info";
 export const TTS_NAV_BUTTON_CLASS = "r2-tts-button";
 export const TTS_ID_SPEAKING_DOC_ELEMENT = "r2-tts-speaking-el";
 export const TTS_CLASS_INJECTED_SPAN = "r2-tts-speaking-txt";
+export const TTS_CLASS_INJECTED_SUBSPAN = "r2-tts-speaking-word";
 export const TTS_ID_INJECTED_PARENT = "r2-tts-speaking-txt-parent";
 
 export const ttsCssStyles = `
@@ -241,6 +242,10 @@ export const ttsCssStyles = `
     color: white !important;
     background-color: #333300 !important;
 }
+.${TTS_CLASS_INJECTED_SUBSPAN} {
+    text-decoration: underline;
+}
+
 */
 .${TTS_ID_INJECTED_PARENT} {
     /*

@@ -287,7 +287,8 @@ export function generateTtsQueue(rootElement: Element): ITextLangDir[] {
 }
 
 // tslint:disable-next-line:max-line-length
-export function wrapHighlight(doHighlight: boolean, ttsQueueItem: ITextLangDir, cssClassParent: string, cssClassSpan: string) {
+export function wrapHighlight(doHighlight: boolean, ttsQueueItemRef: ITextLangDirReference, cssClassParent: string, cssClassSpan: string, _cssClassSubSpan: string) {
+    const ttsQueueItem = ttsQueueItemRef.item;
     if (ttsQueueItem.parentElement) {
         if (doHighlight) {
             if (ttsQueueItem.parentElement.classList.contains(cssClassParent)) {

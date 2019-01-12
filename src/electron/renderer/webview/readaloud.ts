@@ -10,6 +10,7 @@ import { debounce } from "debounce";
 import {
     CSS_CLASS_NO_FOCUS_OUTLINE,
     TTS_CLASS_INJECTED_SPAN,
+    TTS_CLASS_INJECTED_SUBSPAN,
     TTS_ID_ACTIVE_WORD,
     TTS_ID_CONTAINER,
     TTS_ID_INFO,
@@ -264,14 +265,16 @@ function highlights(doHighlight: boolean) {
 
     if (doHighlight) {
         if (_dialogState && _dialogState.ttsQueueItem) {
-            wrapHighlight(true, _dialogState.ttsQueueItem.item, TTS_ID_INJECTED_PARENT, TTS_CLASS_INJECTED_SPAN);
+            // tslint:disable-next-line:max-line-length
+            wrapHighlight(true, _dialogState.ttsQueueItem, TTS_ID_INJECTED_PARENT, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN);
         }
         if (_dialogState && _dialogState.ttsRootElement) {
             _dialogState.ttsRootElement.classList.add(TTS_ID_SPEAKING_DOC_ELEMENT);
         }
     } else {
         if (_dialogState && _dialogState.ttsQueueItem) {
-            wrapHighlight(false, _dialogState.ttsQueueItem.item, TTS_ID_INJECTED_PARENT, TTS_CLASS_INJECTED_SPAN);
+            // tslint:disable-next-line:max-line-length
+            wrapHighlight(false, _dialogState.ttsQueueItem, TTS_ID_INJECTED_PARENT, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN);
         }
         if (_dialogState && _dialogState.ttsRootElement) {
             _dialogState.ttsRootElement.classList.remove(TTS_ID_SPEAKING_DOC_ELEMENT);
