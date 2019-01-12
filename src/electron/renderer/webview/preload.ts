@@ -581,6 +581,8 @@ const checkReadyPass = () => {
                 new ResizeSensor(win.document.body, () => {
 
                     debug("ResizeSensor");
+
+                    (win.document.body as any).tabbables = undefined;
                     scrollToHashDebounced();
                 });
             });
@@ -956,61 +958,84 @@ const focusScrollDebounced = debounce((el: HTMLOrSVGElement, doFocus: boolean) =
 
 let _ignoreFocusInEvent = false;
 
-function handleTab(target: HTMLElement, evt: KeyboardEvent | undefined) {
+function handleTab(target: HTMLElement, tabKeyDownEvent: KeyboardEvent | undefined) {
     if (!target || !win.document.body) {
         return;
     }
 
+    // target
+    // tab-keydown => originating element (will leave focus)
+    // focusin => destination element (focuses in)
+
+    // evt
+    // non-nil when tab-keydown
+    // nil when focusin
+    // const isTabKeyDownEvent = typeof evt !== "undefined";
+    // const isFocusInEvent = !isTabKeyDownEvent;
+
     _ignoreFocusInEvent = false;
 
-    const tabbables = tabbable(win.document.body);
+    // cache problem: temporary tabbables? (e.g. HTML5 details/summary element, expand/collapse)
+    // so right now, resize sensor resets body.tabbables. Is that enough? (other edge cases?)
+    const tabbables = (win.document.body as any).tabbables ?
+        (win.document.body as any).tabbables :
+        ((win.document.body as any).tabbables = tabbable(win.document.body));
+    // const tabbables = tabbable(win.document.body);
     // debug(tabbables);
+
     const i = tabbables.indexOf(target);
+    // debug("TABBABLE: " + i);
+
     if (i === 0) {
         // debug("FIRST TABBABLE");
-        if (!evt || evt.shiftKey) { // prevent the webview from cycling scroll (yet focus leaves)
+        // prevent the webview from cycling scroll (does its own unwanted focus)
+        if (!tabKeyDownEvent || tabKeyDownEvent.shiftKey) {
             _ignoreFocusInEvent = true;
-            focusScrollDebounced(target as HTMLElement, false);
+            focusScrollDebounced(target as HTMLElement, true);
             return;
         }
         if (i < (tabbables.length - 1)) {
             // debug("TABBABLE FORWARD >>");
-            evt.preventDefault();
+            tabKeyDownEvent.preventDefault();
             const nextTabbable = tabbables[i + 1];
             focusScrollDebounced(nextTabbable as HTMLElement, true);
             return;
         }
     } else if (i === (tabbables.length - 1)) {
         // debug("LAST TABBABLE");
-        if (!evt || !evt.shiftKey) { // prevent the webview from cycling scroll (yet focus leaves)
+        // prevent the webview from cycling scroll (does its own unwanted focus)
+        if (!tabKeyDownEvent || !tabKeyDownEvent.shiftKey) {
             _ignoreFocusInEvent = true;
-            focusScrollDebounced(target as HTMLElement, false);
+            focusScrollDebounced(target as HTMLElement, true);
             return;
         }
         if (i > 0) {
             // debug("TABBABLE BACKWARD <<");
-            evt.preventDefault();
+            tabKeyDownEvent.preventDefault();
             const previousTabbable = tabbables[i - 1];
             focusScrollDebounced(previousTabbable as HTMLElement, true);
             return;
         }
     } else if (i > 0) {
-        // debug("TABBABLE: " + i);
-        if (evt) {
-            if (evt.shiftKey) {
+        if (tabKeyDownEvent) {
+            if (tabKeyDownEvent.shiftKey) {
                 // debug("TABBABLE BACKWARD <<");
-                evt.preventDefault();
+                tabKeyDownEvent.preventDefault();
                 const previousTabbable = tabbables[i - 1];
                 focusScrollDebounced(previousTabbable as HTMLElement, true);
                 return;
             } else {
                 // debug("TABBABLE FORWARD >>");
-                evt.preventDefault();
+                tabKeyDownEvent.preventDefault();
                 const nextTabbable = tabbables[i + 1];
                 focusScrollDebounced(nextTabbable as HTMLElement, true);
                 return;
             }
         }
+    }
+    if (!tabKeyDownEvent) {
+        // debug("FOCUSIN force");
+        focusScrollDebounced(target as HTMLElement, true);
     }
 }
 
@@ -1080,8 +1105,8 @@ win.addEventListener("DOMContentLoaded", () => {
 
     const alreadedInjected = win.document.documentElement.hasAttribute("data-readiumcss-injected");
     if (alreadedInjected) {
-        debug(">>>>>1 ReadiumCSS already injected by streamer");
-        console.log(">>>>>2 ReadiumCSS already injected by streamer");
+        debug(">>>>> ReadiumCSS already injected by streamer");
+        // console.log(">>>>>2 ReadiumCSS already injected by streamer");
     }
 
     if (!alreadedInjected) {
@@ -1094,6 +1119,7 @@ win.addEventListener("DOMContentLoaded", () => {
     win.document.body.addEventListener("focusin", (ev: any) => {
 
         if (_ignoreFocusInEvent) {
+            debug("focusin --- IGNORE");
             _ignoreFocusInEvent = false;
             return;
         }
@@ -1114,7 +1140,6 @@ win.addEventListener("DOMContentLoaded", () => {
     });
 
     win.document.body.addEventListener("keydown", (ev: KeyboardEvent) => {
-
         if (isPopupDialogOpen(win.document)) {
             return;
         }
