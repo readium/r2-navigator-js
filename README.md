@@ -94,7 +94,9 @@ Alternatively, GitHub mirror with semantic-versioning release tags:
 
 https://raw.githack.com/edrlab/r2-navigator-js-dist/develop/dist/gitrev.json
 
-## Developer quick start
+## Developer Primer
+
+### Quick Start
 
 Command line steps (NPM, but similar with YARN):
 
@@ -105,7 +107,23 @@ Command line steps (NPM, but similar with YARN):
 5) `npm run build:all` (invoke the main build script: clean, lint, compile)
 6) `ls dist` (that's the build output which gets published as NPM package)
 
-## Documentation
+### Local Workflow (NPM packages not published yet)
+
+Strictly-speaking, a developer needs to clone only the GitHub repository he/she wants to modify code in.
+However, for this documentation let's assume that all `r2-xxx-js` GitHub repositories are cloned, as siblings within the same parent folder.
+The dependency chain is as follows: `r2-utils-js` - `r2-lcp-js` - `r2-shared-js` - `r2-opds-js` - `r2-streamer-js` - `r2-navigator-js` - `r2-testapp-js`
+(for example, this means that `r2-shared-js` depends on `r2-utils-js` and `r2-lcp-js` to compile and function properly).
+Note that `readium-desktop` can be cloned in there too, and this project has the same level as `r2-testapp-js` in terms of its `r2-XXX-js` dependencies.
+
+1) `cd MY_CODE_FOLDER`
+2) `git clone https://github.com/readium/r2-XXX-js.git` (replace `XXX` for each repository name mentioned above)
+3) `cd r2-XXX-js && npm install && npm run build:all` (the order of the `XXX` repositories does not matter here, as we are just pulling dependencies from NPM, and testing that the build works)
+4) Now change some code in `r2-navigator-js` (for example), and invoke `npm run build` (for a quick ES8-2017 build) or `npm run build:all` (for all ECMAScript variants).
+5) To update the `r2-navigator-js` package in `r2-testapp-js` without having to publish an official package with strict semantic versioning, simply invoke `npm run copydist`. This command is available in each `r2-XXX-js` package to "propagate" (compiled) code changes into all dependants.
+6) From time to time, an `r2-XXX-js` package will have new package dependencies in `node_modules` (for example when `npm install --save` is used to fetch a new utility library). In this case ; using the `r2-navigator-js` example above ; the new package dependencies must be manually copied into the `node_modules` folder of `r2-testapp-js`, as these are not known and therefore not handled by the `npm run copydist` command (which only cares about propagating code changes specific to `r2-XXX-js` packages). Such mismatch may typically occur when working from the `develop` branch, as the formal `package-lock.json` definition of dependencies has not yet been published to NPM.
+7) Lastly, once the `r2-navigator-js` code changes are built and copied across into `r2-testapp-js`, simply invoke `npm run electron PATH_TO_EPUB` to launch the test app and check your code modifications (or with `readium-desktop` use `npm run start:dev`).
+
+## Programmer Documentation
 
 An Electron app has one `main` process, and potentially several `renderer` processes (one per `BrowserWindow`).
 In addition, there is a separate runtime for each `webview` embedded inside each `BrowserWindow`
