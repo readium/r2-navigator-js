@@ -51,6 +51,8 @@ interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
     ttsQueueItem: ITextLangDirReference | undefined;
 
     ttsRootElement: Element | undefined;
+
+    focusScrollRaw: ((el: HTMLOrSVGElement, doFocus: boolean) => void )| undefined;
 }
 
 let _dialogState: IHTMLDialogElementWithTTSState | undefined;
@@ -60,6 +62,7 @@ function resetState() {
 
     if (_dialogState) {
         _dialogState.popDialog = undefined;
+        _dialogState.focusScrollRaw = undefined;
 
         _dialogState.ttsRootElement = undefined;
         _dialogState.ttsQueue = undefined;
@@ -205,6 +208,58 @@ export function ttsPauseOrResume() {
     }
 }
 
+export function ttsQueueSize(): number {
+    if (_dialogState && _dialogState.ttsQueue) {
+        getLength(_dialogState.ttsQueue);
+    }
+    return -1;
+}
+export function ttsQueueCurrentIndex(): number {
+    if (_dialogState && _dialogState.ttsQueueItem) {
+        return _dialogState.ttsQueueItem.iGlobal;
+    }
+    return -1;
+}
+export function ttsQueueCurrentText(): string | undefined {
+    if (_dialogState && _dialogState.ttsQueueItem) {
+        return getText(_dialogState.ttsQueueItem);
+    }
+    return undefined;
+}
+
+export function ttsNext() {
+    if (_dialogState && _dialogState.ttsQueueItem) {
+        const j = _dialogState.ttsQueueItem.iGlobal + 1;
+        if (j >= _dialogState.ttsQueueLength || j < 0) {
+            return;
+        }
+        ttsPause();
+        ttsPlayQueueIndexDebounced(j);
+    }
+}
+export function ttsPrevious() {
+    if (_dialogState && _dialogState.ttsQueueItem) {
+        const j = _dialogState.ttsQueueItem.iGlobal - 1;
+        if (j >= _dialogState.ttsQueueLength || j < 0) {
+            return;
+        }
+        ttsPause();
+        ttsPlayQueueIndexDebounced(j);
+    }
+}
+
+export function ttsPreviewAndEventuallyPlayQueueIndex(n: number) {
+
+    ttsPause();
+
+    if (_dialogState && _dialogState.ttsQueue) {
+
+        updateTTSInfo(getItem(_dialogState.ttsQueue, n));
+    }
+
+    ttsPlayQueueIndexDebouncedMore(n);
+}
+
 function highlights(doHighlight: boolean) {
 
     if (doHighlight) {
@@ -292,6 +347,10 @@ function updateTTSInfo(ttsQueueItem: ITextLangDirReference | undefined): string 
         return undefined;
     }
 
+    if (_dialogState.focusScrollRaw && ttsQueueItem.item.parentElement) {
+        _dialogState.focusScrollRaw(ttsQueueItem.item.parentElement as HTMLElement, false);
+    }
+
     const ttsQueueItemText = getText(ttsQueueItem);
 
     if (_dialogState.domText) {
@@ -326,6 +385,98 @@ function updateTTSInfo(ttsQueueItem: ITextLangDirReference | undefined): string 
     return ttsQueueItemText;
 }
 
+const ttsPlayQueueIndexDebounced = debounce((ttsQueueIndex: number) => {
+    ttsPlayQueueIndex(ttsQueueIndex);
+}, 150);
+
+const ttsPlayQueueIndexDebouncedMore = debounce((ttsQueueIndex: number) => {
+    ttsPlayQueueIndex(ttsQueueIndex);
+}, 300);
+
+export function ttsPlayQueueIndex(ttsQueueIndex: number) {
+
+    if (!_dialogState ||
+        !_dialogState.ttsRootElement ||
+        !_dialogState.focusScrollRaw ||
+        !_dialogState.ttsQueue ||
+        !_dialogState.hasAttribute("open")) {
+        ttsStop();
+        return;
+    }
+
+    _dialogState.ttsQueueItem = undefined;
+    _dialogState.ttsUtterance = undefined;
+
+    if (_dialogState.domSlider) {
+        _dialogState.domSlider.value = "" + ttsQueueIndex;
+    }
+
+    if (ttsQueueIndex >= _dialogState.ttsQueueLength || ttsQueueIndex < 0) {
+        ttsStop();
+        return;
+    }
+    const ttsQueueItem = getItem(_dialogState.ttsQueue, ttsQueueIndex);
+    if (!ttsQueueItem) {
+        ttsStop();
+        return;
+    }
+    _dialogState.ttsQueueItem = ttsQueueItem;
+
+    highlights(true);
+
+    const txtStr = updateTTSInfo(_dialogState.ttsQueueItem);
+    if (!txtStr) {
+        ttsStop();
+        return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(txtStr);
+    _dialogState.ttsUtterance = utterance;
+
+    // TODO:
+    // utterance.voice
+    // utterance.rate
+    // utterance.pitch
+    // utterance.volume
+    if (_dialogState.ttsQueueItem.item.lang) {
+        utterance.lang = _dialogState.ttsQueueItem.item.lang;
+    }
+
+    utterance.onboundary = (ev: SpeechSynthesisEvent) => {
+        if (ev.name !== "word") {
+            return;
+        }
+        handleWordBoundary(utterance.text, ev.charIndex);
+    };
+
+    utterance.onend = (_ev: SpeechSynthesisEvent) => {
+
+        highlights(false);
+
+        if (_doNotProcessNextQueueItemOnUtteranceEnd) {
+            _doNotProcessNextQueueItemOnUtteranceEnd = false;
+            return;
+        }
+
+        setTimeout(() => {
+            ttsPlayQueueIndex(ttsQueueIndex + 1);
+        }, 100);
+    };
+
+    _doNotProcessNextQueueItemOnUtteranceEnd = false;
+
+    _resumableState = {
+        focusScrollRaw: _dialogState.focusScrollRaw,
+        ttsQueue: _dialogState.ttsQueue,
+        ttsQueueIndex: _dialogState.ttsQueueItem.iGlobal,
+        ttsRootElement: _dialogState.ttsRootElement,
+    };
+
+    setTimeout(() => {
+        win.speechSynthesis.speak(utterance);
+    }, 0);
+}
+
 function startTTSSession(
     ttsRootElement: Element,
     ttsQueue: ITextLangDir[],
@@ -352,12 +503,14 @@ function startTTSSession(
 
         ttsPause();
 
-        let toScrollTo = el;
-        if (_dialogState && _dialogState.ttsQueueItem && _dialogState.ttsQueueItem.item.parentElement) {
-            toScrollTo = _dialogState.ttsQueueItem.item.parentElement as HTMLElement;
-        }
-        if (toScrollTo) {
-            focusScrollRaw(toScrollTo, false);
+        if (_dialogState && _dialogState.focusScrollRaw) {
+            let toScrollTo = el;
+            if (_dialogState.ttsQueueItem && _dialogState.ttsQueueItem.item.parentElement) {
+                toScrollTo = _dialogState.ttsQueueItem.item.parentElement as HTMLElement;
+            }
+            if (toScrollTo) {
+                _dialogState.focusScrollRaw(toScrollTo, false);
+            }
         }
 
         setTimeout(() => {
@@ -384,7 +537,7 @@ function startTTSSession(
     if (!_dialogState) {
         return;
     }
-
+    _dialogState.focusScrollRaw = focusScrollRaw;
     _dialogState.ttsRootElement = ttsRootElement;
 
     _dialogState.domSlider = win.document.getElementById(TTS_ID_SLIDER) as HTMLInputElement;
@@ -398,14 +551,10 @@ function startTTSSession(
 
     if (_dialogState.domSlider) {
         _dialogState.domSlider.addEventListener("input", (_ev: Event) => {
-            if (_dialogState && _dialogState.ttsQueue && _dialogState.domSlider) {
-                ttsPause();
-
+            if (_dialogState && _dialogState.domSlider) {
                 const n = parseInt(_dialogState.domSlider.value, 10);
 
-                updateTTSInfo(getItem(_dialogState.ttsQueue, n));
-
-                processQueueDebouncedMore(n);
+                ttsPreviewAndEventuallyPlayQueueIndex(n);
             }
         });
     }
@@ -413,27 +562,13 @@ function startTTSSession(
     if (_dialogState.domPrevious) {
         _dialogState.domPrevious.addEventListener("click", (_ev: MouseEvent) => {
 
-            if (_dialogState && _dialogState.ttsQueueItem) {
-                const j = _dialogState.ttsQueueItem.iGlobal - 1;
-                if (j >= _dialogState.ttsQueueLength || j < 0) {
-                    return;
-                }
-                ttsPause();
-                processQueueDebounced(j);
-            }
+            ttsPrevious();
         });
     }
     if (_dialogState.domNext) {
         _dialogState.domNext.addEventListener("click", (_ev: MouseEvent) => {
 
-            if (_dialogState && _dialogState.ttsQueueItem) {
-                const j = _dialogState.ttsQueueItem.iGlobal + 1;
-                if (j >= _dialogState.ttsQueueLength || j < 0) {
-                    return;
-                }
-                ttsPause();
-                processQueueDebounced(j);
-            }
+            ttsNext();
         });
     }
 
@@ -443,95 +578,5 @@ function startTTSSession(
         });
     }
 
-    const processQueueDebouncedMore = debounce((i: number) => {
-        processQueueRaw(i);
-    }, 300);
-    const processQueueDebounced = debounce((i: number) => {
-        processQueueRaw(i);
-    }, 150);
-    function processQueueRaw(ttsQueueIndex: number) {
-
-        if (!_dialogState || !_dialogState.ttsQueue || !_dialogState.hasAttribute("open")) {
-            ttsStop();
-            return;
-        }
-
-        _dialogState.ttsQueueItem = undefined;
-        _dialogState.ttsUtterance = undefined;
-
-        if (_dialogState.domSlider) {
-            _dialogState.domSlider.value = "" + ttsQueueIndex;
-        }
-
-        if (ttsQueueIndex >= _dialogState.ttsQueueLength || ttsQueueIndex < 0) {
-            ttsStop();
-            return;
-        }
-        const ttsQueueItem = getItem(_dialogState.ttsQueue, ttsQueueIndex);
-        if (!ttsQueueItem) {
-            ttsStop();
-            return;
-        }
-        _dialogState.ttsQueueItem = ttsQueueItem;
-
-        highlights(true);
-
-        if (_dialogState.ttsQueueItem.item.parentElement) {
-            focusScrollRaw(_dialogState.ttsQueueItem.item.parentElement as HTMLElement, false);
-        }
-
-        const txtStr = updateTTSInfo(_dialogState.ttsQueueItem);
-        if (!txtStr) {
-            ttsStop();
-            return;
-        }
-
-        const utterance = new SpeechSynthesisUtterance(txtStr);
-        _dialogState.ttsUtterance = utterance;
-
-        // TODO:
-        // utterance.voice
-        // utterance.rate
-        // utterance.pitch
-        // utterance.volume
-        if (_dialogState.ttsQueueItem.item.lang) {
-            utterance.lang = _dialogState.ttsQueueItem.item.lang;
-        }
-
-        utterance.onboundary = (ev: SpeechSynthesisEvent) => {
-            if (ev.name !== "word") {
-                return;
-            }
-            handleWordBoundary(utterance.text, ev.charIndex);
-        };
-
-        utterance.onend = (_ev: SpeechSynthesisEvent) => {
-
-            highlights(false);
-
-            if (_doNotProcessNextQueueItemOnUtteranceEnd) {
-                _doNotProcessNextQueueItemOnUtteranceEnd = false;
-                return;
-            }
-
-            setTimeout(() => {
-                processQueueRaw(ttsQueueIndex + 1);
-            }, 100);
-        };
-
-        _doNotProcessNextQueueItemOnUtteranceEnd = false;
-
-        _resumableState = {
-            focusScrollRaw,
-            ttsQueue,
-            ttsQueueIndex,
-            ttsRootElement,
-        };
-
-        setTimeout(() => {
-            win.speechSynthesis.speak(utterance);
-        }, 0);
-    }
-
-    processQueueRaw(ttsQueueIndexStart);
+    ttsPlayQueueIndex(ttsQueueIndexStart);
 }
