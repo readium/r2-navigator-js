@@ -24,7 +24,7 @@ import {
     ITextLangDir,
     ITextLangDirReference,
     findItem,
-    flattenDomText,
+    generateTtsQueue,
     getItem,
     getLength,
     getText,
@@ -94,7 +94,7 @@ export function ttsPlay(
         rootEl = win.document.body;
     }
 
-    const ttsQueue = flattenDomText(rootEl);
+    const ttsQueue = generateTtsQueue(rootEl);
     if (!ttsQueue.length) {
         return;
     }

@@ -157,9 +157,9 @@ export function findItem(ttsQueue: ITextLangDir[], element: Element, rootElem: E
     return -1;
 }
 
-export function flattenDomText(rootElement: Element): ITextLangDir[] {
+export function generateTtsQueue(rootElement: Element): ITextLangDir[] {
 
-    const flattenedText: ITextLangDir[] = [];
+    const ttsQueue: ITextLangDir[] = [];
     const elementStack: Element[] = [];
 
     function processTextNode(textNode: Node) {
@@ -179,7 +179,7 @@ export function flattenDomText(rootElement: Element): ITextLangDir[] {
         const lang = textNode.parentElement ? getLanguage(textNode.parentElement) : undefined;
         const dir = textNode.parentElement ? getDirection(textNode.parentElement) : undefined;
 
-        let current = flattenedText[flattenedText.length - 1];
+        let current = ttsQueue[ttsQueue.length - 1];
         if (!current || current.parentElement !== parentElement || current.lang !== lang || current.dir !== dir) {
             current = {
                 combinedText: "", // filled in later (see trySplitTexts())
@@ -189,7 +189,7 @@ export function flattenDomText(rootElement: Element): ITextLangDir[] {
                 parentElement,
                 textNodes: [],
             };
-            flattenedText.push(current);
+            ttsQueue.push(current);
         }
         current.textNodes.push(textNode);
     }
@@ -235,7 +235,7 @@ export function flattenDomText(rootElement: Element): ITextLangDir[] {
 
     processElement(rootElement);
 
-    function combineText(textNodes: Node[]): string {
+    function combineTextNodes(textNodes: Node[]): string {
         if (textNodes && textNodes.length) {
             let str = "";
             for (const textNode of textNodes) {
@@ -248,19 +248,19 @@ export function flattenDomText(rootElement: Element): ITextLangDir[] {
         return "";
     }
 
-    function trySplitText(item: ITextLangDir) {
-        item.combinedText = combineText(item.textNodes);
+    function finalizeTextNodes(ttsQueueItem: ITextLangDir) {
+        ttsQueueItem.combinedText = combineTextNodes(ttsQueueItem.textNodes);
         try {
-            const sentences = split(item.combinedText);
+            const sentences = split(ttsQueueItem.combinedText);
             // console.log(JSON.stringify(sentences, null, 4));
-            item.combinedTextSentences = [];
+            ttsQueueItem.combinedTextSentences = [];
             for (const sentence of sentences) {
                 if (sentence.type === "Sentence") {
-                    item.combinedTextSentences.push(sentence.raw);
+                    ttsQueueItem.combinedTextSentences.push(sentence.raw);
                 }
             }
-            if (item.combinedTextSentences.length === 0 || item.combinedTextSentences.length === 1) {
-                item.combinedTextSentences = undefined;
+            if (ttsQueueItem.combinedTextSentences.length === 0 || ttsQueueItem.combinedTextSentences.length === 1) {
+                ttsQueueItem.combinedTextSentences = undefined;
             } else {
                 // let total = item.combinedTextSentences.length - 1;
                 // item.combinedTextSentences.forEach((sent) => {
@@ -275,38 +275,34 @@ export function flattenDomText(rootElement: Element): ITextLangDir[] {
             }
         } catch (err) {
             console.log(err);
-            item.combinedTextSentences = undefined;
+            ttsQueueItem.combinedTextSentences = undefined;
         }
     }
 
-    function trySplitTexts(items: ITextLangDir[]) {
-        for (const it of items) {
-            trySplitText(it);
-        }
+    for (const ttsQueueItem of ttsQueue) {
+        finalizeTextNodes(ttsQueueItem);
     }
 
-    trySplitTexts(flattenedText);
-
-    return flattenedText;
+    return ttsQueue;
 }
 
 // tslint:disable-next-line:max-line-length
-export function wrapHighlight(doHighlight: boolean, textChunk: ITextLangDir, cssClassParent: string, cssClassSpan: string) {
-    if (textChunk.parentElement) {
+export function wrapHighlight(doHighlight: boolean, ttsQueueItem: ITextLangDir, cssClassParent: string, cssClassSpan: string) {
+    if (ttsQueueItem.parentElement) {
         if (doHighlight) {
-            if (textChunk.parentElement.classList.contains(cssClassParent)) {
+            if (ttsQueueItem.parentElement.classList.contains(cssClassParent)) {
                 return;
             }
-            textChunk.parentElement.classList.add(cssClassParent);
+            ttsQueueItem.parentElement.classList.add(cssClassParent);
         } else {
-            if (!textChunk.parentElement.classList.contains(cssClassParent)) {
+            if (!ttsQueueItem.parentElement.classList.contains(cssClassParent)) {
                 return;
             }
-            textChunk.parentElement.classList.remove(cssClassParent);
+            ttsQueueItem.parentElement.classList.remove(cssClassParent);
         }
     }
 
-    textChunk.textNodes.forEach((txtNode) => {
+    ttsQueueItem.textNodes.forEach((txtNode) => {
         if (txtNode.parentElement) {
             if (doHighlight) {
                 if (txtNode.parentElement.tagName.toLowerCase() === "span" &&
