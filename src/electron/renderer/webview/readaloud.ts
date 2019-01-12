@@ -22,13 +22,13 @@ import {
     TTS_NAV_BUTTON_CLASS,
 } from "../../common/styles";
 import {
-    ITextLangDir,
-    ITextLangDirReference,
-    findItem,
+    ITtsQueueItem,
+    ITtsQueueItemReference,
+    findTtsQueueItemIndex,
     generateTtsQueue,
-    getItem,
-    getLength,
-    getText,
+    getTtsQueueItemRef,
+    getTtsQueueItemRefText,
+    getTtsQueueLength,
     wrapHighlight,
 } from "../common/dom-text-utils";
 import { IHTMLDialogElementWithPopup, PopupDialog } from "../common/popup-dialog";
@@ -47,9 +47,9 @@ interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
     domInfo: HTMLDivElement | undefined;
 
     ttsUtterance: SpeechSynthesisUtterance | undefined;
-    ttsQueue: ITextLangDir[] | undefined;
-    ttsQueueLength: number; // index by ITextLangDirReference.iGlobal
-    ttsQueueItem: ITextLangDirReference | undefined;
+    ttsQueue: ITtsQueueItem[] | undefined;
+    ttsQueueLength: number; // index by ITtsQueueItemReference.iGlobal
+    ttsQueueItem: ITtsQueueItemReference | undefined;
 
     ttsRootElement: Element | undefined;
 
@@ -102,7 +102,7 @@ export function ttsPlay(
 
     let ttsQueueIndex = -1;
     if (startElem) {
-        const idx = findItem(ttsQueue, startElem, rootEl);
+        const idx = findTtsQueueItemIndex(ttsQueue, startElem, rootEl);
         if (idx >= 0) {
             ttsQueueIndex = idx;
         }
@@ -158,7 +158,7 @@ export function ttsPause() {
 
 interface IResumableState {
     ttsRootElement: Element;
-    ttsQueue: ITextLangDir[];
+    ttsQueue: ITtsQueueItem[];
     ttsQueueIndex: number;
     focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean) => void;
 }
@@ -211,7 +211,7 @@ export function ttsPauseOrResume() {
 
 export function ttsQueueSize(): number {
     if (_dialogState && _dialogState.ttsQueue) {
-        getLength(_dialogState.ttsQueue);
+        getTtsQueueLength(_dialogState.ttsQueue);
     }
     return -1;
 }
@@ -223,7 +223,7 @@ export function ttsQueueCurrentIndex(): number {
 }
 export function ttsQueueCurrentText(): string | undefined {
     if (_dialogState && _dialogState.ttsQueueItem) {
-        return getText(_dialogState.ttsQueueItem);
+        return getTtsQueueItemRefText(_dialogState.ttsQueueItem);
     }
     return undefined;
 }
@@ -255,7 +255,7 @@ export function ttsPreviewAndEventuallyPlayQueueIndex(n: number) {
 
     if (_dialogState && _dialogState.ttsQueue) {
 
-        updateTTSInfo(getItem(_dialogState.ttsQueue, n));
+        updateTTSInfo(getTtsQueueItemRef(_dialogState.ttsQueue, n));
     }
 
     ttsPlayQueueIndexDebouncedMore(n);
@@ -266,7 +266,7 @@ function highlights(doHighlight: boolean) {
     if (doHighlight) {
         if (_dialogState && _dialogState.ttsQueueItem) {
             // tslint:disable-next-line:max-line-length
-            wrapHighlight(true, _dialogState.ttsQueueItem, TTS_ID_INJECTED_PARENT, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN);
+            wrapHighlight(true, _dialogState.ttsQueueItem, TTS_ID_INJECTED_PARENT, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, undefined, -1, -1);
         }
         if (_dialogState && _dialogState.ttsRootElement) {
             _dialogState.ttsRootElement.classList.add(TTS_ID_SPEAKING_DOC_ELEMENT);
@@ -274,7 +274,7 @@ function highlights(doHighlight: boolean) {
     } else {
         if (_dialogState && _dialogState.ttsQueueItem) {
             // tslint:disable-next-line:max-line-length
-            wrapHighlight(false, _dialogState.ttsQueueItem, TTS_ID_INJECTED_PARENT, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN);
+            wrapHighlight(false, _dialogState.ttsQueueItem, TTS_ID_INJECTED_PARENT, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, undefined, -1, -1);
         }
         if (_dialogState && _dialogState.ttsRootElement) {
             _dialogState.ttsRootElement.classList.remove(TTS_ID_SPEAKING_DOC_ELEMENT);
@@ -284,7 +284,7 @@ function highlights(doHighlight: boolean) {
 
 function handleWordBoundary(utteranceText: string, charIndex: number) {
 
-    if (!_dialogState || !_dialogState.hasAttribute("open") || !_dialogState.domText) {
+    if (!_dialogState || !_dialogState.hasAttribute("open") || !_dialogState.domText || !_dialogState.ttsQueueItem) {
         return;
     }
 
@@ -310,6 +310,9 @@ function handleWordBoundary(utteranceText: string, charIndex: number) {
         console.log(innerHTML);
         _dialogState.domText.innerHTML = "...";
     }
+
+    // tslint:disable-next-line:max-line-length
+    wrapHighlight(true, _dialogState.ttsQueueItem, TTS_ID_INJECTED_PARENT, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, word, start, end);
 
     setTimeout(() => {
         scrollIntoViewSpokenText();
@@ -344,7 +347,7 @@ function scrollIntoViewSpokenText() {
     }
 }
 
-function updateTTSInfo(ttsQueueItem: ITextLangDirReference | undefined): string | undefined {
+function updateTTSInfo(ttsQueueItem: ITtsQueueItemReference | undefined): string | undefined {
 
     if (!_dialogState || !ttsQueueItem) {
         return undefined;
@@ -354,7 +357,7 @@ function updateTTSInfo(ttsQueueItem: ITextLangDirReference | undefined): string 
         _dialogState.focusScrollRaw(ttsQueueItem.item.parentElement as HTMLElement, false);
     }
 
-    const ttsQueueItemText = getText(ttsQueueItem);
+    const ttsQueueItemText = getTtsQueueItemRefText(ttsQueueItem);
 
     if (_dialogState.domText) {
         try {
@@ -418,7 +421,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
         ttsStop();
         return;
     }
-    const ttsQueueItem = getItem(_dialogState.ttsQueue, ttsQueueIndex);
+    const ttsQueueItem = getTtsQueueItemRef(_dialogState.ttsQueue, ttsQueueIndex);
     if (!ttsQueueItem) {
         ttsStop();
         return;
@@ -482,16 +485,16 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
 
 function startTTSSession(
     ttsRootElement: Element,
-    ttsQueue: ITextLangDir[],
+    ttsQueue: ITtsQueueItem[],
     ttsQueueIndexStart: number,
     focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean) => void) {
 
-    const ttsQueueItemStart = getItem(ttsQueue, ttsQueueIndexStart);
+    const ttsQueueItemStart = getTtsQueueItemRef(ttsQueue, ttsQueueIndexStart);
     if (!ttsQueueItemStart) {
         ttsStop();
         return;
     }
-    const ttsQueueLength = getLength(ttsQueue);
+    const ttsQueueLength = getTtsQueueLength(ttsQueue);
 
     // TODO: SSML?
     // https://github.com/guest271314/SpeechSynthesisSSMLParser

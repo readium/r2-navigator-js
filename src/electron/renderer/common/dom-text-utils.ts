@@ -7,6 +7,8 @@
 
 import { split } from "sentence-splitter";
 
+import { uniqueCssSelector } from "../common/cssselector2";
+
 export function getLanguage(el: Element): string | undefined {
 
     let currentElement = el;
@@ -47,12 +49,12 @@ export function getDirection(el: Element): string | undefined {
     return undefined;
 }
 
-function normalizeText(str: string): string {
+export function normalizeText(str: string): string {
     // tslint:disable-next-line:max-line-length
-    return str.replace(/&/g, "&amp;").replace(/\n/g, " ").replace(/\s\s+/g, " ").replace(/</g, "&lt;").replace(/>/g, "&gt;").trim();
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, " ").replace(/\s\s+/g, " "); // no trim(), we collapse multiple whitespaces into single, preserving prefix and suffix (if any)
 }
 
-export interface ITextLangDir {
+export interface ITtsQueueItem {
     dir: string | undefined;
     lang: string | undefined;
     parentElement: Element;
@@ -61,38 +63,37 @@ export interface ITextLangDir {
     combinedTextSentences: string[] | undefined;
 }
 
-export interface ITextLangDirReference {
-    item: ITextLangDir;
-    iArray: number; // ITextLangDir[]
-    iSentence: number; // ITextLangDir.combinedTextSentences
-    iGlobal: number; // ITextLangDir[] and ITextLangDir.combinedTextSentences
+export interface ITtsQueueItemReference {
+    item: ITtsQueueItem;
+    iArray: number; // ITtsQueueItem[]
+    iSentence: number; // ITtsQueueItem.combinedTextSentences
+    iGlobal: number; // ITtsQueueItem[] and ITtsQueueItem.combinedTextSentences
 }
 
-// import { uniqueCssSelector } from "../common/cssselector2";
-// function dump(i: ITextLangDir) {
-//     console.log("<<----");
-//     console.log(i.dir);
-//     console.log(i.lang);
-//     const cssSelector = uniqueCssSelector(i.parentElement, i.parentElement.ownerDocument);
-//     console.log(cssSelector);
-//     console.log(i.parentElement.tagName);
-//     console.log(i.combinedText);
-//     if (i.combinedTextSentences) {
-//         console.log(".......");
-//         for (const j of i.combinedTextSentences) {
-//             console.log(j);
-//         }
-//         console.log(".......");
-//     }
-//     console.log("---->>");
-// }
-// function dumps(f: ITextLangDir[]) {
-//     for (const i of f) {
-//         dump(i);
-//     }
-// }
+export function consoleLogTtsQueueItem(i: ITtsQueueItem) {
+    console.log("<<----");
+    console.log(i.dir);
+    console.log(i.lang);
+    const cssSelector = uniqueCssSelector(i.parentElement, i.parentElement.ownerDocument as Document);
+    console.log(cssSelector);
+    console.log(i.parentElement.tagName);
+    console.log(i.combinedText);
+    if (i.combinedTextSentences) {
+        console.log(".......");
+        for (const j of i.combinedTextSentences) {
+            console.log(j);
+        }
+        console.log(".......");
+    }
+    console.log("---->>");
+}
+export function consoleLogTtsQueue(f: ITtsQueueItem[]) {
+    for (const i of f) {
+        consoleLogTtsQueueItem(i);
+    }
+}
 
-export function getLength(items: ITextLangDir[]) {
+export function getTtsQueueLength(items: ITtsQueueItem[]) {
     let l = 0;
     for (const it of items) {
         if (it.combinedTextSentences) {
@@ -104,7 +105,7 @@ export function getLength(items: ITextLangDir[]) {
     return l;
 }
 
-export function getText(obj: ITextLangDirReference): string {
+export function getTtsQueueItemRefText(obj: ITtsQueueItemReference): string {
     if (obj.iSentence === -1) {
         return obj.item.combinedText;
     }
@@ -114,7 +115,7 @@ export function getText(obj: ITextLangDirReference): string {
     return "";
 }
 
-export function getItem(items: ITextLangDir[], index: number): ITextLangDirReference | undefined {
+export function getTtsQueueItemRef(items: ITtsQueueItem[], index: number): ITtsQueueItemReference | undefined {
     let i = -1;
     let k = -1;
     for (const it of items) {
@@ -138,7 +139,7 @@ export function getItem(items: ITextLangDir[], index: number): ITextLangDirRefer
     return undefined;
 }
 
-export function findItem(ttsQueue: ITextLangDir[], element: Element, rootElem: Element): number {
+export function findTtsQueueItemIndex(ttsQueue: ITtsQueueItem[], element: Element, rootElem: Element): number {
     let i = 0;
     for (const ttsQueueItem of ttsQueue) {
         if (element === ttsQueueItem.parentElement ||
@@ -157,9 +158,9 @@ export function findItem(ttsQueue: ITextLangDir[], element: Element, rootElem: E
     return -1;
 }
 
-export function generateTtsQueue(rootElement: Element): ITextLangDir[] {
+export function generateTtsQueue(rootElement: Element): ITtsQueueItem[] {
 
-    const ttsQueue: ITextLangDir[] = [];
+    const ttsQueue: ITtsQueueItem[] = [];
     const elementStack: Element[] = [];
 
     function processTextNode(textNode: Node) {
@@ -239,20 +240,23 @@ export function generateTtsQueue(rootElement: Element): ITextLangDir[] {
         if (textNodes && textNodes.length) {
             let str = "";
             for (const textNode of textNodes) {
-                str = str + (str.length ? " " : "") +
-                    (textNode.nodeValue !== null ?
-                    normalizeText(textNode.nodeValue) : "");
+                if (textNode.nodeValue) { // excludes purely-whitespace text nodes
+                    // normalizeText() preserves prefix/suffix whitespace (collapsed to single)
+                    // if (str.length) {
+                    //     str += " ";
+                    // }
+                    str += normalizeText(textNode.nodeValue);
+                }
             }
             return str;
         }
         return "";
     }
 
-    function finalizeTextNodes(ttsQueueItem: ITextLangDir) {
-        ttsQueueItem.combinedText = combineTextNodes(ttsQueueItem.textNodes);
+    function finalizeTextNodes(ttsQueueItem: ITtsQueueItem) {
+        ttsQueueItem.combinedText = combineTextNodes(ttsQueueItem.textNodes).trim();
         try {
             const sentences = split(ttsQueueItem.combinedText);
-            // console.log(JSON.stringify(sentences, null, 4));
             ttsQueueItem.combinedTextSentences = [];
             for (const sentence of sentences) {
                 if (sentence.type === "Sentence") {
@@ -262,16 +266,18 @@ export function generateTtsQueue(rootElement: Element): ITextLangDir[] {
             if (ttsQueueItem.combinedTextSentences.length === 0 || ttsQueueItem.combinedTextSentences.length === 1) {
                 ttsQueueItem.combinedTextSentences = undefined;
             } else {
-                // let total = item.combinedTextSentences.length - 1;
-                // item.combinedTextSentences.forEach((sent) => {
-                //     total += sent.length;
-                // });
-                // if (total !== item.combinedText.length) {
-                //     console.log("total !== item.combinedText.length");
-                //     console.log(total);
-                //     console.log(item.combinedText.length);
-                //     dumps([item]);
-                // }
+                let total = 0;
+                ttsQueueItem.combinedTextSentences.forEach((sent) => {
+                    total += sent.length;
+                });
+                const expectedWhiteSpacesSeparators = ttsQueueItem.combinedTextSentences.length - 1;
+                if (total !== ttsQueueItem.combinedText.length &&
+                    ((ttsQueueItem.combinedText.length - total) !== expectedWhiteSpacesSeparators)) {
+                    console.log("sentences total !== item.combinedText.length");
+                    console.log(total + " !== " + ttsQueueItem.combinedText.length);
+                    consoleLogTtsQueueItem(ttsQueueItem);
+                    console.log(JSON.stringify(sentences, null, 4));
+                }
             }
         } catch (err) {
             console.log(err);
@@ -287,38 +293,59 @@ export function generateTtsQueue(rootElement: Element): ITextLangDir[] {
 }
 
 // tslint:disable-next-line:max-line-length
-export function wrapHighlight(doHighlight: boolean, ttsQueueItemRef: ITextLangDirReference, cssClassParent: string, cssClassSpan: string, _cssClassSubSpan: string) {
+export function wrapHighlight(doHighlight: boolean, ttsQueueItemRef: ITtsQueueItemReference, cssClassParent: string, cssClassSpan: string, _cssClassSubSpan: string, word: string | undefined, _start: number, _end: number) {
+
+    // TODO
+    if (typeof word !== "undefined") {
+        // console.log(word);
+        // console.log(start);
+        // console.log(end);
+        // console.log(cssClassSubSpan);
+
+        // ttsQueueItem.textNodes.forEach((txtNode) ...
+        // check that txtNode already has cssClassSpan parent (otherwise, abort)
+        // txt = normalizeText(txtNode.nodeValue)
+        // (remember: combineText() inserted " " space between each txtNode)
+        // match txt inside ttsQueueItemRef.item.combinedTextSentences (if ttsQueueItemRef.iSentence)
+        // or inside ttsQueueItemRef.item.combinedText
+        // if match then locate word/start/end
+        // if located then split txtNode (if needed) in order to insert span for word (cssClassSubSpan)
+        // attach new nodes to txtNode, so they can be restored (un-highlight)
+        // TXT_SPAN_TXT or TXT_SPAN or SPAN_TXT or SPAN (no split, whole word)
+        return;
+    }
+
     const ttsQueueItem = ttsQueueItemRef.item;
+
     if (ttsQueueItem.parentElement) {
         if (doHighlight) {
-            if (ttsQueueItem.parentElement.classList.contains(cssClassParent)) {
-                return;
-            }
-            ttsQueueItem.parentElement.classList.add(cssClassParent);
-        } else {
             if (!ttsQueueItem.parentElement.classList.contains(cssClassParent)) {
-                return;
+                ttsQueueItem.parentElement.classList.add(cssClassParent);
             }
-            ttsQueueItem.parentElement.classList.remove(cssClassParent);
+        } else {
+            if (ttsQueueItem.parentElement.classList.contains(cssClassParent)) {
+                ttsQueueItem.parentElement.classList.remove(cssClassParent);
+            }
         }
     }
 
     ttsQueueItem.textNodes.forEach((txtNode) => {
-        if (txtNode.parentElement) {
-            if (doHighlight) {
-                if (txtNode.parentElement.tagName.toLowerCase() === "span" &&
-                    txtNode.parentElement.classList.contains(cssClassSpan)) {
-                    return;
-                }
+        if (!txtNode.parentElement) {
+            return; // continue
+        }
+        if (doHighlight) {
+            if (txtNode.parentElement.tagName.toLowerCase() !== "span" ||
+                !txtNode.parentElement.classList.contains(cssClassSpan)) {
+
                 const span = (txtNode.ownerDocument as Document).createElement("span");
                 span.setAttribute("class", cssClassSpan);
                 txtNode.parentElement.replaceChild(span, txtNode);
                 span.appendChild(txtNode);
-            } else {
-                if (txtNode.parentElement.tagName.toLowerCase() !== "span" ||
-                    !txtNode.parentElement.classList.contains(cssClassSpan)) {
-                    return;
-                }
+            }
+        } else {
+            if (txtNode.parentElement.tagName.toLowerCase() === "span" &&
+                txtNode.parentElement.classList.contains(cssClassSpan)) {
+
                 const span = txtNode.parentElement;
                 span.removeChild(txtNode);
                 if (span.parentElement) {
