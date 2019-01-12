@@ -127,6 +127,8 @@ i.e. no `const nav = new Navigator()` calls.
 
 ### Electron main process
 
+#### Session initialization
+
 ```javascript
 // ES5 import (assuming node_modules/r2-navigator-js/):
 import { initSessions, secureSessions } from "r2-navigator-js/dist/es5/src/electron/main/sessions";
@@ -159,6 +161,8 @@ app.on("ready", () => {
 }
 ```
 
+#### URL scheme conversion
+
 ```javascript
 import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertHttpUrlToCustomScheme, convertCustomSchemeToHttpUrl }
   from "@r2-navigator-js/electron/common/sessions";
@@ -180,6 +184,8 @@ if (url.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL)) {
 }
 ```
 
+#### Electron browser window tracking
+
 ```javascript
 import { trackBrowserWindow } from "@r2-navigator-js/electron/main/browser-window-tracker";
 
@@ -198,6 +204,8 @@ app.on("ready", () => {
   trackBrowserWindow(electronBrowserWindow);
 }
 ```
+
+#### Readium CSS configuration (streamer-level injection)
 
 ```javascript
 import { IEventPayload_R2_EVENT_READIUMCSS } from "@r2-navigator-js/electron/common/events";
@@ -248,6 +256,8 @@ app.on("ready", () => {
 
 ### Electron renderer process(es), for each Electron BrowserWindow
 
+#### Navigator initial injection
+
 ```javascript
 import {
     installNavigatorDOM,
@@ -279,6 +289,8 @@ const response = await fetch(publicationURL);
 const publicationJSON = await response.json();
 const publication = TAJSON.deserialize<Publication>(publicationJSON, Publication);
 ```
+
+#### Readium CSS configuration (after stream-level injection)
 
 ```javascript
 import {
@@ -342,6 +354,8 @@ import {
 readiumCssOnOff();
 ```
 
+#### EPUB reading system information
+
 ```javascript
 import {
     setEpubReadingSystemInfo
@@ -350,6 +364,8 @@ import {
 // This sets the EPUB3 `navigator.epubReadingSystem` object with the provided `name` and `version` values:
 setEpubReadingSystemInfo({ name: "My R2 Application", version: "0.0.1-alpha.1" });
 ```
+
+#### Logging, redirection from web console to shell
 
 ```javascript
 // This should not be called explicitly on the application side,
@@ -366,6 +382,8 @@ const releaseConsoleRedirect = consoleRedirect(loggingTag, process.stdout, proce
 // and
 // "r2:navigator#electron/renderer/index"
 ```
+
+#### Reading location, linking with locators
 
 ```javascript
 import {
@@ -439,6 +457,8 @@ try {
 }
 ```
 
+#### Navigating using arrow keys
+
 ```javascript
 import {
     navLeftOrRight
@@ -458,6 +478,8 @@ window.document.addEventListener("keydown", (ev: KeyboardEvent) => {
 });
 ```
 
+#### Read aloud, TTS (Text To Speech), Synthetic Speech
+
 ```javascript
 import {
     TTSStateEnum,
@@ -476,8 +498,56 @@ import {
 // The default is false. Once set to true, this setting persists
 // for any new loading document within the same publication.
 // This resets to false for any newly opened publication.
+// The ALT key modifier triggers playback for the pointed DOM fragment only.
 ttsClickEnable(false);
+
+// Starts playing TTS read aloud for the entire document, from the begining of the document,
+// or from the last-known reading location (i.e. currently visible in the viewport).
+// This does not automatically move to the next document.
+// If called when already playing, stops and starts again from the current location.
+// Highlighted word-by-word synthetic speech is rendered inside a modal overlay
+// with basic previous/next and timeline scrubber controls (which has instant text preview).
+// The textual popup overlay receives mouse clicks to pause/resume playback.
+// The main document text (in the background of the modal overlay) keeps track
+// of the current playback position, and the top-level spoken fragment is highlighted.
+// Note that long paragraphs/sections of text are automatically sentence-fragmented
+// in order to generate short speech utterances.
+// Also note that the engine parses DOM information in order to assign the correct language
+// to utterances, thereby providing support for multilingual documents.
+ttsPlay();
+
+// Stops playback whilst maintaining the read aloud popup overlay,
+// ready for playback to be resumed.
+ttsPause();
+
+// Resumes from a paused state, plays from the begining of the last-played utterance, and onwards.
+ttsResume();
+
+// Stops any ongoing playback and discards the popup modal TTS overlay.
+// Cleans-up allocated resources.
+ttsStops();
+
+// Navigate backward / forward inside the stream of utterances scheduled for the current TTS playback.
+// Equivalent to the command buttons left/right of the timeline scrubber located at the bottom of the read aloud overlay.
+ttsPrevious();
+ttsNext();
+
+// Sets up a callback for event notifications from the read aloud state machine.
+// Currently: TTS paused, stopped, and playing.
+ttsListen((ttsState: TTSStateEnum) => {
+  if (ttsState === TTSStateEnum.PAUSED) {
+    // ...
+  } else if (ttsState === TTSStateEnum.STOPPED) {
+    // ...
+  } else if (ttsState === TTSStateEnum.PLAYING) {
+    // ...
+  }
+});
 ```
+
+At this stage there are missing features: voice selection (depending on languages), volume, speech rate and pitch.
+
+#### LCP (DOC TODO)
 
 ```javascript
 // TODO LCP
