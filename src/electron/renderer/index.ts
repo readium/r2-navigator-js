@@ -49,6 +49,9 @@ import {
     R2_EVENT_TTS_DO_PREVIOUS,
     R2_EVENT_TTS_DO_RESUME,
     R2_EVENT_TTS_DO_STOP,
+    R2_EVENT_TTS_IS_PAUSED,
+    R2_EVENT_TTS_IS_PLAYING,
+    R2_EVENT_TTS_IS_STOPPED,
     R2_EVENT_WEBVIEW_READY,
 } from "../common/events";
 import {
@@ -439,62 +442,6 @@ export function navLeftOrRight(left: boolean) {
         go: goPREVIOUS ? "PREVIOUS" : "NEXT",
     };
     activeWebView.send(R2_EVENT_PAGE_TURN, payload); // .getWebContents()
-}
-
-export function ttsPlay() {
-    const activeWebView = getActiveWebView();
-    if (!activeWebView) {
-        return;
-    }
-
-    let startElementCSSSelector: string | undefined;
-    if (_lastSavedReadingLocation && activeWebView.READIUM2 && activeWebView.READIUM2.link) {
-        if (_lastSavedReadingLocation.locator.href === activeWebView.READIUM2.link.Href) {
-            startElementCSSSelector = _lastSavedReadingLocation.locator.locations.cssSelector;
-        }
-    }
-
-    const payload: IEventPayload_R2_EVENT_TTS_DO_PLAY = {
-        rootElement: "html > body", // window.document.body
-        startElement: startElementCSSSelector,
-    };
-    activeWebView.send(R2_EVENT_TTS_DO_PLAY, payload);
-}
-
-export function ttsPause() {
-    const activeWebView = getActiveWebView();
-    if (!activeWebView) {
-        return;
-    }
-    activeWebView.send(R2_EVENT_TTS_DO_PAUSE);
-}
-export function ttsStop() {
-    const activeWebView = getActiveWebView();
-    if (!activeWebView) {
-        return;
-    }
-    activeWebView.send(R2_EVENT_TTS_DO_STOP);
-}
-export function ttsResume() {
-    const activeWebView = getActiveWebView();
-    if (!activeWebView) {
-        return;
-    }
-    activeWebView.send(R2_EVENT_TTS_DO_RESUME);
-}
-export function ttsPrevious() {
-    const activeWebView = getActiveWebView();
-    if (!activeWebView) {
-        return;
-    }
-    activeWebView.send(R2_EVENT_TTS_DO_PREVIOUS);
-}
-export function ttsNext() {
-    const activeWebView = getActiveWebView();
-    if (!activeWebView) {
-        return;
-    }
-    activeWebView.send(R2_EVENT_TTS_DO_NEXT);
 }
 
 const getActiveWebView = (): IElectronWebviewTag => {
@@ -926,6 +873,18 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
                 const urlNoQueryParams = uri.toString(); // _publicationJsonUrl + "/../" + nextOrPreviousSpineItem.Href;
                 handleLink(urlNoQueryParams, goPREVIOUS, false);
             }
+        } else if (event.channel === R2_EVENT_TTS_IS_PAUSED) {
+            if (_ttsListener) {
+                _ttsListener(TTSStateEnum.PAUSED);
+            }
+        } else if (event.channel === R2_EVENT_TTS_IS_STOPPED) {
+            if (_ttsListener) {
+                _ttsListener(TTSStateEnum.STOPPED);
+            }
+        } else if (event.channel === R2_EVENT_TTS_IS_PLAYING) {
+            if (_ttsListener) {
+                _ttsListener(TTSStateEnum.PLAYING);
+            }
         } else {
             debug("webview1 ipc-message");
             debug(event.channel);
@@ -982,3 +941,69 @@ ipcRenderer.on(R2_EVENT_LINK, (_event: any, payload: IEventPayload_R2_EVENT_LINK
     debug(payload.url);
     handleLinkUrl(payload.url);
 });
+
+export function ttsPlay() {
+    const activeWebView = getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+
+    let startElementCSSSelector: string | undefined;
+    if (_lastSavedReadingLocation && activeWebView.READIUM2 && activeWebView.READIUM2.link) {
+        if (_lastSavedReadingLocation.locator.href === activeWebView.READIUM2.link.Href) {
+            startElementCSSSelector = _lastSavedReadingLocation.locator.locations.cssSelector;
+        }
+    }
+
+    const payload: IEventPayload_R2_EVENT_TTS_DO_PLAY = {
+        rootElement: "html > body", // window.document.body
+        startElement: startElementCSSSelector,
+    };
+    activeWebView.send(R2_EVENT_TTS_DO_PLAY, payload);
+}
+
+export function ttsPause() {
+    const activeWebView = getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+    activeWebView.send(R2_EVENT_TTS_DO_PAUSE);
+}
+export function ttsStop() {
+    const activeWebView = getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+    activeWebView.send(R2_EVENT_TTS_DO_STOP);
+}
+export function ttsResume() {
+    const activeWebView = getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+    activeWebView.send(R2_EVENT_TTS_DO_RESUME);
+}
+export function ttsPrevious() {
+    const activeWebView = getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+    activeWebView.send(R2_EVENT_TTS_DO_PREVIOUS);
+}
+export function ttsNext() {
+    const activeWebView = getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+    activeWebView.send(R2_EVENT_TTS_DO_NEXT);
+}
+
+export enum TTSStateEnum {
+    PAUSED = "PAUSED",
+    PLAYING = "PLAYING",
+    STOPPED = "STOPPED",
+}
+let _ttsListener: (ttsState: TTSStateEnum) => void | undefined;
+export function ttsListen(ttsListener: (ttsState: TTSStateEnum) => void) {
+    _ttsListener = ttsListener;
+}
