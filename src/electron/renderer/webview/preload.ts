@@ -1001,6 +1001,7 @@ function handleTab(target: HTMLElement, tabKeyDownEvent: KeyboardEvent | undefin
         // debug("FIRST TABBABLE");
         // prevent the webview from cycling scroll (does its own unwanted focus)
         if (!tabKeyDownEvent || tabKeyDownEvent.shiftKey) {
+            // debug("FIRST TABBABLE focusin or shift-tab");
             _ignoreFocusInEvent = true;
             focusScrollDebounced(target as HTMLElement, true);
             return;
@@ -1012,10 +1013,12 @@ function handleTab(target: HTMLElement, tabKeyDownEvent: KeyboardEvent | undefin
             focusScrollDebounced(nextTabbable as HTMLElement, true);
             return;
         }
+        // debug("FIRST TABBABLE ??");
     } else if (i === (tabbables.length - 1)) {
         // debug("LAST TABBABLE");
         // prevent the webview from cycling scroll (does its own unwanted focus)
         if (!tabKeyDownEvent || !tabKeyDownEvent.shiftKey) {
+            // debug("LAST TABBABLE focusin or no-shift-tab");
             _ignoreFocusInEvent = true;
             focusScrollDebounced(target as HTMLElement, true);
             return;
@@ -1027,6 +1030,7 @@ function handleTab(target: HTMLElement, tabKeyDownEvent: KeyboardEvent | undefin
             focusScrollDebounced(previousTabbable as HTMLElement, true);
             return;
         }
+        // debug("LAST TABBABLE??");
     } else if (i > 0) {
         if (tabKeyDownEvent) {
             if (tabKeyDownEvent.shiftKey) {
@@ -1131,7 +1135,7 @@ win.addEventListener("DOMContentLoaded", () => {
     win.document.body.addEventListener("focusin", (ev: any) => {
 
         if (_ignoreFocusInEvent) {
-            debug("focusin --- IGNORE");
+            // debug("focusin --- IGNORE");
             _ignoreFocusInEvent = false;
             return;
         }
@@ -1141,7 +1145,18 @@ win.addEventListener("DOMContentLoaded", () => {
         }
 
         if (ev.target) {
-            handleTab(ev.target as HTMLElement, undefined);
+            let mouseClickOnLink = false;
+            if (win.document && win.document.documentElement) {
+                if (!win.document.documentElement.classList.contains(ROOT_CLASS_KEYBOARD_INTERACT)) {
+                    if ((ev.target as HTMLElement).tagName.toLowerCase() === "a" && (ev.target as any).href) {
+                        // link mouse click, leave it alone!
+                        mouseClickOnLink = true;
+                    }
+                }
+            }
+            if (!mouseClickOnLink) {
+                handleTab(ev.target as HTMLElement, undefined);
+            }
         }
         // if (!win.document) {
         //     return;
@@ -1203,6 +1218,11 @@ win.addEventListener("DOMContentLoaded", () => {
 
         const done = popupFootNote(e.target as HTMLElement, focusScrollRaw, href);
         if (!done) {
+            focusScrollDebounced.clear();
+            processXYDebounced.clear();
+            notifyReadingLocationDebounced.clear();
+            scrollToHashDebounced.clear();
+
             const payload: IEventPayload_R2_EVENT_LINK = {
                 url: href,
             };
