@@ -9,19 +9,28 @@ import * as tabbable from "tabbable";
 
 import { POPUP_DIALOG_CLASS } from "../../common/styles";
 
+export interface IHTMLDialogElementWithPopup extends HTMLDialogElement {
+    popDialog: PopupDialog | undefined;
+}
+
 export function isPopupDialogOpen(documant: Document): boolean {
     return documant.documentElement &&
         documant.documentElement.classList.contains(POPUP_DIALOG_CLASS);
 }
 
-export function destroyPopupDialogs(documant: Document) {
-    const dialogs = documant.querySelectorAll(`dialog[open]`);
+export function closePopupDialogs(documant: Document) {
+    const dialogs = documant.querySelectorAll(`dialog.${POPUP_DIALOG_CLASS}`);
     dialogs.forEach((dialog) => {
-        if ((dialog as any).popDialog) {
-            // ((dialog as any).popDialog as PopupDialog).hide();
-            ((dialog as any).popDialog as PopupDialog).cancelRefocus();
-            (dialog as HTMLDialogElement).close();
+        const dia = dialog as IHTMLDialogElementWithPopup;
+        if (dia.popDialog) {
+            dia.popDialog.cancelRefocus();
         }
+        if (dia.hasAttribute("open")) {
+            dia.close();
+        }
+        setTimeout(() => {
+            dia.remove();
+        }, 50);
     });
 }
 
@@ -92,7 +101,7 @@ function onKeyUp(this: PopupDialog, ev: KeyboardEvent) {
     if (ev.which === ESCAPE_KEY) {
         if (this.role !== "alertdialog") {
             ev.preventDefault();
-            this.hide();
+            this.dialog.close();
             return;
         }
     }
@@ -148,7 +157,7 @@ function onKeyDown(this: PopupDialog, ev: KeyboardEvent) {
 export class PopupDialog {
 
     public readonly role: string;
-    public readonly dialog: HTMLDialogElement;
+    public readonly dialog: IHTMLDialogElementWithPopup;
 
     private readonly _onKeyUp: () => void;
     private readonly _onKeyDown: () => void;
@@ -163,14 +172,16 @@ export class PopupDialog {
         id: string,
         public readonly onDialogClosed: (el: HTMLOrSVGElement | null) => void) {
 
+        closePopupDialogs(documant);
+
         const that = this;
 
         this._onKeyUp = onKeyUp.bind(this);
         this._onKeyDown = onKeyDown.bind(this);
         // this._onFocus = onFocus.bind(this);
 
-        this.dialog = documant.createElement("dialog");
-        (this.dialog as any).popDialog = this;
+        this.dialog = documant.createElement("dialog") as IHTMLDialogElementWithPopup;
+        this.dialog.popDialog = this;
 
         this.dialog.setAttribute("class", POPUP_DIALOG_CLASS);
         this.dialog.setAttribute("id", id);
@@ -182,8 +193,9 @@ export class PopupDialog {
         // const txtClose = documant.createTextNode("X");
         // button.appendChild(txtClose);
         // button.addEventListener("click", (_ev: Event) => {
+        // if (that.dialog.hasAttribute("open")) {
         //     that.dialog.close();
-        //     // ((dialog as any).popDialog as PopupDialog).hide();
+        // }
         // });
         // this.dialog.appendChild(button);
 
@@ -227,12 +239,13 @@ export class PopupDialog {
                 rect.left <= ev.clientX &&
                 ev.clientX <= rect.left + rect.width;
             if (!inside) {
-                that.dialog.close();
+                if (that.dialog.hasAttribute("open")) {
+                    that.dialog.close();
+                }
             }
         });
 
         this.dialog.addEventListener("close", (_ev) => {
-            // ((that.dialog as any).popDialog as PopupDialog)
             that.hide();
         });
 
@@ -271,8 +284,6 @@ export class PopupDialog {
 
         const el = this.documant.documentElement;
         el.classList.add(POPUP_DIALOG_CLASS);
-        // (el as any).style_overflow_before_dialog = el.style.overflow;
-        // el.style.overflow = "hidden";
 
         if (this.dialog.hasAttribute("open")) {
             return;
@@ -305,8 +316,6 @@ export class PopupDialog {
 
         const el = this.documant.documentElement;
         el.classList.remove(POPUP_DIALOG_CLASS);
-        // const val = (el as any).style_overflow_before_dialog;
-        // el.style.overflow = val ? val : null;
 
         // this.documant.body.removeEventListener("focus", this._onFocus, true);
         this.documant.body.removeEventListener("keyup", this._onKeyUp, true);

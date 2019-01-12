@@ -30,15 +30,14 @@ import {
     getText,
     wrapHighlight,
 } from "../common/dom-text-utils";
-import { PopupDialog } from "../common/popup-dialog";
+import { IHTMLDialogElementWithPopup, PopupDialog } from "../common/popup-dialog";
 import { IElectronWebviewTagWindow } from "./state";
 
 const win = (global as any).window as IElectronWebviewTagWindow;
 
 const TTS_ID_DIALOG = "r2-tts-dialog";
 
-interface HTMLDialogElementWithTTSState extends HTMLDialogElement {
-    popDialog: PopupDialog | undefined;
+interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
 
     domSlider: HTMLInputElement | undefined;
     domNext: HTMLButtonElement | undefined;
@@ -54,7 +53,7 @@ interface HTMLDialogElementWithTTSState extends HTMLDialogElement {
     ttsRootElement: Element | undefined;
 }
 
-let _dialogState: HTMLDialogElementWithTTSState | undefined;
+let _dialogState: IHTMLDialogElementWithTTSState | undefined;
 
 function resetState() {
     _resumableState = undefined;
@@ -381,7 +380,7 @@ function startTTSSession(
     const pop = new PopupDialog(win.document, outerHTML, TTS_ID_DIALOG, onDialogClosed);
     pop.show(ttsQueueItemStart.item.parentElement);
 
-    _dialogState = win.document.getElementById(TTS_ID_DIALOG) as HTMLDialogElementWithTTSState;
+    _dialogState = win.document.getElementById(TTS_ID_DIALOG) as IHTMLDialogElementWithTTSState;
     if (!_dialogState) {
         return;
     }

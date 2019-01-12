@@ -51,11 +51,12 @@ export function popupFootNote(
 
     const ID_PREFIX = "r2-footnote-popup-dialog-for_";
     const id = ID_PREFIX + targetElement.id;
-    const existingDialog = documant.getElementById(id);
-    if (existingDialog) {
-        ((existingDialog as any).popDialog as PopupDialog).show(element);
-        return true;
-    }
+
+    // const existingDialog = documant.getElementById(id) as IHTMLDialogElementWithPopup;
+    // if (existingDialog && existingDialog.popDialog) {
+    //     existingDialog.popDialog.show(element);
+    //     return true;
+    // }
 
     let outerHTML = targetElement.outerHTML;
     if (!outerHTML) {
@@ -91,6 +92,10 @@ export function popupFootNote(
         if (el) {
             focusScrollRaw(el, true);
         }
+
+        setTimeout(() => {
+            pop.dialog.remove();
+        }, 50);
     }
     const pop = new PopupDialog(documant, outerHTML, id, onDialogClosed);
 

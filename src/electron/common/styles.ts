@@ -88,6 +88,11 @@ dialog.${POPUP_DIALOG_CLASS} {
     margin: 0.2em;
 }
 
+.${FOOTNOTES_CONTAINER_CLASS} > * {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
 /*
 .${FOOTNOTES_CLOSE_BUTTON_CLASS} {
     border: 1px solid black;
@@ -281,11 +286,18 @@ export const focusCssStyles = `
     }
 }
 *:focus {
+    outline: none;
+}
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus {
+    outline: none !important;
+}
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} *:focus {
     outline-color: blue !important;
     outline-style: solid !important;
     outline-width: 2px !important;
     outline-offset: 2px !important;
 }
+/*
 :root:not(.${ROOT_CLASS_KEYBOARD_INTERACT}) *:focus {
     animation-name: readium2ElectronAnimation_FOCUS;
     animation-duration: 3s;
@@ -293,9 +305,7 @@ export const focusCssStyles = `
     animation-fill-mode: forwards;
     animation-timing-function: linear;
 }
-*.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus {
-    outline: inherit !important;
-}
+*/
 `;
 
 export const targetCssStyles = `

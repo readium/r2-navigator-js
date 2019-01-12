@@ -63,7 +63,7 @@ import {
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector2";
 import { easings } from "../common/easings";
-import { destroyPopupDialogs, isPopupDialogOpen } from "../common/popup-dialog";
+import { closePopupDialogs, isPopupDialogOpen } from "../common/popup-dialog";
 import { getURLQueryParams } from "../common/querystring";
 import {
     URL_PARAM_CSS,
@@ -264,7 +264,7 @@ ipcRenderer.on(R2_EVENT_LOCATOR_VISIBLE, (_event: any, payload: IEventPayload_R2
 
 ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_SCROLLTO) => {
 
-    destroyPopupDialogs(win.document);
+    closePopupDialogs(win.document);
 
     _cancelInitialScrollCheck = true;
 
@@ -386,7 +386,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
         return;
     }
 
-    destroyPopupDialogs(win.document);
+    closePopupDialogs(win.document);
 
     if (win.READIUM2.isFixedLayout || !win.document.body) {
         ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
@@ -1155,7 +1155,7 @@ win.addEventListener("DOMContentLoaded", () => {
     win.document.addEventListener("click", (e: MouseEvent) => {
 
         // TODO? xlink:href
-        const href = (e.target as any).href;
+        const href = (e.target as HTMLAnchorElement).href;
         // const href = (e.target as Element).getAttribute("href");
         if (!href) {
             return;
@@ -1418,7 +1418,7 @@ export const computeCFI = (node: Node): string | undefined => {
         let blacklistedClass: string | undefined;
         for (const item of _blacklistIdClassForCFI) {
             if (currentElement.classList.contains(item)) {
-                console.log("CFI BLACKLIST CLASS: " + blacklistedClass);
+                console.log("CFI BLACKLIST CLASS: " + item);
                 blacklistedClass = item;
                 break;
             }
