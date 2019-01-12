@@ -459,6 +459,27 @@ window.document.addEventListener("keydown", (ev: KeyboardEvent) => {
 ```
 
 ```javascript
+import {
+    TTSStateEnum,
+    ttsClickEnable,
+    ttsListen,
+    ttsNext,
+    ttsPause,
+    ttsPlay,
+    ttsPrevious,
+    ttsResume,
+    ttsStop,
+} from "@r2-navigator-js/electron/renderer/index";
+
+// When true, mouse clicks on text inside publication documents
+// trigger TTS readaloud playback at the pointed location.
+// The default is false. Once set to true, this setting persists
+// for any new loading document within the same publication.
+// This resets to false for any newly opened publication.
+ttsClickEnable(false);
+```
+
+```javascript
 // TODO LCP
 import { lsdLcpUpdateInject } from "@r2-navigator-js/electron/main/lsd-injectlcpl";
 import { doTryLcpPass } from "@r2-navigator-js/electron/main/lcp";

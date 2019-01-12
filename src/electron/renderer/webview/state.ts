@@ -50,6 +50,7 @@ export interface IElectronBrowserWindowState {
     publicationURL: string;
 
     DEBUG_VISUALS: boolean;
+    ttsClickEnabled: boolean;
 }
 export interface IElectronBrowserWindow extends Window {
     READIUM2: IElectronBrowserWindowState;

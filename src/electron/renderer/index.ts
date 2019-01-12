@@ -366,6 +366,7 @@ export function installNavigatorDOM(
             DEBUG_VISUALS: debugVisuals,
             publication: _publication,
             publicationURL: _publicationJsonUrl,
+            ttsClickEnabled: false,
         };
 
         (window as any).READIUM2.debug = (debugVisualz: boolean) => {
@@ -799,6 +800,10 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
         // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webcontents
         // wc.openDevTools({ mode: "detach" });
         wv.clearHistory();
+
+        if ((window as IElectronBrowserWindow).READIUM2) {
+            ttsClickEnable((window as IElectronBrowserWindow).READIUM2.ttsClickEnabled);
+        }
     });
 
     wv.addEventListener("ipc-message", (event: Electron.IpcMessageEvent) => {
@@ -1011,10 +1016,16 @@ export function ttsListen(ttsListener: (ttsState: TTSStateEnum) => void) {
 }
 
 export function ttsClickEnable(doEnable: boolean) {
+
+    if ((window as IElectronBrowserWindow).READIUM2) {
+        (window as IElectronBrowserWindow).READIUM2.ttsClickEnabled = doEnable;
+    }
+
     const activeWebView = getActiveWebView();
     if (!activeWebView) {
         return;
     }
+
     const payload: IEventPayload_R2_EVENT_TTS_CLICK_ENABLE = {
         doEnable,
     };
