@@ -33,6 +33,7 @@ import {
     IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO,
     IEventPayload_R2_EVENT_READIUMCSS,
     IEventPayload_R2_EVENT_SCROLLTO,
+    IEventPayload_R2_EVENT_TTS_DO_PLAY,
     IEventPayload_R2_EVENT_WEBVIEW_READY,
     R2_EVENT_DEBUG_VISUALS,
     R2_EVENT_LINK,
@@ -42,6 +43,12 @@ import {
     R2_EVENT_READING_LOCATION,
     R2_EVENT_READIUMCSS,
     R2_EVENT_SCROLLTO,
+    R2_EVENT_TTS_DO_NEXT,
+    R2_EVENT_TTS_DO_PAUSE,
+    R2_EVENT_TTS_DO_PLAY,
+    R2_EVENT_TTS_DO_PREVIOUS,
+    R2_EVENT_TTS_DO_RESUME,
+    R2_EVENT_TTS_DO_STOP,
     R2_EVENT_WEBVIEW_READY,
 } from "../common/events";
 import {
@@ -432,6 +439,62 @@ export function navLeftOrRight(left: boolean) {
         go: goPREVIOUS ? "PREVIOUS" : "NEXT",
     };
     activeWebView.send(R2_EVENT_PAGE_TURN, payload); // .getWebContents()
+}
+
+export function ttsPlay() {
+    const activeWebView = getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+
+    let startElementCSSSelector: string | undefined;
+    if (_lastSavedReadingLocation && activeWebView.READIUM2 && activeWebView.READIUM2.link) {
+        if (_lastSavedReadingLocation.locator.href === activeWebView.READIUM2.link.Href) {
+            startElementCSSSelector = _lastSavedReadingLocation.locator.locations.cssSelector;
+        }
+    }
+
+    const payload: IEventPayload_R2_EVENT_TTS_DO_PLAY = {
+        rootElement: "html > body", // window.document.body
+        startElement: startElementCSSSelector,
+    };
+    activeWebView.send(R2_EVENT_TTS_DO_PLAY, payload);
+}
+
+export function ttsPause() {
+    const activeWebView = getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+    activeWebView.send(R2_EVENT_TTS_DO_PAUSE);
+}
+export function ttsStop() {
+    const activeWebView = getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+    activeWebView.send(R2_EVENT_TTS_DO_STOP);
+}
+export function ttsResume() {
+    const activeWebView = getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+    activeWebView.send(R2_EVENT_TTS_DO_RESUME);
+}
+export function ttsPrevious() {
+    const activeWebView = getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+    activeWebView.send(R2_EVENT_TTS_DO_PREVIOUS);
+}
+export function ttsNext() {
+    const activeWebView = getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+    activeWebView.send(R2_EVENT_TTS_DO_NEXT);
 }
 
 const getActiveWebView = (): IElectronWebviewTag => {

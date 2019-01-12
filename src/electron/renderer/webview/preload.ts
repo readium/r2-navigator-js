@@ -29,6 +29,7 @@ import {
     IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO,
     IEventPayload_R2_EVENT_READIUMCSS,
     IEventPayload_R2_EVENT_SCROLLTO,
+    IEventPayload_R2_EVENT_TTS_DO_PLAY,
     IEventPayload_R2_EVENT_WEBVIEW_READY,
     R2_EVENT_DEBUG_VISUALS,
     R2_EVENT_LINK,
@@ -37,6 +38,12 @@ import {
     R2_EVENT_PAGE_TURN_RES,
     R2_EVENT_READING_LOCATION,
     R2_EVENT_SCROLLTO,
+    R2_EVENT_TTS_DO_NEXT,
+    R2_EVENT_TTS_DO_PAUSE,
+    R2_EVENT_TTS_DO_PLAY,
+    R2_EVENT_TTS_DO_PREVIOUS,
+    R2_EVENT_TTS_DO_RESUME,
+    R2_EVENT_TTS_DO_STOP,
     R2_EVENT_WEBVIEW_READY,
 } from "../../common/events";
 import {
@@ -75,7 +82,7 @@ import {
 } from "../common/url-params";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import { popupFootNote } from "./popupFootnotes";
-import { ttsPlay } from "./readaloud";
+import { ttsNext, ttsPause, ttsPlay, ttsPrevious, ttsResume, ttsStop } from "./readaloud";
 import {
     calculateColumnDimension,
     calculateMaxScrollShift,
@@ -1524,3 +1531,29 @@ const notifyReadingLocationRaw = () => {
 const notifyReadingLocationDebounced = debounce(() => {
     notifyReadingLocationRaw();
 }, 500);
+
+ipcRenderer.on(R2_EVENT_TTS_DO_PLAY, (_event: any, payload: IEventPayload_R2_EVENT_TTS_DO_PLAY) => {
+    const rootElement = win.document.querySelector(payload.rootElement);
+    const startElement = payload.startElement ? win.document.querySelector(payload.startElement) : null;
+    ttsPlay(focusScrollRaw, rootElement ? rootElement : undefined, startElement ? startElement : undefined);
+});
+
+ipcRenderer.on(R2_EVENT_TTS_DO_STOP, (_event: any) => {
+    ttsStop();
+});
+
+ipcRenderer.on(R2_EVENT_TTS_DO_PAUSE, (_event: any) => {
+    ttsPause();
+});
+
+ipcRenderer.on(R2_EVENT_TTS_DO_RESUME, (_event: any) => {
+    ttsResume();
+});
+
+ipcRenderer.on(R2_EVENT_TTS_DO_NEXT, (_event: any) => {
+    ttsNext();
+});
+
+ipcRenderer.on(R2_EVENT_TTS_DO_PREVIOUS, (_event: any) => {
+    ttsPrevious();
+});

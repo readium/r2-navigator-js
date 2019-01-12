@@ -101,3 +101,44 @@ export const R2_EVENT_WEBVIEW_READY = "R2_EVENT_WEBVIEW_READY";
 export interface IEventPayload_R2_EVENT_WEBVIEW_READY {
     href: string;
 }
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_TTS_DO_PLAY = "R2_EVENT_TTS_DO_PLAY";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_TTS_DO_PLAY {
+    rootElement: string; // CSS selector
+    startElement: string | undefined; // CSS selector
+}
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_TTS_DO_PAUSE = "R2_EVENT_TTS_DO_PAUSE";
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_TTS_DO_RESUME = "R2_EVENT_TTS_DO_RESUME";
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_TTS_DO_STOP = "R2_EVENT_TTS_DO_STOP";
+
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_TTS_IS_STOPPED = "R2_EVENT_TTS_IS_STOPPED";
+
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_TTS_IS_PAUSED = "R2_EVENT_TTS_IS_PAUSED";
+
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_TTS_IS_PLAYING = "R2_EVENT_TTS_IS_PLAYING";
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_TTS_DO_NEXT = "R2_EVENT_TTS_DO_NEXT";
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_TTS_DO_PREVIOUS = "R2_EVENT_TTS_DO_PREVIOUS";

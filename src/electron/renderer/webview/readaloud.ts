@@ -6,7 +6,13 @@
 // ==LICENSE-END==
 
 import { debounce } from "debounce";
+import { ipcRenderer } from "electron";
 
+import {
+    R2_EVENT_TTS_IS_PAUSED,
+    R2_EVENT_TTS_IS_PLAYING,
+    R2_EVENT_TTS_IS_STOPPED,
+} from "../../common/events";
 import {
     CSS_CLASS_NO_FOCUS_OUTLINE,
     TTS_CLASS_INJECTED_SPAN,
@@ -80,6 +86,8 @@ function resetState() {
         _dialogState.remove();
     }
     _dialogState = undefined;
+
+    ipcRenderer.sendToHost(R2_EVENT_TTS_IS_STOPPED);
 }
 
 export function ttsPlay(
@@ -154,6 +162,8 @@ export function ttsPause() {
             win.speechSynthesis.cancel();
         }, 0);
     }
+
+    ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PAUSED);
 }
 
 interface IResumableState {
@@ -176,6 +186,8 @@ export function ttsResume() {
                 win.speechSynthesis.speak(_dialogState.ttsUtterance);
             }
         }, 0);
+
+        ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PLAYING);
     } else if (_resumableState) {
         setTimeout(() => {
             if (_resumableState) {
@@ -481,6 +493,8 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
     setTimeout(() => {
         win.speechSynthesis.speak(utterance);
     }, 0);
+
+    ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PLAYING);
 }
 
 function startTTSSession(
