@@ -547,13 +547,133 @@ ttsListen((ttsState: TTSStateEnum) => {
 
 At this stage there are missing features: voice selection (depending on languages), volume, speech rate and pitch.
 
-#### LCP (DOC TODO)
+#### LCP
 
 ```javascript
-// TODO LCP
-import { lsdLcpUpdateInject } from "@r2-navigator-js/electron/main/lsd-injectlcpl";
-import { doTryLcpPass } from "@r2-navigator-js/electron/main/lcp";
+import { setLcpNativePluginPath } from "@r2-lcp-js/parser/epub/lcp";
+
+// Registers the filesystem location of the native LCP library
+const lcpPluginPath = path.join(process.cwd(), "LCP", "lcp.node");
+setLcpNativePluginPath(lcpPluginPath);
+```
+
+```javascript
 import { IDeviceIDManager } from "@r2-lcp-js/lsd/deviceid-manager";
+import { launchStatusDocumentProcessing } from "@r2-lcp-js/lsd/status-document-processing";
+import { lsdLcpUpdateInject } from "@r2-navigator-js/electron/main/lsd-injectlcpl";
+
+// App-level implementation of the LSD (License Status Document)
+const deviceIDManager: IDeviceIDManager = {
+
+    async checkDeviceID(key: string): Promise<string | undefined> {
+        //...
+    },
+
+    async getDeviceID(): Promise<string> {
+        //...
+    },
+
+    async getDeviceNAME(): Promise<string> {
+        //...
+    },
+
+    async recordDeviceID(key: string): Promise<void> {
+        //...
+    },
+};
+
+// Assumes a `Publication` object already prepared in memory,
+// loaded from `publicationFilePath`.
+// This performs the LCP-compliant background operations to register the device,
+// and to check for an updated license (as passed in the callback parameter).
+// The lsdLcpUpdateInject() function can be used to immediately inject the updated
+// LCP license (META-INF/license.lcpl) inside the EPUB container on the filesystem.
+try {
+    await launchStatusDocumentProcessing(publication.LCP, deviceIDManager,
+        async (licenseUpdateJson: string | undefined) => {
+
+            if (licenseUpdateJson) {
+                let res: string;
+                try {
+                    res = await lsdLcpUpdateInject(
+                        licenseUpdateJson,
+                        publication as Publication,
+                        publicationFilePath);
+                } catch (err) {
+                    debug(err);
+                }
+            }
+        });
+} catch (err) {
+    debug(err);
+}
+```
+
+```javascript
+import { downloadEPUBFromLCPL } from "@r2-lcp-js/publication-download";
+
+// Downloads the EPUB publication referenced by given LCP license,
+// injects the license at META-INF/license.lcpl inside the EPUB container,
+// and returns the result as an array of two string values:
+// first is the full destination filepath (should be path.join(destinationDirectory, destinationFileName))
+// second is the URL where the EPUB was downloaded from ("publicatiion" link inside the LCP license)
+try {
+    let epub = await downloadEPUBFromLCPL(lcplFilePath, destinationDirectory, destinationFileName);
+} catch (err) {
+  debug(err);
+}
+```
+
+```javascript
+import { doTryLcpPass } from "@r2-navigator-js/electron/main/lcp";
+
+// This asks the LCP library to test an array of passphrases
+// (or the SHA256 digest of the passphrases).
+// The promise is rejected (try+catch) when no valid passphrase was found.
+// The function returns the first valid passphrase.
+try {
+    const lcpPass = "my LCP passphrase";
+    const validPass = await doTryLcpPass(
+        publicationsServer,
+        publicationFilePath,
+        [lcpPass],
+        isSha256Hex);
+
+    let passSha256Hex: string | undefined;
+    if (!isSha256Hex) {
+        const checkSum = crypto.createHash("sha256");
+        checkSum.update(lcpPass);
+        passSha256Hex = checkSum.digest("hex");
+    } else {
+        passSha256Hex = lcpPass;
+    }
+} catch (err) {
+    debug(err);
+}
+```
+
+```javascript
 import { doLsdRenew } from "@r2-navigator-js/electron/main/lsd";
 import { doLsdReturn } from "@r2-navigator-js/electron/main/lsd";
+
+// LSD "renew" (with a specific end date)
+try {
+    const lsdJson = await doLsdRenew(
+        publicationsServer,
+        deviceIDManager,
+        publicationFilePath,
+        endDateStr);
+} catch (err) {
+    debug(err);
+}
+
+// LSD "return"
+try {
+    const lsdJson = await doLsdReturn(
+        publicationsServer,
+        deviceIDManager,
+        publicationFilePath);
+} catch (err) {
+    debug(err);
+}
 ```
