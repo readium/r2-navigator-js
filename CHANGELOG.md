@@ -1,10 +1,40 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.11...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.12...develop
 
 Changes:
 * TODO
+
+# 1.0.12
+
+> Build environment: NodeJS `8.14.1`, NPM `6.4.1`
+
+Changes:
+* NPM updates
+* Added documentation (README)
+* Improved keyboard handling, tab navigation
+* Added support for TTS read aloud (WebSpeech API)
+* Added support for popup footnotes (EPUB3)
+* Fixed ReadiumCSS injection bug (edge cases with some bad DOM, doctype)
+* Enabled loading of remote publications (was filtering local URL)
+* Allow loading of Readium webpubmanifest with different URL syntax than default streamer implementation
+* Disabled window.alert/confirm/prompt to avoid publication documents blocking the renderer thread
+* Fixed arrow keys capture issues (no page turn when used for interaction with text input, video/audio, slider, etc.)
+* Fixed scroll-to-view in the scroll view (now centering, was top edge)
+* Added visibility mask when navigating back into previous publication spine item (to eliminate visual flash due to first-render of document top)
+* Added blacklist of CSS class names and HTML element IDs for locators (CSS Selectors and CFI), to skip navigator-injected DOM markup)
+* Fixed hash-fragment ID reset problem (::active pseudo CSS class)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.12/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.12/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.12
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.11...v1.0.12
 
 # 1.0.11
 
