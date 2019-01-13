@@ -83,7 +83,7 @@ import {
     URL_PARAM_PREVIOUS,
 } from "../common/url-params";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
-import { popupFootNote } from "./popupFootnotes";
+import { popupFootNote } from "./popupFootNotes";
 import { ttsNext, ttsPause, ttsPlay, ttsPrevious, ttsResume, ttsStop } from "./readaloud";
 import {
     calculateColumnDimension,
