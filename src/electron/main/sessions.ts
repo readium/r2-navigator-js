@@ -41,7 +41,7 @@ export function secureSessions(server: Server) {
                 ...details.responseHeaders,
                 "Content-Security-Policy":
                     // tslint:disable-next-line:max-line-length
-                    [`default-src 'self' 'unsafe-inline' 'unsafe-eval' ${READIUM2_ELECTRON_HTTP_PROTOCOL}: ${serverUrl}`],
+                    [`default-src 'self' 'unsafe-inline' 'unsafe-eval' data: http: https: ${READIUM2_ELECTRON_HTTP_PROTOCOL}: ${serverUrl}`],
             } });
         } else {
             callback({});
