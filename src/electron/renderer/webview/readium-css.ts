@@ -17,6 +17,7 @@ import {
     READIUM2_ELECTRON_HTTP_PROTOCOL,
     convertCustomSchemeToHttpUrl,
 } from "../../common/sessions";
+import { FOOTNOTE_FORCE_SHOW, ROOT_CLASS_NO_FOOTNOTES } from "../../common/styles";
 import { IElectronWebviewTagWindow } from "./state";
 
 const win = (global as any).window as IElectronWebviewTagWindow;
@@ -175,10 +176,84 @@ ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVEN
     readiumCSS(win.document, payload);
 });
 
+export function checkHiddenFootNotes(documant: Document) {
+    if (documant.documentElement.classList.contains(ROOT_CLASS_NO_FOOTNOTES)) {
+        return;
+    }
+
+    if (!documant.querySelectorAll) { // TODO: polyfill querySelector[All]() ?
+        return; // when streamer-injected
+    }
+
+    const aNodeList = documant.querySelectorAll("a[href]");
+
+    documant.querySelectorAll("aside").forEach((aside) => {
+        let id = aside.getAttribute("id");
+        if (!id) {
+            return;
+        }
+        id = "#" + id;
+
+        let epubType = aside.getAttribute("epub:type");
+        if (!epubType) {
+            epubType = aside.getAttributeNS("http://www.idpf.org/2007/ops", "type");
+        }
+        if (!epubType) {
+            return;
+        }
+
+        epubType = epubType.trim().replace(/\s\s+/g, " "); // whitespace collapse
+
+        const isPotentiallyHiddenNote = epubType.indexOf("footnote") >= 0 ||
+            epubType.indexOf("endnote") >= 0 ||
+            epubType.indexOf("rearnote") >= 0 ||
+            epubType.indexOf("note") >= 0; // TODO: smarter regexp?
+        if (!isPotentiallyHiddenNote) {
+            return;
+        }
+
+        let found = false;
+        // tslint:disable-next-line:prefer-for-of
+        for (let i = 0; i < aNodeList.length; i++) {
+            const aNode = aNodeList[i];
+            const href = aNode.getAttribute("href");
+            if (!href) {
+                continue;
+            }
+            // try {
+            //     const hash = new URL(href).hash; // includes #
+            //     if (hash === id) {
+            //         found = true;
+            //         break;
+            //     }
+            // } catch (err) {
+            //     debug(href);
+            //     debug(err);
+            //     continue;
+            // }
+            const iHash = href.indexOf("#");
+            if (iHash < 0) {
+                continue;
+            }
+            if (href.substr(iHash) === id) { // does not account for ?query-params
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            aside.classList.add(FOOTNOTE_FORCE_SHOW);
+        }
+    });
+}
+
 export const readiumCSS = (documant: Document, messageJson: IEventPayload_R2_EVENT_READIUMCSS) => {
     console.log("urlRootReadiumCSS: ", urlRootReadiumCSS);
     console.log("messageJson.urlRoot: ", messageJson.urlRoot);
     readiumCSSSet(documant, messageJson, urlRootReadiumCSS, _isVerticalWritingMode, _isRTL);
+
+    if ((messageJson && messageJson.setCSS && !messageJson.setCSS.noFootnotes)) {
+        checkHiddenFootNotes(documant);
+    }
 };
 
 // // // https://javascript.info/size-and-scroll

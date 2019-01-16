@@ -39,8 +39,8 @@ export function popupFootNote(
         return false;
     }
 
-    const url = new URL(href); // includes #
-    if (!url.hash) {
+    const url = new URL(href);
+    if (!url.hash) { // includes #
         return false;
     }
     // const targetElement = win.document.getElementById(url.hash.substr(1));

@@ -89,6 +89,7 @@ import {
     calculateColumnDimension,
     calculateMaxScrollShift,
     calculateTotalColumns,
+    checkHiddenFootNotes,
     computeVerticalRTL,
     isRTL,
     isTwoPageSpread,
@@ -597,7 +598,7 @@ const checkReadyPass = () => {
                     scrollToHashDebounced();
                 });
             });
-        }, 2000);
+        }, 1000);
     }
 
     if (win.document.body) {
@@ -1243,6 +1244,9 @@ win.addEventListener("DOMContentLoaded", () => {
             debug(">>>>>> ReadiumCSS inject again");
             readiumCSS(win.document, readiumcssJson);
         }
+    }
+    if (alreadedInjected) { // because querySelector[All]() is not polyfilled
+        checkHiddenFootNotes(win.document);
     }
 });
 

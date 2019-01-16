@@ -9,6 +9,7 @@ export const ROOT_CLASS_NO_FOOTNOTES = "r2-no-popup-foonotes";
 export const POPUP_DIALOG_CLASS = "r2-popup-dialog";
 export const FOOTNOTES_CONTAINER_CLASS = "r2-footnote-container";
 export const FOOTNOTES_CLOSE_BUTTON_CLASS = "r2-footnote-close";
+export const FOOTNOTE_FORCE_SHOW = "r2-footnote-force-show";
 
 // 'a' element: noteref biblioref glossref annoref
 //
@@ -22,10 +23,10 @@ export const FOOTNOTES_CLOSE_BUTTON_CLASS = "r2-footnote-close";
 export const footnotesCssStyles = `
 @namespace epub "http://www.idpf.org/2007/ops";
 
-:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="footnote"],
-:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="note"],
-:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="endnote"],
-:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="rearnote"] {
+:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="footnote"]:not(.${FOOTNOTE_FORCE_SHOW}),
+:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="note"]:not(.${FOOTNOTE_FORCE_SHOW}),
+:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="endnote"]:not(.${FOOTNOTE_FORCE_SHOW}),
+:root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="rearnote"]:not(.${FOOTNOTE_FORCE_SHOW}) {
     display: none;
 }
 
