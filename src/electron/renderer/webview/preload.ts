@@ -800,7 +800,7 @@ const scrollToHashRaw = () => {
 
         notifyReady();
 
-        _ignoreScrollEvent = true;
+        // _ignoreScrollEvent = true;
         scrollElementIntoView(win.READIUM2.locationHashOverride);
 
         notifyReadingLocationDebounced();
@@ -811,7 +811,7 @@ const scrollToHashRaw = () => {
         notifyReady();
 
         // if (!first) {
-        _ignoreScrollEvent = true;
+        // _ignoreScrollEvent = true;
         scrollElementIntoView(win.READIUM2.hashElement);
         // }
 
@@ -879,6 +879,10 @@ const scrollToHashRaw = () => {
                     if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
                         notifyReadingLocationDebounced();
                     }
+
+                    setTimeout(() => {
+                        _ignoreScrollEvent = false;
+                    }, 10);
                     return;
                 }
 
@@ -913,7 +917,7 @@ const scrollToHashRaw = () => {
 
                         notifyReady();
 
-                        _ignoreScrollEvent = true;
+                        // _ignoreScrollEvent = true;
                         scrollElementIntoView(selected);
 
                         notifyReadingLocationDebounced();
@@ -934,6 +938,9 @@ const scrollToHashRaw = () => {
             _ignoreScrollEvent = true;
             win.document.body.scrollLeft = 0;
             win.document.body.scrollTop = 0;
+            setTimeout(() => {
+                _ignoreScrollEvent = false;
+            }, 10);
         }
     }
 
