@@ -5,6 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+export const ROOT_CLASS_REDUCE_MOTION = "r2-reduce-motion";
 export const ROOT_CLASS_NO_FOOTNOTES = "r2-no-popup-foonotes";
 export const POPUP_DIALOG_CLASS = "r2-popup-dialog";
 export const FOOTNOTES_CONTAINER_CLASS = "r2-footnote-container";

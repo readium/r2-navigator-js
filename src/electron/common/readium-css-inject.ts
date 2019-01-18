@@ -14,6 +14,7 @@ import {
 import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
 import {
     ROOT_CLASS_NO_FOOTNOTES,
+    ROOT_CLASS_REDUCE_MOTION,
     focusCssStyles,
     footnotesCssStyles,
     readPosCssStyles,
@@ -256,6 +257,12 @@ export function readiumCSSSet(
         docElement.classList.add(ROOT_CLASS_NO_FOOTNOTES);
     } else {
         docElement.classList.remove(ROOT_CLASS_NO_FOOTNOTES);
+    }
+
+    if (setCSS.reduceMotion) {
+        docElement.classList.add(ROOT_CLASS_REDUCE_MOTION);
+    } else {
+        docElement.classList.remove(ROOT_CLASS_REDUCE_MOTION);
     }
 
     // if (setCSS.night) {

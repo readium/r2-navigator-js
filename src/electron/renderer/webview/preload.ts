@@ -60,6 +60,7 @@ import {
     ROOT_CLASS_INVISIBLE_MASK,
     ROOT_CLASS_KEYBOARD_INTERACT,
     ROOT_CLASS_NO_FOOTNOTES,
+    ROOT_CLASS_REDUCE_MOTION,
     TTS_CLASS_INJECTED_SPAN,
     TTS_CLASS_INJECTED_SUBSPAN,
     TTS_ID_INJECTED_PARENT,
@@ -409,6 +410,8 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
         return;
     }
 
+    const reduceMotion = win.document.documentElement.classList.contains(ROOT_CLASS_REDUCE_MOTION);
+
     const isPaged = isPaginated(win.document);
 
     const maxScrollShift = calculateMaxScrollShift();
@@ -427,19 +430,25 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     (win.document.body.scrollTop + win.document.documentElement.offsetHeight) :
                         (win.document.body.scrollLeft + (isRTL() ? -1 : 1) * win.document.documentElement.offsetWidth);
 
-                _lastAnimState = animateProperty(
-                    win.cancelAnimationFrame,
-                    undefined,
-                    // (cancelled: boolean) => {
-                    //     debug(cancelled);
-                    // },
-                    isVerticalWritingMode() ? "scrollTop" : "scrollLeft",
-                    300,
-                    win.document.body,
-                    newVal,
-                    win.requestAnimationFrame,
-                    easings.easeInOutQuad,
-                );
+                const targetObj = win.document.body;
+                const targetProp = isVerticalWritingMode() ? "scrollTop" : "scrollLeft";
+                if (reduceMotion) {
+                    targetObj[targetProp] = newVal;
+                } else {
+                    _lastAnimState = animateProperty(
+                        win.cancelAnimationFrame,
+                        undefined,
+                        // (cancelled: boolean) => {
+                        //     debug(cancelled);
+                        // },
+                        targetProp,
+                        300,
+                        targetObj,
+                        newVal,
+                        win.requestAnimationFrame,
+                        easings.easeInOutQuad,
+                    );
+                }
                 return;
             }
         } else {
@@ -453,19 +462,25 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     (win.document.body.scrollLeft + (isRTL() ? -1 : 1) * win.document.documentElement.clientWidth) :
                     (win.document.body.scrollTop + win.document.documentElement.clientHeight);
 
-                _lastAnimState = animateProperty(
-                    win.cancelAnimationFrame,
-                    undefined,
-                    // (cancelled: boolean) => {
-                    //     debug(cancelled);
-                    // },
-                    isVerticalWritingMode() ? "scrollLeft" : "scrollTop",
-                    300,
-                    win.document.body,
-                    newVal,
-                    win.requestAnimationFrame,
-                    easings.easeInOutQuad,
-                );
+                const targetObj = win.document.body;
+                const targetProp = isVerticalWritingMode() ? "scrollLeft" : "scrollTop";
+                if (reduceMotion) {
+                    targetObj[targetProp] = newVal;
+                } else {
+                    _lastAnimState = animateProperty(
+                        win.cancelAnimationFrame,
+                        undefined,
+                        // (cancelled: boolean) => {
+                        //     debug(cancelled);
+                        // },
+                        targetProp,
+                        300,
+                        targetObj,
+                        newVal,
+                        win.requestAnimationFrame,
+                        easings.easeInOutQuad,
+                    );
+                }
                 return;
             }
         }
@@ -481,19 +496,25 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     (win.document.body.scrollTop - win.document.documentElement.offsetHeight) :
                     (win.document.body.scrollLeft - (isRTL() ? -1 : 1) * win.document.documentElement.offsetWidth);
 
-                _lastAnimState = animateProperty(
-                    win.cancelAnimationFrame,
-                    undefined,
-                    // (cancelled: boolean) => {
-                    //     debug(cancelled);
-                    // },
-                    isVerticalWritingMode() ? "scrollTop" : "scrollLeft",
-                    300,
-                    win.document.body,
-                    newVal,
-                    win.requestAnimationFrame,
-                    easings.easeInOutQuad,
-                );
+                const targetObj = win.document.body;
+                const targetProp = isVerticalWritingMode() ? "scrollTop" : "scrollLeft";
+                if (reduceMotion) {
+                    targetObj[targetProp] = newVal;
+                } else {
+                    _lastAnimState = animateProperty(
+                        win.cancelAnimationFrame,
+                        undefined,
+                        // (cancelled: boolean) => {
+                        //     debug(cancelled);
+                        // },
+                        targetProp,
+                        300,
+                        targetObj,
+                        newVal,
+                        win.requestAnimationFrame,
+                        easings.easeInOutQuad,
+                    );
+                }
                 return;
             }
         } else {
@@ -507,19 +528,25 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     (win.document.body.scrollLeft - (isRTL() ? -1 : 1) * win.document.documentElement.clientWidth) :
                     (win.document.body.scrollTop - win.document.documentElement.clientHeight);
 
-                _lastAnimState = animateProperty(
-                    win.cancelAnimationFrame,
-                    undefined,
-                    // (cancelled: boolean) => {
-                    //     debug(cancelled);
-                    // },
-                    isVerticalWritingMode() ? "scrollLeft" : "scrollTop",
-                    300,
-                    win.document.body,
-                    newVal,
-                    win.requestAnimationFrame,
-                    easings.easeInOutQuad,
-                );
+                const targetObj = win.document.body;
+                const targetProp = isVerticalWritingMode() ? "scrollLeft" : "scrollTop";
+                if (reduceMotion) {
+                    targetObj[targetProp] = newVal;
+                } else {
+                    _lastAnimState = animateProperty(
+                        win.cancelAnimationFrame,
+                        undefined,
+                        // (cancelled: boolean) => {
+                        //     debug(cancelled);
+                        // },
+                        targetProp,
+                        300,
+                        targetObj,
+                        newVal,
+                        win.requestAnimationFrame,
+                        easings.easeInOutQuad,
+                    );
+                }
                 return;
             }
         }

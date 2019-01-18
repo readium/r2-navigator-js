@@ -43,6 +43,8 @@ export interface IReadiumCSS {
     a11yNormalize: boolean | undefined;
 
     noFootnotes: boolean | undefined;
+
+    reduceMotion: boolean | undefined;
 }
 
 export enum bodyHyphensEnum {
@@ -126,6 +128,8 @@ export const readiumCSSDefaults = {
 
     // 0 | 0.375rem | 0.75rem | 1rem | 1.125rem | 1.25rem | 1.35rem | 1.5rem | 1.65rem | 1.75rem | 2rem
     paraSpacing: undefined,
+
+    reduceMotion: false,
 
     sepia: false,
 
