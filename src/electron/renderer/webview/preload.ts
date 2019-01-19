@@ -118,11 +118,14 @@ win.READIUM2 = {
     isFixedLayout: false,
     locationHashOverride: undefined,
     locationHashOverrideInfo: {
-        cfi: undefined,
-        cssSelector: undefined,
+        href: "",
+        locations: {
+            cfi: undefined,
+            cssSelector: undefined,
+            position: undefined,
+            progression: undefined,
+        },
         paginationInfo: undefined,
-        position: undefined,
-        progression: undefined,
     },
     ttsClickEnabled: false,
     urlQueryParams: undefined,
@@ -329,13 +332,7 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
     }
 
     win.READIUM2.locationHashOverride = undefined;
-    win.READIUM2.locationHashOverrideInfo = {
-        cfi: undefined,
-        cssSelector: undefined,
-        paginationInfo: undefined,
-        position: undefined,
-        progression: undefined,
-    };
+    resetLocationHashOverrideInfo();
 
     if (delayScrollIntoView) {
         setTimeout(() => {
@@ -345,6 +342,20 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
         scrollToHashRaw();
     }
 });
+
+function resetLocationHashOverrideInfo() {
+    win.READIUM2.locationHashOverrideInfo = {
+        href: "",
+        locations: {
+            cfi: undefined,
+            cssSelector: undefined,
+            position: undefined,
+            progression: undefined,
+        },
+        paginationInfo: undefined,
+        title: undefined,
+    };
+}
 
 let _lastAnimState: IPropertyAnimationState | undefined;
 
@@ -779,13 +790,7 @@ const scrollToHashRaw = () => {
                 }
 
                 win.READIUM2.locationHashOverride = undefined;
-                win.READIUM2.locationHashOverrideInfo = {
-                    cfi: undefined,
-                    cssSelector: undefined,
-                    paginationInfo: undefined,
-                    position: undefined,
-                    progression: undefined,
-                };
+                resetLocationHashOverrideInfo();
 
                 // relative to fixed window top-left corner
                 const y = (isPaged ?
@@ -831,13 +836,11 @@ const scrollToHashRaw = () => {
                 if (selected) {
 
                     win.READIUM2.locationHashOverride = selected;
-                    win.READIUM2.locationHashOverrideInfo = {
-                        cfi: undefined,
-                        cssSelector: gotoCssSelector,
-                        paginationInfo: undefined,
-                        position: undefined,
-                        progression: undefined,
-                    };
+
+                    resetLocationHashOverrideInfo();
+                    if (win.READIUM2.locationHashOverrideInfo) {
+                        win.READIUM2.locationHashOverrideInfo.locations.cssSelector = gotoCssSelector;
+                    }
 
                     // _ignoreScrollEvent = true;
                     scrollElementIntoView(selected);
@@ -849,13 +852,7 @@ const scrollToHashRaw = () => {
         }
 
         win.READIUM2.locationHashOverride = win.document.body;
-        win.READIUM2.locationHashOverrideInfo = {
-            cfi: undefined,
-            cssSelector: undefined,
-            paginationInfo: undefined,
-            position: undefined,
-            progression: undefined,
-        };
+        resetLocationHashOverrideInfo();
 
         _ignoreScrollEvent = true;
         win.document.body.scrollLeft = 0;
@@ -1009,9 +1006,16 @@ ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVEN
     readiumCSS(win.document, payload);
 });
 
+let _docTitle: string | undefined;
+
 win.addEventListener("DOMContentLoaded", () => {
     // console.log("############# DOMContentLoaded");
     // console.log(win.location);
+
+    const titleElement = win.document.documentElement.querySelector("head > title");
+    if (titleElement && titleElement.textContent) {
+        _docTitle = titleElement.textContent;
+    }
 
     _cancelInitialScrollCheck = true;
 
@@ -1612,11 +1616,15 @@ const notifyReadingLocationRaw = () => {
         progressionData.paginationInfo : undefined;
 
     win.READIUM2.locationHashOverrideInfo = {
-        cfi,
-        cssSelector,
+        href: "",
+        locations: {
+            cfi,
+            cssSelector,
+            position: undefined, // calculated in host index.js renderer, where publication object is available
+            progression,
+        },
         paginationInfo: pinfo,
-        position: undefined, // calculated in host index.js renderer, where publication object is available
-        progression,
+        title: _docTitle,
     };
     const payload: IEventPayload_R2_EVENT_READING_LOCATION = win.READIUM2.locationHashOverrideInfo;
     ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION, payload);

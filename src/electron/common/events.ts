@@ -5,7 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { LocatorLocations } from "@r2-shared-js/models/locator";
+import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
 
 import { IReadiumCSS } from "./readium-css-settings";
 
@@ -69,18 +69,7 @@ export interface IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO {
 }
 
 // tslint:disable-next-line:class-name
-export interface IEventPayload_R2_EVENT_READING_LOCATION extends LocatorLocations {
-    // interface LocatorLocations {
-    //     cfi?: string;
-    //     cssSelector?: string;
-    //     position?: number;
-    //     progression?: number;
-    // }
-    // cfi: string | undefined;
-    // cssSelector: string | undefined;
-    // progression: number | undefined;
-    // position: number | undefined;
-
+export interface IEventPayload_R2_EVENT_READING_LOCATION extends Locator {
     paginationInfo: IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO | undefined;
 }
 

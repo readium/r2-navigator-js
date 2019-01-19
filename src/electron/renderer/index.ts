@@ -181,11 +181,16 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
         locator: {
             href: docHref,
             locations: {
-                cfi: locator.cfi ? locator.cfi : undefined,
-                cssSelector: locator.cssSelector ? locator.cssSelector : undefined,
-                position: (typeof locator.position !== "undefined") ? locator.position : undefined,
-                progression: (typeof locator.progression !== "undefined") ? locator.progression : undefined,
+                cfi: locator.locations.cfi ?
+                    locator.locations.cfi : undefined,
+                cssSelector: locator.locations.cssSelector ?
+                    locator.locations.cssSelector : undefined,
+                position: (typeof locator.locations.position !== "undefined") ?
+                    locator.locations.position : undefined,
+                progression: (typeof locator.locations.progression !== "undefined") ?
+                    locator.locations.progression : undefined,
             },
+            title: locator.title,
         },
         paginationInfo: locator.paginationInfo,
     };
