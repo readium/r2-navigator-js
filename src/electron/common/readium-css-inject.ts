@@ -748,19 +748,6 @@ export function injectReadPosCSS(documant: Document) {
     appendCSSInline(documant, "electron-readPos", readPosCssStyles);
 }
 
-// export function injectResizeSensor(docu: Document, urlResizeSensor: string) {
-//     ensureHead(docu);
-//     const scriptElement = docu.createElement("script");
-//     scriptElement.setAttribute("id", "Readium2-ResizeSensor");
-//     scriptElement.setAttribute("type", "application/javascript");
-//     scriptElement.setAttribute("src", urlResizeSensor);
-//     scriptElement.appendChild(docu.createTextNode(" "));
-//     docu.head.appendChild(scriptElement);
-//     scriptElement.addEventListener("load", () => {
-//         debug("ResizeSensor LOADED");
-//     });
-// };
-
 function definePropertyGetterSetter_DocHeadBody(documant: Document, elementName: string) {
 
     Object.defineProperty(documant, elementName, {

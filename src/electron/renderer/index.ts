@@ -33,9 +33,9 @@ import {
     IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO,
     IEventPayload_R2_EVENT_READIUMCSS,
     IEventPayload_R2_EVENT_SCROLLTO,
+    IEventPayload_R2_EVENT_SHIFT_VIEW_X,
     IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
     IEventPayload_R2_EVENT_TTS_DO_PLAY,
-    IEventPayload_R2_EVENT_WEBVIEW_READY,
     R2_EVENT_DEBUG_VISUALS,
     R2_EVENT_LINK,
     R2_EVENT_LOCATOR_VISIBLE,
@@ -44,6 +44,7 @@ import {
     R2_EVENT_READING_LOCATION,
     R2_EVENT_READIUMCSS,
     R2_EVENT_SCROLLTO,
+    R2_EVENT_SHIFT_VIEW_X,
     R2_EVENT_TTS_CLICK_ENABLE,
     R2_EVENT_TTS_DO_NEXT,
     R2_EVENT_TTS_DO_PAUSE,
@@ -54,7 +55,6 @@ import {
     R2_EVENT_TTS_IS_PAUSED,
     R2_EVENT_TTS_IS_PLAYING,
     R2_EVENT_TTS_IS_STOPPED,
-    R2_EVENT_WEBVIEW_READY,
 } from "../common/events";
 import {
     R2_SESSION_WEBVIEW,
@@ -82,9 +82,6 @@ const ENABLE_WEBVIEW_RESIZE = true;
 // const CLASS_POS_RIGHT = "r2_posRight";
 // const CLASS_SHIFT_LEFT = "r2_shiftedLeft";
 // const CLASS_ANIMATED = "r2_animated";
-
-// export const DOM_EVENT_HIDE_VIEWPORT = "r2:hide-content-viewport";
-// export const DOM_EVENT_SHOW_VIEWPORT = "r2:show-content-viewport";
 
 const ELEMENT_ID_SLIDING_VIEWPORT = "r2_navigator_sliding_viewport";
 
@@ -212,9 +209,27 @@ export function setReadingLocationSaver(func: (locator: LocatorExtended) => void
 
 export function readiumCssOnOff() {
 
+    const _savedReadingLocation = _lastSavedReadingLocation;
+
     if (_webview1) {
         const payload1 = __computeReadiumCssJsonMessage(_webview1.READIUM2.link);
-        _webview1.send(R2_EVENT_READIUMCSS, payload1); // .getWebContents()
+
+        if (_webview1.style.transform !== "none") {
+            _webview1.send("R2_EVENT_HIDE");
+
+            setTimeout(() => {
+                shiftWebview(_webview1, 0, undefined); // reset
+                _webview1.send(R2_EVENT_READIUMCSS, payload1);
+            }, 10);
+        } else {
+            _webview1.send(R2_EVENT_READIUMCSS, payload1);
+        }
+    }
+
+    if (_savedReadingLocation) {
+        setTimeout(() => {
+            handleLinkLocator(_savedReadingLocation.locator);
+        }, 60);
     }
 
     // if (_webview2) {
@@ -271,7 +286,8 @@ let _webview1: IElectronWebviewTag;
 let _publication: Publication | undefined;
 let _publicationJsonUrl: string | undefined;
 
-let _rootHtmlElement: Element | undefined;
+let _rootHtmlElement: HTMLElement | undefined;
+let _slidingViewport: HTMLElement | undefined;
 
 export function handleLink(href: string, previous: boolean | undefined, useGoto: boolean) {
 
@@ -395,9 +411,9 @@ export function installNavigatorDOM(
         return;
     }
 
-    const slidingViewport = document.createElement("div");
-    slidingViewport.setAttribute("id", ELEMENT_ID_SLIDING_VIEWPORT);
-    slidingViewport.setAttribute("style", "display: block; position: absolute; left: 0; width: 200%; " +
+    _slidingViewport = document.createElement("div");
+    _slidingViewport.setAttribute("id", ELEMENT_ID_SLIDING_VIEWPORT);
+    _slidingViewport.setAttribute("style", "display: block; position: absolute; left: 0; width: 200%; " +
         "top: 0; bottom: 0; margin: 0; padding: 0; box-sizing: border-box; background: white; overflow: hidden;");
 
     _webview1 = createWebView(preloadScriptPath);
@@ -414,10 +430,10 @@ export function installNavigatorDOM(
     // };
     // _webview2.setAttribute("id", "webview2");
 
-    slidingViewport.appendChild(_webview1 as Node);
+    _slidingViewport.appendChild(_webview1 as Node);
     // slidingViewport.appendChild(_webview2 as Node);
 
-    _rootHtmlElement.appendChild(slidingViewport);
+    _rootHtmlElement.appendChild(_slidingViewport);
 
     // if (isRTL()) {
     //     _webview1.classList.add(CLASS_POS_RIGHT);
@@ -660,7 +676,16 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
             debug(msgStr);
         }
 
-        webviewToReuse.send(R2_EVENT_SCROLLTO, payload); // .getWebContents()
+        if (activeWebView.style.transform !== "none") {
+            webviewToReuse.send("R2_EVENT_HIDE");
+
+            setTimeout(() => {
+                shiftWebview(webviewToReuse, 0, undefined); // reset
+                webviewToReuse.send(R2_EVENT_SCROLLTO, payload);
+            }, 10);
+        } else {
+            webviewToReuse.send(R2_EVENT_SCROLLTO, payload);
+        }
 
         return true;
     }
@@ -673,22 +698,22 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
 
     const uriStr = linkUri.toString();
 
-    if (IS_DEV) {
-        debug("####### >>> ---");
-        debug(activeWebView.READIUM2.id);
-        debug(pubLink.Href);
-        debug(uriStr);
-        debug(linkUri.hash()); // with #
-        debug(linkUri.fragment()); // without #
-        // tslint:disable-next-line:no-string-literal
-        const gto = linkUri.search(true)[URL_PARAM_GOTO];
-        debug(gto ? (new Buffer(gto, "base64").toString("utf8")) : ""); // decodeURIComponent
-        // tslint:disable-next-line:no-string-literal
-        debug(linkUri.search(true)[URL_PARAM_PREVIOUS]);
-        // tslint:disable-next-line:no-string-literal
-        debug(linkUri.search(true)[URL_PARAM_CSS]);
-        debug("####### >>> ---");
-    }
+    // if (IS_DEV) {
+    //     debug("####### >>> ---");
+    //     debug(activeWebView.READIUM2.id);
+    //     debug(pubLink.Href);
+    //     debug(uriStr);
+    //     debug(linkUri.hash()); // with #
+    //     debug(linkUri.fragment()); // without #
+    //     // tslint:disable-next-line:no-string-literal
+    //     const gto = linkUri.search(true)[URL_PARAM_GOTO];
+    //     debug(gto ? (new Buffer(gto, "base64").toString("utf8")) : ""); // decodeURIComponent
+    //     // tslint:disable-next-line:no-string-literal
+    //     debug(linkUri.search(true)[URL_PARAM_PREVIOUS]);
+    //     // tslint:disable-next-line:no-string-literal
+    //     debug(linkUri.search(true)[URL_PARAM_CSS]);
+    //     debug("####### >>> ---");
+    // }
 
     activeWebView.READIUM2.link = pubLink;
 
@@ -699,7 +724,19 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         debug("setAttribute SRC:");
         debug(uriStr_);
     }
-    activeWebView.setAttribute("src", uriStr_);
+
+    if (activeWebView.style.transform !== "none") {
+        // activeWebView.setAttribute("src", "data:, ");
+        activeWebView.send("R2_EVENT_HIDE");
+
+        setTimeout(() => {
+            shiftWebview(activeWebView, 0, undefined); // reset
+            activeWebView.setAttribute("src", uriStr_);
+        }, 10);
+    } else {
+        activeWebView.setAttribute("src", uriStr_);
+    }
+
     // activeWebView.getWebContents().loadURL(uriStr_, { extraHeaders: "pragma: no-cache\n" });
     // activeWebView.loadURL(uriStr_, { extraHeaders: "pragma: no-cache\n" });
 
@@ -758,6 +795,21 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     return true;
 }
 
+function shiftWebview(webview: IElectronWebviewTag, offset: number, backgroundColor: string | undefined) {
+    if (!offset) {
+        webview.style.transform = "none";
+        // if (_slidingViewport) {
+        //     _slidingViewport.style.backgroundColor = "white";
+        // }
+    } else {
+        // console.log(`backgroundColor:::::::::: ${backgroundColor}`);
+        if (_slidingViewport && backgroundColor) {
+            _slidingViewport.style.backgroundColor = backgroundColor;
+        }
+        webview.style.transform = `translateX(${offset}px)`;
+    }
+}
+
 function createWebView(preloadScriptPath: string): IElectronWebviewTag {
 
     // Unfortunately the Chromium web inspector crashes when closing preload :(
@@ -813,17 +865,14 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
             return;
         }
 
-        if (event.channel === R2_EVENT_LINK) {
-            debug("R2_EVENT_LINK (webview.addEventListener('ipc-message')");
+        if (event.channel === R2_EVENT_SHIFT_VIEW_X) {
+            shiftWebview(webview,
+                (event.args[0] as IEventPayload_R2_EVENT_SHIFT_VIEW_X).offset,
+                (event.args[0] as IEventPayload_R2_EVENT_SHIFT_VIEW_X).backgroundColor);
+        } else if (event.channel === R2_EVENT_LINK) {
+            // debug("R2_EVENT_LINK (webview.addEventListener('ipc-message')");
             const payload = event.args[0] as IEventPayload_R2_EVENT_LINK;
             handleLinkUrl(payload.url);
-        } else if (event.channel === R2_EVENT_WEBVIEW_READY) {
-            const payload = event.args[0] as IEventPayload_R2_EVENT_WEBVIEW_READY;
-            debug("WEBVIEW READY: " + payload.href);
-
-            // if (_rootHtmlElement) {
-            //     _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_SHOW_VIEWPORT));
-            // }
         } else if (event.channel === R2_EVENT_READING_LOCATION) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_READING_LOCATION;
             if (webview.READIUM2.link && _saveReadingLocation) {
@@ -924,12 +973,6 @@ if (ENABLE_WEBVIEW_RESIZE) {
     const onResizeDebounced = debounce(() => {
         adjustResize(_webview1);
         // adjustResize(_webview2);
-
-        // setTimeout(() => {
-        //     if (_rootHtmlElement) {
-        //         _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_SHOW_VIEWPORT));
-        //     }
-        // }, 1000);
     }, 200);
     window.addEventListener("resize", () => {
         // if (!isFixedLayout(_webview1.READIUM2.link)) {

@@ -5,11 +5,8 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { ipcRenderer } from "electron";
-
 import {
     IEventPayload_R2_EVENT_READIUMCSS,
-    R2_EVENT_READIUMCSS,
 } from "../../common/events";
 import { isDocRTL, isDocVertical, isPaginated, readiumCSSSet } from "../../common/readium-css-inject";
 import { READIUM_CSS_URL_PATH } from "../../common/readium-css-settings";
@@ -31,10 +28,44 @@ const urlRootReadiumCSS = origin + "/" + READIUM_CSS_URL_PATH + "/";
 
 // const urlResizeSensor = win.location.origin + "/resize-sensor.js";
 
-export const calculateMaxScrollShift = (): number => {
+const calculateDocumentColumnizedWidthAdjustedForTwoPageSpread = (): number => {
 
     if (!win || !win.document || !win.document.body || !win.document.documentElement) {
         return 0;
+    }
+    let w = win.document.body.scrollWidth;
+    const noChange = !isPaginated(win.document) || !isTwoPageSpread() ||
+        isVerticalWritingMode(); // TODO: VWM?
+    if (!noChange) {
+        const columnizedDocWidth = w;
+        // console.log(`columnizedDocWidth: ${columnizedDocWidth}`);
+
+        const twoColWidth = win.document.documentElement.offsetWidth;
+        // console.log(`twoColWidth: ${twoColWidth}`);
+
+        const nSpreads = columnizedDocWidth / twoColWidth;
+        // console.log(`nSpreads: ${nSpreads}`);
+
+        const nWholeSpread = Math.floor(nSpreads);
+        // console.log(`nWholeSpread: ${nWholeSpread}`);
+
+        const fractionalSpread = nSpreads - nWholeSpread;
+        // console.log(`fractionalSpread: ${fractionalSpread}`);
+
+        if (fractionalSpread > 0 && fractionalSpread <= 0.5) {
+            w = twoColWidth * Math.ceil(nSpreads);
+            // tslint:disable-next-line
+            // console.log(`wDIFF: ${win.document.body.scrollWidth} => ${w} (${w - win.document.body.scrollWidth} -- ${twoColWidth / 2})`);
+        }
+    }
+    return w;
+};
+
+export const calculateMaxScrollShift = ():
+    { maxScrollShift: number, maxScrollShiftAdjusted: number } => {
+
+    if (!win || !win.document || !win.document.body || !win.document.documentElement) {
+        return { maxScrollShift: 0, maxScrollShiftAdjusted: 0 };
     }
 
     const isPaged = isPaginated(win.document);
@@ -47,7 +78,15 @@ export const calculateMaxScrollShift = (): number => {
             (win.document.body.scrollWidth - win.document.documentElement.clientWidth) :
             (win.document.body.scrollHeight - win.document.documentElement.clientHeight)));
 
-    return maxScrollShift;
+    const maxScrollShiftAdjusted = isPaged ?
+        ((isVerticalWritingMode() ?
+            maxScrollShift :
+            (calculateDocumentColumnizedWidthAdjustedForTwoPageSpread() - win.document.documentElement.offsetWidth))) :
+        ((isVerticalWritingMode() ?
+            maxScrollShift :
+            maxScrollShift));
+
+    return { maxScrollShift, maxScrollShiftAdjusted };
 };
 
 export const isTwoPageSpread = (): boolean => {
@@ -172,10 +211,6 @@ export function computeVerticalRTL() {
     _isRTL = rtl;
 }
 
-ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVENT_READIUMCSS) => {
-    readiumCSS(win.document, payload);
-});
-
 export function checkHiddenFootNotes(documant: Document) {
     if (documant.documentElement.classList.contains(ROOT_CLASS_NO_FOOTNOTES)) {
         return;
@@ -247,8 +282,8 @@ export function checkHiddenFootNotes(documant: Document) {
 }
 
 export const readiumCSS = (documant: Document, messageJson: IEventPayload_R2_EVENT_READIUMCSS) => {
-    console.log("urlRootReadiumCSS: ", urlRootReadiumCSS);
-    console.log("messageJson.urlRoot: ", messageJson.urlRoot);
+    // console.log("urlRootReadiumCSS: ", urlRootReadiumCSS);
+    // console.log("messageJson.urlRoot: ", messageJson.urlRoot);
     readiumCSSSet(documant, messageJson, urlRootReadiumCSS, _isVerticalWritingMode, _isRTL);
 
     if ((messageJson && messageJson.setCSS && !messageJson.setCSS.noFootnotes)) {

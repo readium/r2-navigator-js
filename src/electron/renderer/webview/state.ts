@@ -22,9 +22,6 @@ export interface IElectronWebviewTagWindowState {
     locationHashOverride: Element | undefined;
     locationHashOverrideInfo: IEventPayload_R2_EVENT_READING_LOCATION | undefined;
 
-    readyPassDone: boolean;
-    readyEventSent: boolean;
-
     isFixedLayout: boolean;
     fxlViewportWidth: number;
     fxlViewportHeight: number;
