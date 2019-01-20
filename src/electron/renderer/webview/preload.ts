@@ -1437,6 +1437,9 @@ const processXYRaw = (x: number, y: number) => {
 
     if (element) {
         win.READIUM2.locationHashOverride = element;
+        if (isPaginated(win.document) && !computeVisibility_(element)) {
+            win.READIUM2.locationHashOverride = win.document.body;
+        }
         notifyReadingLocationDebounced();
 
         if (win.READIUM2.DEBUG_VISUALS) {
