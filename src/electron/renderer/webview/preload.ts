@@ -231,20 +231,41 @@ function computeVisibility_(element: Element): boolean {
             return true;
         }
         // tslint:disable-next-line:max-line-length
-        debug(`computeVisibility_ FALSE: getBoundingClientRect() TOP: ${rect.top} -- win.document.documentElement.clientHeight: ${win.document.documentElement.clientHeight}`);
+        // debug(`computeVisibility_ FALSE: getBoundingClientRect() TOP: ${rect.top} -- win.document.documentElement.clientHeight: ${win.document.documentElement.clientHeight}`);
         return false;
     }
+
     // TODO: vertical writing mode
-    const scrollOffset = scrollOffsetIntoView(element as HTMLElement);
-    const cur = win.document.body.scrollLeft;
-    if (scrollOffset >= (cur - 10) && scrollOffset <= (cur + 10)) {
+    if (isVerticalWritingMode()) {
+        return false;
+    }
+
+    const scrollLeftPotentiallyExcessive = getScrollOffsetIntoView(element as HTMLElement);
+
+    // const { maxScrollShift, maxScrollShiftAdjusted } = calculateMaxScrollShift();
+    const extraShift = (win.document.body as any).scrollLeftExtra;
+    // extraShift === maxScrollShiftAdjusted - maxScrollShift
+
+    let currentOffset = win.document.body.scrollLeft;
+    if (extraShift) {
+        currentOffset += (((win.document.body.scrollLeft < 0) ? -1 : 1) * extraShift);
+    }
+
+    if (scrollLeftPotentiallyExcessive >= (currentOffset - 10) &&
+        scrollLeftPotentiallyExcessive <= (currentOffset + 10)) {
         return true;
     }
-    // TODO: RTL
-    if (!isRTL() && ((rect.left + rect.width) > 0)) {
-        return true;
-    }
-    debug(`computeVisibility_ FALSE: scrollOffsetIntoView: ${scrollOffset} -- win.document.body.scrollLeft: ${cur}`);
+
+    // // TODO: RTL
+    // if (isRTL()) {
+    //     return false;
+    // }
+    // const threshold = extraShift ? extraShift : 0;
+    // if ((rect.left + rect.width) > threshold) {
+    //     return true;
+    // }
+    // tslint:disable-next-line:max-line-length
+    // debug(`computeVisibility_ FALSE: getScrollOffsetIntoView: ${scrollLeftPotentiallyExcessive} -- win.document.body.scrollLeft: ${currentOffset}`);
     return false;
 }
 function computeVisibility(location: LocatorLocations): boolean {
@@ -390,6 +411,8 @@ function ensureTwoPageSpreadWithOddColumnsIsOffset(scrollOffset: number, maxScro
         isVerticalWritingMode() || // TODO: VWM?
         maxScrollShift <= 0 || Math.abs(scrollOffset) <= maxScrollShift;
     if (noChange) {
+        (win.document.body as any).scrollLeftExtra = 0;
+
         // console.log(`"""""""""""""""""""""""""""""""" noChange: ${maxScrollShift}`);
         // win.document.documentElement.classList.remove("r2-spread-offset");
         ipcRenderer.sendToHost(R2_EVENT_SHIFT_VIEW_X,
@@ -424,10 +447,12 @@ function ensureTwoPageSpreadWithOddColumnsIsOffset(scrollOffset: number, maxScro
         }
     }
 
+    (win.document.body as any).scrollLeftExtra = extraOffset;
+
     ipcRenderer.sendToHost(R2_EVENT_SHIFT_VIEW_X,
         {
             backgroundColor: backgroundColor ? backgroundColor : undefined,
-            offset: -extraOffset,
+            offset: (isRTL() ? 1 : -1) * extraOffset,
         } as IEventPayload_R2_EVENT_SHIFT_VIEW_X);
 }
 
@@ -681,8 +706,9 @@ function scrollElementIntoView(element: Element) {
 }
 
 // TODO: vertical writing mode
-function scrollOffsetIntoView(element: HTMLElement): number {
-    if (!win.document || !win.document.documentElement || !win.document.body || !isPaginated(win.document)) {
+function getScrollOffsetIntoView(element: HTMLElement): number {
+    if (!win.document || !win.document.documentElement || !win.document.body ||
+        !isPaginated(win.document) || isVerticalWritingMode()) {
         return 0;
     }
 
@@ -692,7 +718,9 @@ function scrollOffsetIntoView(element: HTMLElement): number {
 
     const isTwoPage = isTwoPageSpread();
 
-    const fullOffset = (isRTL() ? ((columnDimension * (isTwoPage ? 2 : 1)) - rect.left) : rect.left) +
+    const fullOffset = (isRTL() ?
+        ((columnDimension * (isTwoPage ? 2 : 1)) - rect.left) :
+        rect.left) +
         ((isRTL() ? -1 : 1) * win.document.body.scrollLeft);
 
     const columnIndex = Math.floor(fullOffset / columnDimension); // 0-based index
@@ -709,9 +737,9 @@ function scrollIntoView(element: HTMLElement) {
         return;
     }
     const maxScrollShift = calculateMaxScrollShift().maxScrollShift;
-    const scrollLeftPotentiallyExcessive = scrollOffsetIntoView(element);
+    const scrollLeftPotentiallyExcessive = getScrollOffsetIntoView(element);
     // if (Math.abs(scrollLeftPotentiallyExcessive) > maxScrollShift) {
-    //     console.log("scrollOffsetIntoView scrollLeft EXCESS");
+    //     console.log("getScrollOffsetIntoView scrollLeft EXCESS");
     // }
     ensureTwoPageSpreadWithOddColumnsIsOffset(scrollLeftPotentiallyExcessive, maxScrollShift);
 
@@ -769,10 +797,6 @@ const scrollToHashRaw = () => {
                         win.document.body.scrollTop = maxScrollShift;
                     } else {
                         const scrollLeftPotentiallyExcessive = (isRTL() ? -1 : 1) * maxScrollShiftAdjusted;
-                        console.log("isPreviousNavDirection");
-                        console.log(maxScrollShift);
-                        console.log(maxScrollShiftAdjusted);
-                        console.log(scrollLeftPotentiallyExcessive);
                         // tslint:disable-next-line:max-line-length
                         ensureTwoPageSpreadWithOddColumnsIsOffset(scrollLeftPotentiallyExcessive, maxScrollShift);
                         const scrollLeft = (isRTL() ? -1 : 1) * maxScrollShift;
@@ -1447,22 +1471,39 @@ export const computeProgressionData = (): IProgressionData => {
     // zero-based index: 0 <= currentColumn < totalColumns
     let currentColumn = 0;
 
+    let extraShift = 0;
     if (isPaged) {
         if (maxScrollShift > 0) {
             if (isVerticalWritingMode()) {
                 progressionRatio = win.document.body.scrollTop / maxScrollShift;
             } else {
-                progressionRatio = ((isRTL() ? -1 : 1) * win.document.body.scrollLeft) / maxScrollShift;
+                extraShift = (win.document.body as any).scrollLeftExtra;
+                // extraShift === maxScrollShiftAdjusted - maxScrollShift
+                if (extraShift) {
+                    progressionRatio = (((isRTL() ? -1 : 1) * win.document.body.scrollLeft) + extraShift) /
+                        maxScrollShiftAdjusted;
+                } else {
+                    progressionRatio = ((isRTL() ? -1 : 1) * win.document.body.scrollLeft) / maxScrollShift;
+                }
             }
         }
 
+        // console.log(")))))))) 0 progressionRatio");
+        // console.log(progressionRatio);
+
+        // console.log("&&&&& EXTRA");
+        // console.log(extraShift);
+
         // because maxScrollShift excludes whole viewport width of content (0%-100% scroll but minus last page/spread)
-        const adjustedTotalColumns = (totalColumns -
-            (isTwoPage ? ((maxScrollShiftAdjusted > maxScrollShift) ? 1 : 2) : 1));
+        const adjustedTotalColumns = (extraShift ? (totalColumns + 1) : totalColumns) - (isTwoPage ? 2 : 1);
+        // tslint:disable-next-line:max-line-length
+        // const adjustedTotalColumns = totalColumns - (isTwoPage ? ((maxScrollShiftAdjusted > maxScrollShift) ? 1 : 2) : 1);
 
         currentColumn = adjustedTotalColumns * progressionRatio;
+        // console.log("%%%%%%%% 0 currentColumn");
+        // console.log(currentColumn);
 
-        currentColumn = Math.round(currentColumn);
+        currentColumn = Math.floor(currentColumn);
     } else {
         if (maxScrollShift > 0) {
             if (isVerticalWritingMode()) {
@@ -1481,28 +1522,52 @@ export const computeProgressionData = (): IProgressionData => {
 
         const rect = element.getBoundingClientRect();
         let offset = 0;
+        // console.log("##### RECT TOP LEFT");
+        // console.log(rect.top);
+        // console.log(rect.left);
 
         if (isPaged) {
-            const columnDimension = calculateColumnDimension();
 
-            if (isVerticalWritingMode()) {
-                offset = (currentColumn * win.document.body.scrollWidth) + rect.left +
-                    (rect.top >= columnDimension ? win.document.body.scrollWidth : 0);
-            } else {
-                offset = (currentColumn * win.document.body.scrollHeight) + rect.top +
-                    (((isRTL() ?
-                        (win.document.documentElement.clientWidth - (rect.left + rect.width)) :
-                        rect.left) >= columnDimension) ? win.document.body.scrollHeight : 0);
+            const visible = computeVisibility_(element);
+            if (visible) {
+                // because getBoundingClientRect() based on visual rendering,
+                // which does not account for extra shift (CSS transform X-translate of the webview)
+                const curCol = extraShift ? (currentColumn - 1) : currentColumn;
+
+                const columnDimension = calculateColumnDimension();
+                // console.log("##### columnDimension");
+                // console.log(columnDimension);
+
+                if (isVerticalWritingMode()) {
+                    offset = (curCol * win.document.body.scrollWidth) + rect.left +
+                        (rect.top >= columnDimension ? win.document.body.scrollWidth : 0);
+                } else {
+                    offset = (curCol * win.document.body.scrollHeight) + rect.top +
+                        (((isRTL() ?
+                            (win.document.documentElement.clientWidth - (rect.left + rect.width)) :
+                            rect.left) >= columnDimension) ? win.document.body.scrollHeight : 0);
+                }
+
+                // console.log("##### offset");
+                // console.log(offset);
+
+                // includes whitespace beyond bottom/end of document, to fill the unnocupied remainder of the column
+                const totalDocumentDimension = ((isVerticalWritingMode() ? win.document.body.scrollWidth :
+                    win.document.body.scrollHeight) * totalColumns);
+                // console.log("##### totalDocumentDimension");
+                // console.log(totalDocumentDimension);
+                progressionRatio = offset / totalDocumentDimension;
+
+                // console.log(")))))))) 1 progressionRatio");
+                // console.log(progressionRatio);
+
+                currentColumn = totalColumns * progressionRatio;
+
+                // console.log("%%%%%%%% 1 currentColumn");
+                // console.log(currentColumn);
+
+                currentColumn = Math.floor(currentColumn);
             }
-
-            // includes whitespace beyond bottom/end of document, to fill the unnocupied remainder of the column
-            progressionRatio = offset /
-                ((isVerticalWritingMode() ? win.document.body.scrollWidth : win.document.body.scrollHeight) *
-                    totalColumns);
-
-            currentColumn = totalColumns * progressionRatio;
-
-            currentColumn = Math.floor(currentColumn);
         } else {
             if (isVerticalWritingMode()) {
                 offset = ((isRTL() ? -1 : 1) * win.document.body.scrollLeft) + rect.left + (isRTL() ? rect.width : 0);
