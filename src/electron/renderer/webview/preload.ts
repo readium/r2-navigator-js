@@ -672,7 +672,6 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
 });
 
 function scrollElementIntoView(element: Element) {
-
     if (win.READIUM2.DEBUG_VISUALS) {
         const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr3}]`);
         existings.forEach((existing) => {
@@ -764,7 +763,6 @@ const scrollToHashRaw = () => {
         //     notifyReadingLocationDebounced();
         //     return;
         // }
-
         // _ignoreScrollEvent = true;
         scrollElementIntoView(win.READIUM2.locationHashOverride);
 
@@ -819,26 +817,28 @@ const scrollToHashRaw = () => {
                 win.READIUM2.locationHashOverride = undefined;
                 resetLocationHashOverrideInfo();
 
-                // relative to fixed window top-left corner
-                const y = (isPaged ?
-                    (isVerticalWritingMode() ?
-                        win.document.documentElement.offsetWidth :
-                        win.document.documentElement.offsetHeight) :
-                    (isVerticalWritingMode() ?
-                        win.document.documentElement.clientWidth :
-                        win.document.documentElement.clientHeight))
-                - 1;
-                processXYRaw(0, y);
-
-                showHideContentMask(false);
-
-                if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
-                    notifyReadingLocationDebounced();
-                }
-
                 setTimeout(() => {
-                    _ignoreScrollEvent = false;
-                }, 10);
+                    // relative to fixed window top-left corner
+                    const y = (isPaged ?
+                        (isVerticalWritingMode() ?
+                            win.document.documentElement.offsetWidth :
+                            win.document.documentElement.offsetHeight) :
+                        (isVerticalWritingMode() ?
+                            win.document.documentElement.clientWidth :
+                            win.document.documentElement.clientHeight))
+                    - 1;
+                    processXYRaw(0, y);
+
+                    showHideContentMask(false);
+
+                    if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
+                        notifyReadingLocationDebounced();
+                    }
+
+                    setTimeout(() => {
+                        _ignoreScrollEvent = false;
+                    }, 10);
+                }, 60);
                 return;
             }
 
@@ -878,15 +878,22 @@ const scrollToHashRaw = () => {
             }
         }
 
-        win.READIUM2.locationHashOverride = win.document.body;
-        resetLocationHashOverrideInfo();
-
         _ignoreScrollEvent = true;
         win.document.body.scrollLeft = 0;
         win.document.body.scrollTop = 0;
         setTimeout(() => {
             _ignoreScrollEvent = false;
         }, 10);
+
+        win.READIUM2.locationHashOverride = win.document.body;
+        resetLocationHashOverrideInfo();
+
+        processXYRaw(0, 0);
+
+        if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
+            notifyReadingLocationDebounced();
+            return;
+        }
     }
 
     notifyReadingLocationDebounced();
@@ -1158,23 +1165,26 @@ win.addEventListener("load", () => {
             if (_cancelInitialScrollCheck) {
                 return;
             }
-            if (!isPaginated(win.document)) {
-                // scrollToHashRaw();
-                return;
-            }
-            let visible = false;
-            if (win.READIUM2.locationHashOverride) {
-                visible = computeVisibility_(win.READIUM2.locationHashOverride);
-            } else if (win.READIUM2.hashElement) {
-                visible = computeVisibility_(win.READIUM2.hashElement);
-            }
-            if (!visible) {
-                debug("!visible (delayed layout pass?) => forcing second scrollToHashRaw()...");
-                if (win.READIUM2.locationHashOverride) {
-                    debug(uniqueCssSelector(win.READIUM2.locationHashOverride, win.document, undefined));
-                }
-                scrollToHashRaw();
-            }
+            // if (!isPaginated(win.document)) {
+            //     // scrollToHashRaw();
+            //     return;
+            // }
+            // let visible = false;
+            // if (win.READIUM2.locationHashOverride === win.document.body ||
+            //     win.READIUM2.hashElement === win.document.body) {
+            //     visible = true;
+            // } else if (win.READIUM2.locationHashOverride) {
+            //     visible = computeVisibility_(win.READIUM2.locationHashOverride);
+            // } else if (win.READIUM2.hashElement) {
+            //     visible = computeVisibility_(win.READIUM2.hashElement);
+            // }
+            // if (!visible) {
+            //     debug("!visible (delayed layout pass?) => forcing second scrollToHashRaw()...");
+            //     if (win.READIUM2.locationHashOverride) {
+            //         debug(uniqueCssSelector(win.READIUM2.locationHashOverride, win.document, undefined));
+            //     }
+            //     scrollToHashRaw();
+            // }
         }, 500);
     } else {
         processXYDebounced(0, 0);
@@ -1183,18 +1193,23 @@ win.addEventListener("load", () => {
     const useResizeSensor = !win.READIUM2.isFixedLayout;
     if (useResizeSensor && win.document.body) {
 
-        // setTimeout(() => {
-        // }, 1000);
-        window.requestAnimationFrame((_timestamp) => {
+        setTimeout(() => {
+            // let _firstResizeSensor = true;
             // tslint:disable-next-line:no-unused-expression
             new ResizeSensor(win.document.body, () => {
-
-                // debug("ResizeSensor");
+                // if (_firstResizeSensor) {
+                //     _firstResizeSensor = false;
+                //     debug("ResizeSensor SKIPPED (FIRST)");
+                //     return;
+                // }
+                debug("ResizeSensor");
 
                 (win.document.body as any).tabbables = undefined;
                 scrollToHashDebounced();
             });
-        });
+        }, 1000);
+        // window.requestAnimationFrame((_timestamp) => {
+        // });
     }
 
     win.document.body.addEventListener("focusin", (ev: any) => {
@@ -1326,7 +1341,7 @@ win.addEventListener("load", () => {
             const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
             processXYDebounced(x, 0);
         });
-    }, 800);
+    }, 200);
 
     win.document.body.addEventListener("click", (ev: MouseEvent) => {
 
@@ -1401,6 +1416,27 @@ win.addEventListener("load", () => {
 // win.addEventListener("unload", () => {
 // });
 
+function findFirstVisibleElement(rooElement: Element): Element | undefined {
+    if (rooElement !== win.document.body) {
+        const visible = computeVisibility_(rooElement);
+        if (visible) {
+            return rooElement;
+        }
+    }
+    // tslint:disable-next-line:prefer-for-of
+    for (let i = 0; i < rooElement.children.length; i++) {
+        const child = rooElement.children[i];
+        if (child.nodeType !== Node.ELEMENT_NODE) {
+            continue;
+        }
+        const visibleElement = findFirstVisibleElement(child);
+        if (visibleElement) {
+            return visibleElement;
+        }
+    }
+    return undefined;
+}
+
 // relative to fixed window top-left corner
 const processXYRaw = (x: number, y: number) => {
 
@@ -1441,11 +1477,42 @@ const processXYRaw = (x: number, y: number) => {
         }
     }
 
+    if (!element || element === win.document.body) {
+        element = findFirstVisibleElement(win.document.body);
+        if (!element) {
+            debug("|||||||||||||| cannot find visible element inside BODY????");
+            element = win.document.body;
+        }
+    } else if (isPaginated(win.document) && !computeVisibility_(element)) {
+        let next: Element | undefined = element;
+        let found: Element | undefined;
+        while (next) {
+            const firstInside = findFirstVisibleElement(next);
+            if (firstInside) {
+                found = firstInside;
+                break;
+            }
+            const sibling: Element | null = next.nextElementSibling;
+            next = sibling ? sibling : undefined;
+        }
+        if (found) {
+            element = found;
+        } else {
+            debug("|||||||||||||| cannot find visible element after current????");
+        }
+    }
+    // if (element) {
+    //     debug("|||||||||||||| SELECTED ELEMENT");
+    //     debug(element);
+    //     if (element) {
+    //         debug(uniqueCssSelector(element, win.document, undefined));
+    //     }
+    // }
+    if (element === win.document.body) {
+        debug("|||||||||||||| BODY selected????");
+    }
     if (element) {
         win.READIUM2.locationHashOverride = element;
-        if (isPaginated(win.document) && !computeVisibility_(element)) {
-            win.READIUM2.locationHashOverride = win.document.body;
-        }
         notifyReadingLocationDebounced();
 
         if (win.READIUM2.DEBUG_VISUALS) {
