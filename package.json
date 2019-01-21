@@ -85,7 +85,7 @@
     "rimraf": "^2.6.3",
     "tslint": "^5.12.1",
     "tslint-language-service": "^0.9.9",
-    "typescript": "^3.2.2"
+    "typescript": "^3.2.4"
   },
   "files": [
     "LICENSE",
