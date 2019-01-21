@@ -1,10 +1,32 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.12...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.13...develop
 
 Changes:
 * TODO
+
+# 1.0.13
+
+> Build environment: NodeJS `8.14.1`, NPM `6.4.1`
+
+Changes:
+* NPM updates
+* Reflowable pagination improvement: two-page spread with odd number of columns (i.e. empty/blank "virtual" trailing page), and more accurate element-level position reporting
+* Accessibility user setting "reduce motion", to disable animated page transitions
+* Popup footnotes: aside with epub:type (rear|foot|end)note is normally automatically hidden, but shown when no targetting link is detected (e.g. dedicated standalone document appendix for notes)
+* Content Security Policy for webview: allowed data: HTTP(S) protocols
+* The "current reading location" getter now populates the document title, so client apps can use this to render info label
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.13/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.13/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.13
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.12...v1.0.13
 
 # 1.0.12
 
