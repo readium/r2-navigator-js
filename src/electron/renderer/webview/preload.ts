@@ -208,6 +208,9 @@ function computeVisibility_(element: Element): boolean {
     } else if (!win.document || !win.document.documentElement || !win.document.body) {
         return false;
     }
+    if (element === win.document.body) {
+        return true;
+    }
 
     const rect = element.getBoundingClientRect();
     // debug(rect.top);
@@ -757,10 +760,10 @@ const scrollToHashRaw = () => {
     const isPaged = isPaginated(win.document);
 
     if (win.READIUM2.locationHashOverride) {
-        if (win.READIUM2.locationHashOverride === win.document.body) {
-            notifyReadingLocationDebounced();
-            return;
-        }
+        // if (win.READIUM2.locationHashOverride === win.document.body) {
+        //     notifyReadingLocationDebounced();
+        //     return;
+        // }
 
         // _ignoreScrollEvent = true;
         scrollElementIntoView(win.READIUM2.locationHashOverride);
@@ -1167,6 +1170,9 @@ win.addEventListener("load", () => {
             }
             if (!visible) {
                 debug("!visible (delayed layout pass?) => forcing second scrollToHashRaw()...");
+                if (win.READIUM2.locationHashOverride) {
+                    debug(uniqueCssSelector(win.READIUM2.locationHashOverride, win.document, undefined));
+                }
                 scrollToHashRaw();
             }
         }, 500);
