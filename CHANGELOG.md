@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.14...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.15...develop
 
 Changes:
 * TODO
+
+# 1.0.15
+
+> Build environment: NodeJS `8.14.1`, NPM `6.4.1`
+
+Changes:
+* Improved visible element detection algorithm, to automatically create the most appropriate CSS selector in reflow paginated and scroll views (reading location for page / spread)
+* Blacklist resize sensor in DOM traversal operations
+* Handling of non-visual page breaks (invisible DOM spans)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.15/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.15/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.15
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.14...v1.0.15
 
 # 1.0.14
 
