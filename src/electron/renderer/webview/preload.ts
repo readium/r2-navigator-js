@@ -222,14 +222,16 @@ function computeVisibility_(element: Element): boolean {
             // console.log(element.outerHTML);
             return false;
         }
-        const visibility = elStyle.getPropertyValue("visibility");
-        if (visibility === "hidden") {
-            if (IS_DEV) {
-                console.log("element VISIBILITY HIDDEN");
-            }
-            // console.log(element.outerHTML);
-            return false;
-        }
+        // Cannot be relied upon, because web browser engine reports
+        // invisible when out of view in scrolled columns!!
+        // const visibility = elStyle.getPropertyValue("visibility");
+        // if (visibility === "hidden") {
+        //     if (IS_DEV) {
+        //         console.log("element VISIBILITY HIDDEN");
+        //     }
+        //     console.log(element.outerHTML);
+        //     return false;
+        // }
         const opacity = elStyle.getPropertyValue("opacity");
         if (opacity === "0") {
             if (IS_DEV) {
