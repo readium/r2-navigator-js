@@ -219,7 +219,7 @@ export function setReadingLocationSaver(func: (locator: LocatorExtended) => void
 
 export function readiumCssOnOff() {
 
-    const _savedReadingLocation = _lastSavedReadingLocation;
+    const savedReadingLocation = _lastSavedReadingLocation;
 
     if (_webview1) {
         const payload1 = __computeReadiumCssJsonMessage(_webview1.READIUM2.link);
@@ -236,9 +236,9 @@ export function readiumCssOnOff() {
         }
     }
 
-    if (_savedReadingLocation) {
+    if (savedReadingLocation) {
         setTimeout(() => {
-            handleLinkLocator(_savedReadingLocation.locator);
+            handleLinkLocator(savedReadingLocation.locator);
         }, 60);
     }
 
@@ -406,10 +406,10 @@ export function installNavigatorDOM(
                 window.localStorage.setItem(URL_PARAM_DEBUG_VISUALS, debugVisualz ? "true" : "false");
             }
             setTimeout(() => {
-                const loc = getCurrentReadingLocation();
-                debug("|||||||||||||| getCurrentReadingLocation: ", JSON.stringify(loc));
-                if (loc) {
-                    handleLinkLocator(loc.locator);
+                // const loc = getCurrentReadingLocation();
+                // debug("|||||||||||||| getCurrentReadingLocation: ", JSON.stringify(loc));
+                if (_lastSavedReadingLocation) {
+                    handleLinkLocator(_lastSavedReadingLocation.locator);
                 }
             }, 100);
         };

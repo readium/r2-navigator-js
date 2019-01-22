@@ -876,11 +876,13 @@ const scrollToHashRaw = () => {
             // tslint:disable-next-line:no-string-literal
             const gto = win.READIUM2.urlQueryParams[URL_PARAM_GOTO];
             let gotoCssSelector: string | undefined;
+            let gotoProgression: number | undefined;
             if (gto) {
                 // decodeURIComponent
                 const s = new Buffer(gto, "base64").toString("utf8");
                 const js = JSON.parse(s);
                 gotoCssSelector = (js as LocatorLocations).cssSelector;
+                gotoProgression = (js as LocatorLocations).progression;
                 // TODO: CFI, etc.?
             }
             if (gotoCssSelector) {
@@ -892,7 +894,6 @@ const scrollToHashRaw = () => {
                     debug(err);
                 }
                 if (selected) {
-
                     win.READIUM2.locationHashOverride = selected;
 
                     resetLocationHashOverrideInfo();
@@ -904,6 +905,52 @@ const scrollToHashRaw = () => {
                     scrollElementIntoView(selected);
 
                     notifyReadingLocationDebounced();
+                    return;
+                }
+            } else if (gotoProgression) {
+                if (isPaged) {
+                    const isTwoPage = isTwoPageSpread();
+                    const nColumns = calculateTotalColumns();
+                    const nUnits = isTwoPage ? Math.ceil(nColumns / 2) : nColumns;
+                    const unitIndex = Math.floor(gotoProgression * nUnits);
+
+                    const { maxScrollShift } = calculateMaxScrollShift();
+
+                    const unit = isVerticalWritingMode() ?
+                        win.document.documentElement.offsetHeight :
+                        win.document.documentElement.offsetWidth;
+
+                    const scrollOffsetPotentiallyExcessive = isVerticalWritingMode() ?
+                        (unitIndex * unit) :
+                        ((isRTL() ? -1 : 1) * unitIndex * unit);
+
+                    // tslint:disable-next-line:max-line-length
+                    ensureTwoPageSpreadWithOddColumnsIsOffset(scrollOffsetPotentiallyExcessive, maxScrollShift);
+
+                    const scrollOffset = (scrollOffsetPotentiallyExcessive < 0 ? -1 : 1) *
+                        Math.min(Math.abs(scrollOffsetPotentiallyExcessive), maxScrollShift);
+
+                    _ignoreScrollEvent = true;
+                    if (isVerticalWritingMode()) {
+                        win.document.body.scrollTop = scrollOffset;
+                    } else {
+                        win.document.body.scrollLeft = scrollOffset;
+                    }
+                    setTimeout(() => {
+                        _ignoreScrollEvent = false;
+                    }, 10);
+
+                    win.READIUM2.locationHashOverride = win.document.body;
+                    resetLocationHashOverrideInfo();
+
+                    processXYRaw(0, 0, false);
+
+                    // setTimeout(() => {
+                    // }, 60);
+
+                    if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
+                        notifyReadingLocationDebounced();
+                    }
                     return;
                 }
             }
@@ -921,10 +968,10 @@ const scrollToHashRaw = () => {
 
         processXYRaw(0, 0, false);
 
-        if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
-            notifyReadingLocationDebounced();
-            return;
-        }
+        // if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
+        //     notifyReadingLocationDebounced();
+        //     return;
+        // }
     }
 
     notifyReadingLocationDebounced();
