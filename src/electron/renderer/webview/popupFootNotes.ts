@@ -58,32 +58,33 @@ export function popupFootNote(
     //     return true;
     // }
 
-    let outerHTML = targetElement.outerHTML;
-    if (!outerHTML) {
+    let htmltxt = targetElement.innerHTML;
+    if (!htmltxt) {
         return false;
     }
 
-    outerHTML = outerHTML.replace(/xmlns=["']http:\/\/www.w3.org\/1999\/xhtml["']/g, " ");
-    outerHTML = outerHTML.replace(/xmlns:epub=["']http:\/\/www.idpf.org\/2007\/ops["']/g, " ");
-    outerHTML = outerHTML.replace(/epub:type=["'][^"']+["']/g, " ");
-    outerHTML = outerHTML.replace(/<script>.+<\/script>/g, " ");
+    htmltxt = htmltxt.replace(/xmlns=["']http:\/\/www.w3.org\/1999\/xhtml["']/g, " ");
+    htmltxt = htmltxt.replace(/xmlns:epub=["']http:\/\/www.idpf.org\/2007\/ops["']/g, " ");
+    // htmltxt = htmltxt.replace(/epub:type=["'][^"']+["']/g, " ");
+    htmltxt = htmltxt.replace(/<script>.+<\/script>/g, " ");
 
-    const ID_PREFIX_ = "r2-footnote-content-of_";
+    const ID_PREFIX_ = "r2-footnote-for_";
     const id_ = ID_PREFIX_ + targetElement.id;
-    outerHTML = outerHTML.replace(/id=["'][^"']+["']/, `id="${id_}"`);
+    // htmltxt = htmltxt.replace(/id=["'][^"']+["']/, `id="${id_}"`);
+    htmltxt = htmltxt.replace(/id=["']([^"']+)["']/g, `idvoid="$1"`); // remove duplicate IDs
 
-    outerHTML = `<div class="${FOOTNOTES_CONTAINER_CLASS} ${CSS_CLASS_NO_FOCUS_OUTLINE}"
-        tabindex="0" autofocus="autofocus">${outerHTML}</div>`;
+    // tslint:disable-next-line:max-line-length
+    htmltxt = `<div id="${id_}" class="${FOOTNOTES_CONTAINER_CLASS} ${CSS_CLASS_NO_FOCUS_OUTLINE}" tabindex="0" autofocus="autofocus">${htmltxt}</div>`;
 
-    // outerHTML = outerHTML.replace(/click=["']javascript:.+["']/g, " ");
-    // debug(outerHTML);
+    // htmltxt = htmltxt.replace(/click=["']javascript:.+["']/g, " ");
+    // debug(htmltxt);
 
     // import * as xmldom from "xmldom";
-    // const dom = new xmldom.DOMParser().parseFromString(outerHTML, "application/xhtml+xml");
+    // const dom = new xmldom.DOMParser().parseFromString(htmltxt, "application/xhtml+xml");
 
     // const payload_: IEventPayload_R2_EVENT_LINK_FOOTNOTE = {
     //     hash: url.hash,
-    //     html: outerHTML,
+    //     html: htmltxt,
     //     url: href,
     // };
     // ipcRenderer.sendToHost(R2_EVENT_LINK_FOOTNOTE, payload_);
@@ -97,7 +98,7 @@ export function popupFootNote(
             pop.dialog.remove();
         }, 50);
     }
-    const pop = new PopupDialog(documant, outerHTML, id, onDialogClosed);
+    const pop = new PopupDialog(documant, htmltxt, id, onDialogClosed);
 
     pop.show(element);
     return true;
