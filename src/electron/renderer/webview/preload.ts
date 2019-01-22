@@ -630,7 +630,8 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     (win.document.body.scrollTop - unit) :
                     (win.document.body.scrollLeft - (isRTL() ? -1 : 1) * unit);
                 // now snap (just in case):
-                const nWholes = Math.ceil(scrollOffset_ / unit); // retains +/- sign
+                // retains +/- sign
+                const nWholes = isRTL() ? Math.floor(scrollOffset_ / unit) : Math.ceil(scrollOffset_ / unit);
                 const scrollOffset = nWholes * unit;
                 // if (scrollOffset !== scrollOffset_) {
                 //     // tslint:disable-next-line:max-line-length
