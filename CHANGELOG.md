@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.16...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.17...develop
 
 Changes:
 * TODO
+
+# 1.0.17
+
+> Build environment: NodeJS `8.14.1`, NPM `6.4.1`
+
+Changes:
+* Fixed hyperlinking bug: nested a@href DOM fragments
+* Improved footnote rendering (extraction of note content)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.17/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.17/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.17
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.16...v1.0.17
 
 # 1.0.16
 
