@@ -1383,19 +1383,27 @@ win.addEventListener("load", () => {
         }
     }, true);
 
-    win.document.addEventListener("click", (e: MouseEvent) => {
+    win.document.addEventListener("click", (ev: MouseEvent) => {
 
-        // TODO? xlink:href
-        const href = (e.target as HTMLAnchorElement).href;
-        // const href = (e.target as Element).getAttribute("href");
+        let currentElement = ev.target as Element;
+        let href: string | undefined;
+        while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
+            if (currentElement.tagName.toLowerCase() === "a") {
+                href = (currentElement as HTMLAnchorElement).href;
+                // const href = currentElement.getAttribute("href");
+                break;
+            }
+            currentElement = currentElement.parentNode as Element;
+        }
+
         if (!href) {
             return;
         }
 
-        e.preventDefault();
-        e.stopPropagation();
+        ev.preventDefault();
+        ev.stopPropagation();
 
-        const done = popupFootNote(e.target as HTMLElement, focusScrollRaw, href);
+        const done = popupFootNote(currentElement as HTMLElement, focusScrollRaw, href);
         if (!done) {
             focusScrollDebounced.clear();
             processXYDebounced.clear();
