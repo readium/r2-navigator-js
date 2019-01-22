@@ -910,13 +910,13 @@ const scrollToHashRaw = () => {
                     return;
                 }
             } else if (gotoProgression) {
+                const { maxScrollShift } = calculateMaxScrollShift();
+
                 if (isPaged) {
                     const isTwoPage = isTwoPageSpread();
                     const nColumns = calculateTotalColumns();
                     const nUnits = isTwoPage ? Math.ceil(nColumns / 2) : nColumns;
                     const unitIndex = Math.floor(gotoProgression * nUnits);
-
-                    const { maxScrollShift } = calculateMaxScrollShift();
 
                     const unit = isVerticalWritingMode() ?
                         win.document.documentElement.offsetHeight :
@@ -947,14 +947,33 @@ const scrollToHashRaw = () => {
 
                     processXYRaw(0, 0, false);
 
-                    // setTimeout(() => {
-                    // }, 60);
-
                     if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
                         notifyReadingLocationDebounced();
                     }
                     return;
                 }
+                // !isPaged
+                const scrollOffset = gotoProgression * maxScrollShift;
+
+                _ignoreScrollEvent = true;
+                if (isVerticalWritingMode()) {
+                    win.document.body.scrollLeft = scrollOffset;
+                } else {
+                    win.document.body.scrollTop = scrollOffset;
+                }
+                setTimeout(() => {
+                    _ignoreScrollEvent = false;
+                }, 10);
+
+                win.READIUM2.locationHashOverride = win.document.body;
+                resetLocationHashOverrideInfo();
+
+                processXYRaw(0, 0, false);
+
+                if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
+                    notifyReadingLocationDebounced();
+                }
+                return;
             }
         }
 
