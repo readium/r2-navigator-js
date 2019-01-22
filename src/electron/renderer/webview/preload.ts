@@ -208,8 +208,36 @@ function computeVisibility_(element: Element): boolean {
     } else if (!win.document || !win.document.documentElement || !win.document.body) {
         return false;
     }
-    if (element === win.document.body) {
+    if (element === win.document.body || element === win.document.documentElement) {
         return true;
+    }
+
+    const elStyle = win.getComputedStyle(element);
+    if (elStyle) {
+        const display = elStyle.getPropertyValue("display");
+        if (display === "none") {
+            if (IS_DEV) {
+                console.log("element DISPLAY NONE");
+            }
+            // console.log(element.outerHTML);
+            return false;
+        }
+        const visibility = elStyle.getPropertyValue("visibility");
+        if (visibility === "hidden") {
+            if (IS_DEV) {
+                console.log("element VISIBILITY HIDDEN");
+            }
+            // console.log(element.outerHTML);
+            return false;
+        }
+        const opacity = elStyle.getPropertyValue("opacity");
+        if (opacity === "0") {
+            if (IS_DEV) {
+                console.log("element OPACITY ZERO");
+            }
+            // console.log(element.outerHTML);
+            return false;
+        }
     }
 
     const rect = element.getBoundingClientRect();
@@ -230,7 +258,9 @@ function computeVisibility_(element: Element): boolean {
         //     (isVerticalWritingMode() ? win.document.body.scrollWidth : win.document.body.scrollHeight);
 
         // TODO: vertical writing mode
-        if ((rect.top + rect.height) >= 0 && rect.top <= win.document.documentElement.clientHeight) {
+        if (rect.top >= 0 &&
+            // (rect.top + rect.height) >= 0 &&
+            rect.top <= win.document.documentElement.clientHeight) {
             return true;
         }
         // tslint:disable-next-line:max-line-length
@@ -819,15 +849,16 @@ const scrollToHashRaw = () => {
 
                 setTimeout(() => {
                     // relative to fixed window top-left corner
-                    const y = (isPaged ?
-                        (isVerticalWritingMode() ?
-                            win.document.documentElement.offsetWidth :
-                            win.document.documentElement.offsetHeight) :
-                        (isVerticalWritingMode() ?
-                            win.document.documentElement.clientWidth :
-                            win.document.documentElement.clientHeight))
-                    - 1;
-                    processXYRaw(0, y);
+                    // const y = (isPaged ?
+                    //     (isVerticalWritingMode() ?
+                    //         win.document.documentElement.offsetWidth :
+                    //         win.document.documentElement.offsetHeight) :
+                    //     (isVerticalWritingMode() ?
+                    //         win.document.documentElement.clientWidth :
+                    //         win.document.documentElement.clientHeight))
+                    // - 1;
+                    // processXYRaw(0, y, true);
+                    processXYRaw(0, 0, false);
 
                     showHideContentMask(false);
 
@@ -888,7 +919,7 @@ const scrollToHashRaw = () => {
         win.READIUM2.locationHashOverride = win.document.body;
         resetLocationHashOverrideInfo();
 
-        processXYRaw(0, 0);
+        processXYRaw(0, 0, false);
 
         if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
             notifyReadingLocationDebounced();
@@ -1187,7 +1218,7 @@ win.addEventListener("load", () => {
             // }
         }, 500);
     } else {
-        processXYDebounced(0, 0);
+        processXYDebounced(0, 0, false);
     }
 
     const useResizeSensor = !win.READIUM2.isFixedLayout;
@@ -1339,7 +1370,7 @@ win.addEventListener("load", () => {
             }
 
             const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
-            processXYDebounced(x, 0);
+            processXYDebounced(x, 0, false);
         });
     }, 200);
 
@@ -1354,7 +1385,7 @@ win.addEventListener("load", () => {
         const x = ev.clientX;
         const y = ev.clientY;
 
-        processXYDebounced(x, y);
+        processXYDebounced(x, y, false);
     });
 
     win.document.body.addEventListener("click", (ev: MouseEvent) => {
@@ -1416,16 +1447,39 @@ win.addEventListener("load", () => {
 // win.addEventListener("unload", () => {
 // });
 
-function findFirstVisibleElement(rooElement: Element): Element | undefined {
-    if (rooElement !== win.document.body) {
-        const visible = computeVisibility_(rooElement);
-        if (visible) {
-            return rooElement;
+function checkBlacklisted(el: Element): boolean {
+
+    let blacklistedId: string | undefined;
+    const id = el.getAttribute("id");
+    if (id && _blacklistIdClassForCFI.indexOf(id) >= 0) {
+        console.log("checkBlacklisted ID: " + id);
+        blacklistedId = id;
+    }
+    let blacklistedClass: string | undefined;
+    for (const item of _blacklistIdClassForCFI) {
+        if (el.classList.contains(item)) {
+            console.log("checkBlacklisted CLASS: " + item);
+            blacklistedClass = item;
+            break;
         }
     }
+    if (blacklistedId || blacklistedClass) {
+        return true;
+    }
+
+    return false;
+}
+
+function findFirstVisibleElement(rootElement: Element): Element | undefined {
+
+    const blacklisted = checkBlacklisted(rootElement);
+    if (blacklisted) {
+        return undefined;
+    }
+
     // tslint:disable-next-line:prefer-for-of
-    for (let i = 0; i < rooElement.children.length; i++) {
-        const child = rooElement.children[i];
+    for (let i = 0; i < rootElement.children.length; i++) {
+        const child = rootElement.children[i];
         if (child.nodeType !== Node.ELEMENT_NODE) {
             continue;
         }
@@ -1434,11 +1488,19 @@ function findFirstVisibleElement(rooElement: Element): Element | undefined {
             return visibleElement;
         }
     }
+    if (rootElement !== win.document.body &&
+        rootElement !== win.document.documentElement) {
+
+        const visible = computeVisibility_(rootElement);
+        if (visible) {
+            return rootElement;
+        }
+    }
     return undefined;
 }
 
 // relative to fixed window top-left corner
-const processXYRaw = (x: number, y: number) => {
+const processXYRaw = (x: number, y: number, reverse: boolean) => {
 
     if (isPopupDialogOpen(win.document)) {
         return;
@@ -1477,22 +1539,38 @@ const processXYRaw = (x: number, y: number) => {
         }
     }
 
-    if (!element || element === win.document.body) {
-        element = findFirstVisibleElement(win.document.body);
+    if (!element || element === win.document.body || element === win.document.documentElement) {
+        const root = win.document.body; // || win.document.documentElement;
+        element = findFirstVisibleElement(root);
         if (!element) {
-            debug("|||||||||||||| cannot find visible element inside BODY????");
+            debug("|||||||||||||| cannot find visible element inside BODY / HTML????");
             element = win.document.body;
         }
-    } else if (isPaginated(win.document) && !computeVisibility_(element)) {
+    } else if (!computeVisibility_(element)) { // isPaginated(win.document)
         let next: Element | undefined = element;
         let found: Element | undefined;
         while (next) {
+            // const blacklisted = checkBlacklisted(next);
+            // if (blacklisted) {
+            //     break;
+            // }
+
             const firstInside = findFirstVisibleElement(next);
             if (firstInside) {
                 found = firstInside;
                 break;
             }
-            const sibling: Element | null = next.nextElementSibling;
+            let sibling: Element | null = reverse ? next.previousElementSibling : next.nextElementSibling;
+            let parent: Node | null = next;
+            while (!sibling) {
+                parent = parent.parentNode;
+                if (!parent || parent.nodeType !== Node.ELEMENT_NODE) {
+                    break;
+                }
+                sibling = reverse ?
+                    (parent as Element).previousElementSibling :
+                    (parent as Element).nextElementSibling;
+            }
             next = sibling ? sibling : undefined;
         }
         if (found) {
@@ -1508,8 +1586,8 @@ const processXYRaw = (x: number, y: number) => {
     //         debug(uniqueCssSelector(element, win.document, undefined));
     //     }
     // }
-    if (element === win.document.body) {
-        debug("|||||||||||||| BODY selected????");
+    if (element === win.document.body || element === win.document.documentElement) {
+        debug("|||||||||||||| BODY/HTML selected????");
     }
     if (element) {
         win.READIUM2.locationHashOverride = element;
@@ -1524,8 +1602,8 @@ const processXYRaw = (x: number, y: number) => {
         }
     }
 };
-const processXYDebounced = debounce((x: number, y: number) => {
-    processXYRaw(x, y);
+const processXYDebounced = debounce((x: number, y: number, reverse: boolean) => {
+    processXYRaw(x, y, reverse);
 }, 300);
 
 interface IProgressionData {
@@ -1676,7 +1754,7 @@ export const computeProgressionData = (): IProgressionData => {
 const _blacklistIdClassForCssSelectors = [TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
 
 // tslint:disable-next-line:max-line-length
-const _blacklistIdClassForCFI = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN];
+const _blacklistIdClassForCFI = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, "resize-sensor"];
 
 export const computeCFI = (node: Node): string | undefined => {
 
@@ -1689,22 +1767,8 @@ export const computeCFI = (node: Node): string | undefined => {
 
     let currentElement = node as Element;
     while (currentElement.parentNode && currentElement.parentNode.nodeType === Node.ELEMENT_NODE) {
-        let blacklistedId: string | undefined;
-        const id = currentElement.getAttribute("id");
-        if (id && _blacklistIdClassForCFI.indexOf(id) >= 0) {
-            console.log("CFI BLACKLIST ID: " + id);
-            blacklistedId = id;
-        }
-
-        let blacklistedClass: string | undefined;
-        for (const item of _blacklistIdClassForCFI) {
-            if (currentElement.classList.contains(item)) {
-                console.log("CFI BLACKLIST CLASS: " + item);
-                blacklistedClass = item;
-                break;
-            }
-        }
-        if (!blacklistedId && !blacklistedClass) {
+        const blacklisted = checkBlacklisted(currentElement);
+        if (!blacklisted) {
             const currentElementParentChildren = (currentElement.parentNode as Element).children;
             let currentElementIndex = -1;
             for (let i = 0; i < currentElementParentChildren.length; i++) {
@@ -1757,7 +1821,7 @@ const notifyReadingLocationRaw = () => {
         progressionData.paginationInfo : undefined;
 
     win.READIUM2.locationHashOverrideInfo = {
-        href: "",
+        href: "", // TODO
         locations: {
             cfi,
             cssSelector,
@@ -1777,8 +1841,6 @@ const notifyReadingLocationRaw = () => {
         });
         win.READIUM2.locationHashOverride.setAttribute(readPosCssStylesAttr4, "notifyReadingLocationRaw");
     }
-
-    debug("|||||||||||||| notifyReadingLocation: ", JSON.stringify(payload));
 };
 const notifyReadingLocationDebounced = debounce(() => {
     notifyReadingLocationRaw();

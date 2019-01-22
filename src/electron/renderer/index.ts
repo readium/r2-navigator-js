@@ -194,6 +194,11 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
         },
         paginationInfo: locator.paginationInfo,
     };
+
+    if (IS_DEV) {
+        debug("|||||||||||||| notifyReadingLocation: ", JSON.stringify(_lastSavedReadingLocation));
+    }
+
     if (_readingLocationSaver) {
         _readingLocationSaver(_lastSavedReadingLocation);
     }
