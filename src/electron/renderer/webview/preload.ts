@@ -929,14 +929,14 @@ const scrollToHashRaw = () => {
                     // tslint:disable-next-line:max-line-length
                     ensureTwoPageSpreadWithOddColumnsIsOffset(scrollOffsetPotentiallyExcessive, maxScrollShift);
 
-                    const scrollOffset = (scrollOffsetPotentiallyExcessive < 0 ? -1 : 1) *
+                    const scrollOffsetPaged = (scrollOffsetPotentiallyExcessive < 0 ? -1 : 1) *
                         Math.min(Math.abs(scrollOffsetPotentiallyExcessive), maxScrollShift);
 
                     _ignoreScrollEvent = true;
                     if (isVerticalWritingMode()) {
-                        win.document.body.scrollTop = scrollOffset;
+                        win.document.body.scrollTop = scrollOffsetPaged;
                     } else {
-                        win.document.body.scrollLeft = scrollOffset;
+                        win.document.body.scrollLeft = scrollOffsetPaged;
                     }
                     setTimeout(() => {
                         _ignoreScrollEvent = false;
