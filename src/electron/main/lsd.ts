@@ -43,7 +43,7 @@ export async function doLsdRenew(
 
     const publication = publicationsServer.cachedPublication(publicationFilePath);
     if (!publication || !publication.LCP || !publication.LCP.LSDJson) {
-        return Promise.reject("Internal error!");
+        return Promise.reject("no publication LCP LSD data?!");
     }
 
     const endDate = endDateStr ? moment(endDateStr).toDate() : undefined;
