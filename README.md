@@ -606,22 +606,77 @@ const deviceIDManager: IDeviceIDManager = {
 // and to check for an updated license (as passed in the callback parameter).
 // The lsdLcpUpdateInject() function can be used to immediately inject the updated
 // LCP license (META-INF/license.lcpl) inside the EPUB container on the filesystem.
+// Note that although the `launchStatusDocumentProcessing()` initializes `publication.LCP.LSDJson`,
+// after `lsdLcpUpdateInject()` is invoked a fresh new `publication.LCP` object is created
+// (which mirrors `META-INF/container.xml`), so `launchStatusDocumentProcessing()` must be called again (loop)
+// to ensure the latest LSD is indeed loaded and verified. Another alterative is to preserve the previous LSD,
+// which in all likelyhood is exactly the same (i.e. hasn't changed since the LCP license injection).
+// See immediately below for the alternative "preservation" method.
+// See further below for the more contrived (but strictly-speaking more correct) "loop" method.
 try {
     await launchStatusDocumentProcessing(publication.LCP, deviceIDManager,
         async (licenseUpdateJson: string | undefined) => {
 
             if (licenseUpdateJson) {
+                const LSDJson = publication.LCP.LSDJson; // LSD preservation, see comment above.
+
                 let res: string;
                 try {
                     res = await lsdLcpUpdateInject(
                         licenseUpdateJson,
                         publication as Publication,
                         publicationFilePath);
+
+                    publication.LCP.LSDJson = LSDJson; // LSD preservation, see comment above.
                 } catch (err) {
                     debug(err);
                 }
             }
         });
+} catch (err) {
+    debug(err);
+}
+
+// Example of looping the `launchStatusDocumentProcessing()` calls in order to reset `publication.LCP.LSDJson`
+// after `lsdLcpUpdateInject()` injects a fresh `publication.LCP` based on the downloaded `META-INF/container.xml`.
+async function tryLSD(deviceIDManager: IDeviceIDManager, publication: Publication, publicationFilePath: string): Promise<boolean> {
+
+    return new Promise(async (resolve, reject) => {
+        try {
+            await launchStatusDocumentProcessing(publication.LCP as LCP, deviceIDManager,
+                async (licenseUpdateJson: string | undefined) => {
+
+                    if (licenseUpdateJson) {
+                        let res: string;
+                        try {
+                            res = await lsdLcpUpdateInject(
+                                licenseUpdateJson,
+                                publication as Publication,
+                                publicationFilePath);
+
+                            try {
+                                await tryLSD(publication, publicationFilePath); // loop to re-init LSD
+                                resolve(true);
+                            } catch (err) {
+                                debug(err);
+                                reject(err);
+                            }
+                        } catch (err) {
+                            debug(err);
+                            reject(err);
+                        }
+                    } else {
+                        resolve(true);
+                    }
+                });
+        } catch (err) {
+            debug(err);
+            reject(err);
+        }
+    });
+}
+try {
+    await tryLSD(publication, publicationFilePath);
 } catch (err) {
     debug(err);
 }
@@ -694,4 +749,14 @@ try {
 } catch (err) {
     debug(err);
 }
+
+// Both LSD "renew" and "return" interactions can return errors (i.e. Promise.reject => try/catch with async/await)
+// when the server responds with HTTP statusCode < 200 || >= 300.
+// The `err` object in the above code snippet can be a number (HTTP status code) when no response body is available.
+// Otherwise, it can be an object with the `httpStatusCode` property (number) and httpResponseBody (string)
+// when the response body cannot be parsed to JSON.
+// Otherwise, it can be an object with the `httpStatusCode` property (number) and other arbitrary JSON properties,
+// depending on the server response. Typically, compliant LCP/LSD servers are expected to return Problem Details JSON (RFC7807),
+// which provides `title` `type` and `details` JSON properties.
+// See https://readium.org/technical/readium-lsd-specification/#31-handling-errors
 ```
