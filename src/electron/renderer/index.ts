@@ -259,7 +259,7 @@ export async function isLocatorVisible(locator: Locator): Promise<boolean> {
             return;
         }
         if (_webview1.READIUM2.link.Href !== locator.href) {
-            debug(`isLocatorVisible FALSE: ${_webview1.READIUM2.link.Href} !== ${locator.href}`);
+            // debug(`isLocatorVisible FALSE: ${_webview1.READIUM2.link.Href} !== ${locator.href}`);
             resolve(false);
             return;
         }
@@ -279,7 +279,7 @@ export async function isLocatorVisible(locator: Locator): Promise<boolean> {
                     return;
                 }
                 const payload_ = event.args[0] as IEventPayload_R2_EVENT_LOCATOR_VISIBLE;
-                debug(`isLocatorVisible: ${payload_.visible}`);
+                // debug(`isLocatorVisible: ${payload_.visible}`);
                 _webview1.removeEventListener("ipc-message", cb);
                 resolve(payload_.visible);
             }
@@ -951,6 +951,8 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
             if (_ttsListener) {
                 _ttsListener(TTSStateEnum.PLAYING);
             }
+        } else if (event.channel === R2_EVENT_LOCATOR_VISIBLE) {
+            // ignore (handled elsewhere)
         } else {
             debug("webview1 ipc-message");
             debug(event.channel);
