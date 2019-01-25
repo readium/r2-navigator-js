@@ -33,6 +33,14 @@ export interface IEventPayload_R2_EVENT_READIUMCSS {
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_DEBUG_VISUALS = "R2_EVENT_DEBUG_VISUALS";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_DEBUG_VISUALS {
+    debugVisuals: boolean;
+
+    cssSelector?: string;
+    cssClass?: string;
+    cssStyles?: string;
+}
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()

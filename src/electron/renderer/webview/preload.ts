@@ -22,6 +22,7 @@ import { ipcRenderer } from "electron";
 import * as tabbable from "tabbable";
 
 import {
+    IEventPayload_R2_EVENT_DEBUG_VISUALS,
     IEventPayload_R2_EVENT_LINK,
     IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
     IEventPayload_R2_EVENT_PAGE_TURN,
@@ -51,6 +52,7 @@ import {
 } from "../../common/events";
 import {
     CLASS_PAGINATED,
+    appendCSSInline,
     configureFixedLayout,
     injectDefaultCSS,
     injectReadPosCSS,
@@ -185,10 +187,10 @@ if (win.READIUM2.urlQueryParams) {
 }
 
 if (IS_DEV) {
-    ipcRenderer.on(R2_EVENT_DEBUG_VISUALS, (_event: any, payload: string) => {
-        win.READIUM2.DEBUG_VISUALS = payload === "true";
+    ipcRenderer.on(R2_EVENT_DEBUG_VISUALS, (_event: any, payload: IEventPayload_R2_EVENT_DEBUG_VISUALS) => {
+        win.READIUM2.DEBUG_VISUALS = payload.debugVisuals;
 
-        if (!win.READIUM2.DEBUG_VISUALS) {
+        if (!payload.debugVisuals) {
             const existings = win.document.querySelectorAll(
                 // tslint:disable-next-line:max-line-length
                 `*[${readPosCssStylesAttr1}], *[${readPosCssStylesAttr2}], *[${readPosCssStylesAttr3}], *[${readPosCssStylesAttr4}]`);
@@ -198,6 +200,32 @@ if (IS_DEV) {
                 existing.removeAttribute(`${readPosCssStylesAttr3}`);
                 existing.removeAttribute(`${readPosCssStylesAttr4}`);
             });
+        }
+        if (payload.cssClass) {
+            if (_blacklistIdClassForCssSelectors.indexOf(payload.cssClass) < 0) {
+                _blacklistIdClassForCssSelectors.push(payload.cssClass);
+            }
+
+            if (payload.debugVisuals && payload.cssStyles && payload.cssStyles.length) {
+                const idSuffix = `debug_for_class_${payload.cssClass}`;
+                appendCSSInline(win.document, idSuffix, payload.cssStyles);
+
+                if (payload.cssSelector) {
+                    const toHighlights = win.document.querySelectorAll(payload.cssSelector);
+                    toHighlights.forEach((toHighlight) => {
+                        const clazz = `${payload.cssClass}`;
+                        if (!toHighlight.classList.contains(clazz)) {
+                            toHighlight.classList.add(clazz);
+                        }
+                    });
+                }
+            } else {
+                // const existings = win.document.querySelectorAll(payload.cssSelector);
+                const existings = win.document.querySelectorAll(`.${payload.cssClass}`);
+                existings.forEach((existing) => {
+                    existing.classList.remove(`${payload.cssClass}`);
+                });
+            }
         }
     });
 }

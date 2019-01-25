@@ -26,6 +26,7 @@ import * as debug_ from "debug";
 import { ipcRenderer, shell } from "electron";
 
 import {
+    IEventPayload_R2_EVENT_DEBUG_VISUALS,
     IEventPayload_R2_EVENT_LINK,
     IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
     IEventPayload_R2_EVENT_PAGE_TURN,
@@ -382,28 +383,30 @@ export function installNavigatorDOM(
     _publicationJsonUrl = publicationJsonUrl;
 
     if (IS_DEV) {
-        debug("|||||||||||||| installNavigatorDOM: ", JSON.stringify(location));
+        debug("||||||++||||| installNavigatorDOM: ", JSON.stringify(location));
 
-        const debugVisuals = (window.localStorage &&
+        const debugVisualz = (window.localStorage &&
             window.localStorage.getItem(URL_PARAM_DEBUG_VISUALS) === "true") ? true : false;
-        debug("debugVisuals GET: ", debugVisuals);
+        debug("debugVisuals GET: ", debugVisualz);
 
         (window as IElectronBrowserWindow).READIUM2 = {
-            DEBUG_VISUALS: debugVisuals,
+            DEBUG_VISUALS: debugVisualz,
             publication: _publication,
             publicationURL: _publicationJsonUrl,
             ttsClickEnabled: false,
         };
 
-        (window as any).READIUM2.debug = (debugVisualz: boolean) => {
-            debug("debugVisuals SET: ", debugVisualz);
+        (window as any).READIUM2.debug = (debugVisuals: boolean) => {
+            debug("debugVisuals SET: ", debugVisuals);
 
-            (window as IElectronBrowserWindow).READIUM2.DEBUG_VISUALS = debugVisualz;
+            (window as IElectronBrowserWindow).READIUM2.DEBUG_VISUALS = debugVisuals;
             if (_webview1) {
-                _webview1.send(R2_EVENT_DEBUG_VISUALS, debugVisualz ? "true" : "false"); // .getWebContents()
+                const payload: IEventPayload_R2_EVENT_DEBUG_VISUALS
+                    = { debugVisuals };
+                _webview1.send(R2_EVENT_DEBUG_VISUALS, payload);
             }
             if (window.localStorage) {
-                window.localStorage.setItem(URL_PARAM_DEBUG_VISUALS, debugVisualz ? "true" : "false");
+                window.localStorage.setItem(URL_PARAM_DEBUG_VISUALS, debugVisuals ? "true" : "false");
             }
             setTimeout(() => {
                 // const loc = getCurrentReadingLocation();
@@ -412,6 +415,32 @@ export function installNavigatorDOM(
                     handleLinkLocator(_lastSavedReadingLocation.locator);
                 }
             }, 100);
+        };
+
+        (window as any).READIUM2.debugItems =
+            (cssSelector: string, cssClass: string, cssStyles: string | undefined) => {
+
+            debug("debugVisuals ITEMS: ", `${cssSelector} --- ${cssClass} --- ${cssStyles}`);
+
+            // let delay = 0;
+            // if (!(window as IElectronBrowserWindow).READIUM2.DEBUG_VISUALS) {
+            //     (window as any).READIUM2.debug(true);
+            //     delay = 200;
+            // }
+            // setTimeout(() => {
+            //     if (_webview1) {
+            //         const payload: IEventPayload_R2_EVENT_DEBUG_VISUALS
+            //             = { debugVisuals: true, cssSelector, cssClass, cssStyles };
+            //         _webview1.send(R2_EVENT_DEBUG_VISUALS, payload);
+            //     }
+            // }, delay);
+
+            if (_webview1) {
+                const d = (window as IElectronBrowserWindow).READIUM2.DEBUG_VISUALS;
+                const payload: IEventPayload_R2_EVENT_DEBUG_VISUALS
+                    = { debugVisuals: d, cssSelector, cssClass, cssStyles };
+                _webview1.send(R2_EVENT_DEBUG_VISUALS, payload);
+            }
         };
     }
 
