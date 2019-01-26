@@ -420,7 +420,9 @@ export function installNavigatorDOM(
         (window as any).READIUM2.debugItems =
             (cssSelector: string, cssClass: string, cssStyles: string | undefined) => {
 
-            debug("debugVisuals ITEMS: ", `${cssSelector} --- ${cssClass} --- ${cssStyles}`);
+            if (cssStyles) {
+                debug("debugVisuals ITEMS: ", `${cssSelector} --- ${cssClass} --- ${cssStyles}`);
+            }
 
             // let delay = 0;
             // if (!(window as IElectronBrowserWindow).READIUM2.DEBUG_VISUALS) {
