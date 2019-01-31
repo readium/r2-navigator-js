@@ -8,6 +8,7 @@
 import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
 
 import { IReadiumCSS } from "./readium-css-settings";
+import { ISelectionInfo } from "./selection";
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
@@ -79,6 +80,7 @@ export interface IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO {
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_READING_LOCATION extends Locator {
     paginationInfo: IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO | undefined;
+    selectionInfo: ISelectionInfo | undefined;
 }
 
 // in MAIN: browserWindow.webContents.send()

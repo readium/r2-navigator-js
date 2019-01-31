@@ -100,6 +100,7 @@ import {
     isVerticalWritingMode,
     readiumCSS,
 } from "./readium-css";
+import { getCurrentSelectionInfo } from "./selection";
 import { IElectronWebviewTagWindow } from "./state";
 
 import ResizeSensor = require("css-element-queries/src/ResizeSensor");
@@ -128,6 +129,8 @@ win.READIUM2 = {
             progression: undefined,
         },
         paginationInfo: undefined,
+        selectionInfo: undefined,
+        title: undefined,
     },
     ttsClickEnabled: false,
     urlQueryParams: undefined,
@@ -437,6 +440,7 @@ function resetLocationHashOverrideInfo() {
             progression: undefined,
         },
         paginationInfo: undefined,
+        selectionInfo: undefined,
         title: undefined,
     };
 }
@@ -1340,6 +1344,13 @@ win.addEventListener("load", () => {
         // });
     }
 
+    // "selectionchange" event NOT SUITABLE,
+    // BECAUSE selection.removeAllRanges() + selection.addRange(range) in selection.ts
+    // (normalization of selection to single range => infinite loop!!)
+    win.document.addEventListener("selectionstart", (_ev: any) => {
+        notifyReadingLocationDebounced();
+    });
+
     win.document.body.addEventListener("focusin", (ev: any) => {
 
         if (_ignoreFocusInEvent) {
@@ -1895,6 +1906,18 @@ export const computeCFI = (node: Node): string | undefined => {
     return "/" + cfi;
 };
 
+function getCssSelector(element: Element): string {
+    const options = {
+        className: (str: string) => {
+            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+        },
+        idName: (str: string) => {
+            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+        },
+    };
+    return uniqueCssSelector(element, win.document, options);
+}
+
 const notifyReadingLocationRaw = () => {
     if (!win.READIUM2.locationHashOverride) {
         return;
@@ -1904,15 +1927,7 @@ const notifyReadingLocationRaw = () => {
 
     let progressionData: IProgressionData | undefined;
 
-    const options = {
-        className: (str: string) => {
-            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-        },
-        idName: (str: string) => {
-            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-        },
-    };
-    const cssSelector = uniqueCssSelector(win.READIUM2.locationHashOverride, win.document, options);
+    const cssSelector = getCssSelector(win.READIUM2.locationHashOverride);
     const cfi = computeCFI(win.READIUM2.locationHashOverride);
     let progression = 0;
     if (win.READIUM2.isFixedLayout) {
@@ -1925,6 +1940,8 @@ const notifyReadingLocationRaw = () => {
     const pinfo = (progressionData && progressionData.paginationInfo) ?
         progressionData.paginationInfo : undefined;
 
+    const selInfo = getCurrentSelectionInfo(win, getCssSelector);
+
     win.READIUM2.locationHashOverrideInfo = {
         href: "", // TODO
         locations: {
@@ -1934,6 +1951,7 @@ const notifyReadingLocationRaw = () => {
             progression,
         },
         paginationInfo: pinfo,
+        selectionInfo: selInfo,
         title: _docTitle,
     };
     const payload: IEventPayload_R2_EVENT_READING_LOCATION = win.READIUM2.locationHashOverrideInfo;

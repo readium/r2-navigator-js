@@ -57,6 +57,7 @@ import {
     R2_EVENT_TTS_IS_PLAYING,
     R2_EVENT_TTS_IS_STOPPED,
 } from "../common/events";
+import { ISelectionInfo } from "../common/selection";
 import {
     R2_SESSION_WEBVIEW,
     READIUM2_ELECTRON_HTTP_PROTOCOL,
@@ -170,6 +171,7 @@ export function setReadiumCssJsonGetter(func: () => IEventPayload_R2_EVENT_READI
 export interface LocatorExtended {
     locator: Locator;
     paginationInfo: IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO | undefined;
+    selectionInfo: ISelectionInfo | undefined;
 }
 
 let _lastSavedReadingLocation: LocatorExtended | undefined;
@@ -194,10 +196,13 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
             title: locator.title,
         },
         paginationInfo: locator.paginationInfo,
+        selectionInfo: locator.selectionInfo,
     };
 
     if (IS_DEV) {
-        debug("|||||||||||||| notifyReadingLocation: ", JSON.stringify(_lastSavedReadingLocation));
+        // debug(">->->", JSON.stringify(_lastSavedReadingLocation, null, "  "));
+        debug(">->->");
+        debug(_lastSavedReadingLocation);
     }
 
     if (_readingLocationSaver) {
