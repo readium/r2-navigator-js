@@ -10,7 +10,11 @@ import { IElectronWebviewTagWindow } from "./state";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-export function getCurrentSelectionInfo(win: IElectronWebviewTagWindow, getCssSelector: (element: Element) => string):
+export function getCurrentSelectionInfo(
+    win: IElectronWebviewTagWindow,
+    getCssSelector: (element: Element) => string,
+    computeElementCFI: (node: Node) => string | undefined,
+    ):
     ISelectionInfo | undefined {
 
     const selection = win.getSelection();
@@ -23,12 +27,12 @@ export function getCurrentSelectionInfo(win: IElectronWebviewTagWindow, getCssSe
     const range = createSingleOrderedRange(
         selection.anchorNode, selection.anchorOffset, selection.focusNode, selection.focusOffset);
 
-    const rangeInfo = convertRange(range, getCssSelector);
+    const rangeInfo = convertRange(range, getCssSelector, computeElementCFI);
     if (!rangeInfo) {
         return undefined;
     }
 
-    selection.removeAllRanges();
+    // selection.removeAllRanges();
     if (IS_DEV && win.READIUM2.DEBUG_VISUALS) {
         const restoredRange = convertRangeInfo(rangeInfo);
         if (restoredRange) {
@@ -46,18 +50,18 @@ export function getCurrentSelectionInfo(win: IElectronWebviewTagWindow, getCssSe
                 console.log(`RANGE END NODE DIFF!`);
             }
 
-            setTimeout(() => {
-                selection.addRange(restoredRange);
-            }, 500);
+            // setTimeout(() => {
+            //     selection.addRange(restoredRange);
+            // }, 500);
         } else {
             console.log("CANNOT RESTORE SELECTION RANGE ??!");
 
-            setTimeout(() => {
-                selection.addRange(range);
-            }, 500);
+            // setTimeout(() => {
+            //     selection.addRange(range);
+            // }, 500);
         }
     } else {
-        selection.addRange(range);
+        // selection.addRange(range);
     }
 
     return { rangeInfo, text };
@@ -78,7 +82,11 @@ export function createSingleOrderedRange(startNode: Node, startOffset: number, e
     return range;
 }
 
-export function convertRange(range: Range, getCssSelector: (element: Element) => string):
+export function convertRange(
+    range: Range,
+    getCssSelector: (element: Element) => string,
+    computeElementCFI: (node: Node) => string | undefined,
+    ):
     IRangeInfo | undefined {
 
     if (!range.startContainer) {
@@ -91,7 +99,8 @@ export function convertRange(range: Range, getCssSelector: (element: Element) =>
     } else if (range.startContainer.nodeType === Node.TEXT_NODE &&
         range.startContainer.parentElement) {
 
-        const childIndex = getChildTextNodeIndex(range.startContainer.parentElement, range.startContainer);
+        const childIndex =
+            getChildTextNodeIndex(range.startContainer.parentElement, range.startContainer, false);
         if (childIndex >= 0) {
             startElement = range.startContainer.parentElement;
             startChildTextNodeIndex = childIndex;
@@ -112,7 +121,8 @@ export function convertRange(range: Range, getCssSelector: (element: Element) =>
     } else if (range.endContainer.nodeType === Node.TEXT_NODE &&
         range.endContainer.parentElement) {
 
-        const childIndex = getChildTextNodeIndex(range.endContainer.parentElement, range.endContainer);
+        const childIndex =
+            getChildTextNodeIndex(range.endContainer.parentElement, range.endContainer, false);
         if (childIndex >= 0) {
             endElement = range.endContainer.parentElement;
             endChildTextNodeIndex = childIndex;
@@ -123,10 +133,46 @@ export function convertRange(range: Range, getCssSelector: (element: Element) =>
     }
     const endElementCssSelector = getCssSelector(endElement as Element);
 
+    let cfi: string | undefined;
+
+    const startElementCfi = computeElementCFI(startElement);
+    // console.log(`START CFI: ${startElementCfi}`);
+    // console.log(startElement.outerHTML);
+
+    const endElementCfi = computeElementCFI(endElement);
+    // console.log(`END CFI: ${endElementCfi}`);
+    // console.log(endElement.outerHTML);
+
+    const commonElementAncestor = getCommonAncestorElement(startElement, endElement);
+    if (commonElementAncestor) {
+        const rootElementCfi = computeElementCFI(commonElementAncestor);
+        // console.log(`ROOT CFI: ${rootElementCfi}`);
+        // console.log(commonElementAncestor.outerHTML);
+
+        if (rootElementCfi && startElementCfi && endElementCfi) {
+            const startChildTextNodeIndexForCfi  =
+                getChildTextNodeIndex(startElement, range.startContainer, true);
+            const startTextCfi = startElementCfi + "/" + startChildTextNodeIndexForCfi + ":" + range.startOffset;
+            // console.log(`START TEXT CFI: ${startTextCfi}`);
+
+            const endChildTextNodeIndexForCfi  =
+                getChildTextNodeIndex(endElement, range.endContainer, true);
+            const endTextCfi = endElementCfi + "/" + endChildTextNodeIndexForCfi + ":" + range.endOffset;
+            // console.log(`END TEXT CFI: ${endTextCfi}`);
+
+            cfi = rootElementCfi + "," +
+                startTextCfi.replace(rootElementCfi, "") + "," +
+                endTextCfi.replace(rootElementCfi, "");
+        }
+    }
+
     return {
+        cfi,
+
         endChildTextNodeIndex,
         endElementCssSelector,
         endTextOffset: range.endOffset,
+
         startChildTextNodeIndex,
         startElementCssSelector,
         startTextOffset: range.startOffset,
@@ -172,21 +218,71 @@ function getChildTextNode(element: Element, index: number): Node | undefined {
     return undefined;
 }
 
-function getChildTextNodeIndex(element: Element, child: Node): number {
+function getChildTextNodeIndex(element: Element, child: Node, forCfi: boolean): number {
     let found = -1;
     let textNodeIndex = -1;
+    let previousWasElement = false;
     // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < element.childNodes.length; i++) {
         const childNode = element.childNodes[i];
-
+        if (childNode.nodeType !== Node.TEXT_NODE && childNode.nodeType !== Node.ELEMENT_NODE) {
+            continue;
+        }
+        if (forCfi) {
+            if (childNode.nodeType === Node.TEXT_NODE || previousWasElement) {
+                textNodeIndex += 2;
+            }
+        }
         if (childNode.nodeType === Node.TEXT_NODE) {
-            textNodeIndex++;
+            if (!forCfi) {
+                textNodeIndex++;
+            }
 
             if (childNode === child) {
                 found = textNodeIndex;
                 break;
             }
         }
+        previousWasElement = childNode.nodeType === Node.ELEMENT_NODE;
     }
     return found;
+}
+
+function getCommonAncestorElement(node1: Node, node2: Node): Element | undefined {
+    if (node1.nodeType === Node.ELEMENT_NODE && node1 === node2) {
+        return node1 as Element;
+    }
+
+    if (node1.nodeType === Node.ELEMENT_NODE && node1.contains(node2)) {
+        return node1 as Element;
+    }
+
+    if (node2.nodeType === Node.ELEMENT_NODE && node2.contains(node1)) {
+        return node2 as Element;
+    }
+
+    const node1ElementAncestorChain: Element[] = [];
+    let parent: Node | null = node1.parentNode;
+    while (parent && parent.nodeType === Node.ELEMENT_NODE) {
+        node1ElementAncestorChain.push(parent as Element);
+        parent = parent.parentNode;
+    }
+
+    const node2ElementAncestorChain: Element[] = [];
+    parent = node2.parentNode;
+    while (parent && parent.nodeType === Node.ELEMENT_NODE) {
+        node2ElementAncestorChain.push(parent as Element);
+        parent = parent.parentNode;
+    }
+
+    let commonAncestor = node1ElementAncestorChain.find((node1ElementAncestor) => {
+        return node2ElementAncestorChain.indexOf(node1ElementAncestor) >= 0;
+    });
+    if (!commonAncestor) {
+        commonAncestor = node2ElementAncestorChain.find((node2ElementAncestor) => {
+            return node1ElementAncestorChain.indexOf(node2ElementAncestor) >= 0;
+        });
+    }
+
+    return commonAncestor;
 }

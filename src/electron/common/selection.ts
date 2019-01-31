@@ -13,6 +13,8 @@ export interface IRangeInfo {
     endElementCssSelector: string;
     endChildTextNodeIndex: number;
     endTextOffset: number;
+
+    cfi: string | undefined;
 }
 
 export interface ISelectionInfo {

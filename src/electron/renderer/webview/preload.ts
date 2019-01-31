@@ -1344,10 +1344,11 @@ win.addEventListener("load", () => {
         // });
     }
 
-    // "selectionchange" event NOT SUITABLE,
-    // BECAUSE selection.removeAllRanges() + selection.addRange(range) in selection.ts
+    // "selectionchange" event NOT SUITABLE
+    // IF selection.removeAllRanges() + selection.addRange(range) in selection.ts
     // (normalization of selection to single range => infinite loop!!)
-    win.document.addEventListener("selectionstart", (_ev: any) => {
+    // PROBLEM: "selectionstart" DOES NOT ALWAYS TRIGGER :(
+    win.document.addEventListener("selectionchange", (_ev: any) => {
         notifyReadingLocationDebounced();
     });
 
@@ -1940,7 +1941,7 @@ const notifyReadingLocationRaw = () => {
     const pinfo = (progressionData && progressionData.paginationInfo) ?
         progressionData.paginationInfo : undefined;
 
-    const selInfo = getCurrentSelectionInfo(win, getCssSelector);
+    const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI);
 
     win.READIUM2.locationHashOverrideInfo = {
         href: "", // TODO
