@@ -37,14 +37,16 @@ export const footnotesCssStyles = `
 }
 */
 
-dialog.${POPUP_DIALOG_CLASS}::backdrop {
-    background-color: rgba(0, 0, 0, 0.3);
+:root[style] dialog#${POPUP_DIALOG_CLASS}::backdrop,
+:root dialog#${POPUP_DIALOG_CLASS}::backdrop {
+    background: rgba(0, 0, 0, 0.3) !important;
 }
-:root[style*="readium-night-on"] dialog.${POPUP_DIALOG_CLASS}::backdrop {
-    background-color: rgba(0, 0, 0, 0.65) !important;
+:root[style*="readium-night-on"] dialog#${POPUP_DIALOG_CLASS}::backdrop {
+    background: rgba(0, 0, 0, 0.65) !important;
 }
 
-dialog.${POPUP_DIALOG_CLASS} {
+:root[style] dialog#${POPUP_DIALOG_CLASS},
+:root dialog#${POPUP_DIALOG_CLASS} {
     z-index: 3;
 
     position: fixed;
@@ -61,8 +63,8 @@ dialog.${POPUP_DIALOG_CLASS} {
     border-radius: 0.3em;
     border-width: 1px;
 
-    background-color: white;
-    border-color: black;
+    background: white !important;
+    border-color: black !important;
 
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 
@@ -73,12 +75,18 @@ dialog.${POPUP_DIALOG_CLASS} {
     grid-template-columns: 1.5em auto 1.5em;
     grid-template-rows: auto 1.5em;
 }
-:root[style*="readium-night-on"] dialog.${POPUP_DIALOG_CLASS} {
-    background-color: #333333 !important;
+:root[style*="readium-night-on"] dialog#${POPUP_DIALOG_CLASS} {
+    background: #333333 !important;
     border-color: white !important;
 }
-
-.${FOOTNOTES_CONTAINER_CLASS} {
+:root[style*="readium-sepia-on"] dialog#${POPUP_DIALOG_CLASS} {
+    background: var(--RS__backgroundColor) !important;
+}
+:root[style*="--USER__backgroundColor"] dialog#${POPUP_DIALOG_CLASS} {
+    background: var(--USER__backgroundColor) !important;
+}
+:root[style] .${FOOTNOTES_CONTAINER_CLASS},
+:root .${FOOTNOTES_CONTAINER_CLASS} {
     overflow: auto;
 
     grid-column-start: 1;
@@ -90,16 +98,18 @@ dialog.${POPUP_DIALOG_CLASS} {
     margin: 0.2em;
 }
 
-.${FOOTNOTES_CONTAINER_CLASS} > div > * {
+:root[style] .${FOOTNOTES_CONTAINER_CLASS} > div > *,
+:root .${FOOTNOTES_CONTAINER_CLASS} > div > * {
     margin: 0 !important;
     padding: 0 !important;
 }
 
 /*
-.${FOOTNOTES_CLOSE_BUTTON_CLASS} {
+:root[style] .${FOOTNOTES_CLOSE_BUTTON_CLASS},
+:root .${FOOTNOTES_CLOSE_BUTTON_CLASS} {
     border: 1px solid black;
-    background-color: white;
-    color: black;
+    background: white !important;
+    color: black !important;
 
     border-radius: 0.8em;
     position: absolute;
@@ -113,7 +123,7 @@ dialog.${POPUP_DIALOG_CLASS} {
 }
 :root[style*="readium-night-on"] .${FOOTNOTES_CLOSE_BUTTON_CLASS} {
     border: 1px solid white !important;
-    background-color: black !important;
+    background: black !important;
     color: white !important;
 }
 */
@@ -133,8 +143,10 @@ export const TTS_ID_INJECTED_PARENT = "r2-tts-speaking-txt-parent";
 
 export const ttsCssStyles = `
 
-#${TTS_ID_CONTAINER} {
+:root[style] div#${TTS_ID_CONTAINER},
+:root div#${TTS_ID_CONTAINER} {
     overflow: auto;
+    overflow-x: hidden;
 
     grid-column-start: 1;
     grid-column-end: 4;
@@ -151,17 +163,30 @@ export const ttsCssStyles = `
     word-break: keep-all !important;
     word-wrap: break-word !important;
 
-    /*
     font-size: 120% !important;
-    line-height: 1.3em !important;
-    */
 
-    color: #888888 !important;
+    line-height: initial !important;
+
+    color: #999999 !important;
 }
-:root[style*="readium-night-on"] #${TTS_ID_CONTAINER} {
+:root[style*="--USER__lineHeight"] div#${TTS_ID_CONTAINER} {
+    line-height: calc(var(--USER__lineHeight) * 1.2) !important;
+}
+:root[style*="readium-night-on"] div#${TTS_ID_CONTAINER} {
     color: #bbbbbb !important;
 }
-#${TTS_ID_INFO} {
+:root[style*="readium-sepia-on"] div#${TTS_ID_CONTAINER}{
+    background: var(--RS__backgroundColor) !important;
+    color: var(--RS__textColor) !important;
+}
+:root[style*="--USER__backgroundColor"] div#${TTS_ID_CONTAINER} {
+    background: var(--USER__backgroundColor) !important;
+}
+:root[style*="--USER__textColor"] div#${TTS_ID_CONTAINER} {
+    color: var(--USER__textColor) !important;
+}
+:root[style] #${TTS_ID_INFO},
+:root #${TTS_ID_INFO} {
     display: none;
 
     padding: 0;
@@ -176,21 +201,64 @@ export const ttsCssStyles = `
     font-size: 90% !important;
 }
 
-#${TTS_ID_SLIDER} {
+:root[style] #${TTS_ID_SLIDER},
+:root #${TTS_ID_SLIDER} {
     padding: 0;
     margin: 0;
+    margin-left: 6px;
+    margin-right: 6px;
 
     grid-column-start: 2;
     grid-column-end: 3;
     grid-row-start: 2;
     grid-row-end: 3;
-}
 
-.${TTS_NAV_BUTTON_CLASS} {
-    border-radius: 0.3em;
-    border: 1px solid #EEEEEE;
-    background-color: white;
-    color: black;
+    cursor: pointer;
+    -webkit-appearance: none;
+
+    background: transparent !important;
+}
+:root #${TTS_ID_SLIDER}::-webkit-slider-runnable-track {
+    cursor: pointer;
+
+    width: 100%;
+    height: 0.5em;
+
+    background: #999999;
+
+    padding: 0;
+    margin: 0;
+}
+:root[style*="readium-night-on"] #${TTS_ID_SLIDER}::-webkit-slider-runnable-track {
+    background: #545454;
+}
+:root #${TTS_ID_SLIDER}::-webkit-slider-thumb {
+    -webkit-appearance: none;
+
+    cursor: pointer;
+
+    width: 0.8em;
+    height: 1.5em;
+
+    padding: 0;
+    margin: 0;
+    margin-top: -0.5em;
+
+    border: none;
+    border-radius: 0.2em;
+
+    background: #333333;
+}
+:root[style*="readium-night-on"] #${TTS_ID_SLIDER}::-webkit-slider-thumb {
+    background: white;
+}
+:root[style] button.${TTS_NAV_BUTTON_CLASS} > span,
+:root button.${TTS_NAV_BUTTON_CLASS} > span {
+    vertical-align: baseline;
+}
+:root[style] button.${TTS_NAV_BUTTON_CLASS},
+:root button.${TTS_NAV_BUTTON_CLASS} {
+    border: none;
 
     font-size: 100% !important;
     font-family: Arial !important;
@@ -199,13 +267,23 @@ export const ttsCssStyles = `
     padding: 0;
     margin-top: 0.2em;
     margin-bottom: 0.2em;
+
+    background: transparent !important;
+    color: black !important;
 }
-:root[style*="readium-night-on"] .${TTS_NAV_BUTTON_CLASS} {
-    border: 1px solid white !important;
-    background-color: black !important;
+:root[style*="readium-night-on"] button.${TTS_NAV_BUTTON_CLASS} {
     color: white !important;
 }
-#${TTS_ID_PREVIOUS} {
+/*
+:root[style*="readium-sepia-on"] button.${TTS_NAV_BUTTON_CLASS} {
+    background: var(--RS__backgroundColor) !important;
+}
+:root[style*="--USER__backgroundColor"] button.${TTS_NAV_BUTTON_CLASS} {
+    background: var(--USER__backgroundColor) !important;
+}
+*/
+:root[style] #${TTS_ID_PREVIOUS},
+:root #${TTS_ID_PREVIOUS} {
     margin-left: 0.2em;
 
     grid-column-start: 1;
@@ -213,7 +291,8 @@ export const ttsCssStyles = `
     grid-row-start: 2;
     grid-row-end: 3;
 }
-#${TTS_ID_NEXT} {
+:root[style] #${TTS_ID_NEXT},
+:root #${TTS_ID_NEXT} {
     margin-right: 0.2em;
 
     grid-column-start: 3;
@@ -222,7 +301,8 @@ export const ttsCssStyles = `
     grid-row-end: 3;
 }
 
-.${TTS_ID_SPEAKING_DOC_ELEMENT} {
+:root[style] .${TTS_ID_SPEAKING_DOC_ELEMENT},
+:root .${TTS_ID_SPEAKING_DOC_ELEMENT} {
     /*
     outline-color: silver;
     outline-style: solid;
@@ -230,9 +310,10 @@ export const ttsCssStyles = `
     outline-offset: 1px;
     */
 }
-.${TTS_CLASS_INJECTED_SPAN} {
+:root[style] .${TTS_CLASS_INJECTED_SPAN},
+:root .${TTS_CLASS_INJECTED_SPAN} {
     color: black !important;
-    background-color: #FFFFCC !important;
+    background: #FFFFCC !important;
 
     /* text-decoration: underline; */
 
@@ -242,16 +323,17 @@ export const ttsCssStyles = `
 /*
 :root[style*="readium-night-on"] .${TTS_CLASS_INJECTED_SPAN} {
     color: white !important;
-    background-color: #333300 !important;
+    background: #333300 !important;
 }
-.${TTS_CLASS_INJECTED_SUBSPAN} {
+:root[style] .${TTS_CLASS_INJECTED_SUBSPAN},
+:root .${TTS_CLASS_INJECTED_SUBSPAN} {
     text-decoration: underline;
     padding: 0;
     margin: 0;
 }
-
 */
-.${TTS_ID_INJECTED_PARENT} {
+:root[style] .${TTS_ID_INJECTED_PARENT},
+:root .${TTS_ID_INJECTED_PARENT} {
     /*
     outline-color: black;
     outline-style: solid;
@@ -265,21 +347,30 @@ export const ttsCssStyles = `
     */
 }
 
-#${TTS_ID_ACTIVE_WORD}  {
-    color: black;
+:root[style] span#${TTS_ID_ACTIVE_WORD},
+:root span#${TTS_ID_ACTIVE_WORD} {
+    color: black !important;
     text-decoration: underline;
+    text-underline-position: under;
 
     padding: 0;
     margin: 0;
 }
-:root[style*="readium-night-on"] #${TTS_ID_ACTIVE_WORD} {
+:root[style*="readium-night-on"] span#${TTS_ID_ACTIVE_WORD} {
     color: white !important;
+}
+:root[style*="readium-sepia-on"] span#${TTS_ID_ACTIVE_WORD} {
+    color: black !important;
+}
+:root[style*="--USER__textColor"] span#${TTS_ID_ACTIVE_WORD} {
+    color: var(--USER__textColor) !important;
 }
 `;
 
 export const ROOT_CLASS_INVISIBLE_MASK = "r2-visibility-mask";
 export const visibilityMaskCssStyles = `
-*.${ROOT_CLASS_INVISIBLE_MASK} {
+:root[style] *.${ROOT_CLASS_INVISIBLE_MASK},
+:root *.${ROOT_CLASS_INVISIBLE_MASK} {
     visibility: hidden !important;
 }
 `;
@@ -294,12 +385,15 @@ export const focusCssStyles = `
         outline: inherit;
     }
 }
-*:focus {
+:root[style] *:focus,
+:root *:focus {
     outline: none;
 }
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus,
 :root.${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus {
     outline: none !important;
 }
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *:focus,
 :root.${ROOT_CLASS_KEYBOARD_INTERACT} *:focus {
     outline-color: blue !important;
     outline-style: solid !important;
@@ -307,6 +401,7 @@ export const focusCssStyles = `
     outline-offset: 2px !important;
 }
 /*
+:root[style]:not(.${ROOT_CLASS_KEYBOARD_INTERACT}) *:focus,
 :root:not(.${ROOT_CLASS_KEYBOARD_INTERACT}) *:focus {
     animation-name: readium2ElectronAnimation_FOCUS;
     animation-duration: 3s;
@@ -325,7 +420,8 @@ export const targetCssStyles = `
         outline: inherit;
     }
 }
-*:target {
+:root[style] *:target,
+:root *:target {
     outline-color: green !important;
     outline-style: solid !important;
     outline-width: 2px !important;
@@ -337,31 +433,23 @@ export const targetCssStyles = `
     animation-fill-mode: forwards;
     animation-timing-function: linear;
 }
-*.r2-no-target-outline:target {
+:root[style] *.r2-no-target-outline:target,
+:root *.r2-no-target-outline:target {
     outline: inherit !important;
 }
 `;
 
 export const selectionCssStyles = `
-::selection {
-background-color: rgb(155, 179, 240) !important;
+:root[style] ::selection,
+:root ::selection {
+background: rgb(155, 179, 240) !important;
 color: black !important;
 }
 
 :root[style*="readium-night-on"] ::selection {
-background-color: rgb(100, 122, 177) !important;
+background: rgb(100, 122, 177) !important;
 color: white !important;
 }
-/*
-.readium2-hash {
-    color: black !important;
-    background-color: rgb(185, 207, 255) !important;
-}
-:root[style*="readium-night-on"] .readium2-hash {
-    color: white !important;
-    background-color: rgb(67, 64, 125) !important;
-}
-*/
 `;
 
 export const scrollBarCssStyles = `
@@ -375,7 +463,7 @@ background: transparent !important;
 }
 
 /*::-webkit-scrollbar-track-piece {
-background-color: red;
+background: red;
 } */
 
 ::-webkit-scrollbar {
@@ -434,9 +522,10 @@ export const readPosCssStylesAttr4 = "data-readium2-read-pos4";
 export const readPosCssStyles = `
 :root[style*="readium-sepia-on"] *[${readPosCssStylesAttr1}],
 :root[style*="readium-night-on"] *[${readPosCssStylesAttr1}],
-*[${readPosCssStylesAttr1}] {
+:root[style] *[${readPosCssStylesAttr1}],
+:root *[${readPosCssStylesAttr1}] {
     color: black !important;
-    background-color: magenta !important;
+    background: magenta !important;
 
     outline-color: magenta !important;
     outline-style: solid !important;
@@ -445,9 +534,10 @@ export const readPosCssStyles = `
 }
 :root[style*="readium-sepia-on"] *[${readPosCssStylesAttr2}],
 :root[style*="readium-night-on"] *[${readPosCssStylesAttr2}],
-*[${readPosCssStylesAttr2}] {
+:root[style] *[${readPosCssStylesAttr2}],
+:root *[${readPosCssStylesAttr2}] {
     color: black !important;
-    background-color: yellow !important;
+    background: yellow !important;
 
     outline-color: yellow !important;
     outline-style: solid !important;
@@ -456,9 +546,10 @@ export const readPosCssStyles = `
 }
 :root[style*="readium-sepia-on"] *[${readPosCssStylesAttr3}],
 :root[style*="readium-night-on"] *[${readPosCssStylesAttr3}],
-*[${readPosCssStylesAttr3}] {
+:root[style] *[${readPosCssStylesAttr3}],
+:root *[${readPosCssStylesAttr3}] {
     color: black !important;
-    background-color: green !important;
+    background: green !important;
 
     outline-color: green !important;
     outline-style: solid !important;
@@ -467,9 +558,10 @@ export const readPosCssStyles = `
 }
 :root[style*="readium-sepia-on"] *[${readPosCssStylesAttr4}],
 :root[style*="readium-night-on"] *[${readPosCssStylesAttr4}],
-*[${readPosCssStylesAttr4}] {
+:root[style] *[${readPosCssStylesAttr4}],
+:root *[${readPosCssStylesAttr4}] {
     color: black !important;
-    background-color: silver !important;
+    background: silver !important;
 
     outline-color: silver !important;
     outline-style: solid !important;

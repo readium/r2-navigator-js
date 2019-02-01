@@ -42,8 +42,6 @@ import { IElectronWebviewTagWindow } from "./state";
 
 const win = (global as any).window as IElectronWebviewTagWindow;
 
-const TTS_ID_DIALOG = "r2-tts-dialog";
-
 interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
 
     domSlider: HTMLInputElement | undefined;
@@ -275,20 +273,26 @@ export function ttsPreviewAndEventuallyPlayQueueIndex(n: number) {
 
 function highlights(doHighlight: boolean) {
 
+    if (!_dialogState) {
+        return;
+    }
+    if (typeof (_dialogState as any).FALSY_TO_DISABLE_HIGHLIGHTS === "undefined") {
+        return;
+    }
     if (doHighlight) {
-        if (_dialogState && _dialogState.ttsQueueItem) {
+        if (_dialogState.ttsQueueItem) {
             // tslint:disable-next-line:max-line-length
             wrapHighlight(true, _dialogState.ttsQueueItem, TTS_ID_INJECTED_PARENT, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, undefined, -1, -1);
         }
-        if (_dialogState && _dialogState.ttsRootElement) {
+        if (_dialogState.ttsRootElement) {
             _dialogState.ttsRootElement.classList.add(TTS_ID_SPEAKING_DOC_ELEMENT);
         }
     } else {
-        if (_dialogState && _dialogState.ttsQueueItem) {
+        if (_dialogState.ttsQueueItem) {
             // tslint:disable-next-line:max-line-length
             wrapHighlight(false, _dialogState.ttsQueueItem, TTS_ID_INJECTED_PARENT, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, undefined, -1, -1);
         }
-        if (_dialogState && _dialogState.ttsRootElement) {
+        if (_dialogState.ttsRootElement) {
             _dialogState.ttsRootElement.classList.remove(TTS_ID_SPEAKING_DOC_ELEMENT);
         }
     }
@@ -538,6 +542,8 @@ function startTTSSession(
         }, 50);
     }
 
+    // &#x21E0;
+    // &#x21E2;
     const outerHTML =
     `<div id="${TTS_ID_CONTAINER}"
         class="${CSS_CLASS_NO_FOCUS_OUTLINE}"
@@ -546,14 +552,14 @@ function startTTSSession(
         xml:lang="en"
         tabindex="0" autofocus="autofocus">...</div>
     <div id="${TTS_ID_INFO}"> </div>
-    <button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}">&#x21E0;</button>
-    <button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}">&#x21E2;</button>
+    <button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}"><span>&#9668;</span></button>
+    <button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}"><span>&#9658;</span></button>
     <input id="${TTS_ID_SLIDER}" type="range" min="1" max="${ttsQueueLength}" value="1" />`;
 
-    const pop = new PopupDialog(win.document, outerHTML, TTS_ID_DIALOG, onDialogClosed);
+    const pop = new PopupDialog(win.document, outerHTML, onDialogClosed);
     pop.show(ttsQueueItemStart.item.parentElement);
 
-    _dialogState = win.document.getElementById(TTS_ID_DIALOG) as IHTMLDialogElementWithTTSState;
+    _dialogState = pop.dialog as IHTMLDialogElementWithTTSState;
     if (!_dialogState) {
         return;
     }

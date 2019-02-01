@@ -169,7 +169,7 @@ export class PopupDialog {
     constructor(
         public readonly documant: Document,
         outerHTML: string,
-        id: string,
+        // id: string,
         public readonly onDialogClosed: (el: HTMLOrSVGElement | null) => void) {
 
         closePopupDialogs(documant);
@@ -184,7 +184,7 @@ export class PopupDialog {
         this.dialog.popDialog = this;
 
         this.dialog.setAttribute("class", POPUP_DIALOG_CLASS);
-        this.dialog.setAttribute("id", id);
+        this.dialog.setAttribute("id", POPUP_DIALOG_CLASS);
         this.dialog.setAttribute("dir", "ltr");
 
         // const button = documant.createElement("button");

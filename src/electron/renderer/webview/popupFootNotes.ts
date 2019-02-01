@@ -49,9 +49,6 @@ export function popupFootNote(
         return false;
     }
 
-    const ID_PREFIX = "r2-footnote-popup-dialog-for_";
-    const id = ID_PREFIX + targetElement.id;
-
     // const existingDialog = documant.getElementById(id) as IHTMLDialogElementWithPopup;
     // if (existingDialog && existingDialog.popDialog) {
     //     existingDialog.popDialog.show(element);
@@ -98,7 +95,7 @@ export function popupFootNote(
             pop.dialog.remove();
         }, 50);
     }
-    const pop = new PopupDialog(documant, htmltxt, id, onDialogClosed);
+    const pop = new PopupDialog(documant, htmltxt, onDialogClosed);
 
     pop.show(element);
     return true;
