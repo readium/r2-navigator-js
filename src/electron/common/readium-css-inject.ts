@@ -1079,11 +1079,6 @@ export function transformHTML(
     //     win.READIUM2.fxlViewportHeight = wh.height;
     // }
 
-    injectDefaultCSS(documant);
-    if (IS_DEV) { // isDEBUG_VISUALS(documant)
-        injectReadPosCSS(documant);
-    }
-
     const rtl = isDocRTL(documant);
     const vertical = isDocVertical(documant);
     if (readiumcssJson) {
@@ -1091,6 +1086,11 @@ export function transformHTML(
             undefined, // urlRootReadiumCSS
             vertical,
             rtl);
+    }
+
+    injectDefaultCSS(documant);
+    if (IS_DEV) { // isDEBUG_VISUALS(documant)
+        injectReadPosCSS(documant);
     }
 
     // import * as xmldom from "xmldom";
