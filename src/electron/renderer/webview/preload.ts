@@ -852,13 +852,6 @@ const scrollToHashRaw = () => {
         // _ignoreScrollEvent = true;
         scrollElementIntoView(win.READIUM2.hashElement);
 
-        // win.READIUM2.hashElement.classList.add("readium2-hash");
-        // setTimeout(() => {
-        //     if (win.READIUM2.hashElement) {
-        //         win.READIUM2.hashElement.classList.remove("readium2-hash");
-        //     }
-        // }, 1000);
-
         notifyReadingLocationDebounced();
         return;
     } else {
@@ -1275,13 +1268,6 @@ win.addEventListener("DOMContentLoaded", () => {
         // console.log(">>>>>2 ReadiumCSS already injected by streamer");
     }
 
-    if (!alreadedInjected) {
-        injectDefaultCSS(win.document);
-        if (IS_DEV) { // win.READIUM2.DEBUG_VISUALS
-            injectReadPosCSS(win.document);
-        }
-    }
-
     computeVerticalRTL();
     if (readiumcssJson) {
         // ReadiumCSS already injected at the streamer level?
@@ -1292,6 +1278,14 @@ win.addEventListener("DOMContentLoaded", () => {
             readiumCSS(win.document, readiumcssJson);
         }
     }
+
+    if (!alreadedInjected) {
+        injectDefaultCSS(win.document);
+        if (IS_DEV) { // win.READIUM2.DEBUG_VISUALS
+            injectReadPosCSS(win.document);
+        }
+    }
+
     if (alreadedInjected) { // because querySelector[All]() is not polyfilled
         checkHiddenFootNotes(win.document);
     }
@@ -1364,13 +1358,21 @@ win.addEventListener("load", () => {
         // });
     }
 
-    // "selectionchange" event NOT SUITABLE
-    // IF selection.removeAllRanges() + selection.addRange(range) in selection.ts
-    // (normalization of selection to single range => infinite loop!!)
-    // PROBLEM: "selectionstart" DOES NOT ALWAYS TRIGGER :(
-    win.document.addEventListener("selectionchange", (_ev: any) => {
-        notifyReadingLocationDebounced();
-    });
+    // // "selectionchange" event NOT SUITABLE
+    // // IF selection.removeAllRanges() + selection.addRange(range) in selection.ts
+    // // (normalization of selection to single range => infinite loop!!)
+    // // PROBLEM: "selectionstart" DOES NOT ALWAYS TRIGGER :(
+    // win.document.addEventListener("selectionstart", (_ev: any) => {
+    //     // notifyReadingLocationDebounced();
+    //     debug("############ selectionstart EVENT:");
+    //     const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI);
+    //     debug(selInfo);
+    //     if (win.READIUM2.DEBUG_VISUALS) {
+    //         if (selInfo) {
+    //             createHighlight(win.document, selInfo);
+    //         }
+    //     }
+    // });
 
     win.document.body.addEventListener("focusin", (ev: any) => {
 
