@@ -434,28 +434,28 @@ export function readiumCSSSet(
         } else {
             docElement.style.removeProperty("--USER__letterSpacing");
         }
+    }
 
-        if (!isVerticalWritingMode) {
-            if (setCSS.colCount) {
-                docElement.style.setProperty("--USER__colCount", setCSS.colCount);
-            } else {
-                docElement.style.removeProperty("--USER__colCount");
-            }
-
-            if (setCSS.paraIndent) {
-                docElement.style.setProperty("--USER__paraIndent", setCSS.paraIndent);
-            } else {
-                docElement.style.removeProperty("--USER__paraIndent");
-            }
-
-            if (setCSS.textAlign) {
-                docElement.style.setProperty("--USER__textAlign", setCSS.textAlign);
-            } else {
-                docElement.style.removeProperty("--USER__textAlign");
-            }
-        } else if (!isRTL) {
-            docElement.style.removeProperty("--USER__ligatures");
+    if (!isVerticalWritingMode) {
+        if (setCSS.colCount) {
+            docElement.style.setProperty("--USER__colCount", setCSS.colCount);
+        } else {
+            docElement.style.removeProperty("--USER__colCount");
         }
+
+        if (setCSS.paraIndent) {
+            docElement.style.setProperty("--USER__paraIndent", setCSS.paraIndent);
+        } else {
+            docElement.style.removeProperty("--USER__paraIndent");
+        }
+
+        if (setCSS.textAlign) {
+            docElement.style.setProperty("--USER__textAlign", setCSS.textAlign);
+        } else {
+            docElement.style.removeProperty("--USER__textAlign");
+        }
+    } else if (!isRTL) {
+        docElement.style.removeProperty("--USER__ligatures");
     }
 
     if (setCSS.pageMargins) {
