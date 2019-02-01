@@ -1352,6 +1352,11 @@ win.addEventListener("load", () => {
                 (win.document.body as any).tabbables = undefined;
                 scrollToHashDebounced();
             });
+            // Resize Sensor sets body position to "relative" (default static),
+            // which may breaks things!
+            // (e.g. highlights CSS absolute/fixed positioning)
+            // Also note that ReadiumCSS default to (via stylesheet :root):
+            // documant.documentElement.style.position = "relative";
         }, 1000);
         // window.requestAnimationFrame((_timestamp) => {
         // });
