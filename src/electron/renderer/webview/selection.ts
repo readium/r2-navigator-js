@@ -10,6 +10,58 @@ import { IElectronWebviewTagWindow } from "./state";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
+// https://developer.mozilla.org/en-US/docs/Web/API/Selection
+
+function dumpDebug(
+    msg: string,
+    startNode: Node, startOffset: number,
+    endNode: Node, endOffset: number,
+    getCssSelector: (element: Element) => string,
+    ) {
+    console.log("$$$$$$$$$$$$$$$$$ " + msg);
+    console.log("**** START");
+    console.log("Node type (1=element, 3=text): " + startNode.nodeType);
+    if (startNode.nodeType === Node.ELEMENT_NODE) {
+        console.log("CSS Selector: " + getCssSelector(startNode as Element));
+        console.log("Element children count: " + startNode.childNodes.length);
+        if (startOffset >= 0 && startOffset < startNode.childNodes.length) {
+            console.log("Child node type (1=element, 3=text): " + startNode.childNodes[startOffset].nodeType);
+            if (startNode.childNodes[endOffset].nodeType === Node.ELEMENT_NODE) {
+                console.log("Child CSS Selector: " + getCssSelector(startNode.childNodes[endOffset] as Element));
+            }
+        } else {
+            console.log("startOffset >= 0 && startOffset < startNode.childNodes.length ... " +
+                startOffset + " // " + startNode.childNodes.length);
+        }
+    }
+    if (startNode.parentNode && startNode.parentNode.nodeType === Node.ELEMENT_NODE) {
+        console.log("- Parent CSS Selector: " + getCssSelector(startNode.parentNode as Element));
+        console.log("- Parent element children count: " + startNode.parentNode.childNodes.length);
+    }
+    console.log("Offset: " + startOffset);
+    console.log("**** END");
+    console.log("Node type (1=element, 3=text): " + endNode.nodeType);
+    if (endNode.nodeType === Node.ELEMENT_NODE) {
+        console.log("CSS Selector: " + getCssSelector(endNode as Element));
+        console.log("Element children count: " + endNode.childNodes.length);
+        if (endOffset >= 0 && endOffset < endNode.childNodes.length) {
+            console.log("Child node type (1=element, 3=text): " + endNode.childNodes[endOffset].nodeType);
+            if (endNode.childNodes[endOffset].nodeType === Node.ELEMENT_NODE) {
+                console.log("Child CSS Selector: " + getCssSelector(endNode.childNodes[endOffset] as Element));
+            }
+        } else {
+            console.log("endOffset >= 0 && endOffset < endNode.childNodes.length ... " +
+                endOffset + " // " + endNode.childNodes.length);
+        }
+    }
+    if (endNode.parentNode && endNode.parentNode.nodeType === Node.ELEMENT_NODE) {
+        console.log("- Parent CSS Selector: " + getCssSelector(endNode.parentNode as Element));
+        console.log("- Parent element children count: " + endNode.parentNode.childNodes.length);
+    }
+    console.log("Offset: " + endOffset);
+    console.log("$$$$$$$$$$$$$$$$$");
+}
+
 export function getCurrentSelectionInfo(
     win: IElectronWebviewTagWindow,
     getCssSelector: (element: Element) => string,
@@ -19,87 +71,27 @@ export function getCurrentSelectionInfo(
 
     const selection = win.getSelection();
     if (selection.isCollapsed) {
+        console.log("^^^ SELECTION COLLAPSED.");
         return undefined;
     }
 
-    const text = selection.toString().trim();
-
-    if (text.length === 0) {
+    const rawText = selection.toString();
+    const cleanText = rawText.trim().replace(/\n/g, " ").replace(/\s\s+/g, " ");
+    if (cleanText.length === 0) {
+        console.log("^^^ SELECTION TEXT EMPTY.");
         return undefined;
     }
 
-    let range = createOrderedRange(
-        selection.anchorNode, selection.anchorOffset, selection.focusNode, selection.focusOffset);
-
-    if (range.collapsed) {
-        console.log("$$$$$$$$$$$$$$$$$ RANGE COLLAPSED ?!");
-        console.log("$$$$$$$$$$$$$$$$$");
-        console.log(selection.anchorNode.nodeType); // 3 Node.TEXT_NODE
-        if (selection.anchorNode.nodeType === Node.ELEMENT_NODE) { // 1
-            console.log(getCssSelector(selection.anchorNode as Element));
-        }
-        console.log(selection.anchorOffset);
-        console.log(selection.focusNode.nodeType);
-        if (selection.focusNode.nodeType === Node.ELEMENT_NODE) {
-            console.log(getCssSelector(selection.focusNode as Element));
-        }
-        console.log(selection.focusOffset);
-        console.log(selection.isCollapsed);
-        console.log("$$$$$$$$$$$$$$$$$");
-        console.log(range.startContainer.nodeType);
-        if (range.startContainer.nodeType === Node.ELEMENT_NODE) {
-            console.log(getCssSelector(range.startContainer as Element));
-        }
-        console.log(range.startOffset);
-        console.log(range.endContainer.nodeType);
-        if (range.endContainer.nodeType === Node.ELEMENT_NODE) {
-            console.log(getCssSelector(range.endContainer as Element));
-        }
-        console.log(range.endOffset);
-        console.log(range.collapsed);
-        console.log("$$$$$$$$$$$$$$$$$");
-        if (selection.rangeCount === 1) {
-            range = selection.getRangeAt(0); // may not be ordered
-            console.log("#############");
-            console.log(range.startContainer.nodeType);
-            if (range.startContainer.nodeType === Node.ELEMENT_NODE) {
-                console.log(getCssSelector(range.startContainer as Element));
-            }
-            console.log(range.startOffset);
-            console.log(range.endContainer.nodeType);
-            if (range.endContainer.nodeType === Node.ELEMENT_NODE) {
-                console.log(getCssSelector(range.endContainer as Element));
-            }
-            console.log(range.endOffset);
-            console.log(range.collapsed);
-            console.log("#############");
-            if (range.collapsed) {
-                return undefined;
-            }
-            const orderedRange = createOrderedRange(
-                range.startContainer, range.startOffset,
-                range.endContainer, range.endOffset);
-            console.log("|||||||||||");
-            console.log(orderedRange.startContainer.nodeType);
-            if (orderedRange.startContainer.nodeType === Node.ELEMENT_NODE) {
-                console.log(getCssSelector(orderedRange.startContainer as Element));
-            }
-            console.log(orderedRange.startOffset);
-            console.log(orderedRange.endContainer.nodeType);
-            if (orderedRange.endContainer.nodeType === Node.ELEMENT_NODE) {
-                console.log(getCssSelector(orderedRange.endContainer as Element));
-            }
-            console.log(orderedRange.endOffset);
-            console.log(orderedRange.collapsed);
-            console.log("|||||||||||");
-            if (!orderedRange.collapsed) {
-                range = orderedRange;
-            }
-        }
+    const range = selection.rangeCount === 1 ? selection.getRangeAt(0) :
+        createOrderedRange(selection.anchorNode, selection.anchorOffset, selection.focusNode, selection.focusOffset);
+    if (!range || range.collapsed) {
+        console.log("$$$$$$$$$$$$$$$$$ CANNOT GET NON-COLLAPSED SELECTION RANGE?!");
+        return undefined;
     }
 
     const rangeInfo = convertRange(range, getCssSelector, computeElementCFI);
     if (!rangeInfo) {
+        console.log("^^^ SELECTION RANGE INFO FAIL?!");
         return undefined;
     }
 
@@ -107,27 +99,19 @@ export function getCurrentSelectionInfo(
     if (IS_DEV && win.READIUM2.DEBUG_VISUALS) {
         const restoredRange = convertRangeInfo(rangeInfo);
         if (restoredRange) {
-
-            let okay = true;
-            if (restoredRange.startOffset !== range.startOffset) {
-                okay = false;
-                console.log(`RANGE START DIFF! ${restoredRange.startOffset} != ${range.startOffset}`);
-            }
-            if (restoredRange.endOffset !== range.endOffset) {
-                okay = false;
-                console.log(`RANGE END DIFF! ${restoredRange.endOffset} != ${range.endOffset}`);
-            }
-            if (restoredRange.startContainer !== range.startContainer) {
-                okay = false;
-                console.log(`RANGE START NODE DIFF!`);
-            }
-            if (restoredRange.endContainer !== range.endContainer) {
-                okay = false;
-                console.log(`RANGE END NODE DIFF!`);
-            }
-
-            if (okay) {
+            if (restoredRange.startOffset === range.startOffset &&
+                restoredRange.endOffset === range.endOffset &&
+                restoredRange.startContainer === range.startContainer &&
+                restoredRange.endContainer === range.endContainer) {
                 console.log("SELECTION RANGE RESTORED OKAY (dev check).");
+            } else {
+                console.log("SELECTION RANGE RESTORE FAIL (dev check).");
+                // tslint:disable-next-line:max-line-length
+                dumpDebug("SELECTION", selection.anchorNode, selection.anchorOffset, selection.focusNode, selection.focusOffset, getCssSelector);
+                // tslint:disable-next-line:max-line-length
+                dumpDebug("ORDERED RANGE FROM SELECTION", range.startContainer, range.startOffset, range.endContainer, range.endOffset, getCssSelector);
+                // tslint:disable-next-line:max-line-length
+                dumpDebug("RESTORED RANGE", restoredRange.startContainer, restoredRange.startOffset, restoredRange.endContainer, restoredRange.endOffset, getCssSelector);
             }
 
             // setTimeout(() => {
@@ -144,62 +128,88 @@ export function getCurrentSelectionInfo(
         // selection.addRange(range);
     }
 
-    return { rangeInfo, text };
+    return { rangeInfo, cleanText, rawText };
 }
 
 export function createOrderedRange(startNode: Node, startOffset: number, endNode: Node, endOffset: number):
-    Range {
+    Range | undefined {
 
-    if (startNode.nodeType === Node.ELEMENT_NODE) {
-        if (startOffset >= 0 && startOffset < startNode.childNodes.length) {
-            startNode = startNode.childNodes[startOffset];
-        }
-        startOffset = -1;
-    }
-    if (endNode.nodeType === Node.ELEMENT_NODE) {
-        if (endOffset >= 0 && endOffset < endNode.childNodes.length) {
-            endNode = endNode.childNodes[endOffset];
-        }
-        endOffset = -1;
+    const range = new Range(); // document.createRange()
+    range.setStart(startNode, startOffset);
+    range.setEnd(endNode, endOffset);
+    if (!range.collapsed) {
+        return range;
     }
 
-    const position = startNode.compareDocumentPosition(endNode);
-
-    const reverse = (position === 0 && startOffset > endOffset) ||
-        // tslint:disable-next-line:no-bitwise
-        (position & Node.DOCUMENT_POSITION_PRECEDING);
-
-    const range = new Range();
-    if (startOffset >= 0 && endOffset >= 0) {
-        range.setStart(reverse ? endNode : startNode, reverse ? endOffset : startOffset);
-        range.setEnd(reverse ? startNode : endNode, reverse ? startOffset : endOffset);
-    } else {
-        if (reverse) {
-            if (endOffset < 0) {
-                range.setStartAfter(endNode);
-            } else {
-                range.setStart(endNode, endOffset);
-            }
-            if (startOffset < 0) {
-                range.setEndBefore(startNode);
-            } else {
-                range.setEnd(startNode, startOffset);
-            }
-        } else {
-            if (startOffset < 0) {
-                range.setStartAfter(startNode);
-            } else {
-                range.setStart(startNode, startOffset);
-            }
-            if (endOffset < 0) {
-                range.setEndBefore(endNode);
-            } else {
-                range.setEnd(endNode, endOffset);
-            }
-        }
+    console.log(">>> createOrderedRange COLLAPSED ... RANGE REVERSE?");
+    const rangeReverse = new Range(); // document.createRange()
+    rangeReverse.setStart(endNode, endOffset);
+    rangeReverse.setEnd(startNode, startOffset);
+    if (!rangeReverse.collapsed) {
+        console.log(">>> createOrderedRange RANGE REVERSE OK.");
+        return range;
     }
 
-    return range;
+    console.log(">>> createOrderedRange RANGE REVERSE ALSO COLLAPSED?!");
+    return undefined;
+
+    // let startNode = startNode_;
+    // let startOffset = startOffset_;
+    // if (startNode.nodeType === Node.ELEMENT_NODE) {
+    //     if (startOffset >= 0 && startOffset < startNode.childNodes.length) {
+    //         startNode = startNode.childNodes[startOffset];
+    //     }
+    //     startOffset = -1;
+    // }
+
+    // let endNode = endNode_;
+    // let endOffset = endOffset_;
+    // if (endNode.nodeType === Node.ELEMENT_NODE) {
+    //     if (endOffset >= 0 && endOffset < endNode.childNodes.length) {
+    //         endNode = endNode.childNodes[endOffset];
+    //     }
+    //     endOffset = -1;
+    // }
+
+    // const position = startNode.compareDocumentPosition(endNode);
+
+    // const reverse1 = position === 0 && startOffset > endOffset;
+    // // tslint:disable-next-line:no-bitwise
+    // const reverse2 = position & Node.DOCUMENT_POSITION_PRECEDING;
+    // const reverse = reverse1 || reverse2;
+    // console.log("{{{{{{{{{{{ reverse: " + reverse + " (" + reverse1 + " // " + reverse2 + ")");
+
+    // const range = new Range(); // document.createRange()
+    // if (startOffset >= 0 && endOffset >= 0) {
+    //     range.setStart(reverse ? endNode : startNode, reverse ? endOffset : startOffset);
+    //     range.setEnd(reverse ? startNode : endNode, reverse ? startOffset : endOffset);
+    // } else {
+    //     if (reverse) {
+    //         if (endOffset < 0) {
+    //             range.setStartAfter(endNode);
+    //         } else {
+    //             range.setStart(endNode, endOffset);
+    //         }
+    //         if (startOffset < 0) {
+    //             range.setEndBefore(startNode);
+    //         } else {
+    //             range.setEnd(startNode, startOffset);
+    //         }
+    //     } else {
+    //         if (startOffset < 0) {
+    //             range.setStartAfter(startNode);
+    //         } else {
+    //             range.setStart(startNode, startOffset);
+    //         }
+    //         if (endOffset < 0) {
+    //             range.setEndBefore(endNode);
+    //         } else {
+    //             range.setEnd(endNode, endOffset);
+    //         }
+    //     }
+    // }
+
+    // return range;
 }
 
 export function convertRange(
@@ -210,72 +220,39 @@ export function convertRange(
     IRangeInfo | undefined {
 
     // -----------------
-    if (!range.startContainer) {
+    const startIsElement = range.startContainer.nodeType === Node.ELEMENT_NODE;
+    const startContainerElement = startIsElement ?
+        range.startContainer as Element :
+        ((range.startContainer.parentNode && range.startContainer.parentNode.nodeType === Node.ELEMENT_NODE) ?
+            range.startContainer.parentNode as Element : undefined);
+    if (!startContainerElement) {
         return undefined;
     }
-    let startElement: Element | undefined;
-    let startChildTextNodeIndex: number = -2;
-    if (range.startContainer.nodeType === Node.ELEMENT_NODE
-        && range.startOffset >= 0 && range.startOffset < range.startContainer.childNodes.length) {
-        const startNode = range.startContainer.childNodes[range.startOffset];
-        if (startNode && startNode.nodeType === Node.ELEMENT_NODE) {
-            startElement = startNode as Element;
-            startChildTextNodeIndex = -1;
-        }
-    } else if (range.startContainer.nodeType === Node.TEXT_NODE &&
-        range.startContainer.parentElement) {
-
-        const childIndex =
-            getChildTextNodeIndex(range.startContainer.parentElement, range.startContainer as Text, false);
-        if (childIndex >= 0) {
-            startElement = range.startContainer.parentElement;
-            startChildTextNodeIndex = childIndex;
-        }
-    }
-    if (!startElement || startChildTextNodeIndex === -2) {
+    const startContainerChildTextNodeIndex = startIsElement ? -1 :
+        Array.from(startContainerElement.childNodes).indexOf(range.startContainer as ChildNode);
+    if (startContainerChildTextNodeIndex < -1) {
         return undefined;
     }
-    const startElementCssSelector = getCssSelector(startElement);
+    const startContainerElementCssSelector = getCssSelector(startContainerElement);
     // -----------------
-    if (!range.endContainer) {
+    const endIsElement = range.endContainer.nodeType === Node.ELEMENT_NODE;
+    const endContainerElement = endIsElement ?
+        range.endContainer as Element :
+        ((range.endContainer.parentNode && range.endContainer.parentNode.nodeType === Node.ELEMENT_NODE) ?
+            range.endContainer.parentNode as Element : undefined);
+    if (!endContainerElement) {
         return undefined;
     }
-    let endElement: Element | undefined;
-    let endChildTextNodeIndex: number = -2;
-    if (range.endContainer.nodeType === Node.ELEMENT_NODE
-        && range.endOffset >= 0 && range.endOffset < range.endContainer.childNodes.length) {
-        const endNode = range.endContainer.childNodes[range.endOffset];
-        if (endNode && endNode.nodeType === Node.ELEMENT_NODE) {
-            endElement = endNode as Element;
-            endChildTextNodeIndex = -1;
-        }
-    } else if (range.endContainer.nodeType === Node.TEXT_NODE &&
-        range.endContainer.parentElement) {
-
-        const childIndex =
-            getChildTextNodeIndex(range.endContainer.parentElement, range.endContainer as Text, false);
-        if (childIndex >= 0) {
-            endElement = range.endContainer.parentElement;
-            endChildTextNodeIndex = childIndex;
-        }
-    }
-    if (!endElement || endChildTextNodeIndex === -2) {
+    const endContainerChildTextNodeIndex = endIsElement ? -1 :
+        Array.from(endContainerElement.childNodes).indexOf(range.endContainer as ChildNode);
+    if (endContainerChildTextNodeIndex < -1) {
         return undefined;
     }
-    const endElementCssSelector = getCssSelector(endElement);
+    const endContainerElementCssSelector = getCssSelector(endContainerElement);
     // -----------------
-    let cfi: string | undefined;
-
-    const startElementCfi = computeElementCFI(startElement);
-    // console.log(`START CFI: ${startElementCfi}`);
-    // console.log(startElement.outerHTML);
-
-    const endElementCfi = computeElementCFI(endElement);
-    // console.log(`END CFI: ${endElementCfi}`);
-    // console.log(endElement.outerHTML);
-
-    const commonElementAncestor = getCommonAncestorElement(startElement, endElement);
+    const commonElementAncestor = getCommonAncestorElement(range.startContainer, range.endContainer);
     if (!commonElementAncestor) {
+        console.log("^^^ NO RANGE COMMON ANCESTOR?!");
         return undefined;
     }
     if (range.commonAncestorContainer) {
@@ -289,181 +266,139 @@ export function convertRange(
             }
         }
     }
-
+    // -----------------
     const rootElementCfi = computeElementCFI(commonElementAncestor);
     // console.log(`ROOT CFI: ${rootElementCfi}`);
     // console.log(commonElementAncestor.outerHTML);
 
+    const startElementCfi = computeElementCFI(startContainerElement);
+    // console.log(`START CFI: ${startElementCfi}`);
+    // console.log(startContainerElement.outerHTML);
+
+    const endElementCfi = computeElementCFI(endContainerElement);
+    // console.log(`END CFI: ${endElementCfi}`);
+    // console.log(endContainerElement.outerHTML);
+
+    let cfi: string | undefined;
+
     if (rootElementCfi && startElementCfi && endElementCfi) {
         let startElementOrTextCfi = startElementCfi;
-        if (startChildTextNodeIndex >= 0) {
-            const startChildTextNodeIndexForCfi  =
-                getChildTextNodeIndex(startElement, range.startContainer as Text, true);
-            startElementOrTextCfi = startElementCfi + "/" + startChildTextNodeIndexForCfi + ":" + range.startOffset;
-            // console.log(`START TEXT CFI: ${startTextCfi}`);
+        if (!startIsElement) {
+            const startContainerChildTextNodeIndexForCfi =
+                getChildTextNodeCfiIndex(startContainerElement, range.startContainer as Text);
+            // startContainerChildTextNodeIndex ===
+            // Array.from(startContainerElement.childNodes).indexOf(range.startContainer as ChildNode)
+            startElementOrTextCfi = startElementCfi + "/" +
+                startContainerChildTextNodeIndexForCfi + ":" + range.startOffset;
+        } else {
+            if (range.startOffset >= 0 && range.startOffset < startContainerElement.childNodes.length) {
+                const childNode = startContainerElement.childNodes[range.startOffset];
+                if (childNode.nodeType === Node.ELEMENT_NODE) {
+                    startElementOrTextCfi = startElementCfi + "/" + ((range.startOffset + 1) * 2);
+                } else {
+                    const cfiTextNodeIndex = getChildTextNodeCfiIndex(startContainerElement, childNode as Text);
+                    startElementOrTextCfi = startElementCfi + "/" + cfiTextNodeIndex; // + ":0";
+                }
+            } else {
+                const cfiIndexOfLastElement = ((startContainerElement.childElementCount) * 2);
+                const lastChildNode = startContainerElement.childNodes[startContainerElement.childNodes.length - 1];
+                if (lastChildNode.nodeType === Node.ELEMENT_NODE) {
+                    startElementOrTextCfi = startElementCfi + "/" + (cfiIndexOfLastElement + 1);
+                } else {
+                    startElementOrTextCfi = startElementCfi + "/" + (cfiIndexOfLastElement + 2);
+                }
+            }
         }
+        // console.log(`START TEXT CFI: ${startTextCfi}`);
 
         let endElementOrTextCfi = endElementCfi;
-        if (endChildTextNodeIndex >= 0) {
-            const endChildTextNodeIndexForCfi  =
-                getChildTextNodeIndex(endElement, range.endContainer as Text, true);
-            endElementOrTextCfi = endElementCfi + "/" + endChildTextNodeIndexForCfi + ":" + range.endOffset;
-            // console.log(`END TEXT CFI: ${endTextCfi}`);
+        if (!endIsElement) {
+            const endContainerChildTextNodeIndexForCfi =
+                getChildTextNodeCfiIndex(endContainerElement, range.endContainer as Text);
+            // endContainerChildTextNodeIndex ===
+            // Array.from(endContainerElement.childNodes).indexOf(range.endContainer as ChildNode)
+            endElementOrTextCfi = endElementCfi + "/" +
+                endContainerChildTextNodeIndexForCfi + ":" + range.endOffset;
+        } else {
+            if (range.endOffset >= 0 && range.endOffset < endContainerElement.childNodes.length) {
+                const childNode = endContainerElement.childNodes[range.endOffset];
+                if (childNode.nodeType === Node.ELEMENT_NODE) {
+                    endElementOrTextCfi = endElementCfi + "/" + ((range.endOffset + 1) * 2);
+                } else {
+                    const cfiTextNodeIndex = getChildTextNodeCfiIndex(endContainerElement, childNode as Text);
+                    endElementOrTextCfi = endElementCfi + "/" + cfiTextNodeIndex; // + ":0";
+                }
+            } else {
+                const cfiIndexOfLastElement = ((endContainerElement.childElementCount) * 2);
+                const lastChildNode = endContainerElement.childNodes[endContainerElement.childNodes.length - 1];
+                if (lastChildNode.nodeType === Node.ELEMENT_NODE) {
+                    endElementOrTextCfi = endElementCfi + "/" + (cfiIndexOfLastElement + 1);
+                } else {
+                    endElementOrTextCfi = endElementCfi + "/" + (cfiIndexOfLastElement + 2);
+                }
+            }
         }
+        // console.log(`END TEXT CFI: ${endTextCfi}`);
 
         cfi = rootElementCfi + "," +
             startElementOrTextCfi.replace(rootElementCfi, "") + "," +
             endElementOrTextCfi.replace(rootElementCfi, "");
     }
-
+    // -----------------
     return {
         cfi,
 
-        endChildTextNodeIndex,
-        endElementCssSelector,
-        endTextOffset: endChildTextNodeIndex === -1 ? -1 : range.endOffset,
+        endContainerChildTextNodeIndex,
+        endContainerElementCssSelector,
+        endOffset: range.endOffset,
 
-        startChildTextNodeIndex,
-        startElementCssSelector,
-        startTextOffset: startChildTextNodeIndex === -1 ? -1 : range.startOffset,
+        startContainerChildTextNodeIndex,
+        startContainerElementCssSelector,
+        startOffset: range.startOffset,
     };
 }
 
 export function convertRangeInfo(rangeInfo: IRangeInfo):
     Range | undefined {
 
-    const startElement = document.querySelector(rangeInfo.startElementCssSelector);
+    const startElement = document.querySelector(rangeInfo.startContainerElementCssSelector);
     if (!startElement) {
+        console.log("^^^ convertRangeInfo NO START ELEMENT CSS SELECTOR?!");
         return undefined;
     }
-    const endElement = document.querySelector(rangeInfo.endElementCssSelector);
+    let startContainer: Node = startElement;
+    if (rangeInfo.startContainerChildTextNodeIndex >= 0) {
+        if (rangeInfo.startContainerChildTextNodeIndex >= startElement.childNodes.length) {
+            // tslint:disable-next-line:max-line-length
+            console.log("^^^ convertRangeInfo rangeInfo.startContainerChildTextNodeIndex >= startElement.childNodes.length?!");
+            return undefined;
+        }
+        startContainer = startElement.childNodes[rangeInfo.startContainerChildTextNodeIndex];
+        if (startContainer.nodeType !== Node.TEXT_NODE) {
+            console.log("^^^ convertRangeInfo startContainer.nodeType !== Node.TEXT_NODE?!");
+            return undefined;
+        }
+    }
+    const endElement = document.querySelector(rangeInfo.endContainerElementCssSelector);
     if (!endElement) {
+        console.log("^^^ convertRangeInfo NO END ELEMENT CSS SELECTOR?!");
         return undefined;
     }
-
-    // -------------
-    let startNode: Node | undefined | null;
-    if (rangeInfo.startChildTextNodeIndex >= 0) {
-        startNode = getChildTextNode(startElement, rangeInfo.startChildTextNodeIndex);
-        if (!startNode) {
+    let endContainer: Node = endElement;
+    if (rangeInfo.endContainerChildTextNodeIndex >= 0) {
+        if (rangeInfo.endContainerChildTextNodeIndex >= endElement.childNodes.length) {
+            // tslint:disable-next-line:max-line-length
+            console.log("^^^ convertRangeInfo rangeInfo.endContainerChildTextNodeIndex >= endElement.childNodes.length?!");
             return undefined;
         }
-    } else {
-        startNode = startElement.parentNode;
-        if (!startNode || startNode.nodeType !== Node.ELEMENT_NODE) {
-            return undefined;
-        }
-    }
-    let startOffset = rangeInfo.startTextOffset;
-    if (startOffset >= 0) {
-        if (startNode.nodeType !== Node.TEXT_NODE) {
-            return undefined;
-        }
-    } else {
-        if (startNode.nodeType !== Node.ELEMENT_NODE) {
-            return undefined;
-        }
-        let index = -1;
-        // tslint:disable-next-line:prefer-for-of
-        for (let i = 0; i < startNode.childNodes.length; i++) {
-            const childNode = startNode.childNodes[i];
-            if (childNode === startElement) {
-                index = i;
-                break;
-            }
-        }
-        if (index >= 0) {
-            startOffset = index;
-        } else {
+        endContainer = endElement.childNodes[rangeInfo.endContainerChildTextNodeIndex];
+        if (endContainer.nodeType !== Node.TEXT_NODE) {
+            console.log("^^^ convertRangeInfo endContainer.nodeType !== Node.TEXT_NODE?!");
             return undefined;
         }
     }
-    // -------------
-    let endNode: Node | undefined | null;
-    if (rangeInfo.endChildTextNodeIndex >= 0) {
-        endNode = getChildTextNode(endElement, rangeInfo.endChildTextNodeIndex);
-        if (!endNode) {
-            return undefined;
-        }
-    } else {
-        endNode = endElement.parentNode;
-        if (!endNode || endNode.nodeType !== Node.ELEMENT_NODE) {
-            return undefined;
-        }
-    }
-    let endOffset = rangeInfo.endTextOffset;
-    if (endOffset >= 0) {
-        if (endNode.nodeType !== Node.TEXT_NODE) {
-            return undefined;
-        }
-    } else {
-        if (endNode.nodeType !== Node.ELEMENT_NODE) {
-            return undefined;
-        }
-        let index = -1;
-        // tslint:disable-next-line:prefer-for-of
-        for (let i = 0; i < endNode.childNodes.length; i++) {
-            const childNode = endNode.childNodes[i];
-            if (childNode === endElement) {
-                index = i;
-                break;
-            }
-        }
-        if (index >= 0) {
-            endOffset = index;
-        } else {
-            return undefined;
-        }
-    }
-    return createOrderedRange(startNode, startOffset, endNode, endOffset);
-}
 
-function getChildTextNode(element: Element, index: number): Text | undefined {
-
-    let i = -1;
-    for (const childNode of element.childNodes) {
-        if (i > index) {
-            return undefined;
-        }
-        if (childNode.nodeType === Node.TEXT_NODE) {
-            i++;
-            if (i === index) {
-                return childNode as Text;
-            }
-        }
-    }
-
-    return undefined;
-}
-
-function getChildTextNodeIndex(element: Element, child: Text, forCfi: boolean): number {
-    let found = -1;
-    let textNodeIndex = -1;
-    let previousWasElement = false;
-    // tslint:disable-next-line:prefer-for-of
-    for (let i = 0; i < element.childNodes.length; i++) {
-        const childNode = element.childNodes[i];
-        if (childNode.nodeType !== Node.TEXT_NODE && childNode.nodeType !== Node.ELEMENT_NODE) {
-            continue;
-        }
-        if (forCfi) {
-            if (childNode.nodeType === Node.TEXT_NODE || previousWasElement) {
-                textNodeIndex += 2;
-            }
-        }
-        if (childNode.nodeType === Node.TEXT_NODE) {
-            if (!forCfi) {
-                textNodeIndex++;
-            }
-
-            if (childNode === child) {
-                found = textNodeIndex;
-                break;
-            }
-        }
-        previousWasElement = childNode.nodeType === Node.ELEMENT_NODE;
-    }
-    return found;
+    return createOrderedRange(startContainer, rangeInfo.startOffset, endContainer, rangeInfo.endOffset);
 }
 
 function getCommonAncestorElement(node1: Node, node2: Node): Element | undefined {
@@ -504,3 +439,79 @@ function getCommonAncestorElement(node1: Node, node2: Node): Element | undefined
 
     return commonAncestor;
 }
+
+function isCfiTextNode(node: Node) {
+    return node.nodeType !== Node.ELEMENT_NODE;
+    // return node.nodeType === Node.TEXT_NODE ||
+    //     node.nodeType === Node.COMMENT_NODE ||
+    //     node.nodeType === Node.CDATA_SECTION_NODE; // other?
+}
+function getChildTextNodeCfiIndex(element: Element, child: Text): number {
+    let found = -1;
+    let textNodeIndex = -1;
+    let previousWasElement = false;
+    // tslint:disable-next-line:prefer-for-of
+    for (let i = 0; i < element.childNodes.length; i++) {
+        const childNode = element.childNodes[i];
+        const isText = isCfiTextNode(childNode);
+        if (isText || previousWasElement) {
+            textNodeIndex += 2;
+        }
+        if (isText) {
+            if (childNode === child) {
+                found = textNodeIndex;
+                break;
+            }
+        }
+        previousWasElement = childNode.nodeType === Node.ELEMENT_NODE;
+    }
+    return found;
+}
+
+// function getChildTextNode(element: Element, index: number): Text | undefined {
+
+//     let i = -1;
+//     for (const childNode of element.childNodes) {
+//         if (i > index) {
+//             return undefined;
+//         }
+//         if (childNode.nodeType === Node.TEXT_NODE) {
+//             i++;
+//             if (i === index) {
+//                 return childNode as Text;
+//             }
+//         }
+//     }
+
+//     return undefined;
+// }
+
+// function getChildTextNodeIndex(element: Element, child: Text, forCfi: boolean): number {
+//     let found = -1;
+//     let textNodeIndex = -1;
+//     let previousWasElement = false;
+//     // tslint:disable-next-line:prefer-for-of
+//     for (let i = 0; i < element.childNodes.length; i++) {
+//         const childNode = element.childNodes[i];
+//         if (childNode.nodeType !== Node.TEXT_NODE && childNode.nodeType !== Node.ELEMENT_NODE) {
+//             continue;
+//         }
+//         if (forCfi) {
+//             if (childNode.nodeType === Node.TEXT_NODE || previousWasElement) {
+//                 textNodeIndex += 2;
+//             }
+//         }
+//         if (childNode.nodeType === Node.TEXT_NODE) {
+//             if (!forCfi) {
+//                 textNodeIndex++;
+//             }
+
+//             if (childNode === child) {
+//                 found = textNodeIndex;
+//                 break;
+//             }
+//         }
+//         previousWasElement = childNode.nodeType === Node.ELEMENT_NODE;
+//     }
+//     return found;
+// }
