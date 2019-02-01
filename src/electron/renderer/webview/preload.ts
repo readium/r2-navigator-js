@@ -108,7 +108,7 @@ import {
     isVerticalWritingMode,
     readiumCSS,
 } from "./readium-css";
-import { getCurrentSelectionInfo } from "./selection";
+import { clearCurrentSelection, getCurrentSelectionInfo } from "./selection";
 import { IElectronWebviewTagWindow } from "./state";
 
 import ResizeSensor = require("css-element-queries/src/ResizeSensor");
@@ -376,6 +376,7 @@ ipcRenderer.on(R2_EVENT_LOCATOR_VISIBLE, (_event: any, payload: IEventPayload_R2
 ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_SCROLLTO) => {
     showHideContentMask(false);
 
+    clearCurrentSelection(win);
     closePopupDialogs(win.document);
 
     _cancelInitialScrollCheck = true;
@@ -555,6 +556,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
         return;
     }
 
+    clearCurrentSelection(win);
     closePopupDialogs(win.document);
 
     if (win.READIUM2.isFixedLayout || !win.document.body) {

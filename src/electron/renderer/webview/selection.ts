@@ -62,6 +62,11 @@ function dumpDebug(
     console.log("$$$$$$$$$$$$$$$$$");
 }
 
+export function clearCurrentSelection(win: IElectronWebviewTagWindow) {
+    const selection = win.getSelection();
+    selection.removeAllRanges();
+}
+
 export function getCurrentSelectionInfo(
     win: IElectronWebviewTagWindow,
     getCssSelector: (element: Element) => string,
