@@ -87,6 +87,14 @@ import {
     URL_PARAM_PREVIOUS,
 } from "../common/url-params";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
+import {
+    CLASS_HIGHLIGHT_AREA,
+    CLASS_HIGHLIGHT_CONTAINER,
+    ID_HIGHLIGHTS_CONTAINER,
+    createHighlight,
+    destroyAllhighlights,
+    recreateAllHighlightsDebounced,
+} from "./highlight";
 import { popupFootNote } from "./popupFootNotes";
 import { ttsNext, ttsPause, ttsPlay, ttsPrevious, ttsResume, ttsStop } from "./readaloud";
 import {
@@ -203,6 +211,7 @@ if (IS_DEV) {
                 existing.removeAttribute(`${readPosCssStylesAttr3}`);
                 existing.removeAttribute(`${readPosCssStylesAttr4}`);
             });
+            destroyAllhighlights(win.document);
         }
         if (payload.cssClass) {
             if (_blacklistIdClassForCssSelectors.indexOf(payload.cssClass) < 0) {
@@ -821,6 +830,8 @@ const scrollToHashRaw = () => {
         return;
     }
 
+    recreateAllHighlightsDebounced(win.document);
+
     const isPaged = isPaginated(win.document);
 
     if (win.READIUM2.locationHashOverride) {
@@ -1170,6 +1181,8 @@ function handleTab(target: HTMLElement, tabKeyDownEvent: KeyboardEvent | undefin
 ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVENT_READIUMCSS) => {
     showHideContentMask(false);
     readiumCSS(win.document, payload);
+
+    recreateAllHighlightsDebounced(win.document);
 });
 
 let _docTitle: string | undefined;
@@ -1868,10 +1881,10 @@ export const computeProgressionData = (): IProgressionData => {
 };
 
 // tslint:disable-next-line:max-line-length
-const _blacklistIdClassForCssSelectors = [TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
+const _blacklistIdClassForCssSelectors = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
 
 // tslint:disable-next-line:max-line-length
-const _blacklistIdClassForCFI = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, "resize-sensor"];
+const _blacklistIdClassForCFI = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, "resize-sensor"];
 
 export const computeCFI = (node: Node): string | undefined => {
 
@@ -1942,6 +1955,11 @@ const notifyReadingLocationRaw = () => {
         progressionData.paginationInfo : undefined;
 
     const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI);
+    if (win.READIUM2.DEBUG_VISUALS) {
+        if (selInfo) {
+            createHighlight(win.document, selInfo);
+        }
+    }
 
     win.READIUM2.locationHashOverrideInfo = {
         href: "", // TODO
