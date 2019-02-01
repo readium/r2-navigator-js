@@ -97,7 +97,7 @@ export function getCurrentSelectionInfo(
 
     // selection.removeAllRanges();
     if (IS_DEV && win.READIUM2.DEBUG_VISUALS) {
-        const restoredRange = convertRangeInfo(rangeInfo);
+        const restoredRange = convertRangeInfo(win.document, rangeInfo);
         if (restoredRange) {
             if (restoredRange.startOffset === range.startOffset &&
                 restoredRange.endOffset === range.endOffset &&
@@ -358,10 +358,10 @@ export function convertRange(
     };
 }
 
-export function convertRangeInfo(rangeInfo: IRangeInfo):
+export function convertRangeInfo(documant: Document, rangeInfo: IRangeInfo):
     Range | undefined {
 
-    const startElement = document.querySelector(rangeInfo.startContainerElementCssSelector);
+    const startElement = documant.querySelector(rangeInfo.startContainerElementCssSelector);
     if (!startElement) {
         console.log("^^^ convertRangeInfo NO START ELEMENT CSS SELECTOR?!");
         return undefined;
@@ -379,7 +379,7 @@ export function convertRangeInfo(rangeInfo: IRangeInfo):
             return undefined;
         }
     }
-    const endElement = document.querySelector(rangeInfo.endContainerElementCssSelector);
+    const endElement = documant.querySelector(rangeInfo.endContainerElementCssSelector);
     if (!endElement) {
         console.log("^^^ convertRangeInfo NO END ELEMENT CSS SELECTOR?!");
         return undefined;

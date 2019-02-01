@@ -118,7 +118,7 @@ export function createHighlight(documant: Document, selectionInfo: ISelectionInf
 
 function createHighlightDom(documant: Document, highlight: IHighlight) {
 
-    const range = convertRangeInfo(highlight.selectionInfo.rangeInfo);
+    const range = convertRangeInfo(documant, highlight.selectionInfo.rangeInfo);
     if (!range) {
         return;
     }
