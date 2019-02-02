@@ -92,7 +92,6 @@ import {
     CLASS_HIGHLIGHT_CONTAINER,
     ID_HIGHLIGHTS_CONTAINER,
     createHighlight,
-    destroyAllhighlights,
     recreateAllHighlightsDebounced,
 } from "./highlight";
 import { popupFootNote } from "./popupFootNotes";
@@ -212,7 +211,7 @@ if (IS_DEV) {
                 existing.removeAttribute(`${readPosCssStylesAttr3}`);
                 existing.removeAttribute(`${readPosCssStylesAttr4}`);
             });
-            destroyAllhighlights(win.document);
+            // destroyAllhighlights(win.document);
         }
         if (payload.cssClass) {
             if (_blacklistIdClassForCssSelectors.indexOf(payload.cssClass) < 0) {
@@ -1967,7 +1966,7 @@ const notifyReadingLocationRaw = () => {
         progressionData.paginationInfo : undefined;
 
     const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI);
-    if (win.READIUM2.DEBUG_VISUALS) {
+    if (IS_DEV) { // && win.READIUM2.DEBUG_VISUALS
         if (selInfo) {
             createHighlight(win, selInfo, undefined); // default background color
         }
