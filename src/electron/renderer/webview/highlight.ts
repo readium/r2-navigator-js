@@ -10,6 +10,7 @@ import { debounce } from "debounce";
 import { isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";
 import { convertRangeInfo } from "./selection";
+import { IElectronWebviewTagWindow } from "./state";
 
 // import { isRTL } from './readium-css';
 
@@ -82,30 +83,30 @@ export function destroyHighlight(documant: Document, id: string) {
     }
 }
 
-export function recreateAllHighlightsRaw(documant: Document) {
+export function recreateAllHighlightsRaw(win: IElectronWebviewTagWindow) {
     for (const highlight of _highlights) {
-        const highlightContainer = documant.getElementById(highlight.id);
+        const highlightContainer = win.document.getElementById(highlight.id);
         if (highlightContainer) {
             highlightContainer.remove();
         }
     }
     for (const highlight of _highlights) {
-        createHighlightDom(documant, highlight);
+        createHighlightDom(win, highlight);
     }
 }
 
-export const recreateAllHighlightsDebounced = debounce((documant: Document) => {
-    recreateAllHighlightsRaw(documant);
+export const recreateAllHighlightsDebounced = debounce((win: IElectronWebviewTagWindow) => {
+    recreateAllHighlightsRaw(win);
 }, 250);
 
-export function createHighlight(documant: Document, selectionInfo: ISelectionInfo) {
+export function createHighlight(win: IElectronWebviewTagWindow, selectionInfo: ISelectionInfo) {
 
     // const unique = new Buffer(JSON.stringify(selectionInfo.rangeInfo, null, "")).toString("base64");
     // tslint:disable-next-line:max-line-length
     const unique = new Buffer(`${selectionInfo.rangeInfo.cfi}${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`).toString("base64");
     const id = "R2_HIGHLIGHT_" + unique.replace(/\+/, "_").replace(/=/, "-").replace(/\//, ".");
 
-    destroyHighlight(documant, id);
+    destroyHighlight(win.document, id);
 
     const highlight: IHighlight = {
         id,
@@ -113,10 +114,12 @@ export function createHighlight(documant: Document, selectionInfo: ISelectionInf
     };
     _highlights.push(highlight);
 
-    createHighlightDom(documant, highlight);
+    createHighlightDom(win, highlight);
 }
 
-function createHighlightDom(documant: Document, highlight: IHighlight) {
+function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighlight) {
+
+    const documant = win.document;
 
     const range = convertRangeInfo(documant, highlight.selectionInfo.rangeInfo);
     if (!range) {
@@ -163,6 +166,8 @@ function createHighlightDom(documant: Document, highlight: IHighlight) {
     const xOffset = paginated ? (-documant.body.scrollLeft) : bodyRect.left;
     const yOffset = paginated ? (-documant.body.scrollTop) : bodyRect.top;
 
+    const scale = 1 / ((win.READIUM2 && win.READIUM2.isFixedLayout) ? win.READIUM2.fxlViewportScale : 1);
+
     // console.log("documant.body.scrollLeft: " + documant.body.scrollLeft);
     // console.log("documant.body.scrollTop: " + documant.body.scrollTop);
 
@@ -181,10 +186,10 @@ function createHighlightDom(documant: Document, highlight: IHighlight) {
     // mainHighlightArea.style.setProperty("background", "rgba(255, 0, 0, 0.60) !important");
     // mainHighlightArea.style.backgroundColor = "rgba(255, 0, 0, 0.60)";
     mainHighlightArea.style.position = paginated ? "fixed" : "absolute";
-    mainHighlightArea.style.width = `${rangeRect.width}px`;
-    mainHighlightArea.style.height = `${rangeRect.height}px`;
-    mainHighlightArea.style.left = `${rangeRect.left - xOffset}px`;
-    mainHighlightArea.style.top = `${rangeRect.top - yOffset}px`;
+    mainHighlightArea.style.width = `${rangeRect.width * scale}px`;
+    mainHighlightArea.style.height = `${rangeRect.height * scale}px`;
+    mainHighlightArea.style.left = `${(rangeRect.left - xOffset)  * scale}px`;
+    mainHighlightArea.style.top = `${(rangeRect.top - yOffset)  * scale}px`;
     highlightContainer.append(mainHighlightArea);
 
     const clientRects = range.getClientRects(); // ClientRectList | DOMRectList
@@ -202,10 +207,10 @@ function createHighlightDom(documant: Document, highlight: IHighlight) {
         // highlightArea.style.setProperty("background", BACKGROUND_COLOR + " !important");
         // highlightArea.style.backgroundColor = BACKGROUND_COLOR;
         highlightArea.style.position = paginated ? "fixed" : "absolute";
-        highlightArea.style.width = `${clientRect.width}px`;
-        highlightArea.style.height = `${clientRect.height}px`;
-        highlightArea.style.left = `${clientRect.left - xOffset}px`;
-        highlightArea.style.top = `${clientRect.top - yOffset}px`;
+        highlightArea.style.width = `${clientRect.width * scale}px`;
+        highlightArea.style.height = `${clientRect.height * scale}px`;
+        highlightArea.style.left = `${(clientRect.left - xOffset)  * scale}px`;
+        highlightArea.style.top = `${(clientRect.top - yOffset)  * scale}px`;
         highlightContainer.append(highlightArea);
     }
 }

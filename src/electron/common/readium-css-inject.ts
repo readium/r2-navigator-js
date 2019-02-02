@@ -479,6 +479,7 @@ export function readiumCSSSet(
 export interface IwidthHeight {
     width: number;
     height: number;
+    scale: number;
 }
 export function configureFixedLayout(
         documant: Document,
@@ -565,9 +566,16 @@ export function configureFixedLayout(
 
             wh = {
                 height,
+                scale: 1,
                 width,
             };
         }
+    } else {
+        wh = {
+            height,
+            scale: 1,
+            width,
+        };
     }
 
     if (innerWidth && innerHeight && width && height && isFixedLayout
@@ -601,6 +609,11 @@ export function configureFixedLayout(
         if (isDEBUG_VISUALS(documant)) {
             debug("FXL trans X: " + tx);
             debug("FXL trans Y: " + ty);
+            debug("FXL scale XY: " + ratio);
+        }
+
+        if (wh) {
+            wh.scale = ratio;
         }
 
         documant.documentElement.style.transformOrigin = "0 0";

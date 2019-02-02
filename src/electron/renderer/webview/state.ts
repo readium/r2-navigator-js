@@ -25,6 +25,7 @@ export interface IElectronWebviewTagWindowState {
     isFixedLayout: boolean;
     fxlViewportWidth: number;
     fxlViewportHeight: number;
+    fxlViewportScale: number;
 
     DEBUG_VISUALS: boolean;
 

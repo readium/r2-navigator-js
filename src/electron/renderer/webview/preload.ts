@@ -124,6 +124,7 @@ win.READIUM2 = {
     DEBUG_VISUALS: false,
     // dialogs = [],
     fxlViewportHeight: 0,
+    fxlViewportScale: 1,
     fxlViewportWidth: 0,
     hashElement: null,
     isFixedLayout: false,
@@ -832,7 +833,7 @@ const scrollToHashRaw = () => {
         return;
     }
 
-    recreateAllHighlightsDebounced(win.document);
+    recreateAllHighlightsDebounced(win);
 
     const isPaged = isPaginated(win.document);
 
@@ -1177,7 +1178,7 @@ ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVEN
     showHideContentMask(false);
     readiumCSS(win.document, payload);
 
-    recreateAllHighlightsDebounced(win.document);
+    recreateAllHighlightsDebounced(win);
 });
 
 let _docTitle: string | undefined;
@@ -1260,6 +1261,7 @@ win.addEventListener("DOMContentLoaded", () => {
     if (wh) {
         win.READIUM2.fxlViewportWidth = wh.width;
         win.READIUM2.fxlViewportHeight = wh.height;
+        win.READIUM2.fxlViewportScale = wh.scale;
     }
 
     const alreadedInjected = win.document.documentElement.hasAttribute("data-readiumcss-injected");
@@ -1490,6 +1492,7 @@ win.addEventListener("load", () => {
         if (wh) {
             win.READIUM2.fxlViewportWidth = wh.width;
             win.READIUM2.fxlViewportHeight = wh.height;
+            win.READIUM2.fxlViewportScale = wh.scale;
         }
 
         scrollToHashRaw();
@@ -1966,7 +1969,7 @@ const notifyReadingLocationRaw = () => {
     const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI);
     if (win.READIUM2.DEBUG_VISUALS) {
         if (selInfo) {
-            createHighlight(win.document, selInfo);
+            createHighlight(win, selInfo);
         }
     }
 
