@@ -20,11 +20,12 @@ export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
 export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
 
-const BACKGROUND_COLOR = "rgba(0, 0, 255, 0.60)";
+const DEFAULT_BACKGROUND_COLOR = "rgba(0, 0, 255, 0.40)";
 
 interface IHighlight {
     id: string;
     selectionInfo: ISelectionInfo;
+    color: string;
 }
 
 const _highlights: IHighlight[] = [];
@@ -99,7 +100,10 @@ export const recreateAllHighlightsDebounced = debounce((win: IElectronWebviewTag
     recreateAllHighlightsRaw(win);
 }, 250);
 
-export function createHighlight(win: IElectronWebviewTagWindow, selectionInfo: ISelectionInfo) {
+export function createHighlight(
+    win: IElectronWebviewTagWindow,
+    selectionInfo: ISelectionInfo,
+    color: string | undefined) {
 
     // const unique = new Buffer(JSON.stringify(selectionInfo.rangeInfo, null, "")).toString("base64");
     // tslint:disable-next-line:max-line-length
@@ -109,6 +113,7 @@ export function createHighlight(win: IElectronWebviewTagWindow, selectionInfo: I
     destroyHighlight(win.document, id);
 
     const highlight: IHighlight = {
+        color: color ? color : DEFAULT_BACKGROUND_COLOR,
         id,
         selectionInfo,
     };
@@ -171,7 +176,7 @@ function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighligh
     // console.log("documant.body.scrollLeft: " + documant.body.scrollLeft);
     // console.log("documant.body.scrollTop: " + documant.body.scrollTop);
 
-    const rangeRect = range.getBoundingClientRect();
+    // const rangeRect = range.getBoundingClientRect();
     // console.log("==== rangeRect:");
     // console.log("width: " + rangeRect.width);
     // console.log("height: " + rangeRect.height);
@@ -180,17 +185,20 @@ function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighligh
     // console.log("left: " + rangeRect.left);
     // console.log("right: " + rangeRect.right);
 
-    const mainHighlightArea = documant.createElement("div");
-    mainHighlightArea.setAttribute("class", CLASS_HIGHLIGHT_AREA);
-    mainHighlightArea.setAttribute("style", "background-color: rgba(255, 0, 0, 0.60) !important");
-    // mainHighlightArea.style.setProperty("background", "rgba(255, 0, 0, 0.60) !important");
-    // mainHighlightArea.style.backgroundColor = "rgba(255, 0, 0, 0.60)";
-    mainHighlightArea.style.position = paginated ? "fixed" : "absolute";
-    mainHighlightArea.style.width = `${rangeRect.width * scale}px`;
-    mainHighlightArea.style.height = `${rangeRect.height * scale}px`;
-    mainHighlightArea.style.left = `${(rangeRect.left - xOffset)  * scale}px`;
-    mainHighlightArea.style.top = `${(rangeRect.top - yOffset)  * scale}px`;
-    highlightContainer.append(mainHighlightArea);
+    // if (IS_DEV && win.READIUM2.DEBUG_VISUALS) {
+    //     const mainHighlightArea = documant.createElement("div");
+    //     mainHighlightArea.setAttribute("class", CLASS_HIGHLIGHT_AREA);
+    //     const color = "rgba(255, 0, 0, 0.60)";
+    //     mainHighlightArea.setAttribute("style", `background-color: ${color} !important`);
+    //     // mainHighlightArea.style.setProperty("background", "rgba(255, 0, 0, 0.60) !important");
+    //     // mainHighlightArea.style.backgroundColor = "rgba(255, 0, 0, 0.60)";
+    //     mainHighlightArea.style.position = paginated ? "fixed" : "absolute";
+    //     mainHighlightArea.style.width = `${rangeRect.width * scale}px`;
+    //     mainHighlightArea.style.height = `${rangeRect.height * scale}px`;
+    //     mainHighlightArea.style.left = `${(rangeRect.left - xOffset)  * scale}px`;
+    //     mainHighlightArea.style.top = `${(rangeRect.top - yOffset)  * scale}px`;
+    //     highlightContainer.append(mainHighlightArea);
+    // }
 
     const clientRects = range.getClientRects(); // ClientRectList | DOMRectList
     for (const clientRect of clientRects) {
@@ -203,7 +211,7 @@ function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighligh
         // console.log("right: " + clientRect.right);
         const highlightArea = documant.createElement("div");
         highlightArea.setAttribute("class", CLASS_HIGHLIGHT_AREA);
-        highlightArea.setAttribute("style", "background-color: " + BACKGROUND_COLOR + " !important");
+        highlightArea.setAttribute("style", `background-color: ${highlight.color} !important`);
         // highlightArea.style.setProperty("background", BACKGROUND_COLOR + " !important");
         // highlightArea.style.backgroundColor = BACKGROUND_COLOR;
         highlightArea.style.position = paginated ? "fixed" : "absolute";

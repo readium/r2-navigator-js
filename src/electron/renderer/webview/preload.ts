@@ -1969,12 +1969,18 @@ const notifyReadingLocationRaw = () => {
     const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI);
     if (win.READIUM2.DEBUG_VISUALS) {
         if (selInfo) {
-            createHighlight(win, selInfo);
+            createHighlight(win, selInfo, undefined); // default background color
         }
     }
 
+    const text = selInfo ? {
+            after: undefined, // TODO?
+            before: undefined, // TODO?
+            highlight: selInfo.cleanText,
+        } : undefined;
+
     win.READIUM2.locationHashOverrideInfo = {
-        href: "", // TODO
+        href: "", // filled-in from host index.js renderer
         locations: {
             cfi,
             cssSelector,
@@ -1983,6 +1989,7 @@ const notifyReadingLocationRaw = () => {
         },
         paginationInfo: pinfo,
         selectionInfo: selInfo,
+        text,
         title: _docTitle,
     };
     const payload: IEventPayload_R2_EVENT_READING_LOCATION = win.READIUM2.locationHashOverrideInfo;

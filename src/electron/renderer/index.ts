@@ -193,6 +193,7 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
                 progression: (typeof locator.locations.progression !== "undefined") ?
                     locator.locations.progression : undefined,
             },
+            text: locator.text,
             title: locator.title,
         },
         paginationInfo: locator.paginationInfo,
