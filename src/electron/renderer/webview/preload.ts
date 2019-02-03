@@ -478,15 +478,40 @@ function elementCapturesKeyboardArrowKeys(target: Element): boolean {
     return false;
 }
 
+function ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable(): number {
+    const val = (win.document.body as any).scrollLeftExtra;
+    if (val === 0) {
+        return 0;
+    }
+    (win.document.body as any).scrollLeftExtra = 0;
+    ipcRenderer.sendToHost(R2_EVENT_SHIFT_VIEW_X,
+        { offset: 0, backgroundColor: undefined } as IEventPayload_R2_EVENT_SHIFT_VIEW_X);
+    return val;
+}
+function ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable(scrollLeftExtra: number) {
+
+    (win.document.body as any).scrollLeftExtra = scrollLeftExtra;
+    const scrollLeftExtraBackgroundColor = (win.document.body as any).scrollLeftExtraBackgroundColor;
+
+    ipcRenderer.sendToHost(R2_EVENT_SHIFT_VIEW_X,
+        {
+            backgroundColor: scrollLeftExtraBackgroundColor ? scrollLeftExtraBackgroundColor : undefined,
+            offset: (isRTL() ? 1 : -1) * scrollLeftExtra,
+        } as IEventPayload_R2_EVENT_SHIFT_VIEW_X);
+}
+
 function ensureTwoPageSpreadWithOddColumnsIsOffset(scrollOffset: number, maxScrollShift: number) {
 
     if (!win || !win.document || !win.document.body || !win.document.documentElement) {
         return;
     }
 
-    const noChange = !isPaginated(win.document) || !isTwoPageSpread() ||
+    const noChange = isPopupDialogOpen(win.document) ||
+        !isPaginated(win.document) ||
+        !isTwoPageSpread() ||
         isVerticalWritingMode() || // TODO: VWM?
-        maxScrollShift <= 0 || Math.abs(scrollOffset) <= maxScrollShift;
+        maxScrollShift <= 0 ||
+        Math.abs(scrollOffset) <= maxScrollShift;
     if (noChange) {
         (win.document.body as any).scrollLeftExtra = 0;
 
@@ -525,6 +550,7 @@ function ensureTwoPageSpreadWithOddColumnsIsOffset(scrollOffset: number, maxScro
     }
 
     (win.document.body as any).scrollLeftExtra = extraOffset;
+    (win.document.body as any).scrollLeftExtraBackgroundColor = backgroundColor;
 
     ipcRenderer.sendToHost(R2_EVENT_SHIFT_VIEW_X,
         {
@@ -1467,7 +1493,12 @@ win.addEventListener("load", () => {
         ev.preventDefault();
         ev.stopPropagation();
 
-        const done = popupFootNote(currentElement as HTMLElement, focusScrollRaw, href);
+        const done = popupFootNote(
+            currentElement as HTMLElement,
+            focusScrollRaw,
+            href,
+            ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+            ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
         if (!done) {
             focusScrollDebounced.clear();
             processXYDebounced.clear();
@@ -1565,11 +1596,21 @@ win.addEventListener("load", () => {
 
             if (element) {
                 if (ev.altKey) {
-                    ttsPlay(focusScrollRaw, element, undefined);
+                    ttsPlay(
+                        focusScrollRaw,
+                        element,
+                        undefined,
+                        ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+                        ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
                     return;
                 }
 
-                ttsPlay(focusScrollRaw, (element.ownerDocument as Document).body, element);
+                ttsPlay(
+                    focusScrollRaw,
+                    (element.ownerDocument as Document).body,
+                    element,
+                    ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+                    ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
             }
         }
     }
@@ -2007,7 +2048,12 @@ const notifyReadingLocationDebounced = debounce(() => {
 ipcRenderer.on(R2_EVENT_TTS_DO_PLAY, (_event: any, payload: IEventPayload_R2_EVENT_TTS_DO_PLAY) => {
     const rootElement = win.document.querySelector(payload.rootElement);
     const startElement = payload.startElement ? win.document.querySelector(payload.startElement) : null;
-    ttsPlay(focusScrollRaw, rootElement ? rootElement : undefined, startElement ? startElement : undefined);
+    ttsPlay(
+        focusScrollRaw,
+        rootElement ? rootElement : undefined,
+        startElement ? startElement : undefined,
+        ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+        ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
 });
 
 ipcRenderer.on(R2_EVENT_TTS_DO_STOP, (_event: any) => {

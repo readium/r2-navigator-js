@@ -57,7 +57,10 @@ interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
 
     ttsRootElement: Element | undefined;
 
-    focusScrollRaw: ((el: HTMLOrSVGElement, doFocus: boolean) => void )| undefined;
+    focusScrollRaw: ((el: HTMLOrSVGElement, doFocus: boolean) => void) | undefined;
+
+    ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: (() => number) | undefined;
+    ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: ((val: number) => void) | undefined;
 }
 
 let _dialogState: IHTMLDialogElementWithTTSState | undefined;
@@ -68,6 +71,8 @@ function resetState() {
     if (_dialogState) {
         _dialogState.popDialog = undefined;
         _dialogState.focusScrollRaw = undefined;
+        _dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable = undefined;
+        _dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable = undefined;
 
         _dialogState.ttsRootElement = undefined;
         _dialogState.ttsQueue = undefined;
@@ -91,7 +96,10 @@ function resetState() {
 export function ttsPlay(
     focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean) => void,
     rootElem: Element | undefined,
-    startElem: Element | undefined) {
+    startElem: Element | undefined,
+    ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
+    ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: (val: number) => void,
+    ) {
 
     ttsStop();
 
@@ -117,7 +125,13 @@ export function ttsPlay(
         ttsQueueIndex = 0;
     }
     setTimeout(() => {
-        startTTSSession(rootEl as Element, ttsQueue, ttsQueueIndex, focusScrollRaw);
+        startTTSSession(
+            rootEl as Element,
+            ttsQueue,
+            ttsQueueIndex,
+            focusScrollRaw,
+            ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+            ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
     }, 100);
 }
 
@@ -168,7 +182,9 @@ interface IResumableState {
     ttsRootElement: Element;
     ttsQueue: ITtsQueueItem[];
     ttsQueueIndex: number;
-    focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean) => void;
+    focusScrollRaw: ((el: HTMLOrSVGElement, doFocus: boolean) => void);
+    ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: (() => number);
+    ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: ((val: number) => void);
 }
 let _resumableState: IResumableState | undefined;
 
@@ -193,7 +209,9 @@ export function ttsResume() {
                     _resumableState.ttsRootElement,
                     _resumableState.ttsQueue,
                     _resumableState.ttsQueueIndex,
-                    _resumableState.focusScrollRaw);
+                    _resumableState.focusScrollRaw,
+                    _resumableState.ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+                    _resumableState.ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
             }
         }, 100);
     }
@@ -420,6 +438,8 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
     if (!_dialogState ||
         !_dialogState.ttsRootElement ||
         !_dialogState.focusScrollRaw ||
+        !_dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable ||
+        !_dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable ||
         !_dialogState.ttsQueue ||
         !_dialogState.hasAttribute("open")) {
         ttsStop();
@@ -488,6 +508,10 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
     _doNotProcessNextQueueItemOnUtteranceEnd = false;
 
     _resumableState = {
+        ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable:
+            _dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable,
+        ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable:
+            _dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
         focusScrollRaw: _dialogState.focusScrollRaw,
         ttsQueue: _dialogState.ttsQueue,
         ttsQueueIndex: _dialogState.ttsQueueItem.iGlobal,
@@ -505,7 +529,10 @@ function startTTSSession(
     ttsRootElement: Element,
     ttsQueue: ITtsQueueItem[],
     ttsQueueIndexStart: number,
-    focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean) => void) {
+    focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean) => void,
+    ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
+    ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: (val: number) => void,
+    ) {
 
     const ttsQueueItemStart = getTtsQueueItemRef(ttsQueue, ttsQueueIndexStart);
     if (!ttsQueueItemStart) {
@@ -523,8 +550,9 @@ function startTTSSession(
     //                         http://www.w3.org/TR/speech-synthesis/synthesis.xsd"
     //     xml:lang="${language}">${txt}</speak>`;
 
-    function onDialogClosed(el: HTMLOrSVGElement | null) {
+    const val = ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable();
 
+    function onDialogClosed(el: HTMLOrSVGElement | null) {
         ttsPause();
 
         if (_dialogState && _dialogState.focusScrollRaw) {
@@ -534,6 +562,8 @@ function startTTSSession(
             }
             if (toScrollTo) {
                 _dialogState.focusScrollRaw(toScrollTo, false);
+            } else {
+                ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable(val);
             }
         }
 
@@ -564,6 +594,11 @@ function startTTSSession(
         return;
     }
     _dialogState.focusScrollRaw = focusScrollRaw;
+    _dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable =
+        ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable;
+    _dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable =
+        ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable;
+
     _dialogState.ttsRootElement = ttsRootElement;
 
     _dialogState.domSlider = win.document.getElementById(TTS_ID_SLIDER) as HTMLInputElement;

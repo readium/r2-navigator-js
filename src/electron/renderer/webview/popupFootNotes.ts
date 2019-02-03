@@ -15,7 +15,10 @@ import { PopupDialog } from "../common/popup-dialog";
 export function popupFootNote(
     element: HTMLElement,
     focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean) => void,
-    href: string): boolean {
+    href: string,
+    ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
+    ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: (val: number) => void,
+    ): boolean {
 
     const documant = element.ownerDocument as Document;
     if (!documant.documentElement ||
@@ -86,9 +89,14 @@ export function popupFootNote(
     // };
     // ipcRenderer.sendToHost(R2_EVENT_LINK_FOOTNOTE, payload_);
 
+    const val = ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable();
+
     function onDialogClosed(el: HTMLOrSVGElement | null) {
+
         if (el) {
             focusScrollRaw(el, true);
+        } else {
+            ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable(val);
         }
 
         setTimeout(() => {
