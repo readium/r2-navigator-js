@@ -2014,7 +2014,6 @@ const notifyReadingLocationRaw = () => {
                 selInfo,
                 undefined, // default background color
                 true, // mouse / pointer interaction
-                false, // keyboard focus
             );
         }
     }
