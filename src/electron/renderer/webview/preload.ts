@@ -89,6 +89,7 @@ import {
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
     CLASS_HIGHLIGHT_AREA,
+    CLASS_HIGHLIGHT_BOUNDING_AREA,
     CLASS_HIGHLIGHT_CONTAINER,
     ID_HIGHLIGHTS_CONTAINER,
     createHighlight,
@@ -1933,10 +1934,10 @@ export const computeProgressionData = (): IProgressionData => {
 };
 
 // tslint:disable-next-line:max-line-length
-const _blacklistIdClassForCssSelectors = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
+const _blacklistIdClassForCssSelectors = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
 
 // tslint:disable-next-line:max-line-length
-const _blacklistIdClassForCFI = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, "resize-sensor"];
+const _blacklistIdClassForCFI = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, "resize-sensor"];
 
 export const computeCFI = (node: Node): string | undefined => {
 
@@ -2009,7 +2010,12 @@ const notifyReadingLocationRaw = () => {
     const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI);
     if (IS_DEV) { // && win.READIUM2.DEBUG_VISUALS
         if (selInfo) {
-            createHighlight(win, selInfo, undefined); // default background color
+            createHighlight(win,
+                selInfo,
+                undefined, // default background color
+                true, // mouse / pointer interaction
+                false, // keyboard focus
+            );
         }
     }
 

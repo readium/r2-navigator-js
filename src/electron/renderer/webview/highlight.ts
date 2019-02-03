@@ -19,27 +19,208 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
 export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
+export const CLASS_HIGHLIGHT_BOUNDING_AREA = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA";
 
-const DEFAULT_BACKGROUND_COLOR = "rgba(0, 0, 0, 0.10)";
+export interface IColor {
+    red: number;
+    green: number;
+    blue: number;
+}
+
+const DEFAULT_BACKGROUND_COLOR_OPACITY = 0.1;
+const ALT_BACKGROUND_COLOR_OPACITY = 0.2;
+const DEFAULT_BACKGROUND_COLOR: IColor = {
+    blue: 100,
+    green: 50,
+    red: 230,
+};
 
 interface IHighlight {
     id: string;
     selectionInfo: ISelectionInfo;
-    color: string;
+    color: IColor;
+    pointerInteraction: boolean;
+    keyboardFocus: boolean;
 }
 
 const _highlights: IHighlight[] = [];
 
-let _highlightsContainer: HTMLElement | null;
-function ensureHighlightsContainer(documant: Document): HTMLElement {
-    if (_highlightsContainer) {
-        return _highlightsContainer;
+interface IHTMLDivElementWithRect extends HTMLDivElement {
+    rect: IRectSimple;
+    scale: number;
+    xOffset: number;
+    yOffset: number;
+}
+
+function processMouseEvent(win: IElectronWebviewTagWindow, ev: MouseEvent) {
+    const documant = win.document;
+
+    // relative to fixed window top-left corner
+    // (unlike pageX/Y which is relative to top-left rendered content area, subject to scrolling)
+    const x = ev.clientX;
+    const y = ev.clientY;
+
+    // const highlightsContainer = documant.getElementById(`${ID_HIGHLIGHTS_CONTAINER}`);
+    if (!_highlightsContainer) {
+        return;
     }
-    _highlightsContainer = documant.createElement("div");
-    _highlightsContainer.setAttribute("id", ID_HIGHLIGHTS_CONTAINER);
-    _highlightsContainer.style.setProperty("pointer-events", "none");
-    documant.body.append(_highlightsContainer);
-    // documant.documentElement.append(_highlightsContainer);
+
+    const paginated = isPaginated(documant);
+    const bodyRect = documant.body.getBoundingClientRect();
+    const xOffset = paginated ? (-documant.body.scrollLeft) : bodyRect.left;
+    const yOffset = paginated ? (-documant.body.scrollTop) : bodyRect.top;
+
+    let foundHighlight: IHighlight | undefined;
+    let foundElement: IHTMLDivElementWithRect | undefined;
+    // for (const highlight of _highlights) {
+    for (let i = _highlights.length - 1; i >= 0; i--) {
+        const highlight = _highlights[i];
+
+        let highlightParent = documant.getElementById(`${highlight.id}`);
+        if (!highlightParent) { // ??!!
+            highlightParent = _highlightsContainer.querySelector(`#${highlight.id}`); // .${CLASS_HIGHLIGHT_CONTAINER}
+        }
+        if (!highlightParent) { // what?
+            continue;
+        }
+
+        let hit = false;
+        const highlightFragments = highlightParent.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
+        for (const highlightFragment of highlightFragments) {
+            const withRect = highlightFragment as IHTMLDivElementWithRect;
+            // tslint:disable-next-line:max-line-length
+            // console.log(`RECT: ${withRect.rect.left} | ${withRect.rect.top} // ${withRect.rect.width} | ${withRect.rect.height}`);
+
+            const left = withRect.rect.left + (paginated ? withRect.xOffset : xOffset);
+            const top = withRect.rect.top + (paginated ? withRect.yOffset : yOffset);
+            if (x >= left &&
+                x < (left + withRect.rect.width) &&
+                y >= top &&
+                y < (top + withRect.rect.height)
+                ) {
+
+                hit = true;
+                break;
+            }
+        }
+        if (hit) {
+            foundHighlight = highlight;
+            foundElement = highlightParent as IHTMLDivElementWithRect;
+            break;
+        }
+
+        // hit = false;
+        // const highlightBounding = highlightParent.querySelector(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
+        // if (highlightBounding) {
+        //     const highlightBoundingWithRect = highlightBounding as IHTMLDivElementWithRect;
+
+        //     const left = highlightBoundingWithRect.rect.left + highlightBoundingWithRect.xOffset;
+        //     const top = highlightBoundingWithRect.rect.top + highlightBoundingWithRect.yOffset;
+        //     if (x >= left &&
+        //         x < (left + highlightBoundingWithRect.rect.width) &&
+        //         y >= top &&
+        //         y < (top + highlightBoundingWithRect.rect.height)
+        //         ) {
+
+        //         hit = true;
+        //     }
+        // }
+        // if (hit) {
+        //     foundHighlight = highlight;
+        //     foundElement = highlightParent as IHTMLDivElementWithRect;
+        //     break;
+        // }
+    }
+    if (!foundHighlight || !foundElement) {
+        const highlightParents = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
+        for (const highlightParent of highlightParents) {
+            (highlightParent as HTMLElement).style.outline = "none";
+            (highlightParent as HTMLElement).style.backgroundColor = "transparent";
+        }
+        if (!win.READIUM2.DEBUG_VISUALS) {
+            const allHighlightAreas = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
+            for (const highlightArea of allHighlightAreas) {
+                (highlightArea as HTMLElement).style.outline = "none";
+            }
+        }
+        return;
+    }
+    if (foundElement.getAttribute("data-click")) {
+        if (ev.type === "mousemove") {
+            if (!win.READIUM2.DEBUG_VISUALS) {
+                // tslint:disable-next-line:max-line-length
+                const foundElementHighlightAreas = Array.from(foundElement.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`));
+                const allHighlightAreas = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
+                for (const highlightArea of allHighlightAreas) {
+                    if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
+                        (highlightArea as HTMLElement).style.outline = "none";
+                    }
+                }
+                for (const highlightArea of foundElementHighlightAreas) {
+                    // tslint:disable-next-line:max-line-length
+                    (highlightArea as HTMLElement).style.outlineColor = `rgba(${foundHighlight.color.red}, ${foundHighlight.color.green}, ${foundHighlight.color.blue}, 1)`;
+                    (highlightArea as HTMLElement).style.outlineStyle = "solid";
+                    (highlightArea as HTMLElement).style.outlineWidth = "1px";
+                    (highlightArea as HTMLElement).style.outlineOffset = "0px";
+                }
+            }
+            const foundElementHighlightBounding = foundElement.querySelector(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
+            const allHighlightBoundings = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
+            for (const highlightBounding of allHighlightBoundings) {
+                if (!foundElementHighlightBounding || highlightBounding !== foundElementHighlightBounding) {
+                    (highlightBounding as HTMLElement).style.outline = "none";
+                    (highlightBounding as HTMLElement).style.backgroundColor = "transparent";
+                }
+            }
+            if (foundElementHighlightBounding) {
+                if (win.READIUM2.DEBUG_VISUALS) {
+                    const opacity = ALT_BACKGROUND_COLOR_OPACITY;
+                    // tslint:disable-next-line:max-line-length
+                    // highlightBounding.setAttribute("style", `background-color: rgba(${foundHighlight.color.red}, ${foundHighlight.color.green}, ${foundHighlight.color.blue}, ${opacity}) !important;`);
+                    // tslint:disable-next-line:max-line-length
+                    (foundElementHighlightBounding as HTMLElement).style.backgroundColor = `rgba(${foundHighlight.color.red}, ${foundHighlight.color.green}, ${foundHighlight.color.blue}, ${opacity})`;
+                    // tslint:disable-next-line:max-line-length
+                    // (highlightBounding as HTMLElement).style.setProperty("background-color", `rgba(${foundHighlight.color.red}, ${foundHighlight.color.green}, ${foundHighlight.color.blue}, ${opacity})`);
+
+                    // tslint:disable-next-line:max-line-length
+                    (foundElementHighlightBounding as HTMLElement).style.outlineColor = `rgba(${foundHighlight.color.red}, ${foundHighlight.color.green}, ${foundHighlight.color.blue}, 1)`;
+                    (foundElementHighlightBounding as HTMLElement).style.outlineStyle = "solid";
+                    (foundElementHighlightBounding as HTMLElement).style.outlineWidth = "1px";
+                    (foundElementHighlightBounding as HTMLElement).style.outlineOffset = "0px";
+                }
+            }
+        } else if (ev.type === "click") {
+            console.log("HIGHLIGHT CLICK: " + foundHighlight.id);
+            console.log(JSON.stringify(foundHighlight, null, "  "));
+        }
+    }
+}
+
+let bodyEventListenersSet = false;
+let _highlightsContainer: HTMLElement | null;
+function ensureHighlightsContainer(win: IElectronWebviewTagWindow): HTMLElement {
+    const documant = win.document;
+
+    if (!_highlightsContainer) {
+
+        if (!bodyEventListenersSet) {
+            bodyEventListenersSet = true;
+
+            // reminder: mouseenter/mouseleave do not bubble, so no event delegation
+            documant.body.addEventListener("click", (ev: MouseEvent) => {
+                processMouseEvent(win, ev);
+            }, false);
+            documant.body.addEventListener("mousemove", (ev: MouseEvent) => {
+                processMouseEvent(win, ev);
+            }, false);
+        }
+
+        _highlightsContainer = documant.createElement("div");
+        _highlightsContainer.setAttribute("id", ID_HIGHLIGHTS_CONTAINER);
+        _highlightsContainer.style.setProperty("pointer-events", "none");
+        documant.body.append(_highlightsContainer);
+        // documant.documentElement.append(_highlightsContainer);
+    }
     return _highlightsContainer;
 }
 
@@ -107,7 +288,9 @@ export function recreateAllHighlights(win: IElectronWebviewTagWindow) {
 export function createHighlight(
     win: IElectronWebviewTagWindow,
     selectionInfo: ISelectionInfo,
-    color: string | undefined): string {
+    color: IColor | undefined,
+    pointerInteraction: boolean,
+    keyboardFocus: boolean): string {
 
     // tslint:disable-next-line:no-string-literal
     // console.log("Chromium: " + process.versions["chrome"]);
@@ -122,6 +305,8 @@ export function createHighlight(
     const highlight: IHighlight = {
         color: color ? color : DEFAULT_BACKGROUND_COLOR,
         id,
+        keyboardFocus,
+        pointerInteraction,
         selectionInfo,
     };
     _highlights.push(highlight);
@@ -140,17 +325,20 @@ function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighligh
         return undefined;
     }
 
-    // checkRangeFix(documant);
-
-    const highlightsContainer = ensureHighlightsContainer(documant);
-
-    const highlightContainer = documant.createElement("div");
-    highlightContainer.setAttribute("id", highlight.id);
-    highlightContainer.setAttribute("class", CLASS_HIGHLIGHT_CONTAINER);
-    highlightsContainer.append(highlightContainer);
-
     const paginated = isPaginated(documant);
     // const rtl = isRTL();
+
+    // checkRangeFix(documant);
+
+    const highlightsContainer = ensureHighlightsContainer(win);
+
+    const highlightParent = documant.createElement("div") as IHTMLDivElementWithRect;
+    highlightParent.setAttribute("id", highlight.id);
+    highlightParent.setAttribute("class", CLASS_HIGHLIGHT_CONTAINER);
+    highlightParent.style.setProperty("pointer-events", "none");
+    if (highlight.pointerInteraction) {
+        highlightParent.setAttribute("data-click", "1");
+    }
 
     // Resize Sensor sets body position to "relative" (default static),
     // which may breaks things!
@@ -189,8 +377,9 @@ function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighligh
 
     // const clientRects = range.getClientRects(); // ClientRectList | DOMRectList
     const clientRects = win.READIUM2.DEBUG_VISUALS ? range.getClientRects() : getClientRectsNoOverlap(range);
+
     for (const clientRect of clientRects) {
-        const highlightArea = documant.createElement("div");
+        const highlightArea = documant.createElement("div") as IHTMLDivElementWithRect;
         highlightArea.setAttribute("class", CLASS_HIGHLIGHT_AREA);
 
         let extra = "";
@@ -206,20 +395,63 @@ function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighligh
             extra = `outline-color: rgb(${r}, ${g}, ${b}); outline-style: solid; outline-width: 1px; outline-offset: -1px;`;
             // box-shadow: inset 0 0 0 1px #600;
         }
-
+        const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
         // tslint:disable-next-line:max-line-length
-        highlightArea.setAttribute("style", `background-color: ${highlight.color} !important; ${extra}`);
+        highlightArea.setAttribute("style", `background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important; ${extra}`);
         // tslint:disable-next-line:max-line-length
         // highlightArea.setAttribute("style", `outline-color: magenta; outline-style: solid; outline-width: 1px; outline-offset: -1px;`);
+        highlightArea.style.setProperty("pointer-events", "none");
         highlightArea.style.position = paginated ? "fixed" : "absolute";
-        highlightArea.style.width = `${clientRect.width * scale}px`;
-        highlightArea.style.height = `${clientRect.height * scale}px`;
-        highlightArea.style.left = `${(clientRect.left - xOffset)  * scale}px`;
-        highlightArea.style.top = `${(clientRect.top - yOffset)  * scale}px`;
-        highlightContainer.append(highlightArea);
+        highlightArea.scale = scale;
+        highlightArea.xOffset = xOffset;
+        highlightArea.yOffset = yOffset;
+        highlightArea.rect = {
+            height: clientRect.height,
+            left: clientRect.left - xOffset,
+            top: clientRect.top - yOffset,
+            width: clientRect.width,
+        };
+        highlightArea.style.width = `${highlightArea.rect.width * scale}px`;
+        highlightArea.style.height = `${highlightArea.rect.height * scale}px`;
+        highlightArea.style.left = `${highlightArea.rect.left * scale}px`;
+        highlightArea.style.top = `${highlightArea.rect.top * scale}px`;
+
+        // if (highlight.pointerInteraction) {
+        //     highlightArea.style.setProperty("pointer-events", "auto");
+        // }
+
+        highlightParent.append(highlightArea);
     }
 
-    return highlightContainer;
+    const rangeBoundingClientRect = range.getBoundingClientRect();
+    const highlightBounding = documant.createElement("div") as IHTMLDivElementWithRect;
+    highlightBounding.setAttribute("class", CLASS_HIGHLIGHT_BOUNDING_AREA);
+    if (highlight.keyboardFocus) {
+        highlightBounding.setAttribute("tabindex", "0");
+    }
+    if (win.READIUM2.DEBUG_VISUALS) {
+        // tslint:disable-next-line:max-line-length
+        highlightBounding.setAttribute("style", `outline-color: magenta; outline-style: solid; outline-width: 1px; outline-offset: -1px;`);
+    }
+    highlightBounding.style.setProperty("pointer-events", "none");
+    highlightBounding.style.position = paginated ? "fixed" : "absolute";
+    highlightBounding.scale = scale;
+    highlightBounding.xOffset = xOffset;
+    highlightBounding.yOffset = yOffset;
+    highlightBounding.rect = {
+        height: rangeBoundingClientRect.height,
+        left: rangeBoundingClientRect.left - xOffset,
+        top: rangeBoundingClientRect.top - yOffset,
+        width: rangeBoundingClientRect.width,
+    };
+    highlightBounding.style.width = `${highlightBounding.rect.width * scale}px`;
+    highlightBounding.style.height = `${highlightBounding.rect.height * scale}px`;
+    highlightBounding.style.left = `${highlightBounding.rect.left * scale}px`;
+    highlightBounding.style.top = `${highlightBounding.rect.top * scale}px`;
+    highlightParent.append(highlightBounding);
+
+    highlightsContainer.append(highlightParent);
+    return highlightParent;
 }
 
 // interface DOMRect extends DOMRectReadOnly {
@@ -237,25 +469,27 @@ function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighligh
 //     top: number;
 //     readonly width: number;
 // }
-interface Rect {
-    bottom: number;
+interface IRectSimple {
     height: number;
     left: number;
-    right: number;
     top: number;
     width: number;
+}
+interface IRect extends IRectSimple {
+    bottom: number;
+    right: number;
 }
 // https://github.com/GoogleChrome/lighthouse/blob/master/lighthouse-core/lib/rect-helpers.js
 // https://github.com/GoogleChrome/lighthouse/blob/master/lighthouse-core/lib/tappable-rects.js
 function almostEqual(a: number, b: number, tolerance: number) {
     return Math.abs(a - b) <= tolerance;
 }
-function rectIntersect(rect1: Rect, rect2: Rect): Rect {
+function rectIntersect(rect1: IRect, rect2: IRect): IRect {
     const maxLeft = Math.max(rect1.left, rect2.left);
     const minRight = Math.min(rect1.right, rect2.right);
     const maxTop = Math.max(rect1.top, rect2.top);
     const minBottom = Math.min(rect1.bottom, rect2.bottom);
-    const rect: Rect = {
+    const rect: IRect = {
         bottom: minBottom,
         height: Math.max(0, minBottom - maxTop),
         left: maxLeft,
@@ -266,7 +500,7 @@ function rectIntersect(rect1: Rect, rect2: Rect): Rect {
     return rect;
 }
 // rect1 - rect2
-function rectSubtract(rect1: Rect, rect2: Rect): Rect[] {
+function rectSubtract(rect1: IRect, rect2: IRect): IRect[] {
 
     const rectIntersected = rectIntersect(rect2, rect1);
     if (rectIntersected.height === 0 || rectIntersected.width === 0) {
@@ -274,11 +508,11 @@ function rectSubtract(rect1: Rect, rect2: Rect): Rect[] {
         return [rect1];
     }
 
-    const rects: Rect[] = [];
+    const rects: IRect[] = [];
 
     {
         // left strip
-        const rectA: Rect = {
+        const rectA: IRect = {
             bottom: rect1.bottom,
             height: 0,
             left: rect1.left,
@@ -296,7 +530,7 @@ function rectSubtract(rect1: Rect, rect2: Rect): Rect[] {
 
     {
         // inside strip
-        const rectB: Rect = {
+        const rectB: IRect = {
             bottom: rectIntersected.top,
             height: 0,
             left: rectIntersected.left,
@@ -314,7 +548,7 @@ function rectSubtract(rect1: Rect, rect2: Rect): Rect[] {
 
     {
         // inside strip
-        const rectC: Rect = {
+        const rectC: IRect = {
             bottom: rect1.bottom,
             height: 0,
             left: rectIntersected.left,
@@ -332,7 +566,7 @@ function rectSubtract(rect1: Rect, rect2: Rect): Rect[] {
 
     {
         // right strip
-        const rectD: Rect = {
+        const rectD: IRect = {
             bottom: rect1.bottom,
             height: 0,
             left: rectIntersected.right,
@@ -350,13 +584,13 @@ function rectSubtract(rect1: Rect, rect2: Rect): Rect[] {
 
     return rects;
 }
-function rectContainsPoint(rect: Rect, x: number, y: number, tolerance: number) {
+function rectContainsPoint(rect: IRect, x: number, y: number, tolerance: number) {
     return (rect.left < x || almostEqual(rect.left, x, tolerance)) &&
         (rect.right > x || almostEqual(rect.right, x, tolerance)) &&
         (rect.top < y || almostEqual(rect.top, y, tolerance)) &&
         (rect.bottom > y || almostEqual(rect.bottom, y, tolerance));
 }
-function rectContains(rect1: Rect, rect2: Rect, tolerance: number) {
+function rectContains(rect1: IRect, rect2: IRect, tolerance: number) {
     return (
         rectContainsPoint(rect1, rect2.left, rect2.top, tolerance) && // top left corner
         rectContainsPoint(rect1, rect2.right, rect2.top, tolerance) && // top right corner
@@ -364,7 +598,7 @@ function rectContains(rect1: Rect, rect2: Rect, tolerance: number) {
         rectContainsPoint(rect1, rect2.right, rect2.bottom, tolerance) // bottom right corner
     );
 }
-function getBoundingRect(rect1: Rect, rect2: Rect): Rect {
+function getBoundingRect(rect1: IRect, rect2: IRect): IRect {
     const left = Math.min(rect1.left, rect2.left);
     const right = Math.max(rect1.right, rect2.right);
     const top = Math.min(rect1.top, rect2.top);
@@ -379,7 +613,7 @@ function getBoundingRect(rect1: Rect, rect2: Rect): Rect {
     };
 }
 // tslint:disable-next-line:max-line-length
-function rectsTouchOrOverlap(rect1: Rect, rect2: Rect, tolerance: number) {
+function rectsTouchOrOverlap(rect1: IRect, rect2: IRect, tolerance: number) {
     return (
         (rect1.left < rect2.right || (tolerance >= 0 && almostEqual(rect1.left, rect2.right, tolerance))) &&
         (rect2.left < rect1.right || (tolerance >= 0 && almostEqual(rect2.left, rect1.right, tolerance))) &&
@@ -387,7 +621,7 @@ function rectsTouchOrOverlap(rect1: Rect, rect2: Rect, tolerance: number) {
         (rect2.top < rect1.bottom || (tolerance >= 0 && almostEqual(rect2.top, rect1.bottom, tolerance)))
     );
 }
-function mergeTouchingRects(rects: Rect[], tolerance: number): Rect[] {
+function mergeTouchingRects(rects: IRect[], tolerance: number): IRect[] {
     for (let i = 0; i < rects.length; i++) {
         for (let j = i + 1; j < rects.length; j++) {
             const rect1 = rects[i];
@@ -428,7 +662,7 @@ function mergeTouchingRects(rects: Rect[], tolerance: number): Rect[] {
 
     return rects;
 }
-function replaceOverlapingRects(rects: Rect[]): Rect[] {
+function replaceOverlapingRects(rects: IRect[]): IRect[] {
     for (let i = 0; i < rects.length; i++) {
         for (let j = i + 1; j < rects.length; j++) {
             const rect1 = rects[i];
@@ -442,9 +676,9 @@ function replaceOverlapingRects(rects: Rect[]): Rect[] {
 
             if (rectsTouchOrOverlap(rect1, rect2, -1)) { // negative tolerance for strict overlap test
 
-                let toAdd: Rect[] = [];
-                let toRemove: Rect;
-                let toPreserve: Rect;
+                let toAdd: IRect[] = [];
+                let toRemove: IRect;
+                let toPreserve: IRect;
 
                 // rect1 - rect2
                 const subtractRects1 = rectSubtract(rect1, rect2); // discard #1, keep #2, add returned rects
@@ -488,13 +722,13 @@ function replaceOverlapingRects(rects: Rect[]): Rect[] {
 
     return rects;
 }
-function getRectOverlapX(rect1: Rect, rect2: Rect) {
+function getRectOverlapX(rect1: IRect, rect2: IRect) {
     return Math.max(0, Math.min(rect1.right, rect2.right) - Math.max(rect1.left, rect2.left));
 }
-function getRectOverlapY(rect1: Rect, rect2: Rect) {
+function getRectOverlapY(rect1: IRect, rect2: IRect) {
     return Math.max(0, Math.min(rect1.bottom, rect2.bottom) - Math.max(rect1.top, rect2.top));
 }
-function removeContainedRects(rects: Rect[], tolerance: number): Rect[] {
+function removeContainedRects(rects: IRect[], tolerance: number): IRect[] {
 
     const rectsToKeep = new Set(rects);
 
@@ -526,13 +760,13 @@ function removeContainedRects(rects: Rect[], tolerance: number): Rect[] {
 
     return Array.from(rectsToKeep);
 }
-function getClientRectsNoOverlap(range: Range): Rect[] {
+function getClientRectsNoOverlap(range: Range): IRect[] {
 
     const tolerance = 1;
 
     const rangeClientRects = range.getClientRects(); // Array.from(range.getClientRects());
 
-    const originalRects: Rect[] = [];
+    const originalRects: IRect[] = [];
     for (const rangeClientRect of rangeClientRects) {
         originalRects.push({
             bottom: rangeClientRect.bottom,
@@ -576,9 +810,9 @@ function getClientRectsNoOverlap(range: Range): Rect[] {
     }
     return newRects;
 }
-function checkOverlaps(rects: Rect[]) {
+function checkOverlaps(rects: IRect[]) {
 
-    const stillOverlapingRects: Rect[] = [];
+    const stillOverlapingRects: IRect[] = [];
 
     for (const rect1 of rects) {
         for (const rect2 of rects) {
