@@ -27,7 +27,6 @@ import {
     IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
     IEventPayload_R2_EVENT_PAGE_TURN,
     IEventPayload_R2_EVENT_READING_LOCATION,
-    IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO,
     IEventPayload_R2_EVENT_READIUMCSS,
     IEventPayload_R2_EVENT_SCROLLTO,
     IEventPayload_R2_EVENT_SHIFT_VIEW_X,
@@ -50,6 +49,7 @@ import {
     R2_EVENT_TTS_DO_RESUME,
     R2_EVENT_TTS_DO_STOP,
 } from "../../common/events";
+import { IPaginationInfo } from "../../common/pagination";
 import {
     CLASS_PAGINATED,
     appendCSSInline,
@@ -129,6 +129,7 @@ win.READIUM2 = {
     isFixedLayout: false,
     locationHashOverride: undefined,
     locationHashOverrideInfo: {
+        docInfo: undefined,
         href: "",
         locations: {
             cfi: undefined,
@@ -442,6 +443,7 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
 
 function resetLocationHashOverrideInfo() {
     win.READIUM2.locationHashOverrideInfo = {
+        docInfo: undefined,
         href: "",
         locations: {
             cfi: undefined,
@@ -1788,7 +1790,7 @@ const processXYDebounced = debounce((x: number, y: number, reverse: boolean) => 
 
 interface IProgressionData {
     percentRatio: number;
-    paginationInfo: IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO | undefined;
+    paginationInfo: IPaginationInfo | undefined;
 }
 export const computeProgressionData = (): IProgressionData => {
 
@@ -2018,6 +2020,11 @@ const notifyReadingLocationRaw = () => {
         } : undefined;
 
     win.READIUM2.locationHashOverrideInfo = {
+        docInfo: {
+            isFixedLayout: win.READIUM2.isFixedLayout,
+            isRightToLeft: isRTL(),
+            isVerticalWritingMode: isVerticalWritingMode(),
+        },
         href: "", // filled-in from host index.js renderer
         locations: {
             cfi,

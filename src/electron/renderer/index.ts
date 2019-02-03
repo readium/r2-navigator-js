@@ -25,13 +25,13 @@ import { debounce } from "debounce";
 import * as debug_ from "debug";
 import { ipcRenderer, shell } from "electron";
 
+import { IDocInfo } from "../common/document";
 import {
     IEventPayload_R2_EVENT_DEBUG_VISUALS,
     IEventPayload_R2_EVENT_LINK,
     IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
     IEventPayload_R2_EVENT_PAGE_TURN,
     IEventPayload_R2_EVENT_READING_LOCATION,
-    IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO,
     IEventPayload_R2_EVENT_READIUMCSS,
     IEventPayload_R2_EVENT_SCROLLTO,
     IEventPayload_R2_EVENT_SHIFT_VIEW_X,
@@ -57,6 +57,7 @@ import {
     R2_EVENT_TTS_IS_PLAYING,
     R2_EVENT_TTS_IS_STOPPED,
 } from "../common/events";
+import { IPaginationInfo } from "../common/pagination";
 import { ISelectionInfo } from "../common/selection";
 import {
     R2_SESSION_WEBVIEW,
@@ -170,8 +171,9 @@ export function setReadiumCssJsonGetter(func: () => IEventPayload_R2_EVENT_READI
 
 export interface LocatorExtended {
     locator: Locator;
-    paginationInfo: IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO | undefined;
+    paginationInfo: IPaginationInfo | undefined;
     selectionInfo: ISelectionInfo | undefined;
+    docInfo: IDocInfo | undefined;
 }
 
 let _lastSavedReadingLocation: LocatorExtended | undefined;
@@ -181,6 +183,7 @@ export function getCurrentReadingLocation(): LocatorExtended | undefined {
 let _readingLocationSaver: ((locator: LocatorExtended) => void) | undefined;
 const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_READING_LOCATION) => {
     _lastSavedReadingLocation = {
+        docInfo: locator.docInfo,
         locator: {
             href: docHref,
             locations: {

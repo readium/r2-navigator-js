@@ -7,6 +7,8 @@
 
 import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
 
+import { IDocInfo } from "./document";
+import { IPaginationInfo } from "./pagination";
 import { IReadiumCSS } from "./readium-css-settings";
 import { ISelectionInfo } from "./selection";
 
@@ -69,18 +71,12 @@ export interface IEventPayload_R2_EVENT_PAGE_TURN {
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
 export const R2_EVENT_READING_LOCATION = "R2_EVENT_READING_LOCATION";
-// tslint:disable-next-line:class-name
-export interface IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO {
-    totalColumns: number | undefined;
-    currentColumn: number | undefined;
-    isTwoPageSpread: boolean | undefined;
-    spreadIndex: number | undefined;
-}
 
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_READING_LOCATION extends Locator {
-    paginationInfo: IEventPayload_R2_EVENT_READING_LOCATION_PAGINATION_INFO | undefined;
+    paginationInfo: IPaginationInfo | undefined;
     selectionInfo: ISelectionInfo | undefined;
+    docInfo: IDocInfo | undefined;
 }
 
 // in MAIN: browserWindow.webContents.send()
