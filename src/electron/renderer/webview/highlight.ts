@@ -28,7 +28,7 @@ export interface IColor {
 }
 
 const DEFAULT_BACKGROUND_COLOR_OPACITY = 0.1;
-const ALT_BACKGROUND_COLOR_OPACITY = 0.2;
+const ALT_BACKGROUND_COLOR_OPACITY = 0.4;
 const DEFAULT_BACKGROUND_COLOR: IColor = {
     blue: 100,
     green: 50,
@@ -49,6 +49,68 @@ interface IHTMLDivElementWithRect extends HTMLDivElement {
     scale: number;
     xOffset: number;
     yOffset: number;
+}
+
+function resetHighlightBoundingStyle(_win: IElectronWebviewTagWindow, highlightBounding: HTMLElement) {
+
+    highlightBounding.style.outline = "none";
+    highlightBounding.style.backgroundColor = "transparent";
+}
+
+// tslint:disable-next-line:max-line-length
+function setHighlightBoundingStyle(_win: IElectronWebviewTagWindow, highlightBounding: HTMLElement, highlight: IHighlight) {
+
+    const opacity = ALT_BACKGROUND_COLOR_OPACITY;
+    // tslint:disable-next-line:max-line-length
+    // highlightBounding.setAttribute("style", `background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important;`);
+    // tslint:disable-next-line:max-line-length
+    highlightBounding.style.backgroundColor = `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`;
+    // tslint:disable-next-line:max-line-length
+    // (highlightBounding as HTMLElement).style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`);
+
+    // tslint:disable-next-line:max-line-length
+    highlightBounding.style.outlineColor = `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, 1)`;
+    highlightBounding.style.outlineStyle = "solid";
+    highlightBounding.style.outlineWidth = "1px";
+    highlightBounding.style.outlineOffset = "0px";
+}
+
+function resetHighlightAreaStyle(_win: IElectronWebviewTagWindow, highlightArea: HTMLElement) {
+
+    // if (!win.READIUM2.DEBUG_VISUALS) {
+    //     highlightArea.style.outline = "none";
+    // }
+
+    // tslint:disable-next-line:max-line-length
+    const id = (highlightArea.parentNode && highlightArea.parentNode.nodeType === Node.ELEMENT_NODE && (highlightArea.parentNode as Element).getAttribute) ?
+        (highlightArea.parentNode as Element).getAttribute("id") : undefined;
+    if (id) {
+        const highlight = _highlights.find((h) => {
+            return h.id === id;
+        });
+        if (highlight) {
+            const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
+            // tslint:disable-next-line:max-line-length
+            highlightArea.style.backgroundColor = `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`;
+        }
+    }
+}
+
+function setHighlightAreaStyle(_win: IElectronWebviewTagWindow, highlightAreas: Element[], highlight: IHighlight) {
+
+    for (const highlightArea of highlightAreas) {
+        const opacity = ALT_BACKGROUND_COLOR_OPACITY;
+        // tslint:disable-next-line:max-line-length
+        (highlightArea as HTMLElement).style.backgroundColor = `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`;
+
+        // if (!win.READIUM2.DEBUG_VISUALS) {
+        // tslint:disable-next-line:max-line-length
+        //     (highlightArea as HTMLElement).style.outlineColor = `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, 1)`;
+        //     (highlightArea as HTMLElement).style.outlineStyle = "solid";
+        //     (highlightArea as HTMLElement).style.outlineWidth = "1px";
+        //     (highlightArea as HTMLElement).style.outlineOffset = "0px";
+        // }
+    }
 }
 
 function processMouseEvent(win: IElectronWebviewTagWindow, ev: MouseEvent) {
@@ -131,61 +193,38 @@ function processMouseEvent(win: IElectronWebviewTagWindow, ev: MouseEvent) {
         // }
     }
     if (!foundHighlight || !foundElement) {
-        const highlightParents = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
-        for (const highlightParent of highlightParents) {
-            (highlightParent as HTMLElement).style.outline = "none";
-            (highlightParent as HTMLElement).style.backgroundColor = "transparent";
+        const highlightBoundings = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
+        for (const highlightBounding of highlightBoundings) {
+            resetHighlightBoundingStyle(win, highlightBounding as HTMLElement);
         }
-        if (!win.READIUM2.DEBUG_VISUALS) {
-            const allHighlightAreas = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
-            for (const highlightArea of allHighlightAreas) {
-                (highlightArea as HTMLElement).style.outline = "none";
-            }
+        const allHighlightAreas = Array.from(_highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`));
+        for (const highlightArea of allHighlightAreas) {
+            resetHighlightAreaStyle(win, highlightArea as HTMLElement);
         }
         return;
     }
     if (foundElement.getAttribute("data-click")) {
         if (ev.type === "mousemove") {
-            if (!win.READIUM2.DEBUG_VISUALS) {
-                // tslint:disable-next-line:max-line-length
-                const foundElementHighlightAreas = Array.from(foundElement.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`));
-                const allHighlightAreas = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
-                for (const highlightArea of allHighlightAreas) {
-                    if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
-                        (highlightArea as HTMLElement).style.outline = "none";
-                    }
-                }
-                for (const highlightArea of foundElementHighlightAreas) {
-                    // tslint:disable-next-line:max-line-length
-                    (highlightArea as HTMLElement).style.outlineColor = `rgba(${foundHighlight.color.red}, ${foundHighlight.color.green}, ${foundHighlight.color.blue}, 1)`;
-                    (highlightArea as HTMLElement).style.outlineStyle = "solid";
-                    (highlightArea as HTMLElement).style.outlineWidth = "1px";
-                    (highlightArea as HTMLElement).style.outlineOffset = "0px";
+            // tslint:disable-next-line:max-line-length
+            const foundElementHighlightAreas = Array.from(foundElement.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`));
+            const allHighlightAreas = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
+            for (const highlightArea of allHighlightAreas) {
+                if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
+                    resetHighlightAreaStyle(win, highlightArea as HTMLElement);
                 }
             }
+            setHighlightAreaStyle(win, foundElementHighlightAreas, foundHighlight);
+
             const foundElementHighlightBounding = foundElement.querySelector(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
             const allHighlightBoundings = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
             for (const highlightBounding of allHighlightBoundings) {
                 if (!foundElementHighlightBounding || highlightBounding !== foundElementHighlightBounding) {
-                    (highlightBounding as HTMLElement).style.outline = "none";
-                    (highlightBounding as HTMLElement).style.backgroundColor = "transparent";
+                    resetHighlightBoundingStyle(win, highlightBounding as HTMLElement);
                 }
             }
             if (foundElementHighlightBounding) {
                 if (win.READIUM2.DEBUG_VISUALS) {
-                    const opacity = ALT_BACKGROUND_COLOR_OPACITY;
-                    // tslint:disable-next-line:max-line-length
-                    // highlightBounding.setAttribute("style", `background-color: rgba(${foundHighlight.color.red}, ${foundHighlight.color.green}, ${foundHighlight.color.blue}, ${opacity}) !important;`);
-                    // tslint:disable-next-line:max-line-length
-                    (foundElementHighlightBounding as HTMLElement).style.backgroundColor = `rgba(${foundHighlight.color.red}, ${foundHighlight.color.green}, ${foundHighlight.color.blue}, ${opacity})`;
-                    // tslint:disable-next-line:max-line-length
-                    // (highlightBounding as HTMLElement).style.setProperty("background-color", `rgba(${foundHighlight.color.red}, ${foundHighlight.color.green}, ${foundHighlight.color.blue}, ${opacity})`);
-
-                    // tslint:disable-next-line:max-line-length
-                    (foundElementHighlightBounding as HTMLElement).style.outlineColor = `rgba(${foundHighlight.color.red}, ${foundHighlight.color.green}, ${foundHighlight.color.blue}, 1)`;
-                    (foundElementHighlightBounding as HTMLElement).style.outlineStyle = "solid";
-                    (foundElementHighlightBounding as HTMLElement).style.outlineWidth = "1px";
-                    (foundElementHighlightBounding as HTMLElement).style.outlineOffset = "0px";
+                    setHighlightBoundingStyle(win, foundElementHighlightBounding as HTMLElement, foundHighlight);
                 }
             }
         } else if (ev.type === "click") {
