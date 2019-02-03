@@ -43,6 +43,20 @@ function ensureHighlightsContainer(documant: Document): HTMLElement {
     return _highlightsContainer;
 }
 
+export function hideAllhighlights(_documant: Document) {
+    // for (const highlight of _highlights) {
+    //     const highlightContainer = documant.getElementById(highlight.id);
+    //     if (highlightContainer) {
+    //         highlightContainer.remove();
+    //     }
+    // }
+    if (_highlightsContainer) {
+        _highlightsContainer.remove();
+        _highlightsContainer = null;
+        // ensureHighlightsContainer(documant);
+    }
+}
+
 export function destroyAllhighlights(documant: Document) {
     // _highlights.forEach((highlight) => {
     //     destroyHighlight(highlight.id);
@@ -54,17 +68,7 @@ export function destroyAllhighlights(documant: Document) {
     //     const highlight = _highlights[i];
     //     destroyHighlight(highlight.id);
     // }
-    // for (const highlight of _highlights) {
-    //     const highlightContainer = documant.getElementById(highlight.id);
-    //     if (highlightContainer) {
-    //         highlightContainer.remove();
-    //     }
-    // }
-    if (_highlightsContainer) {
-        _highlightsContainer.remove();
-        _highlightsContainer = null;
-        ensureHighlightsContainer(documant);
-    }
+    hideAllhighlights(documant);
     _highlights.splice(0, _highlights.length);
 }
 
@@ -85,17 +89,7 @@ export function destroyHighlight(documant: Document, id: string) {
 }
 
 export function recreateAllHighlightsRaw(win: IElectronWebviewTagWindow) {
-    // for (const highlight of _highlights) {
-    //     const highlightContainer = win.document.getElementById(highlight.id);
-    //     if (highlightContainer) {
-    //         highlightContainer.remove();
-    //     }
-    // }
-    if (_highlightsContainer) {
-        _highlightsContainer.remove();
-        _highlightsContainer = null;
-        ensureHighlightsContainer(win.document);
-    }
+    hideAllhighlights(win.document);
     for (const highlight of _highlights) {
         createHighlightDom(win, highlight);
     }
@@ -103,7 +97,12 @@ export function recreateAllHighlightsRaw(win: IElectronWebviewTagWindow) {
 
 export const recreateAllHighlightsDebounced = debounce((win: IElectronWebviewTagWindow) => {
     recreateAllHighlightsRaw(win);
-}, 250);
+}, 500);
+
+export function recreateAllHighlights(win: IElectronWebviewTagWindow) {
+    hideAllhighlights(win.document);
+    recreateAllHighlightsDebounced(win);
+}
 
 export function createHighlight(
     win: IElectronWebviewTagWindow,

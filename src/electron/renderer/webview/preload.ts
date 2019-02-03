@@ -92,7 +92,7 @@ import {
     CLASS_HIGHLIGHT_CONTAINER,
     ID_HIGHLIGHTS_CONTAINER,
     createHighlight,
-    recreateAllHighlightsDebounced,
+    recreateAllHighlights,
 } from "./highlight";
 import { popupFootNote } from "./popupFootNotes";
 import { ttsNext, ttsPause, ttsPlay, ttsPrevious, ttsResume, ttsStop } from "./readaloud";
@@ -858,7 +858,7 @@ const scrollToHashRaw = () => {
         return;
     }
 
-    recreateAllHighlightsDebounced(win);
+    recreateAllHighlights(win);
 
     const isPaged = isPaginated(win.document);
 
@@ -1203,7 +1203,7 @@ ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVEN
     showHideContentMask(false);
     readiumCSS(win.document, payload);
 
-    recreateAllHighlightsDebounced(win);
+    recreateAllHighlights(win);
 });
 
 let _docTitle: string | undefined;
