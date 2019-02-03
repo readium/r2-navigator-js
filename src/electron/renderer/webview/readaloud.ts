@@ -554,7 +554,7 @@ function startTTSSession(
     <div id="${TTS_ID_INFO}"> </div>
     <button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}"><span>&#9668;</span></button>
     <button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}"><span>&#9658;</span></button>
-    <input id="${TTS_ID_SLIDER}" type="range" min="1" max="${ttsQueueLength}" value="1" />`;
+    <input id="${TTS_ID_SLIDER}" type="range" min="0" max="${ttsQueueLength - 1}" value="0" />`;
 
     const pop = new PopupDialog(win.document, outerHTML, onDialogClosed);
     pop.show(ttsQueueItemStart.item.parentElement);
