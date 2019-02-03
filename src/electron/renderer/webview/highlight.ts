@@ -189,7 +189,7 @@ function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighligh
     // console.log("documant.body.scrollTop: " + documant.body.scrollTop);
 
     // const clientRects = range.getClientRects(); // ClientRectList | DOMRectList
-    const clientRects = getClientRectsNoOverlap(range);
+    const clientRects = win.READIUM2.DEBUG_VISUALS ? range.getClientRects() : getClientRectsNoOverlap(range);
     for (const clientRect of clientRects) {
         const highlightArea = documant.createElement("div");
         highlightArea.setAttribute("class", CLASS_HIGHLIGHT_AREA);
@@ -530,8 +530,6 @@ function removeContainedRects(rects: Rect[], tolerance: number): Rect[] {
 function getClientRectsNoOverlap(range: Range): Rect[] {
 
     const tolerance = 1;
-    const minW = 5;
-    const minH = 10;
 
     const rangeClientRects = range.getClientRects(); // Array.from(range.getClientRects());
 
@@ -551,9 +549,10 @@ function getClientRectsNoOverlap(range: Range): Rect[] {
     const noContainedRects = removeContainedRects(mergedRects, tolerance);
     const newRects = replaceOverlapingRects(noContainedRects);
 
+    const minArea = 2 * 2;
     for (let j = newRects.length - 1; j >= 0; j--) {
         const rect = newRects[j];
-        const bigEnough = rect.width > minW && rect.height > minH;
+        const bigEnough = (rect.width * rect.height) > minArea;
         if (!bigEnough) {
             if (newRects.length > 1) {
                 if (IS_DEV) {
