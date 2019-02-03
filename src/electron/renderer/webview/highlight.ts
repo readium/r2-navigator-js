@@ -54,7 +54,8 @@ interface IHTMLDivElementWithRect extends HTMLDivElement {
 function resetHighlightBoundingStyle(_win: IElectronWebviewTagWindow, highlightBounding: HTMLElement) {
 
     highlightBounding.style.outline = "none";
-    highlightBounding.style.backgroundColor = "transparent";
+    // tslint:disable-next-line:max-line-length
+    highlightBounding.style.setProperty("background-color", "transparent", "important");
 }
 
 // tslint:disable-next-line:max-line-length
@@ -62,11 +63,7 @@ function setHighlightBoundingStyle(_win: IElectronWebviewTagWindow, highlightBou
 
     const opacity = ALT_BACKGROUND_COLOR_OPACITY;
     // tslint:disable-next-line:max-line-length
-    // highlightBounding.setAttribute("style", `background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important;`);
-    // tslint:disable-next-line:max-line-length
-    highlightBounding.style.backgroundColor = `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`;
-    // tslint:disable-next-line:max-line-length
-    // (highlightBounding as HTMLElement).style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`);
+    highlightBounding.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`, "important");
 
     // tslint:disable-next-line:max-line-length
     highlightBounding.style.outlineColor = `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, 1)`;
@@ -91,7 +88,7 @@ function resetHighlightAreaStyle(_win: IElectronWebviewTagWindow, highlightArea:
         if (highlight) {
             const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
             // tslint:disable-next-line:max-line-length
-            highlightArea.style.backgroundColor = `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`;
+            highlightArea.style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`, "important");
         }
     }
 }
@@ -101,7 +98,7 @@ function setHighlightAreaStyle(_win: IElectronWebviewTagWindow, highlightAreas: 
     for (const highlightArea of highlightAreas) {
         const opacity = ALT_BACKGROUND_COLOR_OPACITY;
         // tslint:disable-next-line:max-line-length
-        (highlightArea as HTMLElement).style.backgroundColor = `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`;
+        (highlightArea as HTMLElement).style.setProperty("background-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`, "important");
 
         // if (!win.READIUM2.DEBUG_VISUALS) {
         // tslint:disable-next-line:max-line-length
