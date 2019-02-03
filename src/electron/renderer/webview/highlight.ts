@@ -40,7 +40,6 @@ interface IHighlight {
     selectionInfo: ISelectionInfo;
     color: IColor;
     pointerInteraction: boolean;
-    keyboardFocus: boolean;
 }
 
 const _highlights: IHighlight[] = [];
@@ -289,8 +288,7 @@ export function createHighlight(
     win: IElectronWebviewTagWindow,
     selectionInfo: ISelectionInfo,
     color: IColor | undefined,
-    pointerInteraction: boolean,
-    keyboardFocus: boolean): string {
+    pointerInteraction: boolean): string {
 
     // tslint:disable-next-line:no-string-literal
     // console.log("Chromium: " + process.versions["chrome"]);
@@ -305,7 +303,6 @@ export function createHighlight(
     const highlight: IHighlight = {
         color: color ? color : DEFAULT_BACKGROUND_COLOR,
         id,
-        keyboardFocus,
         pointerInteraction,
         selectionInfo,
     };
@@ -426,9 +423,6 @@ function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighligh
     const rangeBoundingClientRect = range.getBoundingClientRect();
     const highlightBounding = documant.createElement("div") as IHTMLDivElementWithRect;
     highlightBounding.setAttribute("class", CLASS_HIGHLIGHT_BOUNDING_AREA);
-    if (highlight.keyboardFocus) {
-        highlightBounding.setAttribute("tabindex", "0");
-    }
     if (win.READIUM2.DEBUG_VISUALS) {
         // tslint:disable-next-line:max-line-length
         highlightBounding.setAttribute("style", `outline-color: magenta; outline-style: solid; outline-width: 1px; outline-offset: -1px;`);
