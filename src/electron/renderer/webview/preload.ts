@@ -1515,7 +1515,7 @@ win.addEventListener("load", () => {
         });
     }, 200);
 
-    win.document.body.addEventListener("click", (ev: MouseEvent) => {
+    function handleMouseEvent(ev: MouseEvent) {
 
         if (isPopupDialogOpen(win.document)) {
             return;
@@ -1527,60 +1527,58 @@ win.addEventListener("load", () => {
         const y = ev.clientY;
 
         processXYDebounced(x, y, false);
-    });
 
-    win.document.body.addEventListener("click", (ev: MouseEvent) => {
+        if (win.READIUM2.ttsClickEnabled) {
 
-        if (isPopupDialogOpen(win.document)) {
-            return;
-        }
+            // const elems = win.document.elementsFromPoint(x, y);
 
-        // relative to fixed window top-left corner
-        // (unlike pageX/Y which is relative to top-left rendered content area, subject to scrolling)
-        const x = ev.clientX;
-        const y = ev.clientY;
+            // let element: Element | undefined = elems && elems.length ? elems[0] : undefined;
+            let element: Element | undefined;
 
-        // const elems = win.document.elementsFromPoint(x, y);
+            // if ((win.document as any).caretPositionFromPoint) {
+            //     const range = (win.document as any).caretPositionFromPoint(x, y);
+            //     const node = range.offsetNode;
+            //     const offset = range.offset;
+            // } else if (win.document.caretRangeFromPoint) {
+            // }
 
-        // let element: Element | undefined = elems && elems.length ? elems[0] : undefined;
-        let element: Element | undefined;
+            // let textNode: Node | undefined;
+            // let textNodeOffset = 0;
 
-        // if ((win.document as any).caretPositionFromPoint) {
-        //     const range = (win.document as any).caretPositionFromPoint(x, y);
-        //     const node = range.offsetNode;
-        //     const offset = range.offset;
-        // } else if (win.document.caretRangeFromPoint) {
-        // }
+            const range = win.document.caretRangeFromPoint(x, y);
+            if (range) {
+                const node = range.startContainer;
+                // const offset = range.startOffset;
 
-        // let textNode: Node | undefined;
-        // let textNodeOffset = 0;
-
-        const range = win.document.caretRangeFromPoint(x, y);
-        if (range) {
-            const node = range.startContainer;
-            // const offset = range.startOffset;
-
-            if (node) {
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                    element = node as Element;
-                } else if (node.nodeType === Node.TEXT_NODE) {
-                    // textNode = node;
-                    // textNodeOffset = offset;
-                    if (node.parentNode && node.parentNode.nodeType === Node.ELEMENT_NODE) {
-                        element = node.parentNode as Element;
+                if (node) {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        element = node as Element;
+                    } else if (node.nodeType === Node.TEXT_NODE) {
+                        // textNode = node;
+                        // textNodeOffset = offset;
+                        if (node.parentNode && node.parentNode.nodeType === Node.ELEMENT_NODE) {
+                            element = node.parentNode as Element;
+                        }
                     }
                 }
             }
-        }
 
-        if (win.READIUM2.ttsClickEnabled && element) {
-            if (ev.altKey) {
-                ttsPlay(focusScrollRaw, element, undefined);
-                return;
+            if (element) {
+                if (ev.altKey) {
+                    ttsPlay(focusScrollRaw, element, undefined);
+                    return;
+                }
+
+                ttsPlay(focusScrollRaw, (element.ownerDocument as Document).body, element);
             }
-
-            ttsPlay(focusScrollRaw, (element.ownerDocument as Document).body, element);
         }
+    }
+
+    // win.document.body.addEventListener("click", (ev: MouseEvent) => {
+    //     handleMouseEvent(ev);
+    // });
+    win.document.documentElement.addEventListener("mouseup", (ev: MouseEvent) => {
+        handleMouseEvent(ev);
     });
 });
 
