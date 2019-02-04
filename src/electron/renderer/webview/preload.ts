@@ -79,6 +79,7 @@ import { uniqueCssSelector } from "../common/cssselector2";
 import { easings } from "../common/easings";
 import { closePopupDialogs, isPopupDialogOpen } from "../common/popup-dialog";
 import { getURLQueryParams } from "../common/querystring";
+import { getClientRectsNoOverlap_ } from "../common/rect-utils";
 import {
     URL_PARAM_CSS,
     URL_PARAM_DEBUG_VISUALS,
@@ -284,7 +285,7 @@ function computeVisibility_(element: Element): boolean {
         }
     }
 
-    const rect = element.getBoundingClientRect();
+    const rect = getFirstClientRect(element);
     // debug(rect.top);
     // debug(rect.left);
     // debug(rect.width);
@@ -308,7 +309,7 @@ function computeVisibility_(element: Element): boolean {
             return true;
         }
         // tslint:disable-next-line:max-line-length
-        // debug(`computeVisibility_ FALSE: getBoundingClientRect() TOP: ${rect.top} -- win.document.documentElement.clientHeight: ${win.document.documentElement.clientHeight}`);
+        // debug(`computeVisibility_ FALSE: clientRect TOP: ${rect.top} -- win.document.documentElement.clientHeight: ${win.document.documentElement.clientHeight}`);
         return false;
     }
 
@@ -789,7 +790,7 @@ function scrollElementIntoView(element: Element) {
     if (isPaged) {
         scrollIntoView(element as HTMLElement);
     } else {
-        const rect = element.getBoundingClientRect();
+        const rect = getFirstClientRect(element);
         // calculateMaxScrollShift()
         // TODO: vertical writing mode
         const scrollTopMax = win.document.body.scrollHeight - win.document.documentElement.clientHeight;
@@ -819,7 +820,7 @@ function getScrollOffsetIntoView(element: HTMLElement): number {
         return 0;
     }
 
-    const rect = element.getBoundingClientRect();
+    const rect = getFirstClientRect(element);
 
     const columnDimension = calculateColumnDimension();
 
@@ -1789,6 +1790,49 @@ const processXYDebounced = debounce((x: number, y: number, reverse: boolean) => 
     processXYRaw(x, y, reverse);
 }, 300);
 
+function getFirstClientRect(element: Element): ClientRect | DOMRect {
+    if (isPaginated(win.document)) {
+        if (isVerticalWritingMode()) {
+            // TODO
+            return element.getBoundingClientRect();
+        } else {
+            const isTwoPage = isTwoPageSpread();
+            // const { maxScrollShift, maxScrollShiftAdjusted } = calculateMaxScrollShift();
+            // const extraShift = (win.document.body as any).scrollLeftExtra;
+            // extraShift === maxScrollShiftAdjusted - maxScrollShift
+            const columnDimension = calculateColumnDimension();
+
+            const clientRects = getClientRectsNoOverlap_(element.getClientRects());
+            let rectangle: ClientRect | DOMRect | undefined;
+            for (const rect of clientRects) {
+                if (!rectangle) {
+                    rectangle = rect;
+                    continue;
+                }
+                if (isRTL()) {
+                    if (isTwoPage && rect.left < columnDimension) {
+                        continue;
+                    }
+                } else {
+                    if (isTwoPage && rect.left >= columnDimension) {
+                        continue;
+                    }
+                }
+                if (rect.top < rectangle.top) {
+                    rectangle = rect;
+                    continue;
+                }
+            }
+            if (!rectangle) {
+                return element.getBoundingClientRect();
+            }
+            return rectangle;
+        }
+    } else {
+        return element.getBoundingClientRect();
+    }
+}
+
 interface IProgressionData {
     percentRatio: number;
     paginationInfo: IPaginationInfo | undefined;
@@ -1857,7 +1901,7 @@ export const computeProgressionData = (): IProgressionData => {
         // imprecise
         // const offsetTop = computeOffsetTop(element);
 
-        const rect = element.getBoundingClientRect();
+        const rect = getFirstClientRect(element);
         let offset = 0;
         // console.log("##### RECT TOP LEFT");
         // console.log(rect.top);
@@ -1867,7 +1911,7 @@ export const computeProgressionData = (): IProgressionData => {
 
             const visible = computeVisibility_(element);
             if (visible) {
-                // because getBoundingClientRect() based on visual rendering,
+                // because clientRect is based on visual rendering,
                 // which does not account for extra shift (CSS transform X-translate of the webview)
                 const curCol = extraShift ? (currentColumn - 1) : currentColumn;
 

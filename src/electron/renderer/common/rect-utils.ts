@@ -34,12 +34,16 @@ export interface IRect extends IRectSimple {
 
 export function getClientRectsNoOverlap(range: Range): IRect[] {
 
+    const rangeClientRects = range.getClientRects(); // Array.from(range.getClientRects());
+    return getClientRectsNoOverlap_(rangeClientRects);
+}
+
+export function getClientRectsNoOverlap_(clientRects: ClientRectList | DOMRectList): IRect[] {
+
     const tolerance = 1;
 
-    const rangeClientRects = range.getClientRects(); // Array.from(range.getClientRects());
-
     const originalRects: IRect[] = [];
-    for (const rangeClientRect of rangeClientRects) {
+    for (const rangeClientRect of clientRects) {
         originalRects.push({
             bottom: rangeClientRect.bottom,
             height: rangeClientRect.height,
