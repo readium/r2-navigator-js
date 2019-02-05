@@ -79,7 +79,7 @@ import { uniqueCssSelector } from "../common/cssselector2";
 import { easings } from "../common/easings";
 import { closePopupDialogs, isPopupDialogOpen } from "../common/popup-dialog";
 import { getURLQueryParams } from "../common/querystring";
-import { getClientRectsNoOverlap_ } from "../common/rect-utils";
+import { IRect, getClientRectsNoOverlap_ } from "../common/rect-utils";
 import {
     URL_PARAM_CSS,
     URL_PARAM_DEBUG_VISUALS,
@@ -285,13 +285,13 @@ function computeVisibility_(element: Element): boolean {
         }
     }
 
-    const rect = getFirstClientRect(element);
-    // debug(rect.top);
-    // debug(rect.left);
-    // debug(rect.width);
-    // debug(rect.height);
-
     if (!isPaginated(win.document)) { // scroll
+
+        const rect = element.getBoundingClientRect();
+        // debug(rect.top);
+        // debug(rect.left);
+        // debug(rect.width);
+        // debug(rect.height);
 
         // let offset = 0;
         // if (isVerticalWritingMode()) {
@@ -326,7 +326,7 @@ function computeVisibility_(element: Element): boolean {
 
     let currentOffset = win.document.body.scrollLeft;
     if (extraShift) {
-        currentOffset += (((win.document.body.scrollLeft < 0) ? -1 : 1) * extraShift);
+        currentOffset += (((currentOffset < 0) ? -1 : 1) * extraShift);
     }
 
     if (scrollLeftPotentiallyExcessive >= (currentOffset - 10) &&
@@ -334,14 +334,6 @@ function computeVisibility_(element: Element): boolean {
         return true;
     }
 
-    // // TODO: RTL
-    // if (isRTL()) {
-    //     return false;
-    // }
-    // const threshold = extraShift ? extraShift : 0;
-    // if ((rect.left + rect.width) > threshold) {
-    //     return true;
-    // }
     // tslint:disable-next-line:max-line-length
     // debug(`computeVisibility_ FALSE: getScrollOffsetIntoView: ${scrollLeftPotentiallyExcessive} -- win.document.body.scrollLeft: ${currentOffset}`);
     return false;
@@ -790,7 +782,7 @@ function scrollElementIntoView(element: Element) {
     if (isPaged) {
         scrollIntoView(element as HTMLElement);
     } else {
-        const rect = getFirstClientRect(element);
+        const rect = element.getBoundingClientRect();
         // calculateMaxScrollShift()
         // TODO: vertical writing mode
         const scrollTopMax = win.document.body.scrollHeight - win.document.documentElement.clientHeight;
@@ -820,14 +812,14 @@ function getScrollOffsetIntoView(element: HTMLElement): number {
         return 0;
     }
 
-    const rect = getFirstClientRect(element);
+    const rect = element.getBoundingClientRect();
 
     const columnDimension = calculateColumnDimension();
 
     const isTwoPage = isTwoPageSpread();
 
     const fullOffset = (isRTL() ?
-        ((columnDimension * (isTwoPage ? 2 : 1)) - rect.left) :
+        ((columnDimension * (isTwoPage ? 2 : 1)) - (rect.left + rect.width)) :
         rect.left) +
         ((isRTL() ? -1 : 1) * win.document.body.scrollLeft);
 
@@ -1790,49 +1782,6 @@ const processXYDebounced = debounce((x: number, y: number, reverse: boolean) => 
     processXYRaw(x, y, reverse);
 }, 300);
 
-function getFirstClientRect(element: Element): ClientRect | DOMRect {
-    if (isPaginated(win.document)) {
-        if (isVerticalWritingMode()) {
-            // TODO
-            return element.getBoundingClientRect();
-        } else {
-            const isTwoPage = isTwoPageSpread();
-            // const { maxScrollShift, maxScrollShiftAdjusted } = calculateMaxScrollShift();
-            // const extraShift = (win.document.body as any).scrollLeftExtra;
-            // extraShift === maxScrollShiftAdjusted - maxScrollShift
-            const columnDimension = calculateColumnDimension();
-
-            const clientRects = getClientRectsNoOverlap_(element.getClientRects());
-            let rectangle: ClientRect | DOMRect | undefined;
-            for (const rect of clientRects) {
-                if (!rectangle) {
-                    rectangle = rect;
-                    continue;
-                }
-                if (isRTL()) {
-                    if (isTwoPage && rect.left < columnDimension) {
-                        continue;
-                    }
-                } else {
-                    if (isTwoPage && rect.left >= columnDimension) {
-                        continue;
-                    }
-                }
-                if (rect.top < rectangle.top) {
-                    rectangle = rect;
-                    continue;
-                }
-            }
-            if (!rectangle) {
-                return element.getBoundingClientRect();
-            }
-            return rectangle;
-        }
-    } else {
-        return element.getBoundingClientRect();
-    }
-}
-
 interface IProgressionData {
     percentRatio: number;
     paginationInfo: IPaginationInfo | undefined;
@@ -1901,7 +1850,6 @@ export const computeProgressionData = (): IProgressionData => {
         // imprecise
         // const offsetTop = computeOffsetTop(element);
 
-        const rect = getFirstClientRect(element);
         let offset = 0;
         // console.log("##### RECT TOP LEFT");
         // console.log(rect.top);
@@ -1920,13 +1868,69 @@ export const computeProgressionData = (): IProgressionData => {
                 // console.log(columnDimension);
 
                 if (isVerticalWritingMode()) {
+                    const rect = element.getBoundingClientRect();
                     offset = (curCol * win.document.body.scrollWidth) + rect.left +
                         (rect.top >= columnDimension ? win.document.body.scrollWidth : 0);
                 } else {
-                    offset = (curCol * win.document.body.scrollHeight) + rect.top +
-                        (((isRTL() ?
-                            (win.document.documentElement.clientWidth - (rect.left + rect.width)) :
-                            rect.left) >= columnDimension) ? win.document.body.scrollHeight : 0);
+                    const boundingRect = element.getBoundingClientRect();
+                    const clientRects = getClientRectsNoOverlap_(element.getClientRects());
+                    let rectangle: IRect | undefined;
+                    for (const rect of clientRects) {
+                        if (!rectangle) {
+                            rectangle = rect;
+                            continue;
+                        }
+                        if (isRTL()) {
+                            if ((rect.left + rect.width) > (columnDimension * (isTwoPage ? 2 : 1))) {
+                                continue;
+                            }
+                            if (isTwoPage) {
+                                if ((boundingRect.left + boundingRect.width) >= columnDimension &&
+                                (rect.left + rect.width) < columnDimension) {
+                                    continue;
+                                }
+                            }
+                            if ((boundingRect.left + boundingRect.width) >= 0 &&
+                                (rect.left + rect.width) < 0) {
+                                continue;
+                            }
+                        } else {
+                            if (rect.left < 0) {
+                                continue;
+                            }
+                            if (boundingRect.left < columnDimension &&
+                                rect.left >= columnDimension) {
+                                continue;
+                            }
+                            if (isTwoPage) {
+                                const boundary = 2 * columnDimension;
+                                if (boundingRect.left < boundary &&
+                                    rect.left >= boundary) {
+                                    continue;
+                                }
+                            }
+                        }
+                        if (rect.top < rectangle.top) {
+                            rectangle = rect;
+                            continue;
+                        }
+                    }
+                    if (!rectangle) {
+                        rectangle = element.getBoundingClientRect();
+                    }
+
+                    offset = (curCol * win.document.body.scrollHeight) + rectangle.top;
+                    if (isTwoPage) {
+                        if (isRTL()) {
+                            if (rectangle.left < columnDimension) {
+                                offset += win.document.body.scrollHeight;
+                            }
+                        } else {
+                            if (rectangle.left >= columnDimension) {
+                                offset += win.document.body.scrollHeight;
+                            }
+                        }
+                    }
                 }
 
                 // console.log("##### offset");
@@ -1950,6 +1954,8 @@ export const computeProgressionData = (): IProgressionData => {
                 currentColumn = Math.floor(currentColumn);
             }
         } else {
+            const rect = element.getBoundingClientRect();
+
             if (isVerticalWritingMode()) {
                 offset = ((isRTL() ? -1 : 1) * win.document.body.scrollLeft) + rect.left + (isRTL() ? rect.width : 0);
             } else {
