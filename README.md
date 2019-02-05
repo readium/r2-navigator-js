@@ -430,6 +430,127 @@ const loc = getCurrentReadingLocation();
 ```
 
 ```javascript
+// Typically, the `LocatorExtended` data structure will be used to store "bookmarks",
+// to render a user interface that provides information about the document (e.g. page "numbers"),
+// or to display an interactive "timeline" / linear scrub bar
+// to rapidely navigate the publication spine / reading order.
+
+// Here is a typical usage example for LocatorExtended.locator.href:
+// (null/undefined sanity checks removed, for brevity)
+
+let _publication: Publication; // set somewhere else
+const locatorExtended = getCurrentReadingLocation();
+
+// That's the HTML <title /> (inside the <head />)
+console.log(locatorExtended.locator.title);
+
+let foundLink = _publication.Spine.find((link, i) => {
+    return link.Href === locatorExtended.locator.href;
+});
+if (!foundLink) {
+    // a publication document is not necessarily the spine / reading order
+    foundLink = _publication.Resources.find((link) => {
+        return link.Href === locatorExtended.locator.href;
+    });
+}
+// then, use `foundLink` as needed ...
+```
+
+```javascript
+// `LocatorExtended.locations.cssSelector` is a CSS Selector that points to an HTML element,
+// (i.e. the reading location / bookmarked reference)
+// and it can be used as-is to restore this using the `handleLinkLocator()` function (see below).
+
+// `LocatorExtended.locations.cfi` is provided as "read-only" information,
+// in the sense that it is not used when ingested back into the navigator via `handleLinkLocator()`.
+// In other words, setting the CFI field to undefined or another string has no effects when passing the parameter.
+
+// `LocatorExtended.locations.position` is not currently supported / implemented,
+// and as with the CFI field, it can be ignored when feeding back into the navigator API.
+
+// `LocatorExtended.locations.progression` is a percentage (floating point number [0, 1])
+// representing the reading location inside a single document,
+// so for fixed layout this has no effect. However, reflowable documents are either scrolled or paginated,
+// so the progression percentage represents how much vertical scrolling / horizontal panning there is.
+// This progression field can be used to ask the navigator to set a specific reading placement
+// using `handleLinkLocator()` (see further below).
+// Typically, for paginated reflowable documents,
+// the calculation of a desired progression could be mapped to "page" information (columns). See below.
+```
+
+```javascript
+// When a reflowable document is currently presented in a paginated view,
+// `LocatorExtended.paginationInfo` reports the current `totalColumns` (number of single "pages"),
+// `currentColumn` (a zero-based index between [0, totalColumns-1]),
+// and if `isTwoPageSpread` is true, then `spreadIndex` reports the zero-based index
+// of the currently-visible two-page spread.
+```
+
+```javascript
+// `LocatorExtended.docInfo` reports `isFixedLayout`, `isRightToLeft` and `isVerticalWritingMode`
+// which are self-explanatory.
+```
+
+```javascript
+// `LocatorExtended.docInfo` reports `isFixedLayout`, `isRightToLeft` and `isVerticalWritingMode`
+// which are self-explanatory.
+```
+
+```javascript
+// Note that `LocatorExtended.selectionInfo` is currently a prototype concept, not a stable API.
+// However, this already provides an accurate representation of user selection / character ranges,
+// which will ; in a future release of r2-navigator-js ; be connected to a highlights / annotations
+// subsystem (i.e. minimal, but stable / robust functionality).
+```
+
+```javascript
+// For convenience, here is the fully-expanded `LocatorExtended` data structure:
+interface LocatorExtended {
+    locator { //Locator
+        href: string;
+        title?: string;
+        text?: { //LocatorLocations
+            before?: string;
+            highlight?: string;
+            after?: string;
+        };
+        locations { //LocatorLocations
+            cfi?: string;
+            cssSelector?: string;
+            position?: number;
+            progression?: number;
+        };
+    };
+    paginationInfo { //IPaginationInfo
+        totalColumns: number | undefined;
+        currentColumn: number | undefined;
+        isTwoPageSpread: boolean | undefined;
+        spreadIndex: number | undefined;
+    };
+    docInfo { //IDocInfo
+        isFixedLayout: boolean;
+        isRightToLeft: boolean;
+        isVerticalWritingMode: boolean;
+    };
+    selectionInfo { //ISelectionInfo
+        rangeInfo { //IRangeInfo
+            startContainerElementCssSelector: string;
+            startContainerChildTextNodeIndex: number;
+            startOffset: number;
+
+            endContainerElementCssSelector: string;
+            endContainerChildTextNodeIndex: number;
+            endOffset: number;
+
+            cfi: string | undefined;
+        };
+        cleanText: string;
+        rawText: string;
+    };
+}
+```
+
+```javascript
 import {
   handleLinkLocator,
   handleLinkUrl
@@ -445,16 +566,21 @@ handleLinkUrl(href);
 
 // A typical use-case is the publication's Table Of Contents.
 // Each spine/readingOrder item is a `Link` object with a relative href (see `r2-shared-js` models).
-// The final absolute URL can be computed simply by concatenating the publication's manifest.json URL:
+// The final absolute URL may be computed simply by concatenating the publication's manifest.json URL:
+// (although it is recommended to use a URL/URI library in order to handle query parameters, etc.)
 const href = publicationURL + "/../" + link.Href;
 // For example:
 // publicationURL === "https://127.0.0.1:3000/PUB_ID/manifest.json"
 // link.Href === "contents/chapter1.html"
 
 // This can be used to restore a bookmark previously saved via `getCurrentReadingLocation()` (see above).
-// Note that in this version of the navigator, only CSS Selectors are supported
-// (not CFI, position or progression, even though they are initially provided by the navigator)
 handleLinkLocator(locator);
+
+// `locator.href` is obviously required.
+// `locator.locations.cssSelector` can be used as-is (as provided by a prior call to `getCurrentReadingLocation()`)
+// in order to restore a saved reading location.
+// Alternatively, `locator.locations.progression` (percentage) can be used to pan/shift to a desired reading location,
+// based on pagination / scroll information (see description of `LocatorExtended.paginationInfo`, above).
 ```
 
 ```javascript

@@ -93,7 +93,6 @@ import {
     CLASS_HIGHLIGHT_BOUNDING_AREA,
     CLASS_HIGHLIGHT_CONTAINER,
     ID_HIGHLIGHTS_CONTAINER,
-    createHighlight,
     recreateAllHighlights,
 } from "./highlight";
 import { popupFootNote } from "./popupFootNotes";
@@ -2058,15 +2057,15 @@ const notifyReadingLocationRaw = () => {
         progressionData.paginationInfo : undefined;
 
     const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI);
-    if (IS_DEV) { // && win.READIUM2.DEBUG_VISUALS
-        if (selInfo) {
-            createHighlight(win,
-                selInfo,
-                undefined, // default background color
-                true, // mouse / pointer interaction
-            );
-        }
-    }
+    // if (IS_DEV) { // && win.READIUM2.DEBUG_VISUALS
+    //     if (selInfo) {
+    //         createHighlight(win,
+    //             selInfo,
+    //             undefined, // default background color
+    //             true, // mouse / pointer interaction
+    //         );
+    //     }
+    // }
 
     const text = selInfo ? {
             after: undefined, // TODO?
