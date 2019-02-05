@@ -416,8 +416,8 @@ import {
 // many calls (and consequently putting unnecessary strain on the store/messaging system required to
 // handle the renderer/main process communication).
 // A typical example of when this function is called is when the user scrolls the viewport using the mouse
-// (debouncing is every 500ms on the trailing edge,
-// so there is always a 500ms delay before the first notification).
+// (debouncing is every 250ms on the trailing edge,
+// so there is always a 250ms delay before the first notification).
 const saveReadingLocation = (location: LocatorExtended) => {
   // Use an application store to make `location` persistent
   // ...

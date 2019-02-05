@@ -1,10 +1,35 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.17...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.18...develop
 
 Changes:
 * TODO
+
+# 1.0.18
+
+> Build environment: NodeJS `8.14.1`, NPM `6.4.1`
+
+Changes:
+* NPM updates
+* Updated documentation (README)
+* Added support for two-page spreads with odd number of columns => empty "virtual" page at end of document.
+* Fixed reading location progression reporting bugs (paginated reflowable documents, right to left)
+* Added debugging feature for arbitrary visual reading locations
+* New prototype code (uncomplete API) for user text selections/annotations/highlights.
+* Fixed ReadiumCSS for RTL (Hebrew, Arabic), was skipping some configuration
+* Added information data structures to reading location (pagination and document information)
+* Improved and fixed TTS / read aloud graphical user interface (minimal, but core to the user experience: modal popup text presenter with word-level highlighting and full ReadiumCSS support)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.18/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.18/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.18
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.17...v1.0.18
 
 # 1.0.17
 
