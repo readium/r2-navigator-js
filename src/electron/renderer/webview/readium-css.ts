@@ -52,7 +52,7 @@ const calculateDocumentColumnizedWidthAdjustedForTwoPageSpread = (): number => {
         const fractionalSpread = nSpreads - nWholeSpread;
         // console.log(`fractionalSpread: ${fractionalSpread}`);
 
-        if (fractionalSpread > 0 && fractionalSpread <= 0.5) {
+        if (fractionalSpread > 0 && (Math.round(fractionalSpread * 10) / 10) <= 0.5) {
             w = twoColWidth * Math.ceil(nSpreads);
             // tslint:disable-next-line
             // console.log(`wDIFF: ${win.document.body.scrollWidth} => ${w} (${w - win.document.body.scrollWidth} -- ${twoColWidth / 2})`);

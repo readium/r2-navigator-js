@@ -1808,6 +1808,13 @@ export const computeProgressionData = (): IProgressionData => {
             } else {
                 extraShift = (win.document.body as any).scrollLeftExtra;
                 // extraShift === maxScrollShiftAdjusted - maxScrollShift
+
+                // console.log("&&&&& EXTRA");
+                // console.log(extraShift);
+                // console.log(maxScrollShiftAdjusted);
+                // console.log(maxScrollShift);
+                // console.log(maxScrollShiftAdjusted - maxScrollShift);
+
                 if (extraShift) {
                     progressionRatio = (((isRTL() ? -1 : 1) * win.document.body.scrollLeft) + extraShift) /
                         maxScrollShiftAdjusted;
@@ -1820,9 +1827,6 @@ export const computeProgressionData = (): IProgressionData => {
         // console.log(")))))))) 0 progressionRatio");
         // console.log(progressionRatio);
 
-        // console.log("&&&&& EXTRA");
-        // console.log(extraShift);
-
         // because maxScrollShift excludes whole viewport width of content (0%-100% scroll but minus last page/spread)
         const adjustedTotalColumns = (extraShift ? (totalColumns + 1) : totalColumns) - (isTwoPage ? 2 : 1);
         // tslint:disable-next-line:max-line-length
@@ -1832,7 +1836,7 @@ export const computeProgressionData = (): IProgressionData => {
         // console.log("%%%%%%%% 0 currentColumn");
         // console.log(currentColumn);
 
-        currentColumn = Math.floor(currentColumn);
+        currentColumn = Math.round(currentColumn);
     } else {
         if (maxScrollShift > 0) {
             if (isVerticalWritingMode()) {
@@ -1850,9 +1854,6 @@ export const computeProgressionData = (): IProgressionData => {
         // const offsetTop = computeOffsetTop(element);
 
         let offset = 0;
-        // console.log("##### RECT TOP LEFT");
-        // console.log(rect.top);
-        // console.log(rect.left);
 
         if (isPaged) {
 
@@ -1917,6 +1918,10 @@ export const computeProgressionData = (): IProgressionData => {
                     if (!rectangle) {
                         rectangle = element.getBoundingClientRect();
                     }
+
+                    // console.log("##### RECT TOP LEFT");
+                    // console.log(rectangle.top);
+                    // console.log(rectangle.left);
 
                     offset = (curCol * win.document.body.scrollHeight) + rectangle.top;
                     if (isTwoPage) {
