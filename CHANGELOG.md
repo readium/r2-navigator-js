@@ -16,7 +16,7 @@ Changes:
 * Added support for two-page spreads with odd number of columns => empty "virtual" page at end of document.
 * Fixed reading location progression reporting bugs (paginated reflowable documents, right to left)
 * Added debugging feature for arbitrary visual reading locations
-* New prototype code (uncomplete API) for user text selections/annotations/highlights.
+* New prototype code (incomplete API) for user text selections/annotations/highlights.
 * Fixed ReadiumCSS for RTL (Hebrew, Arabic), was skipping some configuration
 * Added information data structures to reading location (pagination and document information)
 * Improved and fixed TTS / read aloud graphical user interface (minimal, but core to the user experience: modal popup text presenter with word-level highlighting and full ReadiumCSS support)
