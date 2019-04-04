@@ -69,7 +69,7 @@
     "@types/debounce": "^3.0.0",
     "@types/debug": "^0.0.31",
     "@types/express": "^4.16.0",
-    "@types/node": "^8.10.39",
+    "@types/node": "^8.10.45",
     "@types/urijs": "^1.15.38",
     "@types/uuid": "^3.4.4",
     "@types/xmldom": "^0.1.29",
@@ -83,9 +83,9 @@
     "json": "^9.0.6",
     "mkdirp": "^0.5.1",
     "rimraf": "^2.6.3",
-    "tslint": "^5.12.1",
+    "tslint": "^5.15.0",
     "tslint-language-service": "^0.9.9",
-    "typescript": "^3.2.4"
+    "typescript": "^3.4.1"
   },
   "files": [
     "LICENSE",
