@@ -64,6 +64,9 @@ function dumpDebug(
 
 export function clearCurrentSelection(win: IElectronWebviewTagWindow) {
     const selection = win.getSelection();
+    if (!selection) {
+        return;
+    }
     selection.removeAllRanges();
 }
 
@@ -75,6 +78,9 @@ export function getCurrentSelectionInfo(
     ISelectionInfo | undefined {
 
     const selection = win.getSelection();
+    if (!selection) {
+        return undefined;
+    }
     if (selection.isCollapsed) {
         console.log("^^^ SELECTION COLLAPSED.");
         return undefined;
@@ -87,6 +93,9 @@ export function getCurrentSelectionInfo(
         return undefined;
     }
 
+    if (!selection.anchorNode || !selection.focusNode) {
+        return undefined;
+    }
     const range = selection.rangeCount === 1 ? selection.getRangeAt(0) :
         createOrderedRange(selection.anchorNode, selection.anchorOffset, selection.focusNode, selection.focusOffset);
     if (!range || range.collapsed) {
