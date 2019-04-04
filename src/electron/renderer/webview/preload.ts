@@ -112,6 +112,8 @@ import { clearCurrentSelection, getCurrentSelectionInfo } from "./selection";
 import { IElectronWebviewTagWindow } from "./state";
 
 import ResizeSensor = require("css-element-queries/src/ResizeSensor");
+
+// https://github.com/normanzb/resize-sensor
 // import ResizeSensor = require("resize-sensor/ResizeSensor");
 
 // import { registerProtocol } from "@r2-navigator-js/electron/renderer/common/protocol";
