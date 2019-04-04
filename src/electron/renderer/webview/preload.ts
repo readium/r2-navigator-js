@@ -1527,7 +1527,7 @@ win.addEventListener("load", () => {
     });
 
     setTimeout(() => {
-        win.addEventListener("scroll", (_ev: UIEvent) => {
+        win.addEventListener("scroll", (_ev: Event) => {
 
             if (_ignoreScrollEvent) {
                 _ignoreScrollEvent = false;
