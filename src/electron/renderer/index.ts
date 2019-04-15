@@ -765,6 +765,9 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     //     debug("####### >>> ---");
     // }
 
+    const webviewAlreadyHasContent = (typeof activeWebView.READIUM2.link !== "undefined")
+        && activeWebView.READIUM2.link !== null;
+
     activeWebView.READIUM2.link = pubLink;
 
     const needConvert = _publicationJsonUrl.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
@@ -777,7 +780,10 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
 
     if (activeWebView.style.transform !== "none") {
         // activeWebView.setAttribute("src", "data:, ");
-        activeWebView.send("R2_EVENT_HIDE");
+
+        if (webviewAlreadyHasContent) {
+            activeWebView.send("R2_EVENT_HIDE");
+        }
 
         setTimeout(() => {
             shiftWebview(activeWebView, 0, undefined); // reset
