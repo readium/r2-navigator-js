@@ -28,12 +28,34 @@ const urlRootReadiumCSS = origin + "/" + READIUM_CSS_URL_PATH + "/";
 
 // const urlResizeSensor = win.location.origin + "/resize-sensor.js";
 
+export const getScrollingElement = (documant: Document): Element => {
+    if (documant.scrollingElement) {
+        return documant.scrollingElement;
+    }
+    return documant.body;
+
+    // console.log(process.versions);
+    // --
+    // electron: '1.8.8'
+    // chrome: '59.0.3071.115'
+    // ---
+    // electron: '4.1.3'
+    // chrome: '69.0.3497.128'
+    // ===
+    // const isBody = win.document.scrollingElement === win.document.body;
+    // console.log(isBody); // Electron V1: true, V4: false
+    // const isHTML = win.document.scrollingElement === win.document.documentElement;
+    // console.log(isHTML); // Electron V1: false, V4: true
+};
+
 const calculateDocumentColumnizedWidthAdjustedForTwoPageSpread = (): number => {
 
     if (!win || !win.document || !win.document.body || !win.document.documentElement) {
         return 0;
     }
-    let w = win.document.body.scrollWidth;
+    const scrollElement = getScrollingElement(win.document);
+
+    let w = scrollElement.scrollWidth;
     const noChange = !isPaginated(win.document) || !isTwoPageSpread() ||
         isVerticalWritingMode(); // TODO: VWM?
     if (!noChange) {
@@ -55,7 +77,7 @@ const calculateDocumentColumnizedWidthAdjustedForTwoPageSpread = (): number => {
         if (fractionalSpread > 0 && (Math.round(fractionalSpread * 10) / 10) <= 0.5) {
             w = twoColWidth * Math.ceil(nSpreads);
             // tslint:disable-next-line
-            // console.log(`wDIFF: ${win.document.body.scrollWidth} => ${w} (${w - win.document.body.scrollWidth} -- ${twoColWidth / 2})`);
+            // console.log(`wDIFF: ${scrollElement.scrollWidth} => ${w} (${w - scrollElement.scrollWidth} -- ${twoColWidth / 2})`);
         }
     }
     return w;
@@ -70,13 +92,15 @@ export const calculateMaxScrollShift = ():
 
     const isPaged = isPaginated(win.document);
 
+    const scrollElement = getScrollingElement(win.document);
+
     const maxScrollShift = isPaged ?
         ((isVerticalWritingMode() ?
-            (win.document.body.scrollHeight - win.document.documentElement.offsetHeight) :
-            (win.document.body.scrollWidth - win.document.documentElement.offsetWidth))) :
+            (scrollElement.scrollHeight - win.document.documentElement.offsetHeight) :
+            (scrollElement.scrollWidth - win.document.documentElement.offsetWidth))) :
         ((isVerticalWritingMode() ?
-            (win.document.body.scrollWidth - win.document.documentElement.clientWidth) :
-            (win.document.body.scrollHeight - win.document.documentElement.clientHeight)));
+            (scrollElement.scrollWidth - win.document.documentElement.clientWidth) :
+            (scrollElement.scrollHeight - win.document.documentElement.clientHeight)));
 
     const maxScrollShiftAdjusted = isPaged ?
         ((isVerticalWritingMode() ?
@@ -107,16 +131,19 @@ export const isTwoPageSpread = (): boolean => {
 
     return docColumnCount === 2;
 };
+
 export const calculateTotalColumns = (): number => {
     if (!win || !win.document || !win.document.body || !isPaginated(win.document)) {
         return 0;
     }
 
+    const scrollElement = getScrollingElement(win.document);
+
     let totalColumns = 0;
     if (isVerticalWritingMode()) {
-        totalColumns = Math.ceil(win.document.body.offsetWidth / win.document.body.scrollWidth);
+        totalColumns = Math.ceil(win.document.body.offsetWidth / scrollElement.scrollWidth);
     } else {
-        totalColumns = Math.ceil(win.document.body.offsetHeight / win.document.body.scrollHeight);
+        totalColumns = Math.ceil(win.document.body.offsetHeight / scrollElement.scrollHeight);
     }
     return totalColumns;
 };

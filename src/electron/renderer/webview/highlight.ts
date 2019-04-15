@@ -9,10 +9,10 @@ import { debounce } from "debounce";
 
 import { isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";
+import { IRectSimple, getClientRectsNoOverlap } from "../common/rect-utils";
+import { getScrollingElement } from "./readium-css";
 import { convertRangeInfo } from "./selection";
 import { IElectronWebviewTagWindow } from "./state";
-
-import { IRectSimple, getClientRectsNoOverlap } from "../common/rect-utils";
 
 // import { isRTL } from './readium-css';
 
@@ -112,6 +112,7 @@ function setHighlightAreaStyle(_win: IElectronWebviewTagWindow, highlightAreas: 
 
 function processMouseEvent(win: IElectronWebviewTagWindow, ev: MouseEvent) {
     const documant = win.document;
+    const scrollElement = getScrollingElement(documant);
 
     // relative to fixed window top-left corner
     // (unlike pageX/Y which is relative to top-left rendered content area, subject to scrolling)
@@ -125,8 +126,8 @@ function processMouseEvent(win: IElectronWebviewTagWindow, ev: MouseEvent) {
 
     const paginated = isPaginated(documant);
     const bodyRect = documant.body.getBoundingClientRect();
-    const xOffset = paginated ? (-documant.body.scrollLeft) : bodyRect.left;
-    const yOffset = paginated ? (-documant.body.scrollTop) : bodyRect.top;
+    const xOffset = paginated ? (-scrollElement.scrollLeft) : bodyRect.left;
+    const yOffset = paginated ? (-scrollElement.scrollTop) : bodyRect.top;
 
     let foundHighlight: IHighlight | undefined;
     let foundElement: IHTMLDivElementWithRect | undefined;
@@ -352,6 +353,7 @@ export function createHighlight(
 function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighlight): HTMLDivElement | undefined {
 
     const documant = win.document;
+    const scrollElement = getScrollingElement(documant);
 
     const range = convertRangeInfo(documant, highlight.selectionInfo.rangeInfo);
     if (!range) {
@@ -400,13 +402,13 @@ function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighligh
     // const xOffset = paginated ? (bodyRect.left - parseInt(marginLeft, 10)) : bodyRect.left;
     // const yOffset = paginated ? (bodyRect.top - parseInt(marginTop, 10)) : bodyRect.top;
 
-    const xOffset = paginated ? (-documant.body.scrollLeft) : bodyRect.left;
-    const yOffset = paginated ? (-documant.body.scrollTop) : bodyRect.top;
+    const xOffset = paginated ? (-scrollElement.scrollLeft) : bodyRect.left;
+    const yOffset = paginated ? (-scrollElement.scrollTop) : bodyRect.top;
 
     const scale = 1 / ((win.READIUM2 && win.READIUM2.isFixedLayout) ? win.READIUM2.fxlViewportScale : 1);
 
-    // console.log("documant.body.scrollLeft: " + documant.body.scrollLeft);
-    // console.log("documant.body.scrollTop: " + documant.body.scrollTop);
+    // console.log("scrollElement.scrollLeft: " + scrollElement.scrollLeft);
+    // console.log("scrollElement.scrollTop: " + scrollElement.scrollTop);
 
     // const clientRects = range.getClientRects(); // ClientRectList | DOMRectList
     const clientRects = win.READIUM2.DEBUG_VISUALS ? range.getClientRects() : getClientRectsNoOverlap(range);
