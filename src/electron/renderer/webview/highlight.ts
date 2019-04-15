@@ -47,8 +47,8 @@ const _highlights: IHighlight[] = [];
 interface IHTMLDivElementWithRect extends HTMLDivElement {
     rect: IRectSimple;
     scale: number;
-    xOffset: number;
-    yOffset: number;
+    // xOffset: number;
+    // yOffset: number;
 }
 
 function resetHighlightBoundingStyle(_win: IElectronWebviewTagWindow, highlightBounding: HTMLElement) {
@@ -150,8 +150,8 @@ function processMouseEvent(win: IElectronWebviewTagWindow, ev: MouseEvent) {
             // tslint:disable-next-line:max-line-length
             // console.log(`RECT: ${withRect.rect.left} | ${withRect.rect.top} // ${withRect.rect.width} | ${withRect.rect.height}`);
 
-            const left = withRect.rect.left + (paginated ? withRect.xOffset : xOffset);
-            const top = withRect.rect.top + (paginated ? withRect.yOffset : yOffset);
+            const left = withRect.rect.left + xOffset; // (paginated ? withRect.xOffset : xOffset);
+            const top = withRect.rect.top + yOffset; // (paginated ? withRect.yOffset : yOffset);
             if (x >= left &&
                 x < (left + withRect.rect.width) &&
                 y >= top &&
@@ -438,8 +438,8 @@ function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighligh
         highlightArea.style.setProperty("pointer-events", "none");
         highlightArea.style.position = paginated ? "fixed" : "absolute";
         highlightArea.scale = scale;
-        highlightArea.xOffset = xOffset;
-        highlightArea.yOffset = yOffset;
+        // highlightArea.xOffset = xOffset;
+        // highlightArea.yOffset = yOffset;
         highlightArea.rect = {
             height: clientRect.height,
             left: clientRect.left - xOffset,
@@ -468,8 +468,8 @@ function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighligh
     highlightBounding.style.setProperty("pointer-events", "none");
     highlightBounding.style.position = paginated ? "fixed" : "absolute";
     highlightBounding.scale = scale;
-    highlightBounding.xOffset = xOffset;
-    highlightBounding.yOffset = yOffset;
+    // highlightBounding.xOffset = xOffset;
+    // highlightBounding.yOffset = yOffset;
     highlightBounding.rect = {
         height: rangeBoundingClientRect.height,
         left: rangeBoundingClientRect.left - xOffset,
