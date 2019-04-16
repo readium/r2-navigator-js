@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.19...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.20...develop
 
 Changes:
 * TODO
+
+# 1.0.20
+
+> Build environment: NodeJS `8.15.1`, NPM `6.4.1`
+
+Changes:
+* Latest ReadiumCSS
+* Fixed Electron v1+ window.document.scrollingElement regression, as well as IPC event send() dom-ready event check, and scroll offset coordinates in selection/highlights (still todo: keyboard focus handling)
+* NPM update r2-shared-js
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.20/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.20/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.20
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.19...v1.0.20
 
 # 1.0.19
 
