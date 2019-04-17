@@ -180,9 +180,9 @@ As you can see, very straight-forward reliable conversion, no CFI edge-case jugg
 
 ## Highlights
 
-### Client rectangles (atomic bounding boxes)
+### Client rectangles (aggregated atomic bounding boxes)
 
-Once a DOM range is obtained (either directly from a user selection, or from a deserialized range object), the "client rectangles" (bounding boxes) can be normalized to prevent overlap (which would otherwise result in rendering artefacts due to combined opacity), and to minimize their number (which would otherwise impact performance).
+Once a DOM range is obtained (either directly from a user selection, or from a deserialized range object), the "client rectangles" (bounding boxes) can be normalized to prevent overlap (which would otherwise result in rendering artefacts due to combined opacity factors), and to minimize their number (as this would otherwise impact performance).
 
 The `getClientRectsNoOverlap()` implements the necessary logic:
 
@@ -190,4 +190,40 @@ https://github.com/readium/r2-navigator-js/blob/59c593511502eb460b8252f807a6e11d
 
 The differences are very obvious between `range.getClientRects()` and `getClientRectsNoOverlap(range)`. The former often generates many duplicates, overlaps, unnecessarily fragmented boxes, etc.
 
-### 
+### Rendering, CSS coordinates in paginated and scroll views
+
+The `createHighlightDom()` function implements a particular strategy for encapsulating rendered highlights inside a hierarchy of DOM elements, including individual client rectangles that make the entire shape, as well as surrounding bounding box (single rectangular shape):
+
+https://github.com/readium/r2-navigator-js/blob/59c593511502eb460b8252f807a6e11dfebb952e/src/electron/renderer/webview/highlight.ts#L353-L487
+
+Note how `pointer-events` is set to `none` on DOM elements used to render highlights, so that neither bounding boxes nor aggregates client rectangles interfere with document-level user interaction (publication HTML). Yet, rendered highlights must react to pointing device / mouse hover and click. This is done using event delegation on the document's body:
+
+https://github.com/readium/r2-navigator-js/blob/59c593511502eb460b8252f807a6e11dfebb952e/src/electron/renderer/webview/highlight.ts#L242-L252
+
+...see the `processMouseEvent()` function:
+
+https://github.com/readium/r2-navigator-js/blob/59c593511502eb460b8252f807a6e11dfebb952e/src/electron/renderer/webview/highlight.ts#L113-L233
+
+Also note how CSS `position` must be `relative` on the HTML `body` element. This is critical for the coordinate system to work:
+
+https://github.com/readium/r2-navigator-js/blob/59c593511502eb460b8252f807a6e11dfebb952e/src/electron/renderer/webview/highlight.ts#L383
+
+Furthermore, `position` must be `fixed` for CSS columns, `absolute` for reflow scroll, and fixed layout:
+
+https://github.com/readium/r2-navigator-js/blob/59c593511502eb460b8252f807a6e11dfebb952e/src/electron/renderer/webview/highlight.ts#L439
+
+In Electron/Chromium, depending on whether the document is rendered in scroll or column-paginated mode, there is an offset to take into account when computing coordinates for rendering:
+
+https://github.com/readium/r2-navigator-js/blob/59c593511502eb460b8252f807a6e11dfebb952e/src/electron/renderer/webview/highlight.ts#L393-L406
+
+There is also a scaling factor for fixed-layout documents:
+
+https://github.com/readium/r2-navigator-js/blob/59c593511502eb460b8252f807a6e11dfebb952e/src/electron/renderer/webview/highlight.ts#L408
+
+Note that the `DEBUG_VISUALS` condition is checked in the `highlight.ts` code to determine when to render special styles for debugging the highlights. In production mode, this code is not used.
+
+Finally, notice how highlights are given unique identifiers so that they can be managed by the navigator instance:
+
+https://github.com/readium/r2-navigator-js/blob/59c593511502eb460b8252f807a6e11dfebb952e/src/electron/renderer/webview/highlight.ts#L335-L336
+
+This way, renderered highlights can be destroyed when the document formatting changes (e.g. font size), which triggers a complete text reflow and therfore requires recreating the character-level highlights using updated coordinates (newly-generated client rectangles).
