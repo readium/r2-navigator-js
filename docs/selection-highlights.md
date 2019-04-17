@@ -18,7 +18,6 @@ Note: the `selectionchange` event may be problematic in cases where the DOM sele
 
 ```javascript
 win.document.addEventListener("selectionchange", (evt) => {
-    
     const selection = window.getSelection();
     if (selection) {
         const range = NORMALIZE_TO_SINGLE_RANGE(...);
