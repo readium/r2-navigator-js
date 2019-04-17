@@ -6,13 +6,14 @@
 // ==LICENSE-END==
 
 import { IDeviceIDManager } from "@r2-lcp-js/lsd/deviceid-manager";
-import { lsdRenew } from "@r2-lcp-js/lsd/renew";
-import { lsdReturn } from "@r2-lcp-js/lsd/return";
+import { lsdRenew_ } from "@r2-lcp-js/lsd/renew";
+import { lsdReturn_ } from "@r2-lcp-js/lsd/return";
 import { LSD } from "@r2-lcp-js/parser/epub/lsd";
 import { Server } from "@r2-streamer-js/http/server";
 import * as debug_ from "debug";
 import * as moment from "moment";
 import { JSON as TAJSON } from "ta-json-x";
+
 const debug = debug_("r2:navigator#electron/main/lsd");
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
@@ -29,7 +30,7 @@ export async function doLsdReturn(
 
     let returnResponseJson: any;
     try {
-        returnResponseJson = await lsdReturn(publication.LCP, deviceIDManager);
+        returnResponseJson = await lsdReturn_(publication.LCP.LSD, deviceIDManager);
     } catch (err) {
         debug(err);
         return Promise.reject(err);
@@ -63,7 +64,7 @@ export async function doLsdRenew(
     const endDate = endDateStr ? moment(endDateStr).toDate() : undefined;
     let renewResponseJson: any;
     try {
-        renewResponseJson = await lsdRenew(endDate, publication.LCP, deviceIDManager);
+        renewResponseJson = await lsdRenew_(endDate, publication.LCP.LSD, deviceIDManager);
     } catch (err) {
         debug(err);
         return Promise.reject(err);
