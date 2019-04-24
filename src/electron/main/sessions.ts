@@ -37,12 +37,14 @@ export function secureSessions(server: Server) {
         if ((serverUrl && details.url.startsWith(serverUrl)) ||
             details.url.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
 
-            callback({ responseHeaders: {
-                ...details.responseHeaders,
-                "Content-Security-Policy":
-                    // tslint:disable-next-line:max-line-length
-                    [`default-src 'self' 'unsafe-inline' 'unsafe-eval' data: http: https: ${READIUM2_ELECTRON_HTTP_PROTOCOL}: ${serverUrl}`],
-            } });
+            callback({
+                responseHeaders: {
+                    ...details.responseHeaders,
+                    "Content-Security-Policy":
+                        // tslint:disable-next-line:max-line-length
+                        [`default-src 'self' 'unsafe-inline' 'unsafe-eval' data: http: https: ${READIUM2_ELECTRON_HTTP_PROTOCOL}: ${serverUrl}`],
+                },
+            });
         } else {
             callback({});
         }
@@ -63,7 +65,7 @@ export function secureSessions(server: Server) {
 
         if (server.isSecured() &&
             ((serverUrl && details.url.startsWith(serverUrl)) ||
-            details.url.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://"))) {
+                details.url.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://"))) {
 
             const header = server.getSecureHTTPHeader(details.url);
             if (header) {
@@ -177,7 +179,23 @@ const httpProtocolHandler = (
 export function initSessions() {
 
     // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webframe
-    protocol.registerStandardSchemes([READIUM2_ELECTRON_HTTP_PROTOCOL], { secure: true });
+    if ((protocol as any).registerStandardSchemes) {
+        (protocol as any).registerStandardSchemes([READIUM2_ELECTRON_HTTP_PROTOCOL], { secure: true });
+    } else {
+        // tslint:disable-next-line:max-line-length
+        // https://github.com/electron/electron/blob/v5.0.0/docs/api/breaking-changes.md#privileged-schemes-registration
+        protocol.registerSchemesAsPrivileged([{
+            privileges: {
+                allowServiceWorkers: false,
+                bypassCSP: false,
+                corsEnabled: true,
+                secure: true,
+                standard: true,
+                supportFetchAPI: true,
+            },
+            scheme: READIUM2_ELECTRON_HTTP_PROTOCOL,
+        }]);
+    }
 
     app.on("ready", () => {
         debug("app ready");

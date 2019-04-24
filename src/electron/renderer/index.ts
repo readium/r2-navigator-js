@@ -319,7 +319,15 @@ export function handleLink(href: string, previous: boolean | undefined, useGoto:
         if (!okay) {
             debug("EXTERNAL LINK:");
             debug(href);
-            shell.openExternal(href);
+
+            // tslint:disable-next-line:no-floating-promises
+            (async () => {
+                try {
+                    await shell.openExternal(href);
+                } catch (err) {
+                    debug(err);
+                }
+            })();
         }
     }
 }

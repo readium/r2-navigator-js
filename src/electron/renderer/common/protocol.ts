@@ -5,7 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { webFrame } from "electron";
+import { protocol, webFrame } from "electron";
 
 import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../../common/sessions";
 
@@ -16,11 +16,27 @@ export const registerProtocol = () => {
     // protocol.registerStandardSchemes([READIUM2_ELECTRON_HTTP_PROTOCOL], { secure: true });
     // webFrame.registerURLSchemeAsSecure(READIUM2_ELECTRON_HTTP_PROTOCOL);
     // // webFrame.registerURLSchemeAsBypassingCSP(READIUM2_ELECTRON_HTTP_PROTOCOL);
-    webFrame.registerURLSchemeAsPrivileged(READIUM2_ELECTRON_HTTP_PROTOCOL, {
-        allowServiceWorkers: false,
-        bypassCSP: false,
-        corsEnabled: true,
-        secure: true,
-        supportFetchAPI: true,
-    });
+    if ((webFrame as any).registerURLSchemeAsPrivileged) {
+        (webFrame as any).registerURLSchemeAsPrivileged(READIUM2_ELECTRON_HTTP_PROTOCOL, {
+            allowServiceWorkers: false,
+            bypassCSP: false,
+            corsEnabled: true,
+            secure: true,
+            supportFetchAPI: true,
+        });
+    } else {
+        // tslint:disable-next-line:max-line-length
+        // https://github.com/electron/electron/blob/v5.0.0/docs/api/breaking-changes.md#privileged-schemes-registration
+        protocol.registerSchemesAsPrivileged([{
+            privileges: {
+                allowServiceWorkers: false,
+                bypassCSP: false,
+                corsEnabled: true,
+                secure: true,
+                standard: true,
+                supportFetchAPI: true,
+            },
+            scheme: READIUM2_ELECTRON_HTTP_PROTOCOL,
+        }]);
+    }
 };
