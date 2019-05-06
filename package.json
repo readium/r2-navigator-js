@@ -1,6 +1,6 @@
 {
   "name": "r2-navigator-js",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "description": "Readium 2 'navigator' for NodeJS (TypeScript)",
   "keywords": [
     "readium",
@@ -52,10 +52,10 @@
     "debug": "^4.1.1",
     "express": "^4.16.4",
     "moment": "^2.24.0",
-    "r2-lcp-js": "^1.0.8",
-    "r2-shared-js": "^1.0.10",
-    "r2-streamer-js": "^1.0.9",
-    "r2-utils-js": "^1.0.8",
+    "r2-lcp-js": "^1.0.9",
+    "r2-shared-js": "^1.0.11",
+    "r2-streamer-js": "^1.0.10",
+    "r2-utils-js": "^1.0.9",
     "sentence-splitter": "^3.0.11",
     "ta-json-x": "^2.5.0",
     "tabbable": "^4.0.0",
