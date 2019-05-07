@@ -5,8 +5,13 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { debounce } from "debounce";
+import * as crypto from "crypto";
 
+import { debounce } from "debounce";
+import { ipcRenderer } from "electron";
+
+import { IEventPayload_R2_EVENT_HIGHLIGHT_CLICK, R2_EVENT_HIGHLIGHT_CLICK } from "../../common/events";
+import { IColor, IHighlight } from "../../common/highlight";
 import { isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";
 import { IRectSimple, getClientRectsNoOverlap } from "../common/rect-utils";
@@ -21,12 +26,6 @@ export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
 export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
 export const CLASS_HIGHLIGHT_BOUNDING_AREA = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA";
 
-export interface IColor {
-    red: number;
-    green: number;
-    blue: number;
-}
-
 const DEFAULT_BACKGROUND_COLOR_OPACITY = 0.1;
 const ALT_BACKGROUND_COLOR_OPACITY = 0.4;
 const DEFAULT_BACKGROUND_COLOR: IColor = {
@@ -34,13 +33,6 @@ const DEFAULT_BACKGROUND_COLOR: IColor = {
     green: 50,
     red: 230,
 };
-
-interface IHighlight {
-    id: string;
-    selectionInfo: ISelectionInfo;
-    color: IColor;
-    pointerInteraction: boolean;
-}
 
 const _highlights: IHighlight[] = [];
 
@@ -226,8 +218,10 @@ function processMouseEvent(win: IElectronWebviewTagWindow, ev: MouseEvent) {
                 }
             }
         } else if (ev.type === "click") {
-            console.log("HIGHLIGHT CLICK: " + foundHighlight.id);
-            console.log(JSON.stringify(foundHighlight, null, "  "));
+            const payload: IEventPayload_R2_EVENT_HIGHLIGHT_CLICK = {
+                highlight: foundHighlight,
+            };
+            ipcRenderer.sendToHost(R2_EVENT_HIGHLIGHT_CLICK, payload);
         }
     }
 }
@@ -325,15 +319,20 @@ export function createHighlight(
     win: IElectronWebviewTagWindow,
     selectionInfo: ISelectionInfo,
     color: IColor | undefined,
-    pointerInteraction: boolean): string {
+    pointerInteraction: boolean): IHighlight {
 
     // tslint:disable-next-line:no-string-literal
     // console.log("Chromium: " + process.versions["chrome"]);
 
-    // const unique = new Buffer(JSON.stringify(selectionInfo.rangeInfo, null, "")).toString("base64");
     // tslint:disable-next-line:max-line-length
-    const unique = new Buffer(`${selectionInfo.rangeInfo.cfi}${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`).toString("base64");
-    const id = "R2_HIGHLIGHT_" + unique.replace(/\+/, "_").replace(/=/, "-").replace(/\//, ".");
+    const uniqueStr = `${selectionInfo.rangeInfo.cfi}${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
+    // const unique = new Buffer(JSON.stringify(selectionInfo.rangeInfo, null, "")).toString("base64");
+    // const unique = new Buffer(uniqueStr).toString("base64");
+    // const id = "R2_HIGHLIGHT_" + unique.replace(/\+/, "_").replace(/=/, "-").replace(/\//, ".");
+    const checkSum = crypto.createHash("sha256");
+    checkSum.update(uniqueStr);
+    const sha256Hex = checkSum.digest("hex");
+    const id = "R2_HIGHLIGHT_" + sha256Hex;
 
     destroyHighlight(win.document, id);
 
@@ -347,7 +346,7 @@ export function createHighlight(
 
     createHighlightDom(win, highlight);
 
-    return id;
+    return highlight;
 }
 
 function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighlight): HTMLDivElement | undefined {

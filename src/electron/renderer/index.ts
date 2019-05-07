@@ -28,6 +28,9 @@ import { ipcRenderer, shell } from "electron";
 import { IDocInfo } from "../common/document";
 import {
     IEventPayload_R2_EVENT_DEBUG_VISUALS,
+    IEventPayload_R2_EVENT_HIGHLIGHT_CLICK,
+    IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
+    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE,
     IEventPayload_R2_EVENT_LINK,
     IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
     IEventPayload_R2_EVENT_PAGE_TURN,
@@ -38,6 +41,10 @@ import {
     IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
     IEventPayload_R2_EVENT_TTS_DO_PLAY,
     R2_EVENT_DEBUG_VISUALS,
+    R2_EVENT_HIGHLIGHT_CLICK,
+    R2_EVENT_HIGHLIGHT_CREATE,
+    R2_EVENT_HIGHLIGHT_REMOVE,
+    R2_EVENT_HIGHLIGHT_REMOVE_ALL,
     R2_EVENT_LINK,
     R2_EVENT_LOCATOR_VISIBLE,
     R2_EVENT_PAGE_TURN,
@@ -57,6 +64,7 @@ import {
     R2_EVENT_TTS_IS_PLAYING,
     R2_EVENT_TTS_IS_STOPPED,
 } from "../common/events";
+import { IHighlight, IHighlightDefinition } from "../common/highlight";
 import { IPaginationInfo } from "../common/pagination";
 import { ISelectionInfo } from "../common/selection";
 import {
@@ -173,6 +181,7 @@ export interface LocatorExtended {
     locator: Locator;
     paginationInfo: IPaginationInfo | undefined;
     selectionInfo: ISelectionInfo | undefined;
+    selectionIsNew: boolean | undefined;
     docInfo: IDocInfo | undefined;
 }
 
@@ -201,6 +210,7 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
         },
         paginationInfo: locator.paginationInfo,
         selectionInfo: locator.selectionInfo,
+        selectionIsNew: locator.selectionIsNew,
     };
 
     if (IS_DEV) {
@@ -288,15 +298,15 @@ export async function isLocatorVisible(locator: Locator): Promise<boolean> {
                     reject("Wrong navigator webview?!");
                     return;
                 }
-                const payload_ = event.args[0] as IEventPayload_R2_EVENT_LOCATOR_VISIBLE;
+                const payloadPong = event.args[0] as IEventPayload_R2_EVENT_LOCATOR_VISIBLE;
                 // debug(`isLocatorVisible: ${payload_.visible}`);
                 _webview1.removeEventListener("ipc-message", cb);
-                resolve(payload_.visible);
+                resolve(payloadPong.visible);
             }
         };
         _webview1.addEventListener("ipc-message", cb);
-        const payload: IEventPayload_R2_EVENT_LOCATOR_VISIBLE = { location: locator.locations, visible: false };
-        _webview1.send(R2_EVENT_LOCATOR_VISIBLE, payload);
+        const payloadPing: IEventPayload_R2_EVENT_LOCATOR_VISIBLE = { location: locator.locations, visible: false };
+        _webview1.send(R2_EVENT_LOCATOR_VISIBLE, payloadPing);
     });
 }
 
@@ -429,30 +439,30 @@ export function installNavigatorDOM(
         (window as any).READIUM2.debugItems =
             (cssSelector: string, cssClass: string, cssStyles: string | undefined) => {
 
-            if (cssStyles) {
-                debug("debugVisuals ITEMS: ", `${cssSelector} --- ${cssClass} --- ${cssStyles}`);
-            }
+                if (cssStyles) {
+                    debug("debugVisuals ITEMS: ", `${cssSelector} --- ${cssClass} --- ${cssStyles}`);
+                }
 
-            // let delay = 0;
-            // if (!(window as IElectronBrowserWindow).READIUM2.DEBUG_VISUALS) {
-            //     (window as any).READIUM2.debug(true);
-            //     delay = 200;
-            // }
-            // setTimeout(() => {
-            //     if (_webview1) {
-            //         const payload: IEventPayload_R2_EVENT_DEBUG_VISUALS
-            //             = { debugVisuals: true, cssSelector, cssClass, cssStyles };
-            //         _webview1.send(R2_EVENT_DEBUG_VISUALS, payload);
-            //     }
-            // }, delay);
+                // let delay = 0;
+                // if (!(window as IElectronBrowserWindow).READIUM2.DEBUG_VISUALS) {
+                //     (window as any).READIUM2.debug(true);
+                //     delay = 200;
+                // }
+                // setTimeout(() => {
+                //     if (_webview1) {
+                //         const payload: IEventPayload_R2_EVENT_DEBUG_VISUALS
+                //             = { debugVisuals: true, cssSelector, cssClass, cssStyles };
+                //         _webview1.send(R2_EVENT_DEBUG_VISUALS, payload);
+                //     }
+                // }, delay);
 
-            if (_webview1) {
-                const d = (window as IElectronBrowserWindow).READIUM2.DEBUG_VISUALS;
-                const payload: IEventPayload_R2_EVENT_DEBUG_VISUALS
-                    = { debugVisuals: d, cssSelector, cssClass, cssStyles };
-                _webview1.send(R2_EVENT_DEBUG_VISUALS, payload);
-            }
-        };
+                if (_webview1) {
+                    const d = (window as IElectronBrowserWindow).READIUM2.DEBUG_VISUALS;
+                    const payload: IEventPayload_R2_EVENT_DEBUG_VISUALS
+                        = { debugVisuals: d, cssSelector, cssClass, cssStyles };
+                    _webview1.send(R2_EVENT_DEBUG_VISUALS, payload);
+                }
+            };
     }
 
     _rootHtmlElement = document.getElementById(rootHtmlElementID) as HTMLElement;
@@ -651,7 +661,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     // const wv2AlreadyLoaded = _webview2.READIUM2.link === pubLink;
     if (wv1AlreadyLoaded
         // || wv2AlreadyLoaded
-        ) {
+    ) {
         const goto = useGoto ? linkUri.search(true)[URL_PARAM_GOTO] as string : undefined;
         const hash = useGoto ? undefined : linkUri.fragment(); // without #
 
@@ -997,7 +1007,14 @@ function createWebView(preloadScriptPath: string): IElectronWebviewTag {
             if (_ttsListener) {
                 _ttsListener(TTSStateEnum.PLAYING);
             }
+        } else if (event.channel === R2_EVENT_HIGHLIGHT_CLICK) {
+            const payload = event.args[0] as IEventPayload_R2_EVENT_HIGHLIGHT_CLICK;
+            if (_highlightsClickListener && webview.READIUM2.link) {
+                _highlightsClickListener(webview.READIUM2.link.Href, payload.highlight);
+            }
         } else if (event.channel === R2_EVENT_LOCATOR_VISIBLE) {
+            // ignore (handled elsewhere)
+        } else if (event.channel === R2_EVENT_HIGHLIGHT_CREATE) {
             // ignore (handled elsewhere)
         } else {
             debug("webview1 ipc-message");
@@ -1111,7 +1128,7 @@ export enum TTSStateEnum {
     PLAYING = "PLAYING",
     STOPPED = "STOPPED",
 }
-let _ttsListener: (ttsState: TTSStateEnum) => void | undefined;
+let _ttsListener: ((ttsState: TTSStateEnum) => void) | undefined;
 export function ttsListen(ttsListener: (ttsState: TTSStateEnum) => void) {
     _ttsListener = ttsListener;
 }
@@ -1131,4 +1148,66 @@ export function ttsClickEnable(doEnable: boolean) {
         doEnable,
     };
     activeWebView.send(R2_EVENT_TTS_CLICK_ENABLE, payload);
+}
+
+let _highlightsClickListener: ((href: string, highlight: IHighlight) => void) | undefined;
+export function highlightsClickListen(highlightsClickListener: (href: string, highlight: IHighlight) => void) {
+    _highlightsClickListener = highlightsClickListener;
+}
+
+export function highlightRemoveAll(href: string) {
+    if (_webview1 && _webview1.READIUM2.link && _webview1.READIUM2.link.Href === href) {
+        _webview1.send(R2_EVENT_HIGHLIGHT_REMOVE_ALL);
+    }
+}
+export function highlightRemove(href: string, highlightIDs: string[]) {
+    if (_webview1 && _webview1.READIUM2.link && _webview1.READIUM2.link.Href === href) {
+        const payload: IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE = {
+            highlightIDs,
+        };
+        _webview1.send(R2_EVENT_HIGHLIGHT_REMOVE, payload);
+    }
+}
+export async function highlightCreate(
+    href: string,
+    highlightDefinitions: IHighlightDefinition[] | undefined):
+    Promise<Array<IHighlight | null>> {
+    return new Promise<Array<IHighlight | null>>((resolve, reject) => {
+
+        if (!_webview1) {
+            reject("No navigator webview?!");
+            return;
+        }
+        if (!_webview1.READIUM2.link) {
+            reject("No navigator webview link?!");
+            return;
+        }
+        if (_webview1.READIUM2.link.Href !== href) {
+            reject("Navigator webview link no match?!");
+            return;
+        }
+
+        const cb = (event: Electron.IpcMessageEvent) => {
+            if (event.channel === R2_EVENT_HIGHLIGHT_CREATE) {
+                const webview = event.currentTarget as IElectronWebviewTag;
+                if (webview !== _webview1) {
+                    reject("Wrong navigator webview?!");
+                    return;
+                }
+                const payloadPong = event.args[0] as IEventPayload_R2_EVENT_HIGHLIGHT_CREATE;
+                _webview1.removeEventListener("ipc-message", cb);
+                if (!payloadPong.highlights) { // includes undefined and empty array
+                    reject("highlightCreate fail?!");
+                } else {
+                    resolve(payloadPong.highlights);
+                }
+            }
+        };
+        _webview1.addEventListener("ipc-message", cb);
+        const payloadPing: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE = {
+            highlightDefinitions,
+            highlights: undefined,
+        };
+        _webview1.send(R2_EVENT_HIGHLIGHT_CREATE, payloadPing);
+    });
 }

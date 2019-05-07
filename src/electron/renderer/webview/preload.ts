@@ -23,6 +23,8 @@ import * as tabbable from "tabbable";
 
 import {
     IEventPayload_R2_EVENT_DEBUG_VISUALS,
+    IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
+    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE,
     IEventPayload_R2_EVENT_LINK,
     IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
     IEventPayload_R2_EVENT_PAGE_TURN,
@@ -33,6 +35,9 @@ import {
     IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
     IEventPayload_R2_EVENT_TTS_DO_PLAY,
     R2_EVENT_DEBUG_VISUALS,
+    R2_EVENT_HIGHLIGHT_CREATE,
+    R2_EVENT_HIGHLIGHT_REMOVE,
+    R2_EVENT_HIGHLIGHT_REMOVE_ALL,
     R2_EVENT_LINK,
     R2_EVENT_LOCATOR_VISIBLE,
     R2_EVENT_PAGE_TURN,
@@ -49,6 +54,7 @@ import {
     R2_EVENT_TTS_DO_RESUME,
     R2_EVENT_TTS_DO_STOP,
 } from "../../common/events";
+import { IHighlight, IHighlightDefinition } from "../../common/highlight";
 import { IPaginationInfo } from "../../common/pagination";
 import {
     CLASS_PAGINATED,
@@ -58,6 +64,7 @@ import {
     injectReadPosCSS,
     isPaginated,
 } from "../../common/readium-css-inject";
+import { sameSelections } from "../../common/selection";
 import {
     POPUP_DIALOG_CLASS,
     ROOT_CLASS_INVISIBLE_MASK,
@@ -93,6 +100,9 @@ import {
     CLASS_HIGHLIGHT_BOUNDING_AREA,
     CLASS_HIGHLIGHT_CONTAINER,
     ID_HIGHLIGHTS_CONTAINER,
+    createHighlight,
+    destroyAllhighlights,
+    destroyHighlight,
     recreateAllHighlights,
 } from "./highlight";
 import { popupFootNote } from "./popupFootNotes";
@@ -143,6 +153,7 @@ win.READIUM2 = {
         },
         paginationInfo: undefined,
         selectionInfo: undefined,
+        selectionIsNew: undefined,
         title: undefined,
     },
     ttsClickEnabled: false,
@@ -451,6 +462,7 @@ function resetLocationHashOverrideInfo() {
         },
         paginationInfo: undefined,
         selectionInfo: undefined,
+        selectionIsNew: undefined,
         title: undefined,
     };
 }
@@ -467,7 +479,7 @@ function elementCapturesKeyboardArrowKeys(target: Element): boolean {
             return true;
         }
 
-        const arrayOfKeyboardCaptureElements = [ "input", "textarea", "video", "audio", "select" ];
+        const arrayOfKeyboardCaptureElements = ["input", "textarea", "video", "audio", "select"];
         if (arrayOfKeyboardCaptureElements.indexOf((curElement as Element).tagName.toLowerCase()) >= 0) {
             return true;
         }
@@ -1911,7 +1923,7 @@ export const computeProgressionData = (): IProgressionData => {
                             }
                             if (isTwoPage) {
                                 if ((boundingRect.left + boundingRect.width) >= columnDimension &&
-                                (rect.left + rect.width) < columnDimension) {
+                                    (rect.left + rect.width) < columnDimension) {
                                     continue;
                                 }
                             }
@@ -2098,10 +2110,18 @@ const notifyReadingLocationRaw = () => {
     // }
 
     const text = selInfo ? {
-            after: undefined, // TODO?
-            before: undefined, // TODO?
-            highlight: selInfo.cleanText,
-        } : undefined;
+        after: undefined, // TODO?
+        before: undefined, // TODO?
+        highlight: selInfo.cleanText,
+    } : undefined;
+
+    let selectionIsNew: boolean | undefined;
+    if (selInfo) {
+        selectionIsNew =
+            !win.READIUM2.locationHashOverrideInfo ||
+            !win.READIUM2.locationHashOverrideInfo.selectionInfo ||
+            !sameSelections(win.READIUM2.locationHashOverrideInfo.selectionInfo, selInfo);
+    }
 
     win.READIUM2.locationHashOverrideInfo = {
         docInfo: {
@@ -2118,6 +2138,7 @@ const notifyReadingLocationRaw = () => {
         },
         paginationInfo: pinfo,
         selectionInfo: selInfo,
+        selectionIsNew,
         text,
         title: _docTitle,
     };
@@ -2169,4 +2190,45 @@ ipcRenderer.on(R2_EVENT_TTS_DO_PREVIOUS, (_event: any) => {
 
 ipcRenderer.on(R2_EVENT_TTS_CLICK_ENABLE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_CLICK_ENABLE) => {
     win.READIUM2.ttsClickEnabled = payload.doEnable;
+});
+
+ipcRenderer.on(R2_EVENT_HIGHLIGHT_CREATE, (_event: any, payloadPing: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE) => {
+
+    const highlightDefinitions = !payloadPing.highlightDefinitions ?
+        [ { color: undefined, selectionInfo: undefined } as IHighlightDefinition ] :
+        payloadPing.highlightDefinitions;
+
+    const highlights: Array<IHighlight | null> = [];
+
+    highlightDefinitions.forEach((highlightDefinition) => {
+        const selInfo = highlightDefinition.selectionInfo ? highlightDefinition.selectionInfo :
+            getCurrentSelectionInfo(win, getCssSelector, computeCFI);
+        if (selInfo) {
+            const highlight = createHighlight(
+                win,
+                selInfo,
+                highlightDefinition.color,
+                true, // mouse / pointer interaction
+            );
+            highlights.push(highlight);
+        } else {
+            highlights.push(null);
+        }
+    });
+
+    const payloadPong: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE = {
+        highlightDefinitions: payloadPing.highlightDefinitions,
+        highlights: highlights.length ? highlights : undefined,
+    };
+    ipcRenderer.sendToHost(R2_EVENT_HIGHLIGHT_CREATE, payloadPong);
+});
+
+ipcRenderer.on(R2_EVENT_HIGHLIGHT_REMOVE, (_event: any, payload: IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE) => {
+    payload.highlightIDs.forEach((highlightID) => {
+        destroyHighlight(win.document, highlightID);
+    });
+});
+
+ipcRenderer.on(R2_EVENT_HIGHLIGHT_REMOVE_ALL, (_event: any) => {
+    destroyAllhighlights(win.document);
 });
