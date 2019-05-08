@@ -40,7 +40,7 @@ import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webvie
 // import { registerProtocol } from "@r2-navigator-js/electron/renderer/common/protocol";
 // registerProtocol();
 
-const ENABLE_WEBVIEW_RESIZE = true;
+const ENABLE_WEBVIEW_RESIZE = false;
 
 // const CLASS_POS_RIGHT = "r2_posRight";
 // const CLASS_SHIFT_LEFT = "r2_shiftedLeft";

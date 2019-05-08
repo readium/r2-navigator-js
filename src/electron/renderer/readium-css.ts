@@ -56,7 +56,13 @@ export function isFixedLayout(link: Link | undefined): boolean {
 export function __computeReadiumCssJsonMessage(link: Link | undefined): IEventPayload_R2_EVENT_READIUMCSS {
 
     if (isFixedLayout(link)) {
-        return { setCSS: undefined, isFixedLayout: true };
+        const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+        return {
+            fixedLayoutWebViewHeight: activeWebView ? activeWebView.clientHeight : undefined,
+            fixedLayoutWebViewWidth: activeWebView ? activeWebView.clientWidth : undefined,
+            isFixedLayout: true,
+            setCSS: undefined,
+        };
     }
 
     if (!_computeReadiumCssJsonMessage) {

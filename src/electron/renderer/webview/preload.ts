@@ -1320,13 +1320,19 @@ win.addEventListener("DOMContentLoaded", () => {
 
     // testReadiumCSS(readiumcssJson);
 
+    // innerWidth/Height can be zero at this rendering stage! :(
+    const w = (readiumcssJson && readiumcssJson.fixedLayoutWebViewWidth) || win.innerWidth;
+    const h = (readiumcssJson && readiumcssJson.fixedLayoutWebViewHeight) || win.innerHeight;
     const wh = configureFixedLayout(win.document, win.READIUM2.isFixedLayout,
         win.READIUM2.fxlViewportWidth, win.READIUM2.fxlViewportHeight,
-        win.innerWidth, win.innerHeight);
+        w, h);
     if (wh) {
         win.READIUM2.fxlViewportWidth = wh.width;
         win.READIUM2.fxlViewportHeight = wh.height;
         win.READIUM2.fxlViewportScale = wh.scale;
+
+        // TODO: is that more reliable than CSS transform on HTML root element?
+        // webFrame.setZoomFactor(wh.scale);
     }
 
     const alreadedInjected = win.document.documentElement.hasAttribute("data-readiumcss-injected");
@@ -1346,15 +1352,17 @@ win.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    if (!alreadedInjected) {
-        injectDefaultCSS(win.document);
-        if (IS_DEV) { // win.READIUM2.DEBUG_VISUALS
-            injectReadPosCSS(win.document);
+    if (!win.READIUM2.isFixedLayout) {
+        if (!alreadedInjected) {
+            injectDefaultCSS(win.document);
+            if (IS_DEV) { // win.READIUM2.DEBUG_VISUALS
+                injectReadPosCSS(win.document);
+            }
         }
-    }
 
-    if (alreadedInjected) { // because querySelector[All]() is not polyfilled
-        checkHiddenFootNotes(win.document);
+        if (alreadedInjected) { // because querySelector[All]() is not polyfilled
+            checkHiddenFootNotes(win.document);
+        }
     }
 });
 
