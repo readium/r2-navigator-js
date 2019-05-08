@@ -26,8 +26,8 @@ export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
 export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
 export const CLASS_HIGHLIGHT_BOUNDING_AREA = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA";
 
-const DEFAULT_BACKGROUND_COLOR_OPACITY = 0.1;
-const ALT_BACKGROUND_COLOR_OPACITY = 0.4;
+const DEFAULT_BACKGROUND_COLOR_OPACITY = 0.3;
+const ALT_BACKGROUND_COLOR_OPACITY = 0.45;
 const DEFAULT_BACKGROUND_COLOR: IColor = {
     blue: 100,
     green: 50,
@@ -217,7 +217,7 @@ function processMouseEvent(win: IReadiumElectronWebviewWindow, ev: MouseEvent) {
                     setHighlightBoundingStyle(win, foundElementHighlightBounding as HTMLElement, foundHighlight);
                 }
             }
-        } else if (ev.type === "click") {
+        } else if (ev.type === "mouseup" || ev.type === "click") {
             const payload: IEventPayload_R2_EVENT_HIGHLIGHT_CLICK = {
                 highlight: foundHighlight,
             };
@@ -226,6 +226,8 @@ function processMouseEvent(win: IReadiumElectronWebviewWindow, ev: MouseEvent) {
     }
 }
 
+let lastMouseDownX = -1;
+let lastMouseDownY = -1;
 let bodyEventListenersSet = false;
 let _highlightsContainer: HTMLElement | null;
 function ensureHighlightsContainer(win: IReadiumElectronWebviewWindow): HTMLElement {
@@ -237,8 +239,18 @@ function ensureHighlightsContainer(win: IReadiumElectronWebviewWindow): HTMLElem
             bodyEventListenersSet = true;
 
             // reminder: mouseenter/mouseleave do not bubble, so no event delegation
-            documant.body.addEventListener("click", (ev: MouseEvent) => {
-                processMouseEvent(win, ev);
+            // documant.body.addEventListener("click", (ev: MouseEvent) => {
+            //     processMouseEvent(win, ev);
+            // }, false);
+            documant.body.addEventListener("mousedown", (ev: MouseEvent) => {
+                lastMouseDownX = ev.clientX;
+                lastMouseDownY = ev.clientY;
+            }, false);
+            documant.body.addEventListener("mouseup", (ev: MouseEvent) => {
+                if ((Math.abs(lastMouseDownX - ev.clientX) < 3) &&
+                    (Math.abs(lastMouseDownY - ev.clientY) < 3)) {
+                    processMouseEvent(win, ev);
+                }
             }, false);
             documant.body.addEventListener("mousemove", (ev: MouseEvent) => {
                 processMouseEvent(win, ev);

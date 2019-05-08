@@ -30,7 +30,7 @@ export function highlightsHandleIpcMessage(
         // (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
         const activeWebView = eventCurrentTarget;
         // if (!activeWebView) {
-        //     return false;
+        //     return true;
         // }
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_HIGHLIGHT_CLICK;
         if (_highlightsClickListener && activeWebView.READIUM2.link) {

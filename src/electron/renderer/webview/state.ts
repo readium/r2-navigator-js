@@ -47,6 +47,9 @@ export interface IReadiumElectronBrowserWindowState {
     publication: Publication;
     publicationURL: string;
 
+    domRootElement: HTMLElement;
+    domSlidingViewport: HTMLElement;
+
     DEBUG_VISUALS: boolean;
     ttsClickEnabled: boolean;
 
