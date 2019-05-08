@@ -15,9 +15,9 @@ import {
     convertCustomSchemeToHttpUrl,
 } from "../../common/sessions";
 import { FOOTNOTE_FORCE_SHOW, ROOT_CLASS_NO_FOOTNOTES } from "../../common/styles";
-import { IElectronWebviewTagWindow } from "./state";
+import { IReadiumElectronWebviewWindow } from "./state";
 
-const win = (global as any).window as IElectronWebviewTagWindow;
+const win = (global as any).window as IReadiumElectronWebviewWindow;
 
 let origin = win.location.origin;
 if (origin.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {

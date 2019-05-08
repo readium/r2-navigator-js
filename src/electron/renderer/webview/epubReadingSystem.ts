@@ -5,7 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { IElectronWebviewTagWindow } from "./state";
+import { IReadiumElectronWebviewWindow } from "./state";
 
 // http://www.idpf.org/epub/31/spec/epub-contentdocs.html#app-epubReadingSystem
 
@@ -22,7 +22,7 @@ interface IWindowNavigator extends Navigator {
     epubReadingSystem: IEpubReadingSystem;
 }
 
-export function setWindowNavigatorEpubReadingSystem(win: IElectronWebviewTagWindow, obj: any) {
+export function setWindowNavigatorEpubReadingSystem(win: IReadiumElectronWebviewWindow, obj: any) {
 
     const ers = {} as IEpubReadingSystem;
     (win.navigator as IWindowNavigator).epubReadingSystem = ers;

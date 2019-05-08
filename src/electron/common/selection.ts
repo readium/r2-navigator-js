@@ -39,8 +39,54 @@ export interface IRangeInfo {
     cfi: string | undefined;
 }
 
+export function sameRanges(r1: IRangeInfo, r2: IRangeInfo): boolean {
+    if (!r1 || !r2) {
+        return false;
+    }
+
+    if (r1.startContainerElementCssSelector !== r2.startContainerElementCssSelector) {
+        return false;
+    }
+    if (r1.startContainerChildTextNodeIndex !== r2.startContainerChildTextNodeIndex) {
+        return false;
+    }
+    if (r1.startOffset !== r2.startOffset) {
+        return false;
+    }
+
+    if (r1.endContainerElementCssSelector !== r2.endContainerElementCssSelector) {
+        return false;
+    }
+    if (r1.endContainerChildTextNodeIndex !== r2.endContainerChildTextNodeIndex) {
+        return false;
+    }
+    if (r1.endOffset !== r2.endOffset) {
+        return false;
+    }
+
+    return true;
+}
+
 export interface ISelectionInfo {
     rangeInfo: IRangeInfo;
     cleanText: string;
     rawText: string;
+}
+
+export function sameSelections(sel1: ISelectionInfo, sel2: ISelectionInfo): boolean {
+    if (!sel1 || !sel2) {
+        return false;
+    }
+    if (!sameRanges(sel1.rangeInfo, sel2.rangeInfo)) {
+        return false;
+    }
+    if (sel1.cleanText !== sel2.cleanText) {
+        console.log("SAME RANGES BUT DIFFERENT CLEAN TEXT??");
+        return false;
+    }
+    if (sel1.rawText !== sel2.rawText) {
+        console.log("SAME RANGES BUT DIFFERENT RAW TEXT??");
+        return false;
+    }
+    return true;
 }

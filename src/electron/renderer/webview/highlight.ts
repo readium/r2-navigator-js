@@ -5,14 +5,19 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { debounce } from "debounce";
+import * as crypto from "crypto";
 
+import { debounce } from "debounce";
+import { ipcRenderer } from "electron";
+
+import { IEventPayload_R2_EVENT_HIGHLIGHT_CLICK, R2_EVENT_HIGHLIGHT_CLICK } from "../../common/events";
+import { IColor, IHighlight } from "../../common/highlight";
 import { isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";
 import { IRectSimple, getClientRectsNoOverlap } from "../common/rect-utils";
 import { getScrollingElement } from "./readium-css";
 import { convertRangeInfo } from "./selection";
-import { IElectronWebviewTagWindow } from "./state";
+import { IReadiumElectronWebviewWindow } from "./state";
 
 // import { isRTL } from './readium-css';
 
@@ -21,26 +26,13 @@ export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
 export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
 export const CLASS_HIGHLIGHT_BOUNDING_AREA = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA";
 
-export interface IColor {
-    red: number;
-    green: number;
-    blue: number;
-}
-
-const DEFAULT_BACKGROUND_COLOR_OPACITY = 0.1;
-const ALT_BACKGROUND_COLOR_OPACITY = 0.4;
+const DEFAULT_BACKGROUND_COLOR_OPACITY = 0.3;
+const ALT_BACKGROUND_COLOR_OPACITY = 0.45;
 const DEFAULT_BACKGROUND_COLOR: IColor = {
     blue: 100,
     green: 50,
     red: 230,
 };
-
-interface IHighlight {
-    id: string;
-    selectionInfo: ISelectionInfo;
-    color: IColor;
-    pointerInteraction: boolean;
-}
 
 const _highlights: IHighlight[] = [];
 
@@ -51,7 +43,7 @@ interface IHTMLDivElementWithRect extends HTMLDivElement {
     // yOffset: number;
 }
 
-function resetHighlightBoundingStyle(_win: IElectronWebviewTagWindow, highlightBounding: HTMLElement) {
+function resetHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highlightBounding: HTMLElement) {
 
     highlightBounding.style.outline = "none";
     // tslint:disable-next-line:max-line-length
@@ -59,7 +51,7 @@ function resetHighlightBoundingStyle(_win: IElectronWebviewTagWindow, highlightB
 }
 
 // tslint:disable-next-line:max-line-length
-function setHighlightBoundingStyle(_win: IElectronWebviewTagWindow, highlightBounding: HTMLElement, highlight: IHighlight) {
+function setHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highlightBounding: HTMLElement, highlight: IHighlight) {
 
     const opacity = ALT_BACKGROUND_COLOR_OPACITY;
     // tslint:disable-next-line:max-line-length
@@ -72,7 +64,7 @@ function setHighlightBoundingStyle(_win: IElectronWebviewTagWindow, highlightBou
     highlightBounding.style.outlineOffset = "0px";
 }
 
-function resetHighlightAreaStyle(_win: IElectronWebviewTagWindow, highlightArea: HTMLElement) {
+function resetHighlightAreaStyle(_win: IReadiumElectronWebviewWindow, highlightArea: HTMLElement) {
 
     // if (!win.READIUM2.DEBUG_VISUALS) {
     //     highlightArea.style.outline = "none";
@@ -93,7 +85,7 @@ function resetHighlightAreaStyle(_win: IElectronWebviewTagWindow, highlightArea:
     }
 }
 
-function setHighlightAreaStyle(_win: IElectronWebviewTagWindow, highlightAreas: Element[], highlight: IHighlight) {
+function setHighlightAreaStyle(_win: IReadiumElectronWebviewWindow, highlightAreas: Element[], highlight: IHighlight) {
 
     for (const highlightArea of highlightAreas) {
         const opacity = ALT_BACKGROUND_COLOR_OPACITY;
@@ -110,7 +102,7 @@ function setHighlightAreaStyle(_win: IElectronWebviewTagWindow, highlightAreas: 
     }
 }
 
-function processMouseEvent(win: IElectronWebviewTagWindow, ev: MouseEvent) {
+function processMouseEvent(win: IReadiumElectronWebviewWindow, ev: MouseEvent) {
     const documant = win.document;
     const scrollElement = getScrollingElement(documant);
 
@@ -225,16 +217,20 @@ function processMouseEvent(win: IElectronWebviewTagWindow, ev: MouseEvent) {
                     setHighlightBoundingStyle(win, foundElementHighlightBounding as HTMLElement, foundHighlight);
                 }
             }
-        } else if (ev.type === "click") {
-            console.log("HIGHLIGHT CLICK: " + foundHighlight.id);
-            console.log(JSON.stringify(foundHighlight, null, "  "));
+        } else if (ev.type === "mouseup" || ev.type === "click") {
+            const payload: IEventPayload_R2_EVENT_HIGHLIGHT_CLICK = {
+                highlight: foundHighlight,
+            };
+            ipcRenderer.sendToHost(R2_EVENT_HIGHLIGHT_CLICK, payload);
         }
     }
 }
 
+let lastMouseDownX = -1;
+let lastMouseDownY = -1;
 let bodyEventListenersSet = false;
 let _highlightsContainer: HTMLElement | null;
-function ensureHighlightsContainer(win: IElectronWebviewTagWindow): HTMLElement {
+function ensureHighlightsContainer(win: IReadiumElectronWebviewWindow): HTMLElement {
     const documant = win.document;
 
     if (!_highlightsContainer) {
@@ -243,8 +239,18 @@ function ensureHighlightsContainer(win: IElectronWebviewTagWindow): HTMLElement 
             bodyEventListenersSet = true;
 
             // reminder: mouseenter/mouseleave do not bubble, so no event delegation
-            documant.body.addEventListener("click", (ev: MouseEvent) => {
-                processMouseEvent(win, ev);
+            // documant.body.addEventListener("click", (ev: MouseEvent) => {
+            //     processMouseEvent(win, ev);
+            // }, false);
+            documant.body.addEventListener("mousedown", (ev: MouseEvent) => {
+                lastMouseDownX = ev.clientX;
+                lastMouseDownY = ev.clientY;
+            }, false);
+            documant.body.addEventListener("mouseup", (ev: MouseEvent) => {
+                if ((Math.abs(lastMouseDownX - ev.clientX) < 3) &&
+                    (Math.abs(lastMouseDownY - ev.clientY) < 3)) {
+                    processMouseEvent(win, ev);
+                }
             }, false);
             documant.body.addEventListener("mousemove", (ev: MouseEvent) => {
                 processMouseEvent(win, ev);
@@ -305,35 +311,40 @@ export function destroyHighlight(documant: Document, id: string) {
     }
 }
 
-export function recreateAllHighlightsRaw(win: IElectronWebviewTagWindow) {
+export function recreateAllHighlightsRaw(win: IReadiumElectronWebviewWindow) {
     hideAllhighlights(win.document);
     for (const highlight of _highlights) {
         createHighlightDom(win, highlight);
     }
 }
 
-export const recreateAllHighlightsDebounced = debounce((win: IElectronWebviewTagWindow) => {
+export const recreateAllHighlightsDebounced = debounce((win: IReadiumElectronWebviewWindow) => {
     recreateAllHighlightsRaw(win);
 }, 500);
 
-export function recreateAllHighlights(win: IElectronWebviewTagWindow) {
+export function recreateAllHighlights(win: IReadiumElectronWebviewWindow) {
     hideAllhighlights(win.document);
     recreateAllHighlightsDebounced(win);
 }
 
 export function createHighlight(
-    win: IElectronWebviewTagWindow,
+    win: IReadiumElectronWebviewWindow,
     selectionInfo: ISelectionInfo,
     color: IColor | undefined,
-    pointerInteraction: boolean): string {
+    pointerInteraction: boolean): IHighlight {
 
     // tslint:disable-next-line:no-string-literal
     // console.log("Chromium: " + process.versions["chrome"]);
 
-    // const unique = new Buffer(JSON.stringify(selectionInfo.rangeInfo, null, "")).toString("base64");
     // tslint:disable-next-line:max-line-length
-    const unique = new Buffer(`${selectionInfo.rangeInfo.cfi}${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`).toString("base64");
-    const id = "R2_HIGHLIGHT_" + unique.replace(/\+/, "_").replace(/=/, "-").replace(/\//, ".");
+    const uniqueStr = `${selectionInfo.rangeInfo.cfi}${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`;
+    // const unique = new Buffer(JSON.stringify(selectionInfo.rangeInfo, null, "")).toString("base64");
+    // const unique = new Buffer(uniqueStr).toString("base64");
+    // const id = "R2_HIGHLIGHT_" + unique.replace(/\+/, "_").replace(/=/, "-").replace(/\//, ".");
+    const checkSum = crypto.createHash("sha256");
+    checkSum.update(uniqueStr);
+    const sha256Hex = checkSum.digest("hex");
+    const id = "R2_HIGHLIGHT_" + sha256Hex;
 
     destroyHighlight(win.document, id);
 
@@ -347,10 +358,10 @@ export function createHighlight(
 
     createHighlightDom(win, highlight);
 
-    return id;
+    return highlight;
 }
 
-function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighlight): HTMLDivElement | undefined {
+function createHighlightDom(win: IReadiumElectronWebviewWindow, highlight: IHighlight): HTMLDivElement | undefined {
 
     const documant = win.document;
     const scrollElement = getScrollingElement(documant);

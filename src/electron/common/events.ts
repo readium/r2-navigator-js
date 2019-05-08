@@ -8,6 +8,7 @@
 import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
 
 import { IDocInfo } from "./document";
+import { IHighlight, IHighlightDefinition } from "./highlight";
 import { IPaginationInfo } from "./pagination";
 import { IReadiumCSS } from "./readium-css-settings";
 import { ISelectionInfo } from "./selection";
@@ -30,6 +31,8 @@ export const R2_EVENT_READIUMCSS = "R2_EVENT_READIUMCSS";
 export interface IEventPayload_R2_EVENT_READIUMCSS {
     setCSS: IReadiumCSS | undefined;
     isFixedLayout?: boolean;
+    fixedLayoutWebViewWidth?: number;
+    fixedLayoutWebViewHeight?: number;
     urlRoot?: string;
 }
 
@@ -77,6 +80,7 @@ export interface IEventPayload_R2_EVENT_READING_LOCATION extends Locator {
     paginationInfo: IPaginationInfo | undefined;
     selectionInfo: ISelectionInfo | undefined;
     docInfo: IDocInfo | undefined;
+    selectionIsNew: boolean | undefined;
 }
 
 // in MAIN: browserWindow.webContents.send()
@@ -146,3 +150,47 @@ export const R2_EVENT_TTS_DO_NEXT = "R2_EVENT_TTS_DO_NEXT";
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_TTS_DO_PREVIOUS = "R2_EVENT_TTS_DO_PREVIOUS";
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_HIGHLIGHT_CREATE = "R2_EVENT_HIGHLIGHT_CREATE";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_HIGHLIGHT_CREATE {
+    highlightDefinitions: IHighlightDefinition[] | undefined;
+    highlights: Array<IHighlight | null> | undefined; // return value, see below (R2_EVENT_HIGHLIGHT_CREATE_RES)
+}
+// // in WEBVIEW: ipcRenderer.sendToHost()
+// // in RENDERER: webview.addEventListener("ipc-message")
+// export const R2_EVENT_HIGHLIGHT_CREATE_RES = "R2_EVENT_HIGHLIGHT_CREATE_RES";
+// // tslint:disable-next-line:class-name
+// export interface IEventPayload_R2_EVENT_HIGHLIGHT_CREATE_RES {
+//     highlightID: string;
+// }
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_HIGHLIGHT_REMOVE = "R2_EVENT_HIGHLIGHT_REMOVE";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE {
+    highlightIDs: string[];
+}
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_HIGHLIGHT_REMOVE_ALL = "R2_EVENT_HIGHLIGHT_REMOVE_ALL";
+
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_HIGHLIGHT_CLICK = "R2_EVENT_HIGHLIGHT_CLICK";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_HIGHLIGHT_CLICK {
+    highlight: IHighlight;
+}
+
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_WEBVIEW_KEYDOWN = "R2_EVENT_WEBVIEW_KEYDOWN";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN {
+    keyCode: number;
+}
