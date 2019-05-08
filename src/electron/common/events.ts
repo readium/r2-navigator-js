@@ -184,3 +184,11 @@ export const R2_EVENT_HIGHLIGHT_CLICK = "R2_EVENT_HIGHLIGHT_CLICK";
 export interface IEventPayload_R2_EVENT_HIGHLIGHT_CLICK {
     highlight: IHighlight;
 }
+
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_WEBVIEW_KEYDOWN = "R2_EVENT_WEBVIEW_KEYDOWN";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN {
+    keyCode: number;
+}

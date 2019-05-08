@@ -14,8 +14,10 @@ import * as debug_ from "debug";
 
 import {
     IEventPayload_R2_EVENT_DEBUG_VISUALS,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
     R2_EVENT_DEBUG_VISUALS,
     R2_EVENT_READIUMCSS,
+    R2_EVENT_WEBVIEW_KEYDOWN,
 } from "../common/events";
 import {
     R2_SESSION_WEBVIEW,
@@ -24,7 +26,13 @@ import {
     URL_PARAM_DEBUG_VISUALS,
 } from "./common/url-params";
 import { highlightsHandleIpcMessage } from "./highlight";
-import { getCurrentReadingLocation, handleLinkLocator, locationHandleIpcMessage, shiftWebview } from "./location";
+import {
+    getCurrentReadingLocation,
+    handleLinkLocator,
+    locationHandleIpcMessage,
+    navLeftOrRight,
+    shiftWebview,
+} from "./location";
 import { __computeReadiumCssJsonMessage } from "./readium-css";
 import { ttsClickEnable, ttsHandleIpcMessage } from "./tts";
 import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
@@ -283,9 +291,17 @@ function createWebView(preloadScriptPath: string): IReadiumElectronWebview {
             return;
         }
 
-        if (!highlightsHandleIpcMessage(event.channel, event.args, webview) &&
-        !ttsHandleIpcMessage(event.channel, event.args, webview) &&
-        !locationHandleIpcMessage(event.channel, event.args, webview)) {
+        if (event.channel === R2_EVENT_WEBVIEW_KEYDOWN) {
+            const payload = event.args[0] as IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN;
+            if (payload.keyCode === 37) { // left
+                navLeftOrRight(true);
+            } else if (payload.keyCode === 39) { // right
+                navLeftOrRight(false);
+            }
+        } else if (!highlightsHandleIpcMessage(event.channel, event.args, webview) &&
+            !ttsHandleIpcMessage(event.channel, event.args, webview) &&
+            !locationHandleIpcMessage(event.channel, event.args, webview)) {
+
             debug("webview1 ipc-message");
             debug(event.channel);
         }

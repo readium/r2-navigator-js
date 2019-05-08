@@ -34,6 +34,7 @@ import {
     IEventPayload_R2_EVENT_SHIFT_VIEW_X,
     IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
     IEventPayload_R2_EVENT_TTS_DO_PLAY,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
     R2_EVENT_DEBUG_VISUALS,
     R2_EVENT_HIGHLIGHT_CREATE,
     R2_EVENT_HIGHLIGHT_REMOVE,
@@ -53,6 +54,7 @@ import {
     R2_EVENT_TTS_DO_PREVIOUS,
     R2_EVENT_TTS_DO_RESUME,
     R2_EVENT_TTS_DO_STOP,
+    R2_EVENT_WEBVIEW_KEYDOWN,
 } from "../../common/events";
 import { IHighlight, IHighlightDefinition } from "../../common/highlight";
 import { IPaginationInfo } from "../../common/pagination";
@@ -157,7 +159,7 @@ win.READIUM2 = {
         title: undefined,
     },
     ttsClickEnabled: false,
-    urlQueryParams: undefined,
+    urlQueryParams: win.location.search ? getURLQueryParams(win.location.search) : undefined,
 };
 
 // const _winAlert = win.alert;
@@ -190,7 +192,15 @@ win.prompt = (...args: any[]): string => {
 //     }
 // }, 2000);
 
-win.READIUM2.urlQueryParams = win.location.search ? getURLQueryParams(win.location.search) : undefined;
+// TODO this feels like a hack! :(
+// (in Electron v1 the top-level app event listener catches the webview-originating events ... not anymore)
+window.document.addEventListener("keydown", (ev: KeyboardEvent) => {
+
+    const payload: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN = {
+        keyCode: ev.keyCode,
+    };
+    ipcRenderer.sendToHost(R2_EVENT_WEBVIEW_KEYDOWN, payload);
+});
 
 if (win.READIUM2.urlQueryParams) {
     let readiumEpubReadingSystemJson: INameVersion | undefined;
@@ -2193,6 +2203,18 @@ ipcRenderer.on(R2_EVENT_TTS_CLICK_ENABLE, (_event: any, payload: IEventPayload_R
 });
 
 ipcRenderer.on(R2_EVENT_HIGHLIGHT_CREATE, (_event: any, payloadPing: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE) => {
+
+    if (payloadPing.highlightDefinitions &&
+        payloadPing.highlightDefinitions.length === 1 &&
+        payloadPing.highlightDefinitions[0].selectionInfo) {
+        const selection = win.getSelection();
+        if (selection) {
+            // selection.empty();
+            // selection.removeAllRanges();
+
+            selection.collapseToStart();
+        }
+    }
 
     const highlightDefinitions = !payloadPing.highlightDefinitions ?
         [ { color: undefined, selectionInfo: undefined } as IHighlightDefinition ] :
