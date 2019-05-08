@@ -622,6 +622,76 @@ window.document.addEventListener("keydown", (ev: KeyboardEvent) => {
 });
 ```
 
+#### Selection Highlighting
+
+```javascript
+// The navigator maintains an ordered (visually-stacked) list of character-level highlights,
+// during the lifespan of a loaded / rendered publication document. The app is responsible for instructing
+// the navigator to instantiate these highlights, whenever a document is (re)loaded.
+// There is no persistence at the level of the navigator, the state is constrained to the lifecycle
+// of individual HTML documents. The navigator handles redrawing at the appropriate optimal times,
+// for example when changing the font size. Highlights emit mouse click events which the app can listen to.
+
+import {
+    IHighlight,
+    IHighlightDefinition,
+} from "@r2-navigator-js/electron/common/highlight";
+import {
+    highlightsClickListen,
+    highlightsCreate,
+    highlightsRemove,
+} from "@r2-navigator-js/electron/renderer/index";
+
+// Use the setReadingLocationSaver() notification to detect when the user creates a new selection:
+const saveReadingLocation = (location: LocatorExtended) => {
+
+    if (location.selectionInfo && location.selectionIsNew) {
+        // Note that a RGB `color` can be optionally specified in IHighlightDefinition (default is red-ish):
+        const highlightToCreate = { selectionInfo: location.selectionInfo } as IHighlightDefinition;
+
+        let createdHighlights: Array<IHighlight | null> | undefined;
+        try {
+            // The highlightsCreate() function takes an array of highlight definitions,
+            // here we just pass a single one, derived from the user selection:
+            createdHighlights = await highlightsCreate(location.locator.href, [highlightToCreate]);
+        } catch (err) {
+            console.log(err);
+        }
+        if (createdHighlights) {
+            createdHighlights.forEach((highlight) => {
+                if (highlight) {
+                    // ...
+                    // The visual highlight created in the navigator can be saved here in the app,
+                    // so that it can be restored at a later stage, typically when reloading the document (href).
+                }
+            });
+        }
+    }
+};
+setReadingLocationSaver(saveReadingLocation);
+
+// TIP: the app can detect when a new document has been loaded,
+// in which case the saved / stored highlights (inside the app's persistence layer)
+// must be re-instantiated inside the navigator:
+let _lastSavedReadingLocationHref: string | undefined;
+const saveReadingLocation = async (location: LocatorExtended) => {
+    const hrefHasChanged = _lastSavedReadingLocationHref !== location.locator.href;
+    _lastSavedReadingLocationHref = location.locator.href;
+
+    // ...
+    // here, invoke highlightsCreate() with the saved / stored highlights for this particular document (href)
+};
+
+// here we listen to mouse click events,
+// and we destroy the clicked highlight:
+highlightsClickListen((href: string, highlight: IHighlight) => {
+    highlightsRemove(href, [highlight.id]);
+    // ...
+    // remove the persistent / stored / saved copy too!
+});
+
+```
+
 #### Read aloud, TTS (Text To Speech), Synthetic Speech
 
 ```javascript

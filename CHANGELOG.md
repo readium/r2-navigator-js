@@ -1,10 +1,30 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.22...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.23...develop
 
 Changes:
 * TODO
+
+# 1.0.23
+
+> Build environment: NodeJS `10.15.3`, NPM `6.9.0`
+
+Changes:
+* NPM updates
+* Fixed left/right arrow key for page switch, when keyboard focus inside webview (Electron post-v1 regression)
+* Added highlights API (with minimal UI / UX in r2-testapp-js)
+* Fixed-layout documents (FXL) sometimes did not emit the load event, and did not scale correctly (browser engine bugs / edge cases). There are still rendering issues in Electron v3-v5. To be continued...
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.23/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.23/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.23
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.22...v1.0.23
 
 # 1.0.22
 
