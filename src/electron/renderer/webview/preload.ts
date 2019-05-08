@@ -23,6 +23,8 @@ import * as tabbable from "tabbable";
 
 import {
     IEventPayload_R2_EVENT_DEBUG_VISUALS,
+    IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
+    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE,
     IEventPayload_R2_EVENT_LINK,
     IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
     IEventPayload_R2_EVENT_PAGE_TURN,
@@ -32,7 +34,11 @@ import {
     IEventPayload_R2_EVENT_SHIFT_VIEW_X,
     IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
     IEventPayload_R2_EVENT_TTS_DO_PLAY,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
     R2_EVENT_DEBUG_VISUALS,
+    R2_EVENT_HIGHLIGHT_CREATE,
+    R2_EVENT_HIGHLIGHT_REMOVE,
+    R2_EVENT_HIGHLIGHT_REMOVE_ALL,
     R2_EVENT_LINK,
     R2_EVENT_LOCATOR_VISIBLE,
     R2_EVENT_PAGE_TURN,
@@ -48,7 +54,9 @@ import {
     R2_EVENT_TTS_DO_PREVIOUS,
     R2_EVENT_TTS_DO_RESUME,
     R2_EVENT_TTS_DO_STOP,
+    R2_EVENT_WEBVIEW_KEYDOWN,
 } from "../../common/events";
+import { IHighlight, IHighlightDefinition } from "../../common/highlight";
 import { IPaginationInfo } from "../../common/pagination";
 import {
     CLASS_PAGINATED,
@@ -58,6 +66,7 @@ import {
     injectReadPosCSS,
     isPaginated,
 } from "../../common/readium-css-inject";
+import { sameSelections } from "../../common/selection";
 import {
     POPUP_DIALOG_CLASS,
     ROOT_CLASS_INVISIBLE_MASK,
@@ -93,6 +102,9 @@ import {
     CLASS_HIGHLIGHT_BOUNDING_AREA,
     CLASS_HIGHLIGHT_CONTAINER,
     ID_HIGHLIGHTS_CONTAINER,
+    createHighlight,
+    destroyAllhighlights,
+    destroyHighlight,
     recreateAllHighlights,
 } from "./highlight";
 import { popupFootNote } from "./popupFootNotes";
@@ -110,7 +122,7 @@ import {
     readiumCSS,
 } from "./readium-css";
 import { clearCurrentSelection, getCurrentSelectionInfo } from "./selection";
-import { IElectronWebviewTagWindow } from "./state";
+import { IReadiumElectronWebviewWindow } from "./state";
 
 import ResizeSensor = require("css-element-queries/src/ResizeSensor");
 
@@ -122,7 +134,7 @@ import ResizeSensor = require("css-element-queries/src/ResizeSensor");
 
 const debug = debug_("r2:navigator#electron/renderer/webview/preload");
 
-const win = (global as any).window as IElectronWebviewTagWindow;
+const win = (global as any).window as IReadiumElectronWebviewWindow;
 win.READIUM2 = {
     DEBUG_VISUALS: false,
     // dialogs = [],
@@ -143,10 +155,11 @@ win.READIUM2 = {
         },
         paginationInfo: undefined,
         selectionInfo: undefined,
+        selectionIsNew: undefined,
         title: undefined,
     },
     ttsClickEnabled: false,
-    urlQueryParams: undefined,
+    urlQueryParams: win.location.search ? getURLQueryParams(win.location.search) : undefined,
 };
 
 // const _winAlert = win.alert;
@@ -179,7 +192,15 @@ win.prompt = (...args: any[]): string => {
 //     }
 // }, 2000);
 
-win.READIUM2.urlQueryParams = win.location.search ? getURLQueryParams(win.location.search) : undefined;
+// TODO this feels like a hack! :(
+// (in Electron v1 the top-level app event listener catches the webview-originating events ... not anymore)
+window.document.addEventListener("keydown", (ev: KeyboardEvent) => {
+
+    const payload: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN = {
+        keyCode: ev.keyCode,
+    };
+    ipcRenderer.sendToHost(R2_EVENT_WEBVIEW_KEYDOWN, payload);
+});
 
 if (win.READIUM2.urlQueryParams) {
     let readiumEpubReadingSystemJson: INameVersion | undefined;
@@ -451,6 +472,7 @@ function resetLocationHashOverrideInfo() {
         },
         paginationInfo: undefined,
         selectionInfo: undefined,
+        selectionIsNew: undefined,
         title: undefined,
     };
 }
@@ -467,7 +489,7 @@ function elementCapturesKeyboardArrowKeys(target: Element): boolean {
             return true;
         }
 
-        const arrayOfKeyboardCaptureElements = [ "input", "textarea", "video", "audio", "select" ];
+        const arrayOfKeyboardCaptureElements = ["input", "textarea", "video", "audio", "select"];
         if (arrayOfKeyboardCaptureElements.indexOf((curElement as Element).tagName.toLowerCase()) >= 0) {
             return true;
         }
@@ -1298,13 +1320,19 @@ win.addEventListener("DOMContentLoaded", () => {
 
     // testReadiumCSS(readiumcssJson);
 
+    // innerWidth/Height can be zero at this rendering stage! :(
+    const w = (readiumcssJson && readiumcssJson.fixedLayoutWebViewWidth) || win.innerWidth;
+    const h = (readiumcssJson && readiumcssJson.fixedLayoutWebViewHeight) || win.innerHeight;
     const wh = configureFixedLayout(win.document, win.READIUM2.isFixedLayout,
         win.READIUM2.fxlViewportWidth, win.READIUM2.fxlViewportHeight,
-        win.innerWidth, win.innerHeight);
+        w, h);
     if (wh) {
         win.READIUM2.fxlViewportWidth = wh.width;
         win.READIUM2.fxlViewportHeight = wh.height;
         win.READIUM2.fxlViewportScale = wh.scale;
+
+        // TODO: is that more reliable than CSS transform on HTML root element?
+        // webFrame.setZoomFactor(wh.scale);
     }
 
     const alreadedInjected = win.document.documentElement.hasAttribute("data-readiumcss-injected");
@@ -1324,15 +1352,17 @@ win.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    if (!alreadedInjected) {
-        injectDefaultCSS(win.document);
-        if (IS_DEV) { // win.READIUM2.DEBUG_VISUALS
-            injectReadPosCSS(win.document);
+    if (!win.READIUM2.isFixedLayout) {
+        if (!alreadedInjected) {
+            injectDefaultCSS(win.document);
+            if (IS_DEV) { // win.READIUM2.DEBUG_VISUALS
+                injectReadPosCSS(win.document);
+            }
         }
-    }
 
-    if (alreadedInjected) { // because querySelector[All]() is not polyfilled
-        checkHiddenFootNotes(win.document);
+        if (alreadedInjected) { // because querySelector[All]() is not polyfilled
+            checkHiddenFootNotes(win.document);
+        }
     }
 });
 
@@ -1911,7 +1941,7 @@ export const computeProgressionData = (): IProgressionData => {
                             }
                             if (isTwoPage) {
                                 if ((boundingRect.left + boundingRect.width) >= columnDimension &&
-                                (rect.left + rect.width) < columnDimension) {
+                                    (rect.left + rect.width) < columnDimension) {
                                     continue;
                                 }
                             }
@@ -2098,10 +2128,18 @@ const notifyReadingLocationRaw = () => {
     // }
 
     const text = selInfo ? {
-            after: undefined, // TODO?
-            before: undefined, // TODO?
-            highlight: selInfo.cleanText,
-        } : undefined;
+        after: undefined, // TODO?
+        before: undefined, // TODO?
+        highlight: selInfo.cleanText,
+    } : undefined;
+
+    let selectionIsNew: boolean | undefined;
+    if (selInfo) {
+        selectionIsNew =
+            !win.READIUM2.locationHashOverrideInfo ||
+            !win.READIUM2.locationHashOverrideInfo.selectionInfo ||
+            !sameSelections(win.READIUM2.locationHashOverrideInfo.selectionInfo, selInfo);
+    }
 
     win.READIUM2.locationHashOverrideInfo = {
         docInfo: {
@@ -2118,6 +2156,7 @@ const notifyReadingLocationRaw = () => {
         },
         paginationInfo: pinfo,
         selectionInfo: selInfo,
+        selectionIsNew,
         text,
         title: _docTitle,
     };
@@ -2169,4 +2208,57 @@ ipcRenderer.on(R2_EVENT_TTS_DO_PREVIOUS, (_event: any) => {
 
 ipcRenderer.on(R2_EVENT_TTS_CLICK_ENABLE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_CLICK_ENABLE) => {
     win.READIUM2.ttsClickEnabled = payload.doEnable;
+});
+
+ipcRenderer.on(R2_EVENT_HIGHLIGHT_CREATE, (_event: any, payloadPing: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE) => {
+
+    if (payloadPing.highlightDefinitions &&
+        payloadPing.highlightDefinitions.length === 1 &&
+        payloadPing.highlightDefinitions[0].selectionInfo) {
+        const selection = win.getSelection();
+        if (selection) {
+            // selection.empty();
+            // selection.removeAllRanges();
+
+            selection.collapseToStart();
+        }
+    }
+
+    const highlightDefinitions = !payloadPing.highlightDefinitions ?
+        [ { color: undefined, selectionInfo: undefined } as IHighlightDefinition ] :
+        payloadPing.highlightDefinitions;
+
+    const highlights: Array<IHighlight | null> = [];
+
+    highlightDefinitions.forEach((highlightDefinition) => {
+        const selInfo = highlightDefinition.selectionInfo ? highlightDefinition.selectionInfo :
+            getCurrentSelectionInfo(win, getCssSelector, computeCFI);
+        if (selInfo) {
+            const highlight = createHighlight(
+                win,
+                selInfo,
+                highlightDefinition.color,
+                true, // mouse / pointer interaction
+            );
+            highlights.push(highlight);
+        } else {
+            highlights.push(null);
+        }
+    });
+
+    const payloadPong: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE = {
+        highlightDefinitions: payloadPing.highlightDefinitions,
+        highlights: highlights.length ? highlights : undefined,
+    };
+    ipcRenderer.sendToHost(R2_EVENT_HIGHLIGHT_CREATE, payloadPong);
+});
+
+ipcRenderer.on(R2_EVENT_HIGHLIGHT_REMOVE, (_event: any, payload: IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE) => {
+    payload.highlightIDs.forEach((highlightID) => {
+        destroyHighlight(win.document, highlightID);
+    });
+});
+
+ipcRenderer.on(R2_EVENT_HIGHLIGHT_REMOVE_ALL, (_event: any) => {
+    destroyAllhighlights(win.document);
 });

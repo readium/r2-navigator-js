@@ -38,9 +38,9 @@ import {
     wrapHighlight,
 } from "../common/dom-text-utils";
 import { IHTMLDialogElementWithPopup, PopupDialog } from "../common/popup-dialog";
-import { IElectronWebviewTagWindow } from "./state";
+import { IReadiumElectronWebviewWindow } from "./state";
 
-const win = (global as any).window as IElectronWebviewTagWindow;
+const win = (global as any).window as IReadiumElectronWebviewWindow;
 
 interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
 

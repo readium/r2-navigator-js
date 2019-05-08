@@ -39,8 +39,8 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 
 const debug = debug_("r2:navigator#electron/common/readium-css-inject");
 
-// import { IElectronWebviewTagWindow } from "../renderer/webview/state";
-// ((global as any).window as IElectronWebviewTagWindow).READIUM2.DEBUG_VISUALS
+// import { IReadiumElectronWebviewWindow } from "../renderer/webview/state";
+// ((global as any).window as IReadiumElectronWebviewWindow).READIUM2.DEBUG_VISUALS
 function isDEBUG_VISUALS(documant: Document): boolean {
     if (!IS_DEV) {
         return false;
@@ -163,7 +163,13 @@ export function readiumCSSSet(
 
     const docElement = documant.documentElement;
 
-    if (!messageJson.setCSS) {
+    if (messageJson.isFixedLayout) {
+        docElement.style.overflow = "hidden";
+        return; // exit early
+    }
+
+    const setCSS = messageJson.setCSS;
+    if (!setCSS) {
 
         docElement.classList.remove(ROOT_CLASS_NO_FOOTNOTES);
 
@@ -244,8 +250,6 @@ export function readiumCSSSet(
         }
         appendCSS(documant, "after", urlRoot);
     }
-
-    const setCSS = messageJson.setCSS;
 
     if (isDEBUG_VISUALS(documant)) {
         debug("---- setCSS -----");
@@ -480,6 +484,8 @@ export interface IwidthHeight {
     width: number;
     height: number;
     scale: number;
+    tx: number;
+    ty: number;
 }
 export function configureFixedLayout(
         documant: Document,
@@ -490,7 +496,6 @@ export function configureFixedLayout(
     if (!documant || !documant.head || !documant.body) {
         return undefined;
     }
-
     let wh: IwidthHeight | undefined;
 
     let width: number = fxlViewportWidth;
@@ -567,6 +572,8 @@ export function configureFixedLayout(
             wh = {
                 height,
                 scale: 1,
+                tx: 0,
+                ty: 0,
                 width,
             };
         }
@@ -574,19 +581,20 @@ export function configureFixedLayout(
         wh = {
             height,
             scale: 1,
+            tx: 0,
+            ty: 0,
             width,
         };
     }
-
     if (innerWidth && innerHeight && width && height && isFixedLayout
         && documant && documant.documentElement && documant.body) {
         documant.documentElement.style.overflow = "hidden";
 
         // Many FXL EPUBs lack the body dimensions (only viewport meta)
-        documant.body.style.width = width + "px";
-        documant.body.style.height = height + "px";
-        documant.body.style.overflow = "hidden";
-        documant.body.style.margin = "0"; // 8px by default!
+        // documant.body.style.width = width + "px";
+        // documant.body.style.height = height + "px";
+        // documant.body.style.overflow = "hidden";
+        // documant.body.style.margin = "0"; // 8px by default!
 
         if (isDEBUG_VISUALS(documant)) {
             debug("FXL width: " + width);
@@ -614,12 +622,14 @@ export function configureFixedLayout(
 
         if (wh) {
             wh.scale = ratio;
+            wh.tx = tx;
+            wh.ty = ty;
         }
-
         documant.documentElement.style.transformOrigin = "0 0";
-        documant.documentElement.style.transform = `translateX(${tx}px) translateY(${ty}px) scale(${ratio})`;
+        // tslint:disable-next-line:max-line-length
+        // documant.documentElement.style.transform = `translateX(${tx}px) translateY(${ty}px) scale3d(${ratio}, ${ratio}, 0)`;
+        documant.documentElement.style.transform = `translate(${tx}px, ${ty}px) scale(${ratio})`;
     }
-
     return wh;
 }
 
