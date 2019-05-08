@@ -13,7 +13,7 @@ import {
 } from "../../common/events";
 import { IStringMap } from "../common/querystring";
 
-export interface IElectronWebviewTagWindowState {
+export interface IReadiumElectronWebviewWindowState {
     // init'ed from  win.location.search immediately in preload.js
     // updated in R2_EVENT_SCROLLTO IPC renderer event
     urlQueryParams: IStringMap | undefined;
@@ -31,25 +31,27 @@ export interface IElectronWebviewTagWindowState {
 
     ttsClickEnabled: boolean;
 }
-export interface IElectronWebviewTagWindow extends Window {
-    READIUM2: IElectronWebviewTagWindowState;
+export interface IReadiumElectronWebviewWindow extends Window {
+    READIUM2: IReadiumElectronWebviewWindowState;
 }
 
-export interface IElectronWebviewTagState {
+export interface IReadiumElectronWebviewState {
     id: number;
     link: Link | undefined;
 }
-export interface IElectronWebviewTag extends Electron.WebviewTag {
-    READIUM2: IElectronWebviewTagState;
+export interface IReadiumElectronWebview extends Electron.WebviewTag {
+    READIUM2: IReadiumElectronWebviewState;
 }
 
-export interface IElectronBrowserWindowState {
+export interface IReadiumElectronBrowserWindowState {
     publication: Publication;
     publicationURL: string;
 
     DEBUG_VISUALS: boolean;
     ttsClickEnabled: boolean;
+
+    getActiveWebView: () => IReadiumElectronWebview | undefined;
 }
-export interface IElectronBrowserWindow extends Window {
-    READIUM2: IElectronBrowserWindowState;
+export interface IReadiumElectronBrowserWindow extends Window {
+    READIUM2: IReadiumElectronBrowserWindowState;
 }

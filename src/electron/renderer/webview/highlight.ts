@@ -17,7 +17,7 @@ import { ISelectionInfo } from "../../common/selection";
 import { IRectSimple, getClientRectsNoOverlap } from "../common/rect-utils";
 import { getScrollingElement } from "./readium-css";
 import { convertRangeInfo } from "./selection";
-import { IElectronWebviewTagWindow } from "./state";
+import { IReadiumElectronWebviewWindow } from "./state";
 
 // import { isRTL } from './readium-css';
 
@@ -43,7 +43,7 @@ interface IHTMLDivElementWithRect extends HTMLDivElement {
     // yOffset: number;
 }
 
-function resetHighlightBoundingStyle(_win: IElectronWebviewTagWindow, highlightBounding: HTMLElement) {
+function resetHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highlightBounding: HTMLElement) {
 
     highlightBounding.style.outline = "none";
     // tslint:disable-next-line:max-line-length
@@ -51,7 +51,7 @@ function resetHighlightBoundingStyle(_win: IElectronWebviewTagWindow, highlightB
 }
 
 // tslint:disable-next-line:max-line-length
-function setHighlightBoundingStyle(_win: IElectronWebviewTagWindow, highlightBounding: HTMLElement, highlight: IHighlight) {
+function setHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highlightBounding: HTMLElement, highlight: IHighlight) {
 
     const opacity = ALT_BACKGROUND_COLOR_OPACITY;
     // tslint:disable-next-line:max-line-length
@@ -64,7 +64,7 @@ function setHighlightBoundingStyle(_win: IElectronWebviewTagWindow, highlightBou
     highlightBounding.style.outlineOffset = "0px";
 }
 
-function resetHighlightAreaStyle(_win: IElectronWebviewTagWindow, highlightArea: HTMLElement) {
+function resetHighlightAreaStyle(_win: IReadiumElectronWebviewWindow, highlightArea: HTMLElement) {
 
     // if (!win.READIUM2.DEBUG_VISUALS) {
     //     highlightArea.style.outline = "none";
@@ -85,7 +85,7 @@ function resetHighlightAreaStyle(_win: IElectronWebviewTagWindow, highlightArea:
     }
 }
 
-function setHighlightAreaStyle(_win: IElectronWebviewTagWindow, highlightAreas: Element[], highlight: IHighlight) {
+function setHighlightAreaStyle(_win: IReadiumElectronWebviewWindow, highlightAreas: Element[], highlight: IHighlight) {
 
     for (const highlightArea of highlightAreas) {
         const opacity = ALT_BACKGROUND_COLOR_OPACITY;
@@ -102,7 +102,7 @@ function setHighlightAreaStyle(_win: IElectronWebviewTagWindow, highlightAreas: 
     }
 }
 
-function processMouseEvent(win: IElectronWebviewTagWindow, ev: MouseEvent) {
+function processMouseEvent(win: IReadiumElectronWebviewWindow, ev: MouseEvent) {
     const documant = win.document;
     const scrollElement = getScrollingElement(documant);
 
@@ -228,7 +228,7 @@ function processMouseEvent(win: IElectronWebviewTagWindow, ev: MouseEvent) {
 
 let bodyEventListenersSet = false;
 let _highlightsContainer: HTMLElement | null;
-function ensureHighlightsContainer(win: IElectronWebviewTagWindow): HTMLElement {
+function ensureHighlightsContainer(win: IReadiumElectronWebviewWindow): HTMLElement {
     const documant = win.document;
 
     if (!_highlightsContainer) {
@@ -299,24 +299,24 @@ export function destroyHighlight(documant: Document, id: string) {
     }
 }
 
-export function recreateAllHighlightsRaw(win: IElectronWebviewTagWindow) {
+export function recreateAllHighlightsRaw(win: IReadiumElectronWebviewWindow) {
     hideAllhighlights(win.document);
     for (const highlight of _highlights) {
         createHighlightDom(win, highlight);
     }
 }
 
-export const recreateAllHighlightsDebounced = debounce((win: IElectronWebviewTagWindow) => {
+export const recreateAllHighlightsDebounced = debounce((win: IReadiumElectronWebviewWindow) => {
     recreateAllHighlightsRaw(win);
 }, 500);
 
-export function recreateAllHighlights(win: IElectronWebviewTagWindow) {
+export function recreateAllHighlights(win: IReadiumElectronWebviewWindow) {
     hideAllhighlights(win.document);
     recreateAllHighlightsDebounced(win);
 }
 
 export function createHighlight(
-    win: IElectronWebviewTagWindow,
+    win: IReadiumElectronWebviewWindow,
     selectionInfo: ISelectionInfo,
     color: IColor | undefined,
     pointerInteraction: boolean): IHighlight {
@@ -349,7 +349,7 @@ export function createHighlight(
     return highlight;
 }
 
-function createHighlightDom(win: IElectronWebviewTagWindow, highlight: IHighlight): HTMLDivElement | undefined {
+function createHighlightDom(win: IReadiumElectronWebviewWindow, highlight: IHighlight): HTMLDivElement | undefined {
 
     const documant = win.document;
     const scrollElement = getScrollingElement(documant);

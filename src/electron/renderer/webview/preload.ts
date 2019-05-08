@@ -120,7 +120,7 @@ import {
     readiumCSS,
 } from "./readium-css";
 import { clearCurrentSelection, getCurrentSelectionInfo } from "./selection";
-import { IElectronWebviewTagWindow } from "./state";
+import { IReadiumElectronWebviewWindow } from "./state";
 
 import ResizeSensor = require("css-element-queries/src/ResizeSensor");
 
@@ -132,7 +132,7 @@ import ResizeSensor = require("css-element-queries/src/ResizeSensor");
 
 const debug = debug_("r2:navigator#electron/renderer/webview/preload");
 
-const win = (global as any).window as IElectronWebviewTagWindow;
+const win = (global as any).window as IReadiumElectronWebviewWindow;
 win.READIUM2 = {
     DEBUG_VISUALS: false,
     // dialogs = [],
