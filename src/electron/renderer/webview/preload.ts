@@ -1364,13 +1364,24 @@ win.addEventListener("DOMContentLoaded", () => {
             checkHiddenFootNotes(win.document);
         }
     }
+
+    // sometimes the load event does not occur! (some weird FXL edge case?)
+    setTimeout(() => {
+        loaded(true);
+    }, 500);
 });
 
 let _cancelInitialScrollCheck = false;
-// after DOMContentLoaded
-win.addEventListener("load", () => {
-    // console.log("############# load");
-    // console.log(win.location);
+
+let _loaded = false;
+function loaded(forced: boolean) {
+    if (forced) {
+        debug("LOAD EVENT WAS FORCED!");
+    }
+    if (_loaded) {
+        return;
+    }
+    _loaded = true;
 
     if (!win.READIUM2.isFixedLayout) {
         setTimeout(() => {
@@ -1403,7 +1414,10 @@ win.addEventListener("load", () => {
             // }
         }, 500);
     } else {
-        processXYDebounced(0, 0, false);
+        // processXYDebounced(0, 0, false);
+
+        win.READIUM2.locationHashOverride = win.document.body;
+        notifyReadingLocationDebounced();
     }
 
     const useResizeSensor = !win.READIUM2.isFixedLayout;
@@ -1669,6 +1683,13 @@ win.addEventListener("load", () => {
     win.document.documentElement.addEventListener("mouseup", (ev: MouseEvent) => {
         handleMouseEvent(ev);
     });
+}
+
+// after DOMContentLoaded, but sometimes fail to occur (e.g. some fixed layout docs with single image in body!)
+win.addEventListener("load", () => {
+    // console.log("############# load");
+    // console.log(win.location);
+    loaded(false);
 });
 
 // // does not occur when re-using same webview (src="href")
