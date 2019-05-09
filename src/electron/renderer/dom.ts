@@ -33,8 +33,8 @@ import {
     navLeftOrRight,
     shiftWebview,
 } from "./location";
+import { ttsClickEnable, ttsHandleIpcMessage } from "./readaloud";
 import { __computeReadiumCssJsonMessage } from "./readium-css";
-import { ttsClickEnable, ttsHandleIpcMessage } from "./tts";
 import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 // import { registerProtocol } from "@r2-navigator-js/electron/renderer/common/protocol";
