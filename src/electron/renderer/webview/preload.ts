@@ -2273,9 +2273,8 @@ ipcRenderer.on(R2_EVENT_HIGHLIGHT_CREATE, (_event: any, payloadPing: IEventPaylo
         const selection = win.getSelection();
         if (selection) {
             // selection.empty();
-            // selection.removeAllRanges();
-
-            selection.collapseToStart();
+            selection.removeAllRanges();
+            // selection.collapseToStart();
         }
     }
 
