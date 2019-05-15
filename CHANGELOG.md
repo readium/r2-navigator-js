@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.23...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.24...develop
 
 Changes:
 * TODO
+
+# 1.0.24
+
+> Build environment: NodeJS `10.15.3`, NPM `6.9.0`
+
+Changes:
+* NPM updates (including the ResizeSensor)
+* TTS renaming to "readaloud" (non-breaking internal API change)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.24/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.24/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.24
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.23...v1.0.24
 
 # 1.0.23
 
