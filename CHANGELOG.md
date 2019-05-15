@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.25...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.26...develop
 
 Changes:
 * TODO
+
+# 1.0.26
+
+> Build environment: NodeJS `10.15.3`, NPM `6.9.0`
+
+Changes:
+* Fix Electron/Chromium regression due to breaking changes in WebView (Out Of Process iFrame) lifecycle: resize and load events were creating unnecessary scroll adjustments in reflow column-paginated and scroll views.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.26/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.26/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.26
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.25...v1.0.26
 
 # 1.0.25
 
