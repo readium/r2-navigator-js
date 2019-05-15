@@ -1,6 +1,6 @@
 {
   "name": "r2-navigator-js",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "description": "Readium 2 'navigator' for NodeJS (TypeScript)",
   "keywords": [
     "readium",
@@ -46,7 +46,7 @@
   },
   "homepage": "https://github.com/readium/r2-navigator-js",
   "dependencies": {
-    "css-element-queries": "github:marcj/css-element-queries#semver:^1.2.0",
+    "css-element-queries": "^1.2.0",
     "cssesc": "^3.0.0",
     "debounce": "^1.2.0",
     "debug": "^4.1.1",
