@@ -25,6 +25,7 @@ import {
 import {
     URL_PARAM_DEBUG_VISUALS,
 } from "./common/url-params";
+import { ENABLE_WEBVIEW_RESIZE } from "./common/webview-resize";
 import { highlightsHandleIpcMessage } from "./highlight";
 import {
     getCurrentReadingLocation,
@@ -39,8 +40,6 @@ import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webvie
 
 // import { registerProtocol } from "@r2-navigator-js/electron/renderer/common/protocol";
 // registerProtocol();
-
-const ENABLE_WEBVIEW_RESIZE = false;
 
 // const CLASS_POS_RIGHT = "r2_posRight";
 // const CLASS_SHIFT_LEFT = "r2_shiftedLeft";
@@ -265,7 +264,6 @@ function createWebView(preloadScriptPath: string): IReadiumElectronWebview {
         "position: absolute; left: 0; width: 50%; bottom: 0; top: 0;");
     wv.setAttribute("preload", preloadScriptPath); // "file://"
 
-    // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webview
     if (ENABLE_WEBVIEW_RESIZE) {
         wv.setAttribute("disableguestresize", "");
     }

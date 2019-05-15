@@ -96,6 +96,7 @@ import {
     URL_PARAM_GOTO,
     URL_PARAM_PREVIOUS,
 } from "../common/url-params";
+import { ENABLE_WEBVIEW_RESIZE } from "../common/webview-resize";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
     CLASS_HIGHLIGHT_AREA,
@@ -453,9 +454,11 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
 
     if (delayScrollIntoView) {
         setTimeout(() => {
+            debug("++++ scrollToHashRaw FROM DELAYED SCROLL_TO");
             scrollToHashRaw();
         }, 100);
     } else {
+        debug("++++ scrollToHashRaw FROM SCROLL_TO");
         scrollToHashRaw();
     }
 });
@@ -896,6 +899,8 @@ const scrollToHashRaw = () => {
         return;
     }
 
+    debug("++++ scrollToHashRaw");
+
     recreateAllHighlights(win);
 
     const isPaged = isPaginated(win.document);
@@ -1104,8 +1109,9 @@ const scrollToHashRaw = () => {
 };
 
 const scrollToHashDebounced = debounce(() => {
+    debug("++++ scrollToHashRaw FROM DEBOUNCED");
     scrollToHashRaw();
-}, 300);
+}, 100);
 
 let _ignoreScrollEvent = false;
 
@@ -1249,7 +1255,7 @@ ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVEN
 let _docTitle: string | undefined;
 
 win.addEventListener("DOMContentLoaded", () => {
-    // console.log("############# DOMContentLoaded");
+    debug("############# DOMContentLoaded");
     // console.log(win.location);
 
     const titleElement = win.document.documentElement.querySelector("head > title");
@@ -1375,18 +1381,23 @@ let _cancelInitialScrollCheck = false;
 
 let _loaded = false;
 function loaded(forced: boolean) {
-    if (forced) {
-        debug("LOAD EVENT WAS FORCED!");
-    }
     if (_loaded) {
         return;
     }
     _loaded = true;
+    if (forced) {
+        debug(">>> LOAD EVENT WAS FORCED!");
+    } else {
+        debug(">>> LOAD EVENT was not forced.");
+    }
 
     if (!win.READIUM2.isFixedLayout) {
-        setTimeout(() => {
-            scrollToHashRaw();
-        }, 100);
+        debug("++++ scrollToHashDebounced FROM LOAD");
+        scrollToHashDebounced();
+        // setTimeout(() => {
+        //     debug("++++ scrollToHashRaw FROM LOAD");
+        //     scrollToHashRaw();
+        // }, 100);
         _cancelInitialScrollCheck = false;
         setTimeout(() => {
             if (_cancelInitialScrollCheck) {
@@ -1424,19 +1435,27 @@ function loaded(forced: boolean) {
     if (useResizeSensor && win.document.body) {
 
         setTimeout(() => {
-            // let _firstResizeSensor = true;
+            let _firstResizeSensor = true;
             // tslint:disable-next-line:no-unused-expression
             new ResizeSensor(win.document.body, () => {
-                // if (_firstResizeSensor) {
-                //     _firstResizeSensor = false;
-                //     debug("ResizeSensor SKIPPED (FIRST)");
-                //     return;
-                // }
+                if (_firstResizeSensor) {
+                    _firstResizeSensor = false;
+                    debug("ResizeSensor SKIP FIRST");
+                    return;
+                }
                 debug("ResizeSensor");
 
                 (win.document.body as any).tabbables = undefined;
+
+                debug("++++ scrollToHashDebounced FROM RESIZE SENSOR");
                 scrollToHashDebounced();
             });
+            setTimeout(() => {
+                if (_firstResizeSensor) {
+                    _firstResizeSensor = false;
+                    debug("ResizeSensor CANCEL SKIP FIRST");
+                }
+            }, 700);
             // Resize Sensor sets body position to "relative" (default static),
             // which may breaks things!
             // (e.g. highlights CSS absolute/fixed positioning)
@@ -1576,8 +1595,7 @@ function loaded(forced: boolean) {
         return false;
     }, true);
 
-    // assumes debounced from outside (Electron's webview object embedded in original renderer process HTML)
-    win.addEventListener("resize", () => {
+    const onResizeRaw = () => {
         const wh = configureFixedLayout(win.document, win.READIUM2.isFixedLayout,
             win.READIUM2.fxlViewportWidth, win.READIUM2.fxlViewportHeight,
             win.innerWidth, win.innerHeight);
@@ -1587,8 +1605,24 @@ function loaded(forced: boolean) {
             win.READIUM2.fxlViewportScale = wh.scale;
         }
 
-        scrollToHashRaw();
-        // scrollToHash(); // debounced
+        debug("++++ scrollToHashDebounced FROM RESIZE");
+        scrollToHashDebounced();
+    };
+    const onResizeDebounced = debounce(() => {
+        onResizeRaw();
+    }, 200);
+    let _firstWindowResize = true;
+    win.addEventListener("resize", () => {
+        if (_firstWindowResize) {
+            debug("Window resize, SKIP FIRST");
+            _firstWindowResize = false;
+            return;
+        }
+        if (ENABLE_WEBVIEW_RESIZE) {
+            onResizeRaw();
+        } else {
+            onResizeDebounced();
+        }
     });
 
     setTimeout(() => {
@@ -1687,7 +1721,7 @@ function loaded(forced: boolean) {
 
 // after DOMContentLoaded, but sometimes fail to occur (e.g. some fixed layout docs with single image in body!)
 win.addEventListener("load", () => {
-    // console.log("############# load");
+    debug("############# load");
     // console.log(win.location);
     loaded(false);
 });
