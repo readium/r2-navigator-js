@@ -59,7 +59,7 @@
     "sentence-splitter": "^3.0.11",
     "ta-json-x": "^2.5.0",
     "tabbable": "^4.0.0",
-    "tslib": "^1.9.3",
+    "tslib": "^1.10.0",
     "urijs": "^1.19.1",
     "uuid": "^3.3.2",
     "xmldom": "^0.1.27"
@@ -82,9 +82,9 @@
     "json": "^9.0.6",
     "mkdirp": "^0.5.1",
     "rimraf": "^2.6.3",
-    "tslint": "^5.16.0",
+    "tslint": "^5.17.0",
     "tslint-language-service": "^0.9.9",
-    "typescript": "^3.4.5"
+    "typescript": "^3.5.2"
   },
   "files": [
     "LICENSE",
