@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.26...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.27...develop
 
 Changes:
 * TODO
+
+# 1.0.27
+
+> Build environment: NodeJS `10.16.0`, NPM `6.9.0`
+
+Changes:
+* NPM updates
+* Document selection: `window.getSelection().collapseToStart()` replaced with `.removeAllRanges()` (was failing silently inside IPC event listener)
+* Document highlighting: working SVG implementation (background, underline, and strikethrough). Works with reflow scroll and paginated, as well as scaled fixed layout. Exact same visuals as with HTML divs, just with SVG instead. Note: no well-defined API to expose total functionality, still work in progress.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.27/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.27/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.27
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.26...v1.0.27
 
 # 1.0.26
 
