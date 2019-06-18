@@ -110,6 +110,9 @@ export function locationHandleIpcMessage(
             uri.hash = "";
             uri.search = "";
             const urlNoQueryParams = uri.toString(); // publicationURL + "/../" + nextOrPreviousSpineItem.Href;
+            // NOTE that decodeURIComponent() must be called on the toString'ed URL urlNoQueryParams
+            // tslint:disable-next-line:max-line-length
+            // (in case nextOrPreviousSpineItem.Href contains Unicode characters, in which case they get percent-encoded by the URL.toString())
             handleLink(urlNoQueryParams, goPREVIOUS, false);
         }
     } else if (eventChannel === R2_EVENT_READING_LOCATION) {
@@ -256,6 +259,9 @@ export function handleLinkLocator(location: Locator | undefined) {
             ((useGoto) ? ("?" + URL_PARAM_GOTO + "=" +
                 encodeURIComponent_RFC3986(new Buffer(JSON.stringify(linkToLoadGoto, null, "")).toString("base64"))) :
                 "");
+        // NOTE that decodeURIComponent() must be called on the toString'ed URL hrefToLoad
+        // tslint:disable-next-line:max-line-length
+        // (in case linkToLoad.Href contains Unicode characters, in which case they get percent-encoded by the URL.toString())
         handleLink(hrefToLoad, undefined, useGoto);
     }
 }
@@ -304,6 +310,9 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         return false;
     }
 
+    // because URL.toString() percent-encodes Unicode characters in the path!
+    linkPath = decodeURIComponent(linkPath);
+
     // const pubUri = new URI(pubJsonUri);
     // // "/pub/BASE64_PATH/manifest.json" ==> "/pub/BASE64_PATH/"
     // const pathPrefix = decodeURIComponent(pubUri.path().replace("manifest.json", ""));
@@ -325,6 +334,13 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         return false;
     }
 
+    // Note that with URI (unlike URL) if hrefFull contains Unicode characters,
+    // the toString() function does not percent-encode them.
+    // But also note that if hrefFull is already percent-encoded, this is returned as-is!
+    // (i.e. do not expect toString() to output Unicode chars from their escaped notation)
+    // See decodeURIComponent() above,
+    // which is necessary in cases where loadLink() is called with URL.toString() for hrefFull
+    // ... which it is!
     const linkUri = new URI(hrefFull);
     linkUri.search((data: any) => {
         // overrides existing (leaves others intact)
