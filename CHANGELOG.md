@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.27...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.28...develop
 
 Changes:
 * TODO
+
+# 1.0.28
+
+> Build environment: NodeJS `10.16.0`, NPM `6.9.0`
+
+Changes:
+* Fixed URI vs. URL bug (percent-escaped Unicode characters in path, was failing to match spine/readingOrder resource)
+* Document selection: DOM Range normalization (algorithm from Apache Annotator, ported to TypeScript)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.28/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.28/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.28
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.27...v1.0.28
 
 # 1.0.27
 
