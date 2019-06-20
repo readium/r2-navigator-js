@@ -802,39 +802,12 @@ const deviceIDManager: IDeviceIDManager = {
 // and to check for an updated license (as passed in the callback parameter).
 // The lsdLcpUpdateInject() function can be used to immediately inject the updated
 // LCP license (META-INF/license.lcpl) inside the EPUB container on the filesystem.
-// Note that although the `launchStatusDocumentProcessing()` initializes `publication.LCP.LSDJson`,
+// Note that although the `launchStatusDocumentProcessing()` initializes `publication.LCP.LSD`,
 // after `lsdLcpUpdateInject()` is invoked a fresh new `publication.LCP` object is created
-// (which mirrors `META-INF/container.xml`), so `launchStatusDocumentProcessing()` must be called again (loop)
-// to ensure the latest LSD is indeed loaded and verified. Another alterative is to preserve the previous LSD,
-// which in all likelyhood is exactly the same (i.e. hasn't changed since the LCP license injection).
-// See immediately below for the alternative "preservation" method.
-// See further below for the more contrived (but strictly-speaking more correct) "loop" method.
-try {
-    await launchStatusDocumentProcessing(publication.LCP, deviceIDManager,
-        async (licenseUpdateJson: string | undefined) => {
-
-            if (licenseUpdateJson) {
-                const LSDJson = publication.LCP.LSDJson; // LSD preservation, see comment above.
-
-                let res: string;
-                try {
-                    res = await lsdLcpUpdateInject(
-                        licenseUpdateJson,
-                        publication as Publication,
-                        publicationFilePath);
-
-                    publication.LCP.LSDJson = LSDJson; // LSD preservation, see comment above.
-                } catch (err) {
-                    debug(err);
-                }
-            }
-        });
-} catch (err) {
-    debug(err);
-}
-
-// Example of looping the `launchStatusDocumentProcessing()` calls in order to reset `publication.LCP.LSDJson`
-// after `lsdLcpUpdateInject()` injects a fresh `publication.LCP` based on the downloaded `META-INF/container.xml`.
+// (which mirrors `META-INF/license.lcpl`), so `launchStatusDocumentProcessing()` must be called again (loop)
+// to ensure the latest LSD is indeed loaded and verified.
+// Below is an example of looping the `launchStatusDocumentProcessing()` calls in order to reset `publication.LCP.LSD`
+// after `lsdLcpUpdateInject()` injects a fresh `publication.LCP` based on the downloaded `META-INF/license.lcpl`.
 async function tryLSD(deviceIDManager: IDeviceIDManager, publication: Publication, publicationFilePath: string): Promise<boolean> {
 
     return new Promise(async (resolve, reject) => {
@@ -873,6 +846,34 @@ async function tryLSD(deviceIDManager: IDeviceIDManager, publication: Publicatio
 }
 try {
     await tryLSD(publication, publicationFilePath);
+} catch (err) {
+    debug(err);
+}
+
+// A less-ideal alterative is to preserve the previous LSD,
+// but in principle the new LCP may contain a LSD link that needs to be requested
+// again in order to get the latest information available for this new license
+// (e.g. associated LSD events list).
+try {
+    await launchStatusDocumentProcessing(publication.LCP, deviceIDManager,
+        async (licenseUpdateJson: string | undefined) => {
+
+            if (licenseUpdateJson) {
+                const LSD_backup = publication.LCP.LSD; // LSD preservation, see comment above.
+
+                let res: string;
+                try {
+                    res = await lsdLcpUpdateInject(
+                        licenseUpdateJson,
+                        publication as Publication,
+                        publicationFilePath);
+
+                    publication.LCP.LSD = LSD_backup; // LSD preservation, see comment above.
+                } catch (err) {
+                    debug(err);
+                }
+            }
+        });
 } catch (err) {
     debug(err);
 }
