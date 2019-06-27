@@ -17,6 +17,7 @@ import {
     CSS_CLASS_NO_FOCUS_OUTLINE,
     TTS_CLASS_INJECTED_SPAN,
     TTS_CLASS_INJECTED_SUBSPAN,
+    TTS_CLASS_UTTERANCE,
     TTS_ID_ACTIVE_UTTERANCE,
     TTS_ID_ACTIVE_WORD,
     TTS_ID_CONTAINER,
@@ -449,7 +450,8 @@ function updateTTSInfo(
                 continue;
             }
             let ttsQItemMarkup = ttsQueueItemMarkup;
-            let ttsQItemMarkupAttributes = `${R2_DATA_ATTR_UTTERANCE_INDEX}="${ttsQItem.iGlobal}"`;
+            // tslint:disable-next-line:max-line-length
+            let ttsQItemMarkupAttributes = `${R2_DATA_ATTR_UTTERANCE_INDEX}="${ttsQItem.iGlobal}" class="${TTS_CLASS_UTTERANCE}"`;
             if (ttsQItem.iGlobal === ttsQueueItem.iGlobal) {
                 ttsQItemMarkupAttributes += ` id="${TTS_ID_ACTIVE_UTTERANCE}" `;
             } else {
@@ -461,7 +463,7 @@ function updateTTSInfo(
             if (ttsQItem.item.lang) {
                 ttsQItemMarkupAttributes += ` lang="${ttsQItem.item.lang}" xml:lang="${ttsQItem.item.lang}" `;
             }
-            fullMarkup += `<span ${ttsQItemMarkupAttributes}>${ttsQItemMarkup}</span><br/>`;
+            fullMarkup += `<div ${ttsQItemMarkupAttributes}>${ttsQItemMarkup}</div>`;
         }
 
         try {

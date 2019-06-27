@@ -134,6 +134,7 @@ export const TTS_ID_NEXT = "r2-tts-next";
 export const TTS_ID_SLIDER = "r2-tts-slider";
 export const TTS_ID_ACTIVE_WORD = "r2-tts-active-word";
 export const TTS_ID_ACTIVE_UTTERANCE = "r2-tts-active-utterance";
+export const TTS_CLASS_UTTERANCE = "r2-tts-utterance";
 export const TTS_ID_CONTAINER = "r2-tts-txt";
 export const TTS_ID_INFO = "r2-tts-info";
 export const TTS_NAV_BUTTON_CLASS = "r2-tts-button";
@@ -233,6 +234,8 @@ export const ttsCssStyles = `
     margin: 0;
     margin-left: 6px;
     margin-right: 6px;
+    margin-top: 6px;
+    margin-bottom: 6px;
 
     grid-column-start: 2;
     grid-column-end: 3;
@@ -373,22 +376,28 @@ export const ttsCssStyles = `
     */
 }
 
-:root[style] span#${TTS_ID_ACTIVE_UTTERANCE},
-:root span#${TTS_ID_ACTIVE_UTTERANCE} {
+.${TTS_CLASS_UTTERANCE} {
+    margin-bottom: 1em;
+}
+
+:root[style] div#${TTS_ID_ACTIVE_UTTERANCE},
+:root div#${TTS_ID_ACTIVE_UTTERANCE} {
     /* background-color: yellow !important; */
 
     color: black !important;
 
     padding: 0;
     margin: 0;
+
+    display: block;
 }
-:root[style*="readium-night-on"] span#${TTS_ID_ACTIVE_UTTERANCE} {
+:root[style*="readium-night-on"] div#${TTS_ID_ACTIVE_UTTERANCE} {
     color: white !important;
 }
-:root[style*="readium-sepia-on"] span#${TTS_ID_ACTIVE_UTTERANCE} {
+:root[style*="readium-sepia-on"] div#${TTS_ID_ACTIVE_UTTERANCE} {
     color: black !important;
 }
-:root[style*="--USER__textColor"] span#${TTS_ID_ACTIVE_UTTERANCE} {
+:root[style*="--USER__textColor"] div#${TTS_ID_ACTIVE_UTTERANCE} {
     color: var(--USER__textColor) !important;
 }
 
