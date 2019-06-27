@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.28...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.29...develop
 
 Changes:
 * TODO
+
+# 1.0.29
+
+> Build environment: NodeJS `10.16.0`, NPM `6.9.0`
+
+Changes:
+* TTS readaloud improvements and fixes (full screen utterances view, support for RTL text)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.29/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.29/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.29
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.28...v1.0.29
 
 # 1.0.28
 
