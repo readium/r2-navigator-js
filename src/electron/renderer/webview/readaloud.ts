@@ -41,6 +41,9 @@ import {
     wrapHighlight,
 } from "../common/dom-text-utils";
 import { IHTMLDialogElementWithPopup, PopupDialog } from "../common/popup-dialog";
+import {
+    isRTL,
+} from "./readium-css";
 import { IReadiumElectronWebviewWindow } from "./state";
 
 const win = (global as any).window as IReadiumElectronWebviewWindow;
@@ -660,7 +663,8 @@ function startTTSSession(
     <div id="${TTS_ID_INFO}"> </div>
     <button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}"><span>&#9668;</span></button>
     <button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}"><span>&#9658;</span></button>
-    <input id="${TTS_ID_SLIDER}" type="range" min="0" max="${ttsQueueLength - 1}" value="0" />`;
+    <input id="${TTS_ID_SLIDER}" type="range" min="0" max="${ttsQueueLength - 1}" value="0"
+        ${isRTL() ? `dir="rtl"` : `dir="ltr"`}/>`;
 
     const pop = new PopupDialog(win.document, outerHTML, onDialogClosed, TTS_POPUP_DIALOG_CLASS);
     pop.show(ttsQueueItemStart.item.parentElement);
@@ -699,13 +703,21 @@ function startTTSSession(
     if (_dialogState.domPrevious) {
         _dialogState.domPrevious.addEventListener("click", (_ev: MouseEvent) => {
 
-            ttsPrevious();
+            if (isRTL()) {
+                ttsNext();
+            } else {
+                ttsPrevious();
+            }
         });
     }
     if (_dialogState.domNext) {
         _dialogState.domNext.addEventListener("click", (_ev: MouseEvent) => {
 
-            ttsNext();
+            if (!isRTL()) {
+                ttsNext();
+            } else {
+                ttsPrevious();
+            }
         });
     }
 
