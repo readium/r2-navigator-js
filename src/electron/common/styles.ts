@@ -378,6 +378,8 @@ export const ttsCssStyles = `
 
 .${TTS_CLASS_UTTERANCE} {
     margin-bottom: 1em;
+    padding: 0;
+    display: block;
 }
 
 :root[style] div#${TTS_ID_ACTIVE_UTTERANCE},
@@ -385,11 +387,6 @@ export const ttsCssStyles = `
     /* background-color: yellow !important; */
 
     color: black !important;
-
-    padding: 0;
-    margin: 0;
-
-    display: block;
 }
 :root[style*="readium-night-on"] div#${TTS_ID_ACTIVE_UTTERANCE} {
     color: white !important;
