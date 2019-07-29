@@ -59,7 +59,7 @@ const debug = debug_("r2:navigator#electron/renderer/index");
 // debug(publicationJsonUrl_);
 // const pathBase64 = publicationJsonUrl_.replace(/.*\/pub\/(.*)\/manifest.json/, "$1");
 // debug(pathBase64);
-// const pathDecoded = new Buffer(decodeURIComponent(pathBase64), "base64").toString("utf8");
+// const pathDecoded = Buffer.from(decodeURIComponent(pathBase64), "base64").toString("utf8");
 // debug(pathDecoded);
 // const pathFileName = pathDecoded.substr(
 //     pathDecoded.replace(/\\/g, "/").lastIndexOf("/") + 1,

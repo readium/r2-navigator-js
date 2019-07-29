@@ -257,7 +257,7 @@ export function handleLinkLocator(location: Locator | undefined) {
         const urlNoQueryParams = uri.toString(); // publicationURL + "/../" + linkToLoad.Href;
         const hrefToLoad = urlNoQueryParams +
             ((useGoto) ? ("?" + URL_PARAM_GOTO + "=" +
-                encodeURIComponent_RFC3986(new Buffer(JSON.stringify(linkToLoadGoto, null, "")).toString("base64"))) :
+                encodeURIComponent_RFC3986(Buffer.from(JSON.stringify(linkToLoadGoto, null, "")).toString("base64"))) :
                 "");
         // NOTE that decodeURIComponent() must be called on the toString'ed URL hrefToLoad
         // tslint:disable-next-line:max-line-length
@@ -367,11 +367,11 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
 
     const rcssJson = __computeReadiumCssJsonMessage(pubLink);
     const rcssJsonstr = JSON.stringify(rcssJson, null, "");
-    const rcssJsonstrBase64 = new Buffer(rcssJsonstr).toString("base64");
+    const rcssJsonstrBase64 = Buffer.from(rcssJsonstr).toString("base64");
 
     const rersJson = getEpubReadingSystemInfo();
     const rersJsonstr = JSON.stringify(rersJson, null, "");
-    const rersJsonstrBase64 = new Buffer(rersJsonstr).toString("base64");
+    const rersJsonstrBase64 = Buffer.from(rersJsonstr).toString("base64");
 
     linkUri.search((data: any) => {
         // overrides existing (leaves others intact)
@@ -491,7 +491,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         //     debug(linkUri.fragment()); // without #
         //     // tslint:disable-next-line:no-string-literal
         //     const gto = linkUri.search(true)[URL_PARAM_GOTO];
-        //     debug(gto ? (new Buffer(gto, "base64").toString("utf8")) : ""); // decodeURIComponent
+        //     debug(gto ? (Buffer.from(gto, "base64").toString("utf8")) : ""); // decodeURIComponent
         //     // tslint:disable-next-line:no-string-literal
         //     debug(linkUri.search(true)[URL_PARAM_PREVIOUS]);
         //     // tslint:disable-next-line:no-string-literal
