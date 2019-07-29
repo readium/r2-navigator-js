@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.29...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.30...develop
 
 Changes:
 * TODO
+
+# 1.0.30
+
+> Build environment: NodeJS `10.16.0`, NPM `6.10.2`
+
+Changes:
+* NPM updates
+* Buffer.from() API to remove deprecation messages
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.30/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.30/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.30
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.29...v1.0.30
 
 # 1.0.29
 
