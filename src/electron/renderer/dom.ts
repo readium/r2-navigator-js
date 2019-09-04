@@ -31,7 +31,6 @@ import {
     getCurrentReadingLocation,
     handleLinkLocator,
     locationHandleIpcMessage,
-    navLeftOrRight,
     shiftWebview,
 } from "./location";
 import { ttsClickEnable, ttsHandleIpcMessage } from "./readaloud";
@@ -233,6 +232,11 @@ export function installNavigatorDOM(
     }, 100);
 }
 
+let _keyDownEventHandler: (ev: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN) => void;
+export function setKeyDownEventHandler(func: (ev: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN) => void) {
+    _keyDownEventHandler = func;
+}
+
 function createWebView(preloadScriptPath: string): IReadiumElectronWebview {
 
     // Unfortunately the Chromium web inspector crashes when closing preload :(
@@ -291,10 +295,8 @@ function createWebView(preloadScriptPath: string): IReadiumElectronWebview {
 
         if (event.channel === R2_EVENT_WEBVIEW_KEYDOWN) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN;
-            if (payload.keyCode === 37) { // left
-                navLeftOrRight(true);
-            } else if (payload.keyCode === 39) { // right
-                navLeftOrRight(false);
+            if (_keyDownEventHandler) {
+                _keyDownEventHandler(payload);
             }
         } else if (!highlightsHandleIpcMessage(event.channel, event.args, webview) &&
             !ttsHandleIpcMessage(event.channel, event.args, webview) &&

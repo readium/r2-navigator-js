@@ -198,7 +198,12 @@ win.prompt = (...args: any[]): string => {
 window.document.addEventListener("keydown", (ev: KeyboardEvent) => {
 
     const payload: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN = {
-        keyCode: ev.keyCode,
+        altKey: ev.altKey,
+        code: ev.code,
+        ctrlKey: ev.ctrlKey,
+        key: ev.key,
+        metaKey: ev.metaKey,
+        shiftKey: ev.shiftKey,
     };
     ipcRenderer.sendToHost(R2_EVENT_WEBVIEW_KEYDOWN, payload);
 });
@@ -1540,7 +1545,12 @@ function loaded(forced: boolean) {
         if (win.document && win.document.documentElement) {
             win.document.documentElement.classList.add(ROOT_CLASS_KEYBOARD_INTERACT);
         }
-        if (ev.keyCode === 37 || ev.keyCode === 39) { // left / right
+        // DEPRECATED
+        // if (ev.keyCode === 37 || ev.keyCode === 39) { // left / right
+        // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
+        // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code
+        // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code/code_values
+        if (ev.code === "ArrowLeft" || ev.code === "ArrowRight") {
             if (ev.target && elementCapturesKeyboardArrowKeys(ev.target as Element)) {
                 (ev.target as any).r2_leftrightKeyboardTimeStamp = new Date();
             }

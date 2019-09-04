@@ -172,20 +172,71 @@ export function shiftWebview(webview: IReadiumElectronWebview, offset: number, b
     }
 }
 
-export function navLeftOrRight(left: boolean) {
+export function navLeftOrRight(left: boolean, spineNav?: boolean) {
     const publication = (window as IReadiumElectronBrowserWindow).READIUM2.publication;
-    if (!publication) {
+    const publicationURL = (window as IReadiumElectronBrowserWindow).READIUM2.publicationURL;
+    if (!publication || !publicationURL) {
         return;
     }
+
+    // metadata-level RTL
     const rtl = isRTL();
-    const goPREVIOUS = left ? !rtl : rtl;
-    const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-        direction: rtl ? "RTL" : "LTR",
-        go: goPREVIOUS ? "PREVIOUS" : "NEXT",
-    };
-    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
-    if (activeWebView) {
-        activeWebView.send(R2_EVENT_PAGE_TURN, payload); // .getWebContents()
+
+    if (spineNav) {
+        if (!publication.Spine) {
+            return;
+        }
+
+        if (!_lastSavedReadingLocation) { // getCurrentReadingLocation()
+            return;
+        }
+        const loc = _lastSavedReadingLocation;
+
+        // document-level RTL
+        const rtl_ = loc.docInfo && loc.docInfo.isRightToLeft;
+        if (rtl_ !== rtl) {
+            debug(`RTL differ?! METADATA ${rtl} vs. DOCUMENT ${rtl_}`);
+        }
+
+        // array boundaries overflow are checked further down ...
+        const offset = (left ? -1 : 1) * (rtl ? -1 : 1);
+
+        const currentSpineIndex = publication.Spine.findIndex((link) => {
+            return link.Href === loc.locator.href;
+        });
+        if (currentSpineIndex >= 0) {
+            const spineIndex = currentSpineIndex + offset;
+
+            // array boundaries overflow are checked here:
+            if (spineIndex >= 0 && spineIndex <= (publication.Spine.length - 1)) {
+                const nextOrPreviousSpineItem = publication.Spine[spineIndex];
+
+                // handleLinkUrl(publicationURL + "/../" + nextOrPreviousSpineItem.Href);
+
+                const uri = new URL(nextOrPreviousSpineItem.Href, publicationURL);
+                uri.hash = "";
+                uri.search = "";
+                const urlNoQueryParams = uri.toString(); // publicationURL + "/../" + nextOrPreviousSpineItem.Href;
+                // NOTE that decodeURIComponent() must be called on the toString'ed URL urlNoQueryParams
+                // tslint:disable-next-line:max-line-length
+                // (in case nextOrPreviousSpineItem.Href contains Unicode characters, in which case they get percent-encoded by the URL.toString())
+                handleLink(urlNoQueryParams, false, false);
+
+                return;
+            } else {
+                shell.beep(); // announce boundary overflow (first or last Spine item)
+            }
+        }
+    } else {
+        const goPREVIOUS = left ? !rtl : rtl;
+        const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+            direction: rtl ? "RTL" : "LTR",
+            go: goPREVIOUS ? "PREVIOUS" : "NEXT",
+        };
+        const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+        if (activeWebView) {
+            activeWebView.send(R2_EVENT_PAGE_TURN, payload); // .getWebContents()
+        }
     }
 }
 
