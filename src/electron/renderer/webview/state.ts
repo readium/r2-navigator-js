@@ -55,6 +55,9 @@ export interface IReadiumElectronBrowserWindowState {
 
     getActiveWebView: () => IReadiumElectronWebview | undefined;
 }
-export interface IReadiumElectronBrowserWindow extends Window {
+
+export interface IWithReadiumElectronBrowserWindowState {
     READIUM2: IReadiumElectronBrowserWindowState;
 }
+export type TWindow = typeof window;
+export type IReadiumElectronBrowserWindow = TWindow & IWithReadiumElectronBrowserWindowState;
