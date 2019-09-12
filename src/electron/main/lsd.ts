@@ -5,13 +5,14 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import * as debug_ from "debug";
+import * as moment from "moment";
+
 import { IDeviceIDManager } from "@r2-lcp-js/lsd/deviceid-manager";
 import { lsdRenew_ } from "@r2-lcp-js/lsd/renew";
 import { lsdReturn_ } from "@r2-lcp-js/lsd/return";
 import { LSD } from "@r2-lcp-js/parser/epub/lsd";
 import { Server } from "@r2-streamer-js/http/server";
-import * as debug_ from "debug";
-import * as moment from "moment";
 
 const debug = debug_("r2:navigator#electron/main/lsd");
 

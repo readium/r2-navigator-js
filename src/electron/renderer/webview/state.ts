@@ -8,9 +8,7 @@
 import { Publication } from "@r2-shared-js/models/publication";
 import { Link } from "@r2-shared-js/models/publication-link";
 
-import {
-    IEventPayload_R2_EVENT_READING_LOCATION,
-} from "../../common/events";
+import { IEventPayload_R2_EVENT_READING_LOCATION } from "../../common/events";
 import { IStringMap } from "../common/querystring";
 
 export interface IReadiumElectronWebviewWindowState {

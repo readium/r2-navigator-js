@@ -8,20 +8,11 @@
 import * as debug_ from "debug";
 import * as xmldom from "xmldom";
 
-import {
-    IEventPayload_R2_EVENT_READIUMCSS,
-} from "./events";
+import { IEventPayload_R2_EVENT_READIUMCSS } from "./events";
 import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
 import {
-    ROOT_CLASS_NO_FOOTNOTES,
-    ROOT_CLASS_REDUCE_MOTION,
-    focusCssStyles,
-    footnotesCssStyles,
-    readPosCssStyles,
-    scrollBarCssStyles,
-    selectionCssStyles,
-    targetCssStyles,
-    ttsCssStyles,
+    ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, focusCssStyles, footnotesCssStyles,
+    readPosCssStyles, scrollBarCssStyles, selectionCssStyles, targetCssStyles, ttsCssStyles,
     visibilityMaskCssStyles,
 } from "./styles";
 

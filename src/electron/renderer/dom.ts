@@ -7,31 +7,22 @@
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-import { Locator } from "@r2-shared-js/models/locator";
-import { Publication } from "@r2-shared-js/models/publication";
 import { debounce } from "debounce";
 import * as debug_ from "debug";
 
+import { Locator } from "@r2-shared-js/models/locator";
+import { Publication } from "@r2-shared-js/models/publication";
+
 import {
-    IEventPayload_R2_EVENT_DEBUG_VISUALS,
-    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
-    R2_EVENT_DEBUG_VISUALS,
-    R2_EVENT_READIUMCSS,
-    R2_EVENT_WEBVIEW_KEYDOWN,
+    IEventPayload_R2_EVENT_DEBUG_VISUALS, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
+    R2_EVENT_DEBUG_VISUALS, R2_EVENT_READIUMCSS, R2_EVENT_WEBVIEW_KEYDOWN,
 } from "../common/events";
-import {
-    R2_SESSION_WEBVIEW,
-} from "../common/sessions";
-import {
-    URL_PARAM_DEBUG_VISUALS,
-} from "./common/url-params";
+import { R2_SESSION_WEBVIEW } from "../common/sessions";
+import { URL_PARAM_DEBUG_VISUALS } from "./common/url-params";
 import { ENABLE_WEBVIEW_RESIZE } from "./common/webview-resize";
 import { highlightsHandleIpcMessage } from "./highlight";
 import {
-    getCurrentReadingLocation,
-    handleLinkLocator,
-    locationHandleIpcMessage,
-    shiftWebview,
+    getCurrentReadingLocation, handleLinkLocator, locationHandleIpcMessage, shiftWebview,
 } from "./location";
 import { ttsClickEnable, ttsHandleIpcMessage } from "./readaloud";
 import { __computeReadiumCssJsonMessage } from "./readium-css";

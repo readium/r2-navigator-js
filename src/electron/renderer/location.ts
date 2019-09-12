@@ -5,42 +5,29 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import * as debug_ from "debug";
+import { ipcRenderer, shell } from "electron";
 import { URL } from "url";
 
 import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
 import { Link } from "@r2-shared-js/models/publication-link";
 import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
-import * as debug_ from "debug";
-import { ipcRenderer, shell } from "electron";
 
 import { IDocInfo } from "../common/document";
 import {
-    IEventPayload_R2_EVENT_LINK,
-    IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
-    IEventPayload_R2_EVENT_PAGE_TURN,
-    IEventPayload_R2_EVENT_READING_LOCATION,
-    IEventPayload_R2_EVENT_SCROLLTO,
-    IEventPayload_R2_EVENT_SHIFT_VIEW_X,
-    R2_EVENT_LINK,
-    R2_EVENT_LOCATOR_VISIBLE,
-    R2_EVENT_PAGE_TURN,
-    R2_EVENT_PAGE_TURN_RES,
-    R2_EVENT_READING_LOCATION,
-    R2_EVENT_SCROLLTO,
-    R2_EVENT_SHIFT_VIEW_X,
+    IEventPayload_R2_EVENT_LINK, IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
+    IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READING_LOCATION,
+    IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X, R2_EVENT_LINK,
+    R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION,
+    R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
 } from "../common/events";
 import { IPaginationInfo } from "../common/pagination";
 import { ISelectionInfo } from "../common/selection";
 import {
-    READIUM2_ELECTRON_HTTP_PROTOCOL,
-    convertCustomSchemeToHttpUrl,
-    convertHttpUrlToCustomScheme,
+    READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl, convertHttpUrlToCustomScheme,
 } from "../common/sessions";
 import {
-    URL_PARAM_CSS,
-    URL_PARAM_DEBUG_VISUALS,
-    URL_PARAM_EPUBREADINGSYSTEM,
-    URL_PARAM_GOTO,
+    URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO,
     URL_PARAM_PREVIOUS,
 } from "./common/url-params";
 import { getEpubReadingSystemInfo } from "./epubReadingSystem";

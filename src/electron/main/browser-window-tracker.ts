@@ -9,6 +9,7 @@ import * as debug_ from "debug";
 import { app } from "electron";
 
 import { IEventPayload_R2_EVENT_LINK, R2_EVENT_LINK } from "../common/events";
+
 // import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../common/sessions";
 
 const debug = debug_("r2:navigator#electron/main/browser-window-tracker");

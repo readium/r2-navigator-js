@@ -6,9 +6,9 @@
 // ==LICENSE-END==
 
 import * as crypto from "crypto";
+import * as debug_ from "debug";
 
 import { Server } from "@r2-streamer-js/http/server";
-import * as debug_ from "debug";
 
 const debug = debug_("r2:navigator#electron/main/lcp");
 

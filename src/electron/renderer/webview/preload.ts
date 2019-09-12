@@ -15,74 +15,40 @@ if (IS_DEV) {
     cr.consoleRedirect("r2:navigator#electron/renderer/webview/preload", process.stdout, process.stderr, true);
 }
 
-import { LocatorLocations } from "@r2-shared-js/models/locator";
 import { debounce } from "debounce";
 import * as debug_ from "debug";
 import { ipcRenderer } from "electron";
 import * as tabbable from "tabbable";
 
+import { LocatorLocations } from "@r2-shared-js/models/locator";
+
 import {
-    IEventPayload_R2_EVENT_DEBUG_VISUALS,
-    IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
-    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE,
-    IEventPayload_R2_EVENT_LINK,
-    IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
-    IEventPayload_R2_EVENT_PAGE_TURN,
-    IEventPayload_R2_EVENT_READING_LOCATION,
-    IEventPayload_R2_EVENT_READIUMCSS,
-    IEventPayload_R2_EVENT_SCROLLTO,
-    IEventPayload_R2_EVENT_SHIFT_VIEW_X,
-    IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
-    IEventPayload_R2_EVENT_TTS_DO_PLAY,
-    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
-    R2_EVENT_DEBUG_VISUALS,
-    R2_EVENT_HIGHLIGHT_CREATE,
-    R2_EVENT_HIGHLIGHT_REMOVE,
-    R2_EVENT_HIGHLIGHT_REMOVE_ALL,
-    R2_EVENT_LINK,
-    R2_EVENT_LOCATOR_VISIBLE,
-    R2_EVENT_PAGE_TURN,
-    R2_EVENT_PAGE_TURN_RES,
-    R2_EVENT_READING_LOCATION,
-    R2_EVENT_READIUMCSS,
-    R2_EVENT_SCROLLTO,
-    R2_EVENT_SHIFT_VIEW_X,
-    R2_EVENT_TTS_CLICK_ENABLE,
-    R2_EVENT_TTS_DO_NEXT,
-    R2_EVENT_TTS_DO_PAUSE,
-    R2_EVENT_TTS_DO_PLAY,
-    R2_EVENT_TTS_DO_PREVIOUS,
-    R2_EVENT_TTS_DO_RESUME,
-    R2_EVENT_TTS_DO_STOP,
-    R2_EVENT_WEBVIEW_KEYDOWN,
+    IEventPayload_R2_EVENT_DEBUG_VISUALS, IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
+    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, IEventPayload_R2_EVENT_LINK,
+    IEventPayload_R2_EVENT_LOCATOR_VISIBLE, IEventPayload_R2_EVENT_PAGE_TURN,
+    IEventPayload_R2_EVENT_READING_LOCATION, IEventPayload_R2_EVENT_READIUMCSS,
+    IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X,
+    IEventPayload_R2_EVENT_TTS_CLICK_ENABLE, IEventPayload_R2_EVENT_TTS_DO_PLAY,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_DEBUG_VISUALS, R2_EVENT_HIGHLIGHT_CREATE,
+    R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL, R2_EVENT_LINK,
+    R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION,
+    R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X, R2_EVENT_TTS_CLICK_ENABLE,
+    R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS,
+    R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP, R2_EVENT_WEBVIEW_KEYDOWN,
 } from "../../common/events";
 import { IHighlight, IHighlightDefinition } from "../../common/highlight";
 import { IPaginationInfo } from "../../common/pagination";
 import {
-    CLASS_PAGINATED,
-    appendCSSInline,
-    configureFixedLayout,
-    injectDefaultCSS,
-    injectReadPosCSS,
+    CLASS_PAGINATED, appendCSSInline, configureFixedLayout, injectDefaultCSS, injectReadPosCSS,
     isPaginated,
 } from "../../common/readium-css-inject";
 import { sameSelections } from "../../common/selection";
 import {
-    POPUP_DIALOG_CLASS,
-    ROOT_CLASS_INVISIBLE_MASK,
-    ROOT_CLASS_KEYBOARD_INTERACT,
-    ROOT_CLASS_NO_FOOTNOTES,
-    ROOT_CLASS_REDUCE_MOTION,
-    TTS_CLASS_INJECTED_SPAN,
-    TTS_CLASS_INJECTED_SUBSPAN,
-    TTS_ID_INJECTED_PARENT,
-    TTS_ID_SPEAKING_DOC_ELEMENT,
-    readPosCssStylesAttr1,
-    readPosCssStylesAttr2,
-    readPosCssStylesAttr3,
-    readPosCssStylesAttr4,
+    POPUP_DIALOG_CLASS, ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_KEYBOARD_INTERACT,
+    ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, TTS_CLASS_INJECTED_SPAN,
+    TTS_CLASS_INJECTED_SUBSPAN, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT,
+    readPosCssStylesAttr1, readPosCssStylesAttr2, readPosCssStylesAttr3, readPosCssStylesAttr4,
 } from "../../common/styles";
-// import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../../common/sessions";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector2";
 import { easings } from "../common/easings";
@@ -90,36 +56,21 @@ import { closePopupDialogs, isPopupDialogOpen } from "../common/popup-dialog";
 import { getURLQueryParams } from "../common/querystring";
 import { IRect, getClientRectsNoOverlap_ } from "../common/rect-utils";
 import {
-    URL_PARAM_CSS,
-    URL_PARAM_DEBUG_VISUALS,
-    URL_PARAM_EPUBREADINGSYSTEM,
-    URL_PARAM_GOTO,
+    URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO,
     URL_PARAM_PREVIOUS,
 } from "../common/url-params";
 import { ENABLE_WEBVIEW_RESIZE } from "../common/webview-resize";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
-    CLASS_HIGHLIGHT_AREA,
-    CLASS_HIGHLIGHT_BOUNDING_AREA,
-    CLASS_HIGHLIGHT_CONTAINER,
-    ID_HIGHLIGHTS_CONTAINER,
-    createHighlight,
-    destroyAllhighlights,
-    destroyHighlight,
+    CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, CLASS_HIGHLIGHT_CONTAINER,
+    ID_HIGHLIGHTS_CONTAINER, createHighlight, destroyAllhighlights, destroyHighlight,
     recreateAllHighlights,
 } from "./highlight";
 import { popupFootNote } from "./popupFootNotes";
 import { ttsNext, ttsPause, ttsPlay, ttsPrevious, ttsResume, ttsStop } from "./readaloud";
 import {
-    calculateColumnDimension,
-    calculateMaxScrollShift,
-    calculateTotalColumns,
-    checkHiddenFootNotes,
-    computeVerticalRTL,
-    getScrollingElement,
-    isRTL,
-    isTwoPageSpread,
-    isVerticalWritingMode,
+    calculateColumnDimension, calculateMaxScrollShift, calculateTotalColumns, checkHiddenFootNotes,
+    computeVerticalRTL, getScrollingElement, isRTL, isTwoPageSpread, isVerticalWritingMode,
     readiumCSS,
 } from "./readium-css";
 import { clearCurrentSelection, getCurrentSelectionInfo } from "./selection";

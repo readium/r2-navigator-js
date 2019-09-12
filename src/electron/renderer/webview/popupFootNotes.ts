@@ -6,9 +6,7 @@
 // ==LICENSE-END==
 
 import {
-    CSS_CLASS_NO_FOCUS_OUTLINE,
-    FOOTNOTES_CONTAINER_CLASS,
-    ROOT_CLASS_NO_FOOTNOTES,
+    CSS_CLASS_NO_FOCUS_OUTLINE, FOOTNOTES_CONTAINER_CLASS, ROOT_CLASS_NO_FOOTNOTES,
 } from "../../common/styles";
 import { PopupDialog } from "../common/popup-dialog";
 

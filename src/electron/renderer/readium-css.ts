@@ -7,10 +7,7 @@
 
 import { Link } from "@r2-shared-js/models/publication-link";
 
-import {
-    IEventPayload_R2_EVENT_READIUMCSS,
-} from "../common/events";
-
+import { IEventPayload_R2_EVENT_READIUMCSS } from "../common/events";
 import { IReadiumElectronBrowserWindow } from "./webview/state";
 
 export function isRTL(/* link: Link | undefined */): boolean {

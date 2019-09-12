@@ -9,41 +9,20 @@ import { debounce } from "debounce";
 import { ipcRenderer } from "electron";
 
 import {
-    R2_EVENT_TTS_IS_PAUSED,
-    R2_EVENT_TTS_IS_PLAYING,
-    R2_EVENT_TTS_IS_STOPPED,
+    R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED,
 } from "../../common/events";
 import {
-    CSS_CLASS_NO_FOCUS_OUTLINE,
-    TTS_CLASS_INJECTED_SPAN,
-    TTS_CLASS_INJECTED_SUBSPAN,
-    TTS_CLASS_UTTERANCE,
-    TTS_ID_ACTIVE_UTTERANCE,
-    TTS_ID_ACTIVE_WORD,
-    TTS_ID_CONTAINER,
-    TTS_ID_INFO,
-    TTS_ID_INJECTED_PARENT,
-    TTS_ID_NEXT,
-    TTS_ID_PREVIOUS,
-    TTS_ID_SLIDER,
-    TTS_ID_SPEAKING_DOC_ELEMENT,
-    TTS_NAV_BUTTON_CLASS,
-    TTS_POPUP_DIALOG_CLASS,
+    CSS_CLASS_NO_FOCUS_OUTLINE, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN,
+    TTS_CLASS_UTTERANCE, TTS_ID_ACTIVE_UTTERANCE, TTS_ID_ACTIVE_WORD, TTS_ID_CONTAINER, TTS_ID_INFO,
+    TTS_ID_INJECTED_PARENT, TTS_ID_NEXT, TTS_ID_PREVIOUS, TTS_ID_SLIDER,
+    TTS_ID_SPEAKING_DOC_ELEMENT, TTS_NAV_BUTTON_CLASS, TTS_POPUP_DIALOG_CLASS,
 } from "../../common/styles";
 import {
-    ITtsQueueItem,
-    ITtsQueueItemReference,
-    findTtsQueueItemIndex,
-    generateTtsQueue,
-    getTtsQueueItemRef,
-    getTtsQueueItemRefText,
-    getTtsQueueLength,
-    wrapHighlight,
+    ITtsQueueItem, ITtsQueueItemReference, findTtsQueueItemIndex, generateTtsQueue,
+    getTtsQueueItemRef, getTtsQueueItemRefText, getTtsQueueLength, wrapHighlight,
 } from "../common/dom-text-utils";
 import { IHTMLDialogElementWithPopup, PopupDialog } from "../common/popup-dialog";
-import {
-    isRTL,
-} from "./readium-css";
+import { isRTL } from "./readium-css";
 import { IReadiumElectronWebviewWindow } from "./state";
 
 const win = (global as any).window as IReadiumElectronWebviewWindow;

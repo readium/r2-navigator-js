@@ -11,9 +11,7 @@ import { CertificateVerifyProcRequest, app, protocol, session } from "electron";
 import { Server } from "@r2-streamer-js/http/server";
 
 import {
-    R2_SESSION_WEBVIEW,
-    READIUM2_ELECTRON_HTTP_PROTOCOL,
-    convertCustomSchemeToHttpUrl,
+    R2_SESSION_WEBVIEW, READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl,
 } from "../common/sessions";
 
 const debug = debug_("r2:navigator#electron/main/sessions");

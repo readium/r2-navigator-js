@@ -6,11 +6,12 @@
 // ==LICENSE-END==
 
 import * as crypto from "crypto";
-
 import { debounce } from "debounce";
 import { ipcRenderer } from "electron";
 
-import { IEventPayload_R2_EVENT_HIGHLIGHT_CLICK, R2_EVENT_HIGHLIGHT_CLICK } from "../../common/events";
+import {
+    IEventPayload_R2_EVENT_HIGHLIGHT_CLICK, R2_EVENT_HIGHLIGHT_CLICK,
+} from "../../common/events";
 import { IColor, IHighlight } from "../../common/highlight";
 import { isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";

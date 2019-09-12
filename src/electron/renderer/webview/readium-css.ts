@@ -5,14 +5,13 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import { IEventPayload_R2_EVENT_READIUMCSS } from "../../common/events";
 import {
-    IEventPayload_R2_EVENT_READIUMCSS,
-} from "../../common/events";
-import { isDocRTL, isDocVertical, isPaginated, readiumCSSSet } from "../../common/readium-css-inject";
+    isDocRTL, isDocVertical, isPaginated, readiumCSSSet,
+} from "../../common/readium-css-inject";
 import { READIUM_CSS_URL_PATH } from "../../common/readium-css-settings";
 import {
-    READIUM2_ELECTRON_HTTP_PROTOCOL,
-    convertCustomSchemeToHttpUrl,
+    READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl,
 } from "../../common/sessions";
 import { FOOTNOTE_FORCE_SHOW, ROOT_CLASS_NO_FOOTNOTES } from "../../common/styles";
 import { IReadiumElectronWebviewWindow } from "./state";
