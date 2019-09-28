@@ -231,13 +231,19 @@ export function handleLink(href: string, previous: boolean | undefined, useGoto:
 
     const special = href.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
     if (special) {
-        loadLink(href, previous, useGoto);
+        const okay = loadLink(href, previous, useGoto);
+        if (!okay) {
+            debug(`Readium link fail?! ${href}`);
+        }
     } else {
         const okay = loadLink(href, previous, useGoto);
         if (!okay) {
-            debug("EXTERNAL LINK:");
-            debug(href);
-            shell.openExternal(href);
+            if (/^http[s]?:\/\/127\.0\.0\.1/.test(href)) { // href.startsWith("https://127.0.0.1")
+                debug(`Internal link, fails to match publication document: ${href}`);
+            } else {
+                debug(`External link: ${href}`);
+                shell.openExternal(href);
+            }
         }
     }
 }
