@@ -5,6 +5,8 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import { remote } from "electron";
+
 import { Publication } from "@r2-shared-js/models/publication";
 import { Link } from "@r2-shared-js/models/publication-link";
 
@@ -51,7 +53,13 @@ export interface IReadiumElectronBrowserWindowState {
     DEBUG_VISUALS: boolean;
     ttsClickEnabled: boolean;
 
+    preloadScriptPath: string;
+
     getActiveWebView: () => IReadiumElectronWebview | undefined;
+    destroyActiveWebView: () => void;
+    createActiveWebView: () => void;
+
+    enableScreenReaderAccessibilityWebViewHardRefresh: boolean;
 }
 
 export interface IWithReadiumElectronBrowserWindowState {
@@ -59,3 +67,18 @@ export interface IWithReadiumElectronBrowserWindowState {
 }
 export type TWindow = typeof window;
 export type IReadiumElectronBrowserWindow = TWindow & IWithReadiumElectronBrowserWindowState;
+
+let _isScreenReaderMounted: boolean | undefined;
+export function isScreenReaderMounted() {
+    if (typeof _isScreenReaderMounted === "undefined") {
+        _isScreenReaderMounted = remote.app.isAccessibilitySupportEnabled();
+
+        // Instead of dynamically updating this state via the app event,
+        // the detection of mounted screen reader is done at every launch of a reader window.
+        //
+        // app.on("accessibility-support-changed", (_ev, accessibilitySupportEnabled) => {
+        //     _isScreenReaderMounted = accessibilitySupportEnabled;
+        // });
+    }
+    return _isScreenReaderMounted;
+}

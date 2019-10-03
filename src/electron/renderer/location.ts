@@ -32,7 +32,9 @@ import {
 } from "./common/url-params";
 import { getEpubReadingSystemInfo } from "./epubReadingSystem";
 import { __computeReadiumCssJsonMessage, isRTL } from "./readium-css";
-import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
+import {
+    IReadiumElectronBrowserWindow, IReadiumElectronWebview, isScreenReaderMounted,
+} from "./webview/state";
 
 import URI = require("urijs");
 
@@ -431,13 +433,19 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
             "true" : "false";
     });
 
+    const webviewNeedsHardRefresh =
+        (window as IReadiumElectronBrowserWindow).READIUM2.enableScreenReaderAccessibilityWebViewHardRefresh
+        && isScreenReaderMounted();
+
     const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
 
-    if (activeWebView && activeWebView.READIUM2.link === pubLink) {
+    if (!webviewNeedsHardRefresh &&
+        activeWebView && activeWebView.READIUM2.link === pubLink) {
+
         const goto = useGoto ? linkUri.search(true)[URL_PARAM_GOTO] as string : undefined;
         const hash = useGoto ? undefined : linkUri.fragment(); // without #
 
-        debug("ALREADY LOADED: " + pubLink.Href);
+        debug("WEBVIEW ALREADY LOADED: " + pubLink.Href);
 
         const payload: IEventPayload_R2_EVENT_SCROLLTO = {
             goto,
@@ -523,8 +531,11 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     // }
 
     if (activeWebView) {
-
         const uriStr = linkUri.toString();
+
+        const needConvert = publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
+        const uriStr_ = uriStr.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ?
+            uriStr : (needConvert ? convertHttpUrlToCustomScheme(uriStr) : uriStr);
 
         // if (IS_DEV) {
         //     debug("####### >>> ---");
@@ -543,32 +554,42 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         //     debug("####### >>> ---");
         // }
 
-        const webviewAlreadyHasContent = (typeof activeWebView.READIUM2.link !== "undefined")
-            && activeWebView.READIUM2.link !== null;
-
-        activeWebView.READIUM2.link = pubLink;
-
-        const needConvert = publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
-        const uriStr_ = uriStr.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ?
-            uriStr : (needConvert ? convertHttpUrlToCustomScheme(uriStr) : uriStr);
-        if (IS_DEV) {
-            debug("setAttribute SRC:");
-            debug(uriStr_);
-        }
-
-        if (activeWebView.style.transform !== "none") {
-            // activeWebView.setAttribute("src", "data:, ");
-
-            if (webviewAlreadyHasContent) {
-                activeWebView.send("R2_EVENT_HIDE");
+        if (webviewNeedsHardRefresh) {
+            if (IS_DEV) {
+                debug(`___HARD___ WEBVIEW REFRESH: ${uriStr_}`);
             }
 
-            setTimeout(() => {
-                shiftWebview(activeWebView, 0, undefined); // reset
-                activeWebView.setAttribute("src", uriStr_);
-            }, 10);
+            (window as IReadiumElectronBrowserWindow).READIUM2.destroyActiveWebView();
+            (window as IReadiumElectronBrowserWindow).READIUM2.createActiveWebView();
+            const newActiveWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+            if (newActiveWebView) {
+                newActiveWebView.READIUM2.link = pubLink;
+                newActiveWebView.setAttribute("src", uriStr_);
+            }
+            return true;
         } else {
-            activeWebView.setAttribute("src", uriStr_);
+            if (IS_DEV) {
+                debug(`___SOFT___ WEBVIEW REFRESH: ${uriStr_}`);
+            }
+
+            const webviewAlreadyHasContent = (typeof activeWebView.READIUM2.link !== "undefined")
+                && activeWebView.READIUM2.link !== null;
+            activeWebView.READIUM2.link = pubLink;
+
+            if (activeWebView.style.transform !== "none") {
+                // activeWebView.setAttribute("src", "data:, ");
+
+                if (webviewAlreadyHasContent) {
+                    activeWebView.send("R2_EVENT_HIDE");
+                }
+
+                setTimeout(() => {
+                    shiftWebview(activeWebView, 0, undefined); // reset
+                    activeWebView.setAttribute("src", uriStr_);
+                }, 10);
+            } else {
+                activeWebView.setAttribute("src", uriStr_);
+            }
         }
     }
 
