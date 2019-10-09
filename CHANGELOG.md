@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.35...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.36...develop
 
 Changes:
 * TODO
+
+# 1.0.36
+
+> Build environment: NodeJS `10.16.3`, NPM `6.11.3`
+
+Changes:
+* Now allowing `javascript:` hyperlinks
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.36/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.36/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.36
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.35...v1.0.36
 
 # 1.0.35
 
