@@ -1532,6 +1532,10 @@ function loaded(forced: boolean) {
             return;
         }
 
+        if (/^javascript:/.test(href)) {
+            return;
+        }
+
         ev.preventDefault();
         ev.stopPropagation();
 
