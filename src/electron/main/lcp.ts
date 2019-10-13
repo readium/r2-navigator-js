@@ -6,9 +6,9 @@
 // ==LICENSE-END==
 
 import * as crypto from "crypto";
+import * as debug_ from "debug";
 
 import { Server } from "@r2-streamer-js/http/server";
-import * as debug_ from "debug";
 
 const debug = debug_("r2:navigator#electron/main/lcp");
 
@@ -32,8 +32,8 @@ export async function doTryLcpPass(
             checkSum.update(lcpPass);
             const passSha256Hex = checkSum.digest("hex");
             return passSha256Hex;
-            // const lcpPass64 = new Buffer(hash).toString("base64");
-            // const lcpPassHex = new Buffer(lcpPass64, "base64").toString("utf8");
+            // const lcpPass64 = Buffer.from(hash).toString("base64");
+            // const lcpPassHex = Buffer.from(lcpPass64, "base64").toString("utf8");
         });
     }
 

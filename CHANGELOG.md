@@ -1,10 +1,258 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.22...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.0.36...develop
 
 Changes:
 * TODO
+
+# 1.0.36
+
+> Build environment: NodeJS `10.16.3`, NPM `6.11.3`
+
+Changes:
+* Now allowing `javascript:` hyperlinks
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.36/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.36/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.36
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.35...v1.0.36
+
+# 1.0.35
+
+> Build environment: NodeJS `10.16.3`, NPM `6.11.3`
+
+Changes:
+* Screen reader detection optionally triggers webview hard refresh
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.35/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.35/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.35
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.34...v1.0.35
+
+# 1.0.34
+
+> Build environment: NodeJS `10.16.3`, NPM `6.11.3`
+
+Changes:
+* Added safeguard against erroneous inner-publication links (badly-authored EPUBs)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.34/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.34/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.34
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.33...v1.0.34
+
+# 1.0.33
+
+> Build environment: NodeJS `10.16.3`, NPM `6.11.3`
+
+Changes:
+* NPM updates
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.33/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.33/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.33
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.32...v1.0.33
+
+# 1.0.32
+
+> Build environment: NodeJS `10.16.3`, NPM `6.11.3`
+
+Changes:
+* NPM updates
+* TypeScript sort import
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.32/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.32/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.32
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.31...v1.0.32
+
+# 1.0.31
+
+> Build environment: NodeJS `10.16.3`, NPM `6.11.3`
+
+Changes:
+* NPM updates
+* Added API to forward keyboard key down press event to consumer app, useful for previous/next navigation at page or spine -level
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.31/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.31/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.31
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.30...v1.0.31
+
+# 1.0.30
+
+> Build environment: NodeJS `10.16.0`, NPM `6.10.2`
+
+Changes:
+* NPM updates
+* Buffer.from() API to remove deprecation messages
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.30/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.30/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.30
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.29...v1.0.30
+
+# 1.0.29
+
+> Build environment: NodeJS `10.16.0`, NPM `6.9.0`
+
+Changes:
+* TTS readaloud improvements and fixes (full screen utterances view, support for RTL text)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.29/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.29/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.29
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.28...v1.0.29
+
+# 1.0.28
+
+> Build environment: NodeJS `10.16.0`, NPM `6.9.0`
+
+Changes:
+* Fixed URI vs. URL bug (percent-escaped Unicode characters in path, was failing to match spine/readingOrder resource)
+* Document selection: DOM Range normalization (algorithm from Apache Annotator, ported to TypeScript)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.28/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.28/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.28
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.27...v1.0.28
+
+# 1.0.27
+
+> Build environment: NodeJS `10.16.0`, NPM `6.9.0`
+
+Changes:
+* NPM updates
+* Document selection: `window.getSelection().collapseToStart()` replaced with `.removeAllRanges()` (was failing silently inside IPC event listener)
+* Document highlighting: working SVG implementation (background, underline, and strikethrough). Works with reflow scroll and paginated, as well as scaled fixed layout. Exact same visuals as with HTML divs, just with SVG instead. Note: no well-defined API to expose total functionality, still work in progress.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.27/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.27/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.27
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.26...v1.0.27
+
+# 1.0.26
+
+> Build environment: NodeJS `10.15.3`, NPM `6.9.0`
+
+Changes:
+* Fix Electron/Chromium regression due to breaking changes in WebView (Out Of Process iFrame) lifecycle: resize and load events were creating unnecessary scroll adjustments in reflow column-paginated and scroll views.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.26/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.26/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.26
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.25...v1.0.26
+
+# 1.0.25
+
+> Build environment: NodeJS `10.15.3`, NPM `6.9.0`
+
+Changes:
+* NPM update: the css-element-queries package (ResizeSensor) is now fetched from NPM rather than GitHub (was a forked/patched dependency, some time ago ...)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.25/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.25/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.25
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.24...v1.0.25
+
+# 1.0.24
+
+> Build environment: NodeJS `10.15.3`, NPM `6.9.0`
+
+Changes:
+* NPM updates (including the ResizeSensor)
+* TTS renaming to "readaloud" (non-breaking internal API change)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.24/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.24/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.24
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.23...v1.0.24
+
+# 1.0.23
+
+> Build environment: NodeJS `10.15.3`, NPM `6.9.0`
+
+Changes:
+* NPM updates
+* Fixed left/right arrow key for page switch, when keyboard focus inside webview (Electron post-v1 regression)
+* Added highlights API (with minimal UI / UX in r2-testapp-js)
+* Fixed-layout documents (FXL) sometimes did not emit the load event, and did not scale correctly (browser engine bugs / edge cases). There are still rendering issues in Electron v3-v5. To be continued...
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.0.23/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.0.23/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.0.23
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.22...v1.0.23
 
 # 1.0.22
 

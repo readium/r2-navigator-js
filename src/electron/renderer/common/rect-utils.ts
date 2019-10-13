@@ -32,13 +32,14 @@ export interface IRect extends IRectSimple {
     right: number;
 }
 
-export function getClientRectsNoOverlap(range: Range): IRect[] {
+export function getClientRectsNoOverlap(range: Range, doNotMergeHorizontallyAlignedRects: boolean): IRect[] {
 
     const rangeClientRects = range.getClientRects(); // Array.from(range.getClientRects());
-    return getClientRectsNoOverlap_(rangeClientRects);
+    return getClientRectsNoOverlap_(rangeClientRects, doNotMergeHorizontallyAlignedRects);
 }
 
-export function getClientRectsNoOverlap_(clientRects: ClientRectList | DOMRectList): IRect[] {
+// tslint:disable-next-line:max-line-length
+export function getClientRectsNoOverlap_(clientRects: ClientRectList | DOMRectList, doNotMergeHorizontallyAlignedRects: boolean): IRect[] {
 
     const tolerance = 1;
 
@@ -54,7 +55,7 @@ export function getClientRectsNoOverlap_(clientRects: ClientRectList | DOMRectLi
         });
     }
 
-    const mergedRects = mergeTouchingRects(originalRects, tolerance);
+    const mergedRects = mergeTouchingRects(originalRects, tolerance, doNotMergeHorizontallyAlignedRects);
     const noContainedRects = removeContainedRects(mergedRects, tolerance);
     const newRects = replaceOverlapingRects(noContainedRects);
 
@@ -235,7 +236,8 @@ export function rectsTouchOrOverlap(rect1: IRect, rect2: IRect, tolerance: numbe
     );
 }
 
-export function mergeTouchingRects(rects: IRect[], tolerance: number): IRect[] {
+// tslint:disable-next-line:max-line-length
+export function mergeTouchingRects(rects: IRect[], tolerance: number, doNotMergeHorizontallyAlignedRects: boolean): IRect[] {
     for (let i = 0; i < rects.length; i++) {
         for (let j = i + 1; j < rects.length; j++) {
             const rect1 = rects[i];
@@ -247,21 +249,24 @@ export function mergeTouchingRects(rects: IRect[], tolerance: number): IRect[] {
                 continue;
             }
 
-            const rectsLineUpHorizontally =
+            const rectsLineUpVertically =
                 almostEqual(rect1.top, rect2.top, tolerance) &&
                 almostEqual(rect1.bottom, rect2.bottom, tolerance);
 
-            const rectsLineUpVertically =
+            const rectsLineUpHorizontally =
                 almostEqual(rect1.left, rect2.left, tolerance) &&
                 almostEqual(rect1.right, rect2.right, tolerance);
 
-            const canMerge =
-                rectsTouchOrOverlap(rect1, rect2, tolerance) &&
-                (rectsLineUpHorizontally || rectsLineUpVertically);
+            const horizontalAllowed = !doNotMergeHorizontallyAlignedRects;
+            // tslint:disable-next-line:max-line-length
+            const aligned = (rectsLineUpHorizontally && horizontalAllowed) || (rectsLineUpVertically && !rectsLineUpHorizontally);
+
+            const canMerge = aligned && rectsTouchOrOverlap(rect1, rect2, tolerance);
 
             if (canMerge) {
                 if (IS_DEV) {
-                    console.log("CLIENT RECT: merging two into one");
+                    // tslint:disable-next-line:max-line-length
+                    console.log(`CLIENT RECT: merging two into one, VERTICAL: ${rectsLineUpVertically} HORIZONTAL: ${rectsLineUpHorizontally} (${doNotMergeHorizontallyAlignedRects})`);
                 }
                 const newRects = rects.filter((rect) => {
                     return rect !== rect1 && rect !== rect2;
@@ -269,7 +274,7 @@ export function mergeTouchingRects(rects: IRect[], tolerance: number): IRect[] {
                 const replacementClientRect = getBoundingRect(rect1, rect2);
                 newRects.push(replacementClientRect);
 
-                return mergeTouchingRects(newRects, tolerance);
+                return mergeTouchingRects(newRects, tolerance, doNotMergeHorizontallyAlignedRects);
             }
         }
     }

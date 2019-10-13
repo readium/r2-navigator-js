@@ -622,6 +622,76 @@ window.document.addEventListener("keydown", (ev: KeyboardEvent) => {
 });
 ```
 
+#### Selection Highlighting
+
+```javascript
+// The navigator maintains an ordered (visually-stacked) list of character-level highlights,
+// during the lifespan of a loaded / rendered publication document. The app is responsible for instructing
+// the navigator to instantiate these highlights, whenever a document is (re)loaded.
+// There is no persistence at the level of the navigator, the state is constrained to the lifecycle
+// of individual HTML documents. The navigator handles redrawing at the appropriate optimal times,
+// for example when changing the font size. Highlights emit mouse click events which the app can listen to.
+
+import {
+    IHighlight,
+    IHighlightDefinition,
+} from "@r2-navigator-js/electron/common/highlight";
+import {
+    highlightsClickListen,
+    highlightsCreate,
+    highlightsRemove,
+} from "@r2-navigator-js/electron/renderer/index";
+
+// Use the setReadingLocationSaver() notification to detect when the user creates a new selection:
+const saveReadingLocation = (location: LocatorExtended) => {
+
+    if (location.selectionInfo && location.selectionIsNew) {
+        // Note that a RGB `color` can be optionally specified in IHighlightDefinition (default is red-ish):
+        const highlightToCreate = { selectionInfo: location.selectionInfo } as IHighlightDefinition;
+
+        let createdHighlights: Array<IHighlight | null> | undefined;
+        try {
+            // The highlightsCreate() function takes an array of highlight definitions,
+            // here we just pass a single one, derived from the user selection:
+            createdHighlights = await highlightsCreate(location.locator.href, [highlightToCreate]);
+        } catch (err) {
+            console.log(err);
+        }
+        if (createdHighlights) {
+            createdHighlights.forEach((highlight) => {
+                if (highlight) {
+                    // ...
+                    // The visual highlight created in the navigator can be saved here in the app,
+                    // so that it can be restored at a later stage, typically when reloading the document (href).
+                }
+            });
+        }
+    }
+};
+setReadingLocationSaver(saveReadingLocation);
+
+// TIP: the app can detect when a new document has been loaded,
+// in which case the saved / stored highlights (inside the app's persistence layer)
+// must be re-instantiated inside the navigator:
+let _lastSavedReadingLocationHref: string | undefined;
+const saveReadingLocation = async (location: LocatorExtended) => {
+    const hrefHasChanged = _lastSavedReadingLocationHref !== location.locator.href;
+    _lastSavedReadingLocationHref = location.locator.href;
+
+    // ...
+    // here, invoke highlightsCreate() with the saved / stored highlights for this particular document (href)
+};
+
+// here we listen to mouse click events,
+// and we destroy the clicked highlight:
+highlightsClickListen((href: string, highlight: IHighlight) => {
+    highlightsRemove(href, [highlight.id]);
+    // ...
+    // remove the persistent / stored / saved copy too!
+});
+
+```
+
 #### Read aloud, TTS (Text To Speech), Synthetic Speech
 
 ```javascript
@@ -732,39 +802,12 @@ const deviceIDManager: IDeviceIDManager = {
 // and to check for an updated license (as passed in the callback parameter).
 // The lsdLcpUpdateInject() function can be used to immediately inject the updated
 // LCP license (META-INF/license.lcpl) inside the EPUB container on the filesystem.
-// Note that although the `launchStatusDocumentProcessing()` initializes `publication.LCP.LSDJson`,
+// Note that although the `launchStatusDocumentProcessing()` initializes `publication.LCP.LSD`,
 // after `lsdLcpUpdateInject()` is invoked a fresh new `publication.LCP` object is created
-// (which mirrors `META-INF/container.xml`), so `launchStatusDocumentProcessing()` must be called again (loop)
-// to ensure the latest LSD is indeed loaded and verified. Another alterative is to preserve the previous LSD,
-// which in all likelyhood is exactly the same (i.e. hasn't changed since the LCP license injection).
-// See immediately below for the alternative "preservation" method.
-// See further below for the more contrived (but strictly-speaking more correct) "loop" method.
-try {
-    await launchStatusDocumentProcessing(publication.LCP, deviceIDManager,
-        async (licenseUpdateJson: string | undefined) => {
-
-            if (licenseUpdateJson) {
-                const LSDJson = publication.LCP.LSDJson; // LSD preservation, see comment above.
-
-                let res: string;
-                try {
-                    res = await lsdLcpUpdateInject(
-                        licenseUpdateJson,
-                        publication as Publication,
-                        publicationFilePath);
-
-                    publication.LCP.LSDJson = LSDJson; // LSD preservation, see comment above.
-                } catch (err) {
-                    debug(err);
-                }
-            }
-        });
-} catch (err) {
-    debug(err);
-}
-
-// Example of looping the `launchStatusDocumentProcessing()` calls in order to reset `publication.LCP.LSDJson`
-// after `lsdLcpUpdateInject()` injects a fresh `publication.LCP` based on the downloaded `META-INF/container.xml`.
+// (which mirrors `META-INF/license.lcpl`), so `launchStatusDocumentProcessing()` must be called again (loop)
+// to ensure the latest LSD is indeed loaded and verified.
+// Below is an example of looping the `launchStatusDocumentProcessing()` calls in order to reset `publication.LCP.LSD`
+// after `lsdLcpUpdateInject()` injects a fresh `publication.LCP` based on the downloaded `META-INF/license.lcpl`.
 async function tryLSD(deviceIDManager: IDeviceIDManager, publication: Publication, publicationFilePath: string): Promise<boolean> {
 
     return new Promise(async (resolve, reject) => {
@@ -803,6 +846,34 @@ async function tryLSD(deviceIDManager: IDeviceIDManager, publication: Publicatio
 }
 try {
     await tryLSD(publication, publicationFilePath);
+} catch (err) {
+    debug(err);
+}
+
+// A less-ideal alterative is to preserve the previous LSD,
+// but in principle the new LCP may contain a LSD link that needs to be requested
+// again in order to get the latest information available for this new license
+// (e.g. associated LSD events list).
+try {
+    await launchStatusDocumentProcessing(publication.LCP, deviceIDManager,
+        async (licenseUpdateJson: string | undefined) => {
+
+            if (licenseUpdateJson) {
+                const LSD_backup = publication.LCP.LSD; // LSD preservation, see comment above.
+
+                let res: string;
+                try {
+                    res = await lsdLcpUpdateInject(
+                        licenseUpdateJson,
+                        publication as Publication,
+                        publicationFilePath);
+
+                    publication.LCP.LSD = LSD_backup; // LSD preservation, see comment above.
+                } catch (err) {
+                    debug(err);
+                }
+            }
+        });
 } catch (err) {
     debug(err);
 }

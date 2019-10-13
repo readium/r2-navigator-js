@@ -5,13 +5,13 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import * as debug_ from "debug";
 import * as fs from "fs";
+import { JSON as TAJSON } from "ta-json-x";
 
 import { LCP } from "@r2-lcp-js/parser/epub/lcp";
 import { Publication } from "@r2-shared-js/models/publication";
 import { injectBufferInZip } from "@r2-utils-js/_utils/zip/zipInjector";
-import * as debug_ from "debug";
-import { JSON as TAJSON } from "ta-json-x";
 
 const debug = debug_("r2:navigator#electron/main/lsd-injectlcpl");
 

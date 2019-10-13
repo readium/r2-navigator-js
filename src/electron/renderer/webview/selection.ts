@@ -17,7 +17,7 @@ function dumpDebug(
     startNode: Node, startOffset: number,
     endNode: Node, endOffset: number,
     getCssSelector: (element: Element) => string,
-    ) {
+) {
     console.log("$$$$$$$$$$$$$$$$$ " + msg);
     console.log("**** START");
     console.log("Node type (1=element, 3=text): " + startNode.nodeType);
@@ -74,7 +74,7 @@ export function getCurrentSelectionInfo(
     win: IReadiumElectronWebviewWindow,
     getCssSelector: (element: Element) => string,
     computeElementCFI: (node: Node) => string | undefined,
-    ):
+):
     ISelectionInfo | undefined {
 
     const selection = win.getSelection();
@@ -96,11 +96,33 @@ export function getCurrentSelectionInfo(
     if (!selection.anchorNode || !selection.focusNode) {
         return undefined;
     }
-    const range = selection.rangeCount === 1 ? selection.getRangeAt(0) :
+    const r = selection.rangeCount === 1 ? selection.getRangeAt(0) :
         createOrderedRange(selection.anchorNode, selection.anchorOffset, selection.focusNode, selection.focusOffset);
-    if (!range || range.collapsed) {
+    if (!r || r.collapsed) {
         console.log("$$$$$$$$$$$$$$$$$ CANNOT GET NON-COLLAPSED SELECTION RANGE?!");
         return undefined;
+    }
+
+    const range = normalizeRange(r);
+    if (IS_DEV) {
+        if (range.startContainer !== r.startContainer) {
+            console.log(">>>>>>>>>>>>>>>>>>>>>>> SELECTION RANGE NORMALIZE diff: startContainer");
+            console.log(range.startContainer);
+            console.log(r.startContainer);
+        }
+        if (range.startOffset !== r.startOffset) {
+            console.log(">>>>>>>>>>>>>>>>>>>>>>> SELECTION RANGE NORMALIZE diff: startOffset");
+            console.log(`${range.startOffset} !== ${r.startOffset}`);
+        }
+        if (range.endContainer !== r.endContainer) {
+            console.log(">>>>>>>>>>>>>>>>>>>>>>> SELECTION RANGE NORMALIZE diff: endContainer");
+            console.log(range.endContainer);
+            console.log(r.endContainer);
+        }
+        if (range.endOffset !== r.endOffset) {
+            console.log(">>>>>>>>>>>>>>>>>>>>>>> SELECTION RANGE NORMALIZE diff: endOffset");
+            console.log(`${range.endOffset} !== ${r.endOffset}`);
+        }
     }
 
     const rangeInfo = convertRange(range, getCssSelector, computeElementCFI);
@@ -152,6 +174,7 @@ export function createOrderedRange(startNode: Node, startOffset: number, endNode
     range.setStart(startNode, startOffset);
     range.setEnd(endNode, endOffset);
     if (!range.collapsed) {
+        console.log(">>> createOrderedRange RANGE OK");
         return range;
     }
 
@@ -230,7 +253,7 @@ export function convertRange(
     range: Range,
     getCssSelector: (element: Element) => string,
     computeElementCFI: (node: Node) => string | undefined,
-    ):
+):
     IRangeInfo | undefined {
 
     // -----------------
@@ -529,3 +552,145 @@ function getChildTextNodeCfiIndex(element: Element, child: Text): number {
 //     }
 //     return found;
 // }
+
+//  https://github.com/webmodules/range-normalize/pull/2
+//  "Normalizes" the DOM Range instance, such that slight variations in the start
+//  and end containers end up being normalized to the same "base" representation.
+//  The aim is to always have `startContainer` and `endContainer` pointing to
+//  TextNode instances.
+//  Pseudo-logic is as follows:
+//  - Expand the boundaries if they fall between siblings.
+//  - Narrow the boundaries until they point at leaf nodes.
+//  - Is the start container excluded by its offset?
+//    - Move it to the next leaf Node, but not past the end container.
+//    - Is the start container a leaf Node but not a TextNode?
+//      - Set the start boundary to be before the Node.
+//  - Is the end container excluded by its offset?
+//    - Move it to the previous leaf Node, but not past the start container.
+//    - Is the end container a leaf Node but not a TextNode?
+//      - Set the end boundary to be after the Node.
+//  @param {Range} range - DOM Range instance to "normalize"
+//  @return {Range} returns a "normalized" clone of `range`
+export function normalizeRange(r: Range) {
+
+    const range = r.cloneRange(); // new Range(); // document.createRange()
+
+    let sc = range.startContainer;
+    let so = range.startOffset;
+    let ec = range.endContainer;
+    let eo = range.endOffset;
+
+    // Move the start container to the last leaf before any sibling boundary.
+    if (sc.childNodes.length && so > 0) {
+        sc = lastLeaf(sc.childNodes[so - 1]);
+        so = (sc as CharacterData).length || 0;
+    }
+
+    // Move the end container to the first leaf after any sibling boundary.
+    if (eo < ec.childNodes.length) {
+        ec = firstLeaf(ec.childNodes[eo]);
+        eo = 0;
+    }
+
+    // Move each container inward until it reaches a leaf Node.
+    let start: Node | null = firstLeaf(sc);
+    let end: Node | null = lastLeaf(ec);
+
+    // Define a predicate to check if a Node is a leaf Node inside the Range.
+    function isLeafNodeInRange(node: Node): boolean {
+        if (node.childNodes.length) {
+            return false;
+        }
+
+        const length = (node as CharacterData).length || 0;
+        if (node === sc && so === length) {
+            return false;
+        }
+        if (node === ec && eo === 0) {
+            return false;
+        }
+        return true;
+    }
+
+    // Move the start container until it is included or collapses to the end.
+    while (start && !isLeafNodeInRange(start) && start !== end) {
+        start = documentForward(start);
+    }
+
+    if (start === sc) {
+        range.setStart(sc, so);
+    } else if (start !== null) {
+        if (start.nodeType === 3) {
+            range.setStart(start, 0);
+        } else {
+            range.setStartBefore(start);
+        }
+    }
+
+    // Move the end container until it is included or collapses to the start.
+    while (end && !isLeafNodeInRange(end) && end !== start) {
+        end = documentReverse(end);
+    }
+
+    if (end === ec) {
+        range.setEnd(ec, eo);
+    } else if (end !== null) {
+        if (end.nodeType === 3) {
+            range.setEnd(end, (end as CharacterData).length);
+        } else {
+            range.setEndAfter(end);
+        }
+    }
+
+    return range;
+}
+
+// Return the next Node in a document order traversal.
+// This order is equivalent to a classic pre-order.
+function documentForward(node: Node): Node | null {
+    if (node.firstChild) {
+        return node.firstChild;
+    }
+
+    let n: Node | null = node;
+    while (!n.nextSibling) {
+        n = n.parentNode;
+        if (!n) {
+            return null;
+        }
+    }
+
+    return n.nextSibling;
+}
+
+// Return the next Node in a reverse document order traversal.
+// This order is equivalent to pre-order with the child order reversed.
+function documentReverse(node: Node): Node | null {
+    if (node.lastChild) {
+        return node.lastChild;
+    }
+
+    let n: Node | null = node;
+    while (!n.previousSibling) {
+        n = n.parentNode;
+        if (!n) {
+            return null;
+        }
+    }
+
+    return n.previousSibling;
+}
+
+function firstLeaf(node: Node): Node {
+    while (node.firstChild) {
+        node = node.firstChild;
+    }
+    return node;
+}
+
+function lastLeaf(node: Node): Node {
+    while (node.lastChild) {
+        node = node.lastChild;
+    }
+    return node;
+}

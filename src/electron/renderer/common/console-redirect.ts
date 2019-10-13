@@ -5,15 +5,13 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import * as util from "util";
-
 // https://github.com/visionmedia/debug/blob/master/src/index.js
 // typeof process === 'undefined' || process.type === 'renderer' || process.browser === true || process.__nwjs
 // (defaults to "debug/src/browser" when Electron renderer process)
 import * as debugBrowser from "debug";
-
 // https://github.com/visionmedia/debug/blob/master/src/node.js
 import * as debugNode from "debug/src/node"; // used for shell output (print to stderr/out stream)
+import * as util from "util";
 
 // https://github.com/visionmedia/debug/blob/master/src/common.js
 // import * as debugCommon from "debug/src/common";

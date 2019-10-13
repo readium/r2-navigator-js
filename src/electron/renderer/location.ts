@@ -5,47 +5,36 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import * as debug_ from "debug";
+import { ipcRenderer, shell } from "electron";
 import { URL } from "url";
 
 import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
 import { Link } from "@r2-shared-js/models/publication-link";
 import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
-import * as debug_ from "debug";
-import { ipcRenderer, shell } from "electron";
 
 import { IDocInfo } from "../common/document";
 import {
-    IEventPayload_R2_EVENT_LINK,
-    IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
-    IEventPayload_R2_EVENT_PAGE_TURN,
-    IEventPayload_R2_EVENT_READING_LOCATION,
-    IEventPayload_R2_EVENT_SCROLLTO,
-    IEventPayload_R2_EVENT_SHIFT_VIEW_X,
-    R2_EVENT_LINK,
-    R2_EVENT_LOCATOR_VISIBLE,
-    R2_EVENT_PAGE_TURN,
-    R2_EVENT_PAGE_TURN_RES,
-    R2_EVENT_READING_LOCATION,
-    R2_EVENT_SCROLLTO,
-    R2_EVENT_SHIFT_VIEW_X,
+    IEventPayload_R2_EVENT_LINK, IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
+    IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READING_LOCATION,
+    IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X, R2_EVENT_LINK,
+    R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION,
+    R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
 } from "../common/events";
 import { IPaginationInfo } from "../common/pagination";
 import { ISelectionInfo } from "../common/selection";
 import {
-    READIUM2_ELECTRON_HTTP_PROTOCOL,
-    convertCustomSchemeToHttpUrl,
-    convertHttpUrlToCustomScheme,
+    READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl, convertHttpUrlToCustomScheme,
 } from "../common/sessions";
 import {
-    URL_PARAM_CSS,
-    URL_PARAM_DEBUG_VISUALS,
-    URL_PARAM_EPUBREADINGSYSTEM,
-    URL_PARAM_GOTO,
+    URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO,
     URL_PARAM_PREVIOUS,
 } from "./common/url-params";
 import { getEpubReadingSystemInfo } from "./epubReadingSystem";
 import { __computeReadiumCssJsonMessage, isRTL } from "./readium-css";
-import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
+import {
+    IReadiumElectronBrowserWindow, IReadiumElectronWebview, isScreenReaderMounted,
+} from "./webview/state";
 
 import URI = require("urijs");
 
@@ -110,6 +99,9 @@ export function locationHandleIpcMessage(
             uri.hash = "";
             uri.search = "";
             const urlNoQueryParams = uri.toString(); // publicationURL + "/../" + nextOrPreviousSpineItem.Href;
+            // NOTE that decodeURIComponent() must be called on the toString'ed URL urlNoQueryParams
+            // tslint:disable-next-line:max-line-length
+            // (in case nextOrPreviousSpineItem.Href contains Unicode characters, in which case they get percent-encoded by the URL.toString())
             handleLink(urlNoQueryParams, goPREVIOUS, false);
         }
     } else if (eventChannel === R2_EVENT_READING_LOCATION) {
@@ -169,20 +161,71 @@ export function shiftWebview(webview: IReadiumElectronWebview, offset: number, b
     }
 }
 
-export function navLeftOrRight(left: boolean) {
+export function navLeftOrRight(left: boolean, spineNav?: boolean) {
     const publication = (window as IReadiumElectronBrowserWindow).READIUM2.publication;
-    if (!publication) {
+    const publicationURL = (window as IReadiumElectronBrowserWindow).READIUM2.publicationURL;
+    if (!publication || !publicationURL) {
         return;
     }
+
+    // metadata-level RTL
     const rtl = isRTL();
-    const goPREVIOUS = left ? !rtl : rtl;
-    const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-        direction: rtl ? "RTL" : "LTR",
-        go: goPREVIOUS ? "PREVIOUS" : "NEXT",
-    };
-    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
-    if (activeWebView) {
-        activeWebView.send(R2_EVENT_PAGE_TURN, payload); // .getWebContents()
+
+    if (spineNav) {
+        if (!publication.Spine) {
+            return;
+        }
+
+        if (!_lastSavedReadingLocation) { // getCurrentReadingLocation()
+            return;
+        }
+        const loc = _lastSavedReadingLocation;
+
+        // document-level RTL
+        const rtl_ = loc.docInfo && loc.docInfo.isRightToLeft;
+        if (rtl_ !== rtl) {
+            debug(`RTL differ?! METADATA ${rtl} vs. DOCUMENT ${rtl_}`);
+        }
+
+        // array boundaries overflow are checked further down ...
+        const offset = (left ? -1 : 1) * (rtl ? -1 : 1);
+
+        const currentSpineIndex = publication.Spine.findIndex((link) => {
+            return link.Href === loc.locator.href;
+        });
+        if (currentSpineIndex >= 0) {
+            const spineIndex = currentSpineIndex + offset;
+
+            // array boundaries overflow are checked here:
+            if (spineIndex >= 0 && spineIndex <= (publication.Spine.length - 1)) {
+                const nextOrPreviousSpineItem = publication.Spine[spineIndex];
+
+                // handleLinkUrl(publicationURL + "/../" + nextOrPreviousSpineItem.Href);
+
+                const uri = new URL(nextOrPreviousSpineItem.Href, publicationURL);
+                uri.hash = "";
+                uri.search = "";
+                const urlNoQueryParams = uri.toString(); // publicationURL + "/../" + nextOrPreviousSpineItem.Href;
+                // NOTE that decodeURIComponent() must be called on the toString'ed URL urlNoQueryParams
+                // tslint:disable-next-line:max-line-length
+                // (in case nextOrPreviousSpineItem.Href contains Unicode characters, in which case they get percent-encoded by the URL.toString())
+                handleLink(urlNoQueryParams, false, false);
+
+                return;
+            } else {
+                shell.beep(); // announce boundary overflow (first or last Spine item)
+            }
+        }
+    } else {
+        const goPREVIOUS = left ? !rtl : rtl;
+        const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+            direction: rtl ? "RTL" : "LTR",
+            go: goPREVIOUS ? "PREVIOUS" : "NEXT",
+        };
+        const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+        if (activeWebView) {
+            activeWebView.send(R2_EVENT_PAGE_TURN, payload); // .getWebContents()
+        }
     }
 }
 
@@ -190,21 +233,27 @@ export function handleLink(href: string, previous: boolean | undefined, useGoto:
 
     const special = href.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
     if (special) {
-        loadLink(href, previous, useGoto);
+        const okay = loadLink(href, previous, useGoto);
+        if (!okay) {
+            debug(`Readium link fail?! ${href}`);
+        }
     } else {
         const okay = loadLink(href, previous, useGoto);
         if (!okay) {
-            debug("EXTERNAL LINK:");
-            debug(href);
+            if (/^http[s]?:\/\/127\.0\.0\.1/.test(href)) { // href.startsWith("https://127.0.0.1")
+                debug(`Internal link, fails to match publication document: ${href}`);
+            } else {
+                debug(`External link: ${href}`);
 
-            // tslint:disable-next-line:no-floating-promises
-            (async () => {
-                try {
-                    await shell.openExternal(href);
-                } catch (err) {
-                    debug(err);
-                }
-            })();
+                // tslint:disable-next-line:no-floating-promises
+                (async () => {
+                    try {
+                        await shell.openExternal(href);
+                    } catch (err) {
+                        debug(err);
+                    }
+                })();
+            }
         }
     }
 }
@@ -262,8 +311,11 @@ export function handleLinkLocator(location: Locator | undefined) {
         const urlNoQueryParams = uri.toString(); // publicationURL + "/../" + linkToLoad.Href;
         const hrefToLoad = urlNoQueryParams +
             ((useGoto) ? ("?" + URL_PARAM_GOTO + "=" +
-                encodeURIComponent_RFC3986(new Buffer(JSON.stringify(linkToLoadGoto, null, "")).toString("base64"))) :
+                encodeURIComponent_RFC3986(Buffer.from(JSON.stringify(linkToLoadGoto, null, "")).toString("base64"))) :
                 "");
+        // NOTE that decodeURIComponent() must be called on the toString'ed URL hrefToLoad
+        // tslint:disable-next-line:max-line-length
+        // (in case linkToLoad.Href contains Unicode characters, in which case they get percent-encoded by the URL.toString())
         handleLink(hrefToLoad, undefined, useGoto);
     }
 }
@@ -312,6 +364,9 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         return false;
     }
 
+    // because URL.toString() percent-encodes Unicode characters in the path!
+    linkPath = decodeURIComponent(linkPath);
+
     // const pubUri = new URI(pubJsonUri);
     // // "/pub/BASE64_PATH/manifest.json" ==> "/pub/BASE64_PATH/"
     // const pathPrefix = decodeURIComponent(pubUri.path().replace("manifest.json", ""));
@@ -333,6 +388,13 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         return false;
     }
 
+    // Note that with URI (unlike URL) if hrefFull contains Unicode characters,
+    // the toString() function does not percent-encode them.
+    // But also note that if hrefFull is already percent-encoded, this is returned as-is!
+    // (i.e. do not expect toString() to output Unicode chars from their escaped notation)
+    // See decodeURIComponent() above,
+    // which is necessary in cases where loadLink() is called with URL.toString() for hrefFull
+    // ... which it is!
     const linkUri = new URI(hrefFull);
     linkUri.search((data: any) => {
         // overrides existing (leaves others intact)
@@ -359,11 +421,11 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
 
     const rcssJson = __computeReadiumCssJsonMessage(pubLink);
     const rcssJsonstr = JSON.stringify(rcssJson, null, "");
-    const rcssJsonstrBase64 = new Buffer(rcssJsonstr).toString("base64");
+    const rcssJsonstrBase64 = Buffer.from(rcssJsonstr).toString("base64");
 
     const rersJson = getEpubReadingSystemInfo();
     const rersJsonstr = JSON.stringify(rersJson, null, "");
-    const rersJsonstrBase64 = new Buffer(rersJsonstr).toString("base64");
+    const rersJsonstrBase64 = Buffer.from(rersJsonstr).toString("base64");
 
     linkUri.search((data: any) => {
         // overrides existing (leaves others intact)
@@ -379,13 +441,19 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
             "true" : "false";
     });
 
+    const webviewNeedsHardRefresh =
+        (window as IReadiumElectronBrowserWindow).READIUM2.enableScreenReaderAccessibilityWebViewHardRefresh
+        && isScreenReaderMounted();
+
     const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
 
-    if (activeWebView && activeWebView.READIUM2.link === pubLink) {
+    if (!webviewNeedsHardRefresh &&
+        activeWebView && activeWebView.READIUM2.link === pubLink) {
+
         const goto = useGoto ? linkUri.search(true)[URL_PARAM_GOTO] as string : undefined;
         const hash = useGoto ? undefined : linkUri.fragment(); // without #
 
-        debug("ALREADY LOADED: " + pubLink.Href);
+        debug("WEBVIEW ALREADY LOADED: " + pubLink.Href);
 
         const payload: IEventPayload_R2_EVENT_SCROLLTO = {
             goto,
@@ -471,8 +539,11 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     // }
 
     if (activeWebView) {
-
         const uriStr = linkUri.toString();
+
+        const needConvert = publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
+        const uriStr_ = uriStr.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ?
+            uriStr : (needConvert ? convertHttpUrlToCustomScheme(uriStr) : uriStr);
 
         // if (IS_DEV) {
         //     debug("####### >>> ---");
@@ -483,7 +554,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         //     debug(linkUri.fragment()); // without #
         //     // tslint:disable-next-line:no-string-literal
         //     const gto = linkUri.search(true)[URL_PARAM_GOTO];
-        //     debug(gto ? (new Buffer(gto, "base64").toString("utf8")) : ""); // decodeURIComponent
+        //     debug(gto ? (Buffer.from(gto, "base64").toString("utf8")) : ""); // decodeURIComponent
         //     // tslint:disable-next-line:no-string-literal
         //     debug(linkUri.search(true)[URL_PARAM_PREVIOUS]);
         //     // tslint:disable-next-line:no-string-literal
@@ -491,32 +562,42 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         //     debug("####### >>> ---");
         // }
 
-        const webviewAlreadyHasContent = (typeof activeWebView.READIUM2.link !== "undefined")
-            && activeWebView.READIUM2.link !== null;
-
-        activeWebView.READIUM2.link = pubLink;
-
-        const needConvert = publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
-        const uriStr_ = uriStr.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ?
-            uriStr : (needConvert ? convertHttpUrlToCustomScheme(uriStr) : uriStr);
-        if (IS_DEV) {
-            debug("setAttribute SRC:");
-            debug(uriStr_);
-        }
-
-        if (activeWebView.style.transform !== "none") {
-            // activeWebView.setAttribute("src", "data:, ");
-
-            if (webviewAlreadyHasContent) {
-                activeWebView.send("R2_EVENT_HIDE");
+        if (webviewNeedsHardRefresh) {
+            if (IS_DEV) {
+                debug(`___HARD___ WEBVIEW REFRESH: ${uriStr_}`);
             }
 
-            setTimeout(() => {
-                shiftWebview(activeWebView, 0, undefined); // reset
-                activeWebView.setAttribute("src", uriStr_);
-            }, 10);
+            (window as IReadiumElectronBrowserWindow).READIUM2.destroyActiveWebView();
+            (window as IReadiumElectronBrowserWindow).READIUM2.createActiveWebView();
+            const newActiveWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+            if (newActiveWebView) {
+                newActiveWebView.READIUM2.link = pubLink;
+                newActiveWebView.setAttribute("src", uriStr_);
+            }
+            return true;
         } else {
-            activeWebView.setAttribute("src", uriStr_);
+            if (IS_DEV) {
+                debug(`___SOFT___ WEBVIEW REFRESH: ${uriStr_}`);
+            }
+
+            const webviewAlreadyHasContent = (typeof activeWebView.READIUM2.link !== "undefined")
+                && activeWebView.READIUM2.link !== null;
+            activeWebView.READIUM2.link = pubLink;
+
+            if (activeWebView.style.transform !== "none") {
+                // activeWebView.setAttribute("src", "data:, ");
+
+                if (webviewAlreadyHasContent) {
+                    activeWebView.send("R2_EVENT_HIDE");
+                }
+
+                setTimeout(() => {
+                    shiftWebview(activeWebView, 0, undefined); // reset
+                    activeWebView.setAttribute("src", uriStr_);
+                }, 10);
+            } else {
+                activeWebView.setAttribute("src", uriStr_);
+            }
         }
     }
 

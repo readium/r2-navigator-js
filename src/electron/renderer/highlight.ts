@@ -6,13 +6,9 @@
 // ==LICENSE-END==
 
 import {
-    IEventPayload_R2_EVENT_HIGHLIGHT_CLICK,
-    IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
-    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE,
-    R2_EVENT_HIGHLIGHT_CLICK,
-    R2_EVENT_HIGHLIGHT_CREATE,
-    R2_EVENT_HIGHLIGHT_REMOVE,
-    R2_EVENT_HIGHLIGHT_REMOVE_ALL,
+    IEventPayload_R2_EVENT_HIGHLIGHT_CLICK, IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
+    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_CLICK, R2_EVENT_HIGHLIGHT_CREATE,
+    R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
 } from "../common/events";
 import { IHighlight, IHighlightDefinition } from "../common/highlight";
 import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";

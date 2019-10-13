@@ -133,6 +133,8 @@ export const TTS_ID_PREVIOUS = "r2-tts-previous";
 export const TTS_ID_NEXT = "r2-tts-next";
 export const TTS_ID_SLIDER = "r2-tts-slider";
 export const TTS_ID_ACTIVE_WORD = "r2-tts-active-word";
+export const TTS_ID_ACTIVE_UTTERANCE = "r2-tts-active-utterance";
+export const TTS_CLASS_UTTERANCE = "r2-tts-utterance";
 export const TTS_ID_CONTAINER = "r2-tts-txt";
 export const TTS_ID_INFO = "r2-tts-info";
 export const TTS_NAV_BUTTON_CLASS = "r2-tts-button";
@@ -140,8 +142,33 @@ export const TTS_ID_SPEAKING_DOC_ELEMENT = "r2-tts-speaking-el";
 export const TTS_CLASS_INJECTED_SPAN = "r2-tts-speaking-txt";
 export const TTS_CLASS_INJECTED_SUBSPAN = "r2-tts-speaking-word";
 export const TTS_ID_INJECTED_PARENT = "r2-tts-speaking-txt-parent";
+export const TTS_POPUP_DIALOG_CLASS = "r2-tts-popup-dialog";
 
 export const ttsCssStyles = `
+
+:root[style] dialog#${POPUP_DIALOG_CLASS}.${TTS_POPUP_DIALOG_CLASS},
+:root dialog#${POPUP_DIALOG_CLASS}.${TTS_POPUP_DIALOG_CLASS} {
+    width: auto;
+    max-width: 100%;
+
+    height: auto;
+    max-height: 100%;
+
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+
+    margin: 0;
+    padding: 0;
+
+    box-shadow: none;
+
+    border-radius: 0;
+    border-style: solid;
+    border-width: 2px;
+    border-color: black !important;
+}
 
 :root[style] div#${TTS_ID_CONTAINER},
 :root div#${TTS_ID_CONTAINER} {
@@ -153,7 +180,7 @@ export const ttsCssStyles = `
     grid-row-start: 1;
     grid-row-end: 2;
 
-    padding: 0.3em;
+    padding: 1em;
     margin: 0;
     margin-left: 0.2em;
     margin-top: 0.2em;
@@ -207,6 +234,8 @@ export const ttsCssStyles = `
     margin: 0;
     margin-left: 6px;
     margin-right: 6px;
+    margin-top: 6px;
+    margin-bottom: 6px;
 
     grid-column-start: 2;
     grid-column-end: 3;
@@ -347,23 +376,55 @@ export const ttsCssStyles = `
     */
 }
 
+.${TTS_CLASS_UTTERANCE} {
+    margin-bottom: 1em;
+    padding: 0;
+    display: block;
+}
+
+:root[style] div#${TTS_ID_ACTIVE_UTTERANCE},
+:root div#${TTS_ID_ACTIVE_UTTERANCE} {
+    /* background-color: yellow !important; */
+
+    color: black !important;
+}
+:root[style*="readium-night-on"] div#${TTS_ID_ACTIVE_UTTERANCE} {
+    color: white !important;
+}
+:root[style*="readium-sepia-on"] div#${TTS_ID_ACTIVE_UTTERANCE} {
+    color: black !important;
+}
+:root[style*="--USER__textColor"] div#${TTS_ID_ACTIVE_UTTERANCE} {
+    color: var(--USER__textColor) !important;
+}
+
 :root[style] span#${TTS_ID_ACTIVE_WORD},
 :root span#${TTS_ID_ACTIVE_WORD} {
     color: black !important;
+
+    /*
     text-decoration: underline;
     text-underline-position: under;
+    */
+    outline-color: black;
+    outline-offset: 2px;
+    outline-style: solid;
+    outline-width: 1px;
 
     padding: 0;
     margin: 0;
 }
 :root[style*="readium-night-on"] span#${TTS_ID_ACTIVE_WORD} {
     color: white !important;
+    outline-color: white;
 }
 :root[style*="readium-sepia-on"] span#${TTS_ID_ACTIVE_WORD} {
     color: black !important;
+    outline-color: black;
 }
 :root[style*="--USER__textColor"] span#${TTS_ID_ACTIVE_WORD} {
     color: var(--USER__textColor) !important;
+    outline-color: var(--USER__textColor);
 }
 `;
 

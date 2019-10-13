@@ -170,7 +170,8 @@ export class PopupDialog {
         public readonly documant: Document,
         outerHTML: string,
         // id: string,
-        public readonly onDialogClosed: (el: HTMLOrSVGElement | null) => void) {
+        public readonly onDialogClosed: (el: HTMLOrSVGElement | null) => void,
+        optionalCssClass?: string) {
 
         closePopupDialogs(documant);
 
@@ -183,7 +184,8 @@ export class PopupDialog {
         this.dialog = documant.createElement("dialog") as IHTMLDialogElementWithPopup;
         this.dialog.popDialog = this;
 
-        this.dialog.setAttribute("class", POPUP_DIALOG_CLASS);
+        this.dialog.setAttribute("class", POPUP_DIALOG_CLASS
+            + (optionalCssClass ? ` ${optionalCssClass}` : ""));
         this.dialog.setAttribute("id", POPUP_DIALOG_CLASS);
         this.dialog.setAttribute("dir", "ltr");
 
