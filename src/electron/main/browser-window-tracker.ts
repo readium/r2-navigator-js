@@ -80,12 +80,7 @@ app.on("web-contents-created", (_evt, wc) => {
 
             wc.on("will-navigate", (event, url) => {
                 debug("webview.getWebContents().on('will-navigate'");
-
-                // debug(event.sender);
                 debug(url);
-
-                const wcUrl = event.sender.getURL();
-                debug(wcUrl);
 
                 event.preventDefault();
 

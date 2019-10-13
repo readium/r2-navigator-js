@@ -18,7 +18,7 @@ const debug = debug_("r2:navigator#electron/main/sessions");
 
 export function secureSessions(server: Server) {
 
-    const filter = { urls: ["*", "*://*/*"] };
+    const filter = { urls: ["*://*/*"] };
 
     // https://github.com/electron/electron/blob/master/docs/tutorial/security.md#csp-http-header
     const onHeadersReceivedCB = (details: any, callback: any) => {
