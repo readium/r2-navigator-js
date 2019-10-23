@@ -1,12 +1,31 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.0.37...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.37...develop
 
 Changes:
 * TODO
 
+# 1.1.37
+
+> Build environment: NodeJS `12.13.0`, NPM `6.12.0`
+
+Changes:
+* NPM updates, Electron v7
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.37/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.37/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.37
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.37...v1.1.37
+
 # 1.0.37
+
+ELECTRON v6 moved to `electron6` branch! (Electron v7 in `develop`)
 
 > Build environment: NodeJS `10.16.3`, NPM `6.12.0`
 
