@@ -70,14 +70,18 @@ export function readiumCssOnOff() {
         const payload1 = __computeReadiumCssJsonMessage(activeWebView.READIUM2.link);
 
         if (activeWebView.style.transform !== "none") {
-            activeWebView.send("R2_EVENT_HIDE");
+            setTimeout(async () => {
+                await activeWebView.send("R2_EVENT_HIDE");
+            }, 0);
 
-            setTimeout(() => {
+            setTimeout(async () => {
                 shiftWebview(activeWebView, 0, undefined); // reset
-                activeWebView.send(R2_EVENT_READIUMCSS, payload1);
+                await activeWebView.send(R2_EVENT_READIUMCSS, payload1);
             }, 10);
         } else {
-            activeWebView.send(R2_EVENT_READIUMCSS, payload1);
+            setTimeout(async () => {
+                await activeWebView.send(R2_EVENT_READIUMCSS, payload1);
+            }, 0);
         }
     }
 
@@ -302,7 +306,9 @@ export function installNavigatorDOM(
             if (activeWebView) {
                 const payload: IEventPayload_R2_EVENT_DEBUG_VISUALS
                     = { debugVisuals };
-                activeWebView.send(R2_EVENT_DEBUG_VISUALS, payload);
+                setTimeout(async () => {
+                    await activeWebView.send(R2_EVENT_DEBUG_VISUALS, payload);
+                }, 0);
             }
             if (window.localStorage) {
                 window.localStorage.setItem(URL_PARAM_DEBUG_VISUALS, debugVisuals ? "true" : "false");
@@ -340,7 +346,10 @@ export function installNavigatorDOM(
                     const d = (window as IReadiumElectronBrowserWindow).READIUM2.DEBUG_VISUALS;
                     const payload: IEventPayload_R2_EVENT_DEBUG_VISUALS
                         = { debugVisuals: d, cssSelector, cssClass, cssStyles };
-                    activeWebView.send(R2_EVENT_DEBUG_VISUALS, payload);
+
+                    setTimeout(async () => {
+                        await activeWebView.send(R2_EVENT_DEBUG_VISUALS, payload);
+                    }, 0);
                 }
             };
     }

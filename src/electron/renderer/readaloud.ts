@@ -69,7 +69,10 @@ export function ttsPlay() {
         rootElement: "html > body", // window.document.body
         startElement: startElementCSSSelector,
     };
-    activeWebView.send(R2_EVENT_TTS_DO_PLAY, payload);
+
+    setTimeout(async () => {
+        await activeWebView.send(R2_EVENT_TTS_DO_PLAY, payload);
+    }, 0);
 }
 
 export function ttsPause() {
@@ -77,35 +80,50 @@ export function ttsPause() {
     if (!activeWebView) {
         return;
     }
-    activeWebView.send(R2_EVENT_TTS_DO_PAUSE);
+
+    setTimeout(async () => {
+        await activeWebView.send(R2_EVENT_TTS_DO_PAUSE);
+    }, 0);
 }
 export function ttsStop() {
     const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
     if (!activeWebView) {
         return;
     }
-    activeWebView.send(R2_EVENT_TTS_DO_STOP);
+
+    setTimeout(async () => {
+        await activeWebView.send(R2_EVENT_TTS_DO_STOP);
+    }, 0);
 }
 export function ttsResume() {
     const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
     if (!activeWebView) {
         return;
     }
-    activeWebView.send(R2_EVENT_TTS_DO_RESUME);
+
+    setTimeout(async () => {
+        await activeWebView.send(R2_EVENT_TTS_DO_RESUME);
+    }, 0);
 }
 export function ttsPrevious() {
     const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
     if (!activeWebView) {
         return;
     }
-    activeWebView.send(R2_EVENT_TTS_DO_PREVIOUS);
+
+    setTimeout(async () => {
+        await activeWebView.send(R2_EVENT_TTS_DO_PREVIOUS);
+    }, 0);
 }
 export function ttsNext() {
     const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
     if (!activeWebView) {
         return;
     }
-    activeWebView.send(R2_EVENT_TTS_DO_NEXT);
+
+    setTimeout(async () => {
+        await activeWebView.send(R2_EVENT_TTS_DO_NEXT);
+    }, 0);
 }
 
 export function ttsClickEnable(doEnable: boolean) {
@@ -122,5 +140,8 @@ export function ttsClickEnable(doEnable: boolean) {
     const payload: IEventPayload_R2_EVENT_TTS_CLICK_ENABLE = {
         doEnable,
     };
-    activeWebView.send(R2_EVENT_TTS_CLICK_ENABLE, payload);
+
+    setTimeout(async () => {
+        await activeWebView.send(R2_EVENT_TTS_CLICK_ENABLE, payload);
+    }, 0);
 }

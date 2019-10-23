@@ -47,7 +47,10 @@ export function highlightsClickListen(highlightsClickListener: (href: string, hi
 export function highlightsRemoveAll(href: string) {
     const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
     if (activeWebView && activeWebView.READIUM2.link && activeWebView.READIUM2.link.Href === href) {
-        activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE_ALL);
+
+        setTimeout(async () => {
+            await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE_ALL);
+        }, 0);
     }
 }
 export function highlightsRemove(href: string, highlightIDs: string[]) {
@@ -56,7 +59,10 @@ export function highlightsRemove(href: string, highlightIDs: string[]) {
         const payload: IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE = {
             highlightIDs,
         };
-        activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE, payload);
+
+        setTimeout(async () => {
+            await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE, payload);
+        }, 0);
     }
 }
 export async function highlightsCreate(
@@ -100,6 +106,9 @@ export async function highlightsCreate(
             highlightDefinitions,
             highlights: undefined,
         };
-        activeWebView.send(R2_EVENT_HIGHLIGHT_CREATE, payloadPing);
+
+        setTimeout(async () => {
+            await activeWebView.send(R2_EVENT_HIGHLIGHT_CREATE, payloadPing);
+        }, 0);
     });
 }

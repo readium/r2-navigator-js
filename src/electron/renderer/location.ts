@@ -224,7 +224,9 @@ export function navLeftOrRight(left: boolean, spineNav?: boolean) {
         };
         const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
         if (activeWebView) {
-            activeWebView.send(R2_EVENT_PAGE_TURN, payload); // .getWebContents()
+            setTimeout(async () => {
+                await activeWebView.send(R2_EVENT_PAGE_TURN, payload); // .getWebContents()
+            }, 0);
         }
     }
 }
@@ -467,14 +469,19 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         }
         if (activeWebView) {
             if (activeWebView.style.transform !== "none") {
-                activeWebView.send("R2_EVENT_HIDE");
 
-                setTimeout(() => {
+                setTimeout(async () => {
+                    await activeWebView.send("R2_EVENT_HIDE");
+                }, 0);
+
+                setTimeout(async () => {
                     shiftWebview(activeWebView, 0, undefined); // reset
-                    activeWebView.send(R2_EVENT_SCROLLTO, payload);
+                    await activeWebView.send(R2_EVENT_SCROLLTO, payload);
                 }, 10);
             } else {
-                activeWebView.send(R2_EVENT_SCROLLTO, payload);
+                setTimeout(async () => {
+                    await activeWebView.send(R2_EVENT_SCROLLTO, payload);
+                }, 0);
             }
         }
 
@@ -588,7 +595,10 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
                 // activeWebView.setAttribute("src", "data:, ");
 
                 if (webviewAlreadyHasContent) {
-                    activeWebView.send("R2_EVENT_HIDE");
+
+                    setTimeout(async () => {
+                        await activeWebView.send("R2_EVENT_HIDE");
+                    }, 0);
                 }
 
                 setTimeout(() => {
@@ -758,6 +768,9 @@ export async function isLocatorVisible(locator: Locator): Promise<boolean> {
         };
         activeWebView.addEventListener("ipc-message", cb);
         const payloadPing: IEventPayload_R2_EVENT_LOCATOR_VISIBLE = { location: locator.locations, visible: false };
-        activeWebView.send(R2_EVENT_LOCATOR_VISIBLE, payloadPing);
+
+        setTimeout(async () => {
+            await activeWebView.send(R2_EVENT_LOCATOR_VISIBLE, payloadPing);
+        }, 0);
     });
 }
