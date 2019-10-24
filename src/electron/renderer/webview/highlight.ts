@@ -427,9 +427,7 @@ function createHighlightDom(win: IReadiumElectronWebviewWindow, highlight: IHigh
         highlightParent.setAttribute("data-click", "1");
     }
 
-    // Resize Sensor sets body position to "relative" (default static),
-    // which may breaks things!
-    // (e.g. highlights CSS absolute/fixed positioning)
+    // Note that legacy ResizeSensor sets body position to "relative" (default static).
     // Also note that ReadiumCSS default to (via stylesheet :root):
     // documant.documentElement.style.position = "relative";
     documant.body.style.position = "relative";

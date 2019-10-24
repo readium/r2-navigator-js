@@ -7,10 +7,6 @@
 
 // declare module "*";
 
-// https://github.com/normanzb/resize-sensor
-// declare module "resize-sensor/ResizeSensor";
-declare module "css-element-queries/src/ResizeSensor";
-
 declare module "debug/src/node";
 declare module "debug/src/browser";
 declare module "debug/src/common";

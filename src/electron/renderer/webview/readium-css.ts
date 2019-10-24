@@ -25,8 +25,6 @@ if (origin.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
 }
 const urlRootReadiumCSS = origin + "/" + READIUM_CSS_URL_PATH + "/";
 
-// const urlResizeSensor = win.location.origin + "/resize-sensor.js";
-
 export const getScrollingElement = (documant: Document): Element => {
     if (documant.scrollingElement) {
         return documant.scrollingElement;

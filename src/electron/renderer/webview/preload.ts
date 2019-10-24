@@ -76,11 +76,6 @@ import {
 import { clearCurrentSelection, getCurrentSelectionInfo } from "./selection";
 import { IReadiumElectronWebviewWindow } from "./state";
 
-import ResizeSensor = require("css-element-queries/src/ResizeSensor");
-
-// https://github.com/normanzb/resize-sensor
-// import ResizeSensor = require("resize-sensor/ResizeSensor");
-
 // import { registerProtocol } from "@r2-navigator-js/electron/renderer/common/protocol";
 // registerProtocol();
 
@@ -1134,7 +1129,7 @@ function handleTab(target: HTMLElement, tabKeyDownEvent: KeyboardEvent | undefin
     _ignoreFocusInEvent = false;
 
     // cache problem: temporary tabbables? (e.g. HTML5 details/summary element, expand/collapse)
-    // so right now, resize sensor resets body.tabbables. Is that enough? (other edge cases?)
+    // so right now, resize observer resets body.tabbables. Is that enough? (other edge cases?)
     const tabbables = (win.document.body as any).tabbables ?
         (win.document.body as any).tabbables :
         ((win.document.body as any).tabbables = tabbable(win.document.body));
@@ -1387,36 +1382,40 @@ function loaded(forced: boolean) {
         notifyReadingLocationDebounced();
     }
 
-    const useResizeSensor = !win.READIUM2.isFixedLayout;
-    if (useResizeSensor && win.document.body) {
+    const useResizeObserver = !win.READIUM2.isFixedLayout;
+    if (useResizeObserver && win.document.body) {
 
         setTimeout(() => {
-            let _firstResizeSensor = true;
-            // tslint:disable-next-line:no-unused-expression
-            new ResizeSensor(win.document.body, () => {
-                if (_firstResizeSensor) {
-                    _firstResizeSensor = false;
-                    debug("ResizeSensor SKIP FIRST");
+            let _firstResizeObserver = true;
+            const resizeObserver = new (window as any).ResizeObserver((_entries: any) => { // ResizeObserverEntries
+                // for (const entry of entries) {
+                //     const rect = entry.contentRect as DOMRect;
+                //     const element = entry.target as HTMLElement;
+                // }
+
+                if (_firstResizeObserver) {
+                    _firstResizeObserver = false;
+                    debug("ResizeObserver SKIP FIRST");
                     return;
                 }
-                debug("ResizeSensor");
+                // debug("ResizeObserver");
 
                 (win.document.body as any).tabbables = undefined;
 
-                debug("++++ scrollToHashDebounced FROM RESIZE SENSOR");
+                // debug("++++ scrollToHashDebounced from ResizeObserver");
                 scrollToHashDebounced();
             });
+            resizeObserver.observe(win.document.body);
+
             setTimeout(() => {
-                if (_firstResizeSensor) {
-                    _firstResizeSensor = false;
-                    debug("ResizeSensor CANCEL SKIP FIRST");
+                if (_firstResizeObserver) {
+                    _firstResizeObserver = false;
+                    debug("ResizeObserver CANCEL SKIP FIRST");
                 }
             }, 700);
-            // Resize Sensor sets body position to "relative" (default static),
-            // which may breaks things!
-            // (e.g. highlights CSS absolute/fixed positioning)
+            // Note that legacy ResizeSensor sets body position to "relative" (default static).
             // Also note that ReadiumCSS default to (via stylesheet :root):
-            // documant.documentElement.style.position = "relative";
+            // document.documentElement.style.position = "relative";
         }, 1000);
         // window.requestAnimationFrame((_timestamp) => {
         // });
