@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.37...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.38...develop
 
 Changes:
 * TODO
+
+# 1.1.38
+
+> Build environment: NodeJS `12.13.0`, NPM `6.12.0`
+
+Changes:
+* NPM updates
+* Removal of ResizeSensor, now using Chromium native Observer to detect HTML body dimensions changes (in order to re-paginate)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.38/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.38/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.38
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.37...v1.1.38
 
 # 1.1.37
 
