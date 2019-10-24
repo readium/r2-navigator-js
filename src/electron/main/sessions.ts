@@ -315,7 +315,7 @@ export async function clearSession(sess: Electron.Session, str: string): Promise
             // "cookies",
             // "filesystem",
             // "indexdb",
-            // "localstorage",
+            // "localstorage", BLOCKS!?
             // "shadercache",
             // "websql",
             "serviceworkers",
