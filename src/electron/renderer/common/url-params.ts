@@ -12,3 +12,5 @@ export const URL_PARAM_CSS = "r2_CSS";
 export const URL_PARAM_EPUBREADINGSYSTEM = "r2_ERS";
 
 export const URL_PARAM_DEBUG_VISUALS = "r2_DEBUG";
+
+export const URL_PARAM_REFRESH = "r2_REFRESH";

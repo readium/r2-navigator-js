@@ -44,7 +44,7 @@ import {
 } from "../../common/readium-css-inject";
 import { sameSelections } from "../../common/selection";
 import {
-    POPUP_DIALOG_CLASS, ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_KEYBOARD_INTERACT,
+    POPUP_DIALOG_CLASS, ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX,
     ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, TTS_CLASS_INJECTED_SPAN,
     TTS_CLASS_INJECTED_SUBSPAN, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT,
     readPosCssStylesAttr1, readPosCssStylesAttr2, readPosCssStylesAttr3, readPosCssStylesAttr4,
@@ -193,7 +193,7 @@ if (IS_DEV) {
         }
         if (payload.cssClass) {
             if (_blacklistIdClassForCssSelectors.indexOf(payload.cssClass) < 0) {
-                _blacklistIdClassForCssSelectors.push(payload.cssClass);
+                _blacklistIdClassForCssSelectors.push(payload.cssClass.toLowerCase());
             }
 
             if (payload.debugVisuals && payload.cssStyles && payload.cssStyles.length) {
@@ -1696,25 +1696,56 @@ win.addEventListener("load", () => {
 
 function checkBlacklisted(el: Element): boolean {
 
-    let blacklistedId: string | undefined;
-    const id = el.getAttribute("id");
-    if (id && _blacklistIdClassForCFI.indexOf(id) >= 0) {
-        console.log("checkBlacklisted ID: " + id);
-        blacklistedId = id;
-    }
-    let blacklistedClass: string | undefined;
-    for (const item of _blacklistIdClassForCFI) {
-        if (el.classList.contains(item)) {
-            console.log("checkBlacklisted CLASS: " + item);
-            blacklistedClass = item;
-            break;
+    const mathJax = win.document.documentElement.classList.contains(ROOT_CLASS_MATHJAX);
+    if (mathJax) {
+        const low = el.tagName.toLowerCase();
+        for (const item of _blacklistIdClassForCFI) {
+            if (low.startsWith(item)) {
+                console.log("checkBlacklisted ELEMENT NAME: " + el.tagName);
+                return true;
+            }
         }
-    }
-    if (blacklistedId || blacklistedClass) {
-        return true;
-    }
 
-    return false;
+        const id = el.getAttribute("id");
+        if (id) {
+            const lowId = id.toLowerCase();
+            for (const item of _blacklistIdClassForCFI) {
+                if (lowId.startsWith(item)) {
+                    console.log("checkBlacklisted ID: " + id);
+                    return true;
+                }
+            }
+        }
+
+        // tslint:disable-next-line: prefer-for-of
+        for (let i = 0; i < el.classList.length; i++) {
+            const cl = el.classList[i];
+            const lowCl = cl.toLowerCase();
+            for (const item of _blacklistIdClassForCFI) {
+                if (lowCl.startsWith(item)) {
+                    console.log("checkBlacklisted CLASS: " + cl);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    } else {
+        const id = el.getAttribute("id");
+        if (id && _blacklistIdClassForCFI.indexOf(id) >= 0) {
+            console.log("checkBlacklisted ID: " + id);
+            return true;
+        }
+
+        for (const item of _blacklistIdClassForCFI) {
+            if (el.classList.contains(item)) {
+                console.log("checkBlacklisted CLASS: " + item);
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
 
 function findFirstVisibleElement(rootElement: Element): Element | undefined {
@@ -2062,10 +2093,10 @@ export const computeProgressionData = (): IProgressionData => {
 };
 
 // tslint:disable-next-line:max-line-length
-const _blacklistIdClassForCssSelectors = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
+const _blacklistIdClassForCssSelectors = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, "MathJax", "Ctxt", "mjx", TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES].map((a) => a.toLowerCase());
 
 // tslint:disable-next-line:max-line-length
-const _blacklistIdClassForCFI = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, "resize-sensor"];
+const _blacklistIdClassForCFI = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, "MathJax", "Ctxt", "mjx"].map((a) => a.toLowerCase()); // "CtxtMenu_MenuFrame", "CtxtMenu_Info", "CtxtMenu_MenuItem", "CtxtMenu_ContextMenu", "CtxtMenu_MenuArrow", "CtxtMenu_Attached_0", "mjx-container"
 
 export const computeCFI = (node: Node): string | undefined => {
 
@@ -2094,6 +2125,8 @@ export const computeCFI = (node: Node): string | undefined => {
                     (currentElement.id ? ("[" + currentElement.id + "]") : "") +
                     (cfi.length ? ("/" + cfi) : "");
             }
+        } else {
+            cfi = "";
         }
         currentElement = currentElement.parentNode as Element;
     }
@@ -2101,16 +2134,58 @@ export const computeCFI = (node: Node): string | undefined => {
     return "/" + cfi;
 };
 
+const _getCssSelectorOptions = {
+    className: (str: string) => {
+        const mathJax = win.document.documentElement.classList.contains(ROOT_CLASS_MATHJAX);
+        if (mathJax) {
+            const low = str.toLowerCase();
+            for (const item of _blacklistIdClassForCssSelectors) {
+                if (low.startsWith(item)) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+        }
+    },
+    idName: (str: string) => {
+        const mathJax = win.document.documentElement.classList.contains(ROOT_CLASS_MATHJAX);
+        if (mathJax) {
+            const low = str.toLowerCase();
+            for (const item of _blacklistIdClassForCssSelectors) {
+                if (low.startsWith(item)) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+        }
+    },
+    tagName: (str: string) => {
+        const mathJax = win.document.documentElement.classList.contains(ROOT_CLASS_MATHJAX);
+        if (mathJax) {
+            for (const item of _blacklistIdClassForCssSelectors) {
+                if (str.startsWith(item)) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return true;
+            // return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
+        }
+    },
+};
 function getCssSelector(element: Element): string {
-    const options = {
-        className: (str: string) => {
-            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-        },
-        idName: (str: string) => {
-            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
-        },
-    };
-    return uniqueCssSelector(element, win.document, options);
+    try {
+        return uniqueCssSelector(element, win.document, _getCssSelectorOptions);
+    } catch (err) {
+        debug("uniqueCssSelector:");
+        debug(err);
+        return "";
+    }
 }
 
 const notifyReadingLocationRaw = () => {

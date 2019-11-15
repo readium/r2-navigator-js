@@ -38,6 +38,7 @@ export interface IReadiumElectronWebviewWindow extends Window {
 export interface IReadiumElectronWebviewState {
     id: number;
     link: Link | undefined;
+    forceRefresh?: boolean;
 }
 export interface IReadiumElectronWebview extends Electron.WebviewTag {
     READIUM2: IReadiumElectronWebviewState;

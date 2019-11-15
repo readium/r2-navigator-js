@@ -44,6 +44,8 @@ export interface IReadiumCSS {
 
     noFootnotes: boolean | undefined;
 
+    mathJax: boolean | undefined;
+
     reduceMotion: boolean | undefined;
 }
 
@@ -117,6 +119,8 @@ export const readiumCSSDefaults = {
     night: false,
 
     noFootnotes: false,
+
+    mathJax: false,
 
     // 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2
     pageMargins: undefined, // or 1

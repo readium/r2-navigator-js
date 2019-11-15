@@ -11,9 +11,9 @@ import * as xmldom from "xmldom";
 import { IEventPayload_R2_EVENT_READIUMCSS } from "./events";
 import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
 import {
-    ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, focusCssStyles, footnotesCssStyles,
-    readPosCssStyles, scrollBarCssStyles, selectionCssStyles, targetCssStyles, ttsCssStyles,
-    visibilityMaskCssStyles,
+    ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, focusCssStyles,
+    footnotesCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles, targetCssStyles,
+    ttsCssStyles, visibilityMaskCssStyles,
 } from "./styles";
 
 // now match with :root[style*="readium-night-on"]
@@ -252,6 +252,12 @@ export function readiumCSSSet(
         docElement.classList.add(ROOT_CLASS_NO_FOOTNOTES);
     } else {
         docElement.classList.remove(ROOT_CLASS_NO_FOOTNOTES);
+    }
+
+    if (setCSS.mathJax) {
+        docElement.classList.add(ROOT_CLASS_MATHJAX);
+    } else {
+        docElement.classList.remove(ROOT_CLASS_MATHJAX);
     }
 
     if (setCSS.reduceMotion) {

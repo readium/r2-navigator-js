@@ -28,7 +28,7 @@ import {
 } from "../common/sessions";
 import {
     URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO,
-    URL_PARAM_PREVIOUS,
+    URL_PARAM_PREVIOUS, URL_PARAM_REFRESH,
 } from "./common/url-params";
 import { getEpubReadingSystemInfo } from "./epubReadingSystem";
 import { __computeReadiumCssJsonMessage, isRTL } from "./readium-css";
@@ -37,6 +37,8 @@ import {
 } from "./webview/state";
 
 import URI = require("urijs");
+
+// import * as uuidv4 from "uuid/v4";
 
 const debug = debug_("r2:navigator#electron/renderer/location");
 
@@ -322,6 +324,28 @@ export function handleLinkLocator(location: Locator | undefined) {
     }
 }
 
+let _reloadCounter = 0;
+export function reloadContent() {
+    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+
+    setTimeout(() => {
+        // const src = activeWebView.getAttribute("src");
+        activeWebView.READIUM2.forceRefresh = true;
+        if (activeWebView.READIUM2.link) {
+            const uri = new URL(activeWebView.READIUM2.link.Href,
+                (window as IReadiumElectronBrowserWindow).READIUM2.publicationURL);
+            uri.hash = "";
+            uri.search = "";
+            const urlNoQueryParams = uri.toString();
+            handleLinkUrl(urlNoQueryParams);
+        }
+        // activeWebView.reloadIgnoringCache();
+    }, 0);
+}
+
 function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: boolean): boolean {
 
     const publication = (window as IReadiumElectronBrowserWindow).READIUM2.publication;
@@ -443,13 +467,17 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
             "true" : "false";
     });
 
-    const webviewNeedsHardRefresh =
-        (window as IReadiumElectronBrowserWindow).READIUM2.enableScreenReaderAccessibilityWebViewHardRefresh
-        && isScreenReaderMounted();
-
     const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
 
-    if (!webviewNeedsHardRefresh &&
+    const webviewNeedsForcedRefresh = activeWebView && activeWebView.READIUM2.forceRefresh;
+    if (activeWebView) {
+        activeWebView.READIUM2.forceRefresh = undefined;
+    }
+    const webviewNeedsHardRefresh =
+        ((window as IReadiumElectronBrowserWindow).READIUM2.enableScreenReaderAccessibilityWebViewHardRefresh
+        && isScreenReaderMounted());
+
+    if (!webviewNeedsHardRefresh && !webviewNeedsForcedRefresh &&
         activeWebView && activeWebView.READIUM2.link === pubLink) {
 
         const goto = useGoto ? linkUri.search(true)[URL_PARAM_GOTO] as string : undefined;
@@ -546,6 +574,15 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     // }
 
     if (activeWebView) {
+
+        if (webviewNeedsForcedRefresh) {
+            linkUri.search((data: any) => {
+                // overrides existing (leaves others intact)
+
+                // uuidv4();
+                data[URL_PARAM_REFRESH] = `${++_reloadCounter}`;
+            });
+        }
         const uriStr = linkUri.toString();
 
         const needConvert = publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
