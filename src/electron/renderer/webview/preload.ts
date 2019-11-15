@@ -1696,22 +1696,34 @@ win.addEventListener("load", () => {
 
 function checkBlacklisted(el: Element): boolean {
 
+    const id = el.getAttribute("id");
+    if (id && _blacklistIdClassForCFI.indexOf(id) >= 0) {
+        console.log("checkBlacklisted ID: " + id);
+        return true;
+    }
+
+    for (const item of _blacklistIdClassForCFI) {
+        if (el.classList.contains(item)) {
+            console.log("checkBlacklisted CLASS: " + item);
+            return true;
+        }
+    }
+
     const mathJax = win.document.documentElement.classList.contains(ROOT_CLASS_MATHJAX);
     if (mathJax) {
         const low = el.tagName.toLowerCase();
-        for (const item of _blacklistIdClassForCFI) {
+        for (const item of _blacklistIdClassForCFIMathJax) {
             if (low.startsWith(item)) {
-                console.log("checkBlacklisted ELEMENT NAME: " + el.tagName);
+                console.log("checkBlacklisted MathJax ELEMENT NAME: " + el.tagName);
                 return true;
             }
         }
 
-        const id = el.getAttribute("id");
         if (id) {
             const lowId = id.toLowerCase();
-            for (const item of _blacklistIdClassForCFI) {
+            for (const item of _blacklistIdClassForCFIMathJax) {
                 if (lowId.startsWith(item)) {
-                    console.log("checkBlacklisted ID: " + id);
+                    console.log("checkBlacklisted MathJax ID: " + id);
                     return true;
                 }
             }
@@ -1721,31 +1733,16 @@ function checkBlacklisted(el: Element): boolean {
         for (let i = 0; i < el.classList.length; i++) {
             const cl = el.classList[i];
             const lowCl = cl.toLowerCase();
-            for (const item of _blacklistIdClassForCFI) {
+            for (const item of _blacklistIdClassForCFIMathJax) {
                 if (lowCl.startsWith(item)) {
-                    console.log("checkBlacklisted CLASS: " + cl);
+                    console.log("checkBlacklisted MathJax CLASS: " + cl);
                     return true;
                 }
             }
         }
-
-        return false;
-    } else {
-        const id = el.getAttribute("id");
-        if (id && _blacklistIdClassForCFI.indexOf(id) >= 0) {
-            console.log("checkBlacklisted ID: " + id);
-            return true;
-        }
-
-        for (const item of _blacklistIdClassForCFI) {
-            if (el.classList.contains(item)) {
-                console.log("checkBlacklisted CLASS: " + item);
-                return true;
-            }
-        }
-
-        return false;
     }
+
+    return false;
 }
 
 function findFirstVisibleElement(rootElement: Element): Element | undefined {
@@ -2093,10 +2090,14 @@ export const computeProgressionData = (): IProgressionData => {
 };
 
 // tslint:disable-next-line:max-line-length
-const _blacklistIdClassForCssSelectors = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, "mathjax", "ctxt", "mjx", TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
+const _blacklistIdClassForCssSelectors = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
+const _blacklistIdClassForCssSelectorsMathJax = ["mathjax", "ctxt", "mjx"];
 
 // tslint:disable-next-line:max-line-length
-const _blacklistIdClassForCFI = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, "mathjax", "ctxt", "mjx"]; // "CtxtMenu_MenuFrame", "CtxtMenu_Info", "CtxtMenu_MenuItem", "CtxtMenu_ContextMenu", "CtxtMenu_MenuArrow", "CtxtMenu_Attached_0", "mjx-container"
+const _blacklistIdClassForCFI = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA];
+// "CtxtMenu_MenuFrame", "CtxtMenu_Info", "CtxtMenu_MenuItem", "CtxtMenu_ContextMenu",
+// "CtxtMenu_MenuArrow", "CtxtMenu_Attached_0", "mjx-container", "MathJax"
+const _blacklistIdClassForCFIMathJax = ["mathjax", "ctxt", "mjx"];
 
 export const computeCFI = (node: Node): string | undefined => {
 
@@ -2136,46 +2137,48 @@ export const computeCFI = (node: Node): string | undefined => {
 
 const _getCssSelectorOptions = {
     className: (str: string) => {
+        if (_blacklistIdClassForCssSelectors.indexOf(str) >= 0) {
+            return false;
+        }
         const mathJax = win.document.documentElement.classList.contains(ROOT_CLASS_MATHJAX);
         if (mathJax) {
             const low = str.toLowerCase();
-            for (const item of _blacklistIdClassForCssSelectors) {
+            for (const item of _blacklistIdClassForCssSelectorsMathJax) {
                 if (low.startsWith(item)) {
                     return false;
                 }
             }
-            return true;
-        } else {
-            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
         }
+        return true;
     },
     idName: (str: string) => {
+        if (_blacklistIdClassForCssSelectors.indexOf(str) >= 0) {
+            return false;
+        }
         const mathJax = win.document.documentElement.classList.contains(ROOT_CLASS_MATHJAX);
         if (mathJax) {
             const low = str.toLowerCase();
-            for (const item of _blacklistIdClassForCssSelectors) {
+            for (const item of _blacklistIdClassForCssSelectorsMathJax) {
                 if (low.startsWith(item)) {
                     return false;
                 }
             }
-            return true;
-        } else {
-            return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
         }
+        return true;
     },
     tagName: (str: string) => {
+        // if (_blacklistIdClassForCssSelectors.indexOf(str) >= 0) {
+        //     return false;
+        // }
         const mathJax = win.document.documentElement.classList.contains(ROOT_CLASS_MATHJAX);
         if (mathJax) {
-            for (const item of _blacklistIdClassForCssSelectors) {
+            for (const item of _blacklistIdClassForCssSelectorsMathJax) {
                 if (str.startsWith(item)) {
                     return false;
                 }
             }
-            return true;
-        } else {
-            return true;
-            // return _blacklistIdClassForCssSelectors.indexOf(str) < 0;
         }
+        return true;
     },
 };
 function getCssSelector(element: Element): string {
