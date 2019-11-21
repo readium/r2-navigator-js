@@ -6,7 +6,7 @@
 // ==LICENSE-END==
 
 import * as debug_ from "debug";
-import { HandlerRequest, ProcRequest, RedirectRequest, app, protocol, session } from "electron";
+import { ProcRequest, RedirectRequest, Request, app, protocol, session } from "electron";
 
 import { Server } from "@r2-streamer-js/http/server";
 
@@ -186,7 +186,7 @@ export function secureSessions(server: Server) {
 }
 
 const httpProtocolHandler = (
-    request: HandlerRequest,
+    request: Request,
     callback: (redirectRequest: RedirectRequest) => void) => {
 
     // debug("httpProtocolHandler:");
