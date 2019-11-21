@@ -7,9 +7,9 @@
 
 import * as debug_ from "debug";
 import * as fs from "fs";
-import { JSON as TAJSON } from "ta-json-x";
 
 import { LCP } from "@r2-lcp-js/parser/epub/lcp";
+import { TaJsonDeserialize } from "@r2-lcp-js/serializable";
 import { Publication } from "@r2-shared-js/models/publication";
 import { injectBufferInZip } from "@r2-utils-js/_utils/zip/zipInjector";
 
@@ -27,7 +27,7 @@ export async function lsdLcpUpdateInject(
 
     let lcpl: LCP;
     try {
-        lcpl = TAJSON.deserialize<LCP>(lcplJson, LCP);
+        lcpl = TaJsonDeserialize<LCP>(lcplJson, LCP);
     } catch (erorz) {
         return Promise.reject(erorz);
     }

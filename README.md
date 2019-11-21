@@ -301,11 +301,12 @@ installNavigatorDOM(
 
 // Here is a typical example of how the Publication object (passed as first parameter) is created:
 import { Publication } from "@r2-shared-js/models/publication";
-import { JSON as TAJSON } from "ta-json-x";
+
+import { TaJsonDeserialize } from "@r2-lcp-js/serializable";
 
 const response = await fetch(publicationURL);
 const publicationJSON = await response.json();
-const publication = TAJSON.deserialize<Publication>(publicationJSON, Publication);
+const publication = TaJsonDeserialize<Publication>(publicationJSON, Publication);
 ```
 
 #### Readium CSS configuration (after stream-level injection)

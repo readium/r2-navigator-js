@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.39...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.40...develop
 
 Changes:
 * TODO
+
+# 1.1.40
+
+> Build environment: NodeJS `12.13.0`, NPM `6.13.0`
+
+Changes:
+* NPM package updates
+* TAJSON now parses/generates arbitrary JSON properties with typed object
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.40/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.40/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.40
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.39...v1.1.40
 
 # 1.1.39
 
