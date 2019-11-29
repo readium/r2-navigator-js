@@ -1,14 +1,33 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.40...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.41...develop
 
 Changes:
 * TODO
 
+# 1.1.41
+
+> Build environment: NodeJS `12.13.0`, NPM `6.13.0`
+
+Changes:
+* Clipboard copy interceptor for LCP rights
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.41/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.41/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.41
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.0.40...v1.1.41
+
 # 1.1.40
 
 > Build environment: NodeJS `12.13.0`, NPM `6.13.0`
+
+NOTE: this was mistakenly tagged as 1.0.40!
 
 Changes:
 * NPM package updates
