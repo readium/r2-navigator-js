@@ -59,7 +59,7 @@ export interface IReadiumElectronBrowserWindowState {
 
     ttsClickEnabled: boolean;
 
-    clipboardInterceptor: (data: IEventPayload_R2_EVENT_CLIPBOARD_COPY) => void;
+    clipboardInterceptor: ((data: IEventPayload_R2_EVENT_CLIPBOARD_COPY) => void) | undefined;
 
     preloadScriptPath: string;
 
