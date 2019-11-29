@@ -27,8 +27,8 @@ import {
     READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl, convertHttpUrlToCustomScheme,
 } from "../common/sessions";
 import {
-    URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO,
-    URL_PARAM_PREVIOUS, URL_PARAM_REFRESH,
+    URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
+    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS, URL_PARAM_REFRESH,
 } from "./common/url-params";
 import { getEpubReadingSystemInfo } from "./epubReadingSystem";
 import { __computeReadiumCssJsonMessage, isRTL } from "./readium-css";
@@ -464,6 +464,10 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
 
         // tslint:disable-next-line:no-string-literal
         data[URL_PARAM_DEBUG_VISUALS] = (IS_DEV && (window as IReadiumElectronBrowserWindow).READIUM2.DEBUG_VISUALS) ?
+            "true" : "false";
+
+        // tslint:disable-next-line:no-string-literal
+        data[URL_PARAM_CLIPBOARD_INTERCEPT] = (window as IReadiumElectronBrowserWindow).READIUM2.clipboardInterceptor ?
             "true" : "false";
     });
 

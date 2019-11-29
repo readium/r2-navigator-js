@@ -10,7 +10,9 @@ import { remote } from "electron";
 import { Publication } from "@r2-shared-js/models/publication";
 import { Link } from "@r2-shared-js/models/publication-link";
 
-import { IEventPayload_R2_EVENT_READING_LOCATION } from "../../common/events";
+import {
+    IEventPayload_R2_EVENT_CLIPBOARD_COPY, IEventPayload_R2_EVENT_READING_LOCATION,
+} from "../../common/events";
 import { IStringMap } from "../common/querystring";
 
 export interface IReadiumElectronWebviewWindowState {
@@ -30,6 +32,8 @@ export interface IReadiumElectronWebviewWindowState {
     DEBUG_VISUALS: boolean;
 
     ttsClickEnabled: boolean;
+
+    isClipboardIntercept: boolean;
 }
 export interface IReadiumElectronWebviewWindow extends Window {
     READIUM2: IReadiumElectronWebviewWindowState;
@@ -52,7 +56,10 @@ export interface IReadiumElectronBrowserWindowState {
     domSlidingViewport: HTMLElement;
 
     DEBUG_VISUALS: boolean;
+
     ttsClickEnabled: boolean;
+
+    clipboardInterceptor: (data: IEventPayload_R2_EVENT_CLIPBOARD_COPY) => void;
 
     preloadScriptPath: string;
 

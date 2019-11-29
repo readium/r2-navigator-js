@@ -14,8 +14,9 @@ import { Locator } from "@r2-shared-js/models/locator";
 import { Publication } from "@r2-shared-js/models/publication";
 
 import {
-    IEventPayload_R2_EVENT_DEBUG_VISUALS, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
-    R2_EVENT_DEBUG_VISUALS, R2_EVENT_READIUMCSS, R2_EVENT_WEBVIEW_KEYDOWN,
+    IEventPayload_R2_EVENT_CLIPBOARD_COPY, IEventPayload_R2_EVENT_DEBUG_VISUALS,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS,
+    R2_EVENT_READIUMCSS, R2_EVENT_WEBVIEW_KEYDOWN,
 } from "../common/events";
 import { R2_SESSION_WEBVIEW } from "../common/sessions";
 import { URL_PARAM_DEBUG_VISUALS } from "./common/url-params";
@@ -26,9 +27,7 @@ import {
 } from "./location";
 import { ttsClickEnable, ttsHandleIpcMessage } from "./readaloud";
 import { __computeReadiumCssJsonMessage } from "./readium-css";
-import {
-    IReadiumElectronBrowserWindow, IReadiumElectronWebview,
-} from "./webview/state";
+import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 // import { registerProtocol } from "@r2-navigator-js/electron/renderer/common/protocol";
 // registerProtocol();
@@ -149,11 +148,16 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
         if (webview !== activeWebView) {
             return;
         }
-
         if (event.channel === R2_EVENT_WEBVIEW_KEYDOWN) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN;
             if (_keyDownEventHandler) {
                 _keyDownEventHandler(payload);
+            }
+        } else if (event.channel === R2_EVENT_CLIPBOARD_COPY) {
+            const clipboardInterceptor = (window as IReadiumElectronBrowserWindow).READIUM2.clipboardInterceptor;
+            if (clipboardInterceptor) {
+                const payload = event.args[0] as IEventPayload_R2_EVENT_CLIPBOARD_COPY;
+                clipboardInterceptor(payload);
             }
         } else if (!highlightsHandleIpcMessage(event.channel, event.args, webview) &&
             !ttsHandleIpcMessage(event.channel, event.args, webview) &&
@@ -240,7 +244,9 @@ export function installNavigatorDOM(
     rootHtmlElementID: string,
     preloadScriptPath: string,
     location: Locator | undefined,
-    enableScreenReaderAccessibilityWebViewHardRefresh?: boolean) {
+    enableScreenReaderAccessibilityWebViewHardRefresh: boolean,
+    clipboardInterceptor: (data: IEventPayload_R2_EVENT_CLIPBOARD_COPY) => void | undefined,
+    ) {
 
     const domRootElement = document.getElementById(rootHtmlElementID) as HTMLElement;
     if (!domRootElement) {
@@ -255,6 +261,7 @@ export function installNavigatorDOM(
 
     (window as IReadiumElectronBrowserWindow).READIUM2 = {
         DEBUG_VISUALS: false,
+        clipboardInterceptor,
         createActiveWebView: createWebView,
         destroyActiveWebView: destroyWebView,
         domRootElement,

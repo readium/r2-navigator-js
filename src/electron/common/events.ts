@@ -200,3 +200,12 @@ export interface IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN { // KeyboardEvent
     metaKey: boolean;
     shiftKey: boolean;
 }
+
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_CLIPBOARD_COPY = "R2_EVENT_CLIPBOARD_COPY";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_CLIPBOARD_COPY { // CliboardEvent
+    txt: string;
+    locator: IEventPayload_R2_EVENT_READING_LOCATION | undefined;
+}

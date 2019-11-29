@@ -23,13 +23,14 @@ import * as tabbable from "tabbable";
 import { LocatorLocations } from "@r2-shared-js/models/locator";
 
 import {
-    IEventPayload_R2_EVENT_DEBUG_VISUALS, IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
-    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, IEventPayload_R2_EVENT_LINK,
-    IEventPayload_R2_EVENT_LOCATOR_VISIBLE, IEventPayload_R2_EVENT_PAGE_TURN,
-    IEventPayload_R2_EVENT_READING_LOCATION, IEventPayload_R2_EVENT_READIUMCSS,
-    IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X,
-    IEventPayload_R2_EVENT_TTS_CLICK_ENABLE, IEventPayload_R2_EVENT_TTS_DO_PLAY,
-    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_DEBUG_VISUALS, R2_EVENT_HIGHLIGHT_CREATE,
+    IEventPayload_R2_EVENT_CLIPBOARD_COPY, IEventPayload_R2_EVENT_DEBUG_VISUALS,
+    IEventPayload_R2_EVENT_HIGHLIGHT_CREATE, IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE,
+    IEventPayload_R2_EVENT_LINK, IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
+    IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READING_LOCATION,
+    IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_SCROLLTO,
+    IEventPayload_R2_EVENT_SHIFT_VIEW_X, IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
+    IEventPayload_R2_EVENT_TTS_DO_PLAY, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
+    R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_HIGHLIGHT_CREATE,
     R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL, R2_EVENT_LINK,
     R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION,
     R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X, R2_EVENT_TTS_CLICK_ENABLE,
@@ -56,8 +57,8 @@ import { closePopupDialogs, isPopupDialogOpen } from "../common/popup-dialog";
 import { getURLQueryParams } from "../common/querystring";
 import { IRect, getClientRectsNoOverlap_ } from "../common/rect-utils";
 import {
-    URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS, URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO,
-    URL_PARAM_PREVIOUS,
+    URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
+    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS,
 } from "../common/url-params";
 import { ENABLE_WEBVIEW_RESIZE } from "../common/webview-resize";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
@@ -89,6 +90,7 @@ win.READIUM2 = {
     fxlViewportScale: 1,
     fxlViewportWidth: 0,
     hashElement: null,
+    isClipboardIntercept: false,
     isFixedLayout: false,
     locationHashOverride: undefined,
     locationHashOverrideInfo: {
@@ -173,6 +175,8 @@ if (win.READIUM2.urlQueryParams) {
     }
 
     win.READIUM2.DEBUG_VISUALS = win.READIUM2.urlQueryParams[URL_PARAM_DEBUG_VISUALS] === "true";
+
+    win.READIUM2.isClipboardIntercept = win.READIUM2.urlQueryParams[URL_PARAM_CLIPBOARD_INTERCEPT] === "true";
 }
 
 if (IS_DEV) {
@@ -1680,6 +1684,29 @@ function loaded(forced: boolean) {
     // });
     win.document.documentElement.addEventListener("mouseup", (ev: MouseEvent) => {
         handleMouseEvent(ev);
+    });
+
+    win.document.body.addEventListener("copy", (evt: ClipboardEvent) => {
+        if (win.READIUM2.isClipboardIntercept) {
+            const selection = win.document.getSelection();
+            if (selection) {
+                const str = selection.toString();
+                if (str) {
+                    evt.preventDefault();
+
+                    setTimeout(() => {
+                        const payload: IEventPayload_R2_EVENT_CLIPBOARD_COPY = {
+                            locator: win.READIUM2.locationHashOverrideInfo, // see notifyReadingLocationRaw()
+                            txt: str,
+                        };
+                        ipcRenderer.sendToHost(R2_EVENT_CLIPBOARD_COPY, payload);
+                        // if (evt.clipboardData) {
+                        //     evt.clipboardData.setData("text/plain", str);
+                        // }
+                    }, 500); // see notifyReadingLocationDebounced()
+                }
+            }
+        }
     });
 }
 
