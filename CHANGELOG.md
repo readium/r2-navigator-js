@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.41...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.42...develop
 
 Changes:
 * TODO
+
+# 1.1.42
+
+> Build environment: NodeJS `12.13.1`, NPM `6.13.4`
+
+Changes:
+* NPM updates
+* ReadiumCSS update
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.42/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.42/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.42
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.41...v1.1.42
 
 # 1.1.41
 
