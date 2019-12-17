@@ -1,15 +1,15 @@
 Downloaded from MASTER:
-https://github.com/readium/readium-css/tree/develop
+https://github.com/readium/readium-css/tree/master
 
 ...at commit hash:
-bd6462780d1ed724181df4fce3d3a22b2f15ab45
+e100d6912ed2488452b68022b4ba83314966b7d9
 =>
-https://github.com/readium/readium-css/commit/bd6462780d1ed724181df4fce3d3a22b2f15ab45
-https://github.com/readium/readium-css/commits/bd6462780d1ed724181df4fce3d3a22b2f15ab45
-https://github.com/readium/readium-css/tree/bd6462780d1ed724181df4fce3d3a22b2f15ab45
+https://github.com/readium/readium-css/commit/e100d6912ed2488452b68022b4ba83314966b7d9
+https://github.com/readium/readium-css/commits/e100d6912ed2488452b68022b4ba83314966b7d9
+https://github.com/readium/readium-css/tree/e100d6912ed2488452b68022b4ba83314966b7d9
 
 Diff with current DEVELOP:
-https://github.com/readium/readium-css/compare/develop...bd6462780d1ed724181df4fce3d3a22b2f15ab45
+https://github.com/readium/readium-css/compare/develop...e100d6912ed2488452b68022b4ba83314966b7d9
 
 Diff with current MASTER:
-https://github.com/readium/readium-css/compare/master...bd6462780d1ed724181df4fce3d3a22b2f15ab45
+https://github.com/readium/readium-css/compare/master...e100d6912ed2488452b68022b4ba83314966b7d9
