@@ -403,7 +403,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     let pubLink = publication.Spine ? publication.Spine.find((spineLink) => {
         return spineLink.Href === linkPath;
     }) : undefined;
-    if (!pubLink) {
+    if (!pubLink && publication.Resources) {
         pubLink = publication.Resources.find((spineLink) => {
             return spineLink.Href === linkPath;
         });
