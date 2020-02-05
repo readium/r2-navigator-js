@@ -7,6 +7,7 @@
 
 import * as debug_ from "debug";
 import { ipcRenderer, shell } from "electron";
+import * as path from "path";
 import { URL } from "url";
 
 import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
@@ -22,6 +23,7 @@ import {
     R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
 } from "../common/events";
 import { IPaginationInfo } from "../common/pagination";
+import { transformHTML } from "../common/readium-css-inject";
 import { ISelectionInfo } from "../common/selection";
 import {
     READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl, convertHttpUrlToCustomScheme,
@@ -37,7 +39,6 @@ import {
 } from "./webview/state";
 
 import URI = require("urijs");
-
 // import * as uuidv4 from "uuid/v4";
 
 const debug = debug_("r2:navigator#electron/renderer/location");
@@ -414,6 +415,26 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         return false;
     }
 
+    const rcssJson = __computeReadiumCssJsonMessage(pubLink);
+    const rcssJsonstr = JSON.stringify(rcssJson, null, "");
+    const rcssJsonstrBase64 = Buffer.from(rcssJsonstr).toString("base64");
+
+    const fileName = path.basename(linkPath);
+    const ext = path.extname(fileName).toLowerCase();
+    const isAudio =
+        publication.Metadata &&
+        publication.Metadata.RDFType &&
+        /http[s]?:\/\/schema\.org\/Audiobook$/.test(publication.Metadata.RDFType) &&
+        ((pubLink.TypeLink && pubLink.TypeLink.startsWith("audio/")) ||
+        // fallbacks:
+        /\.mp[3|4]$/.test(ext) ||
+        /\.wav$/.test(ext) ||
+        /\.aac$/.test(ext) ||
+        /\.og[g|b|a]$/.test(ext) ||
+        /\.aiff$/.test(ext) ||
+        /\.wma$/.test(ext) ||
+        /\.flac$/.test(ext));
+
     // Note that with URI (unlike URL) if hrefFull contains Unicode characters,
     // the toString() function does not percent-encode them.
     // But also note that if hrefFull is already percent-encoded, this is returned as-is!
@@ -422,66 +443,79 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     // which is necessary in cases where loadLink() is called with URL.toString() for hrefFull
     // ... which it is!
     const linkUri = new URI(hrefFull);
-    linkUri.search((data: any) => {
-        // overrides existing (leaves others intact)
-
-        if (typeof previous === "undefined") {
-            // erase unwanted forward of query param during linking
-            data[URL_PARAM_PREVIOUS] = undefined;
-            // delete data[URL_PARAM_PREVIOUS];
-        } else {
-            data[URL_PARAM_PREVIOUS] = previous ? "true" : "false";
-        }
-
-        if (!useGoto) {
-            // erase unwanted forward of query param during linking
-            data[URL_PARAM_GOTO] = undefined;
-            // delete data[URL_PARAM_GOTO];
-        }
-    });
-    if (useGoto) {
+    if (isAudio) {
         linkUri.hash("").normalizeHash();
+        linkUri.search((data: any) => {
+            // overrides existing (leaves others intact)
+            data[URL_PARAM_PREVIOUS] = undefined;
+            data[URL_PARAM_GOTO] = undefined;
+            data[URL_PARAM_CSS] = undefined;
+            data[URL_PARAM_EPUBREADINGSYSTEM] = undefined;
+            data[URL_PARAM_DEBUG_VISUALS] = undefined;
+            data[URL_PARAM_CLIPBOARD_INTERCEPT] = undefined;
+            data[URL_PARAM_REFRESH] = undefined;
+        });
+    } else {
+        linkUri.search((data: any) => {
+            // overrides existing (leaves others intact)
+
+            if (typeof previous === "undefined") {
+                // erase unwanted forward of query param during linking
+                data[URL_PARAM_PREVIOUS] = undefined;
+                // delete data[URL_PARAM_PREVIOUS];
+            } else {
+                data[URL_PARAM_PREVIOUS] = previous ? "true" : "false";
+            }
+
+            if (!useGoto) {
+                // erase unwanted forward of query param during linking
+                data[URL_PARAM_GOTO] = undefined;
+                // delete data[URL_PARAM_GOTO];
+            }
+        });
+        if (useGoto) {
+            linkUri.hash("").normalizeHash();
+        }
+
+        // no need for encodeURIComponent_RFC3986, auto-encoded by URI class
+
+        const rersJson = getEpubReadingSystemInfo();
+        const rersJsonstr = JSON.stringify(rersJson, null, "");
+        const rersJsonstrBase64 = Buffer.from(rersJsonstr).toString("base64");
+
+        linkUri.search((data: any) => {
+            // overrides existing (leaves others intact)
+
+            // tslint:disable-next-line:no-string-literal
+            data[URL_PARAM_CSS] = rcssJsonstrBase64;
+
+            // tslint:disable-next-line:no-string-literal
+            data[URL_PARAM_EPUBREADINGSYSTEM] = rersJsonstrBase64;
+
+            // tslint:disable-next-line:no-string-literal
+            data[URL_PARAM_DEBUG_VISUALS] = (IS_DEV &&
+                (window as IReadiumElectronBrowserWindow).READIUM2.DEBUG_VISUALS) ?
+                "true" : "false";
+
+            // tslint:disable-next-line:no-string-literal
+            data[URL_PARAM_CLIPBOARD_INTERCEPT] =
+                (window as IReadiumElectronBrowserWindow).READIUM2.clipboardInterceptor ?
+                "true" : "false";
+        });
     }
-
-    // no need for encodeURIComponent_RFC3986, auto-encoded by URI class
-
-    const rcssJson = __computeReadiumCssJsonMessage(pubLink);
-    const rcssJsonstr = JSON.stringify(rcssJson, null, "");
-    const rcssJsonstrBase64 = Buffer.from(rcssJsonstr).toString("base64");
-
-    const rersJson = getEpubReadingSystemInfo();
-    const rersJsonstr = JSON.stringify(rersJson, null, "");
-    const rersJsonstrBase64 = Buffer.from(rersJsonstr).toString("base64");
-
-    linkUri.search((data: any) => {
-        // overrides existing (leaves others intact)
-
-        // tslint:disable-next-line:no-string-literal
-        data[URL_PARAM_CSS] = rcssJsonstrBase64;
-
-        // tslint:disable-next-line:no-string-literal
-        data[URL_PARAM_EPUBREADINGSYSTEM] = rersJsonstrBase64;
-
-        // tslint:disable-next-line:no-string-literal
-        data[URL_PARAM_DEBUG_VISUALS] = (IS_DEV && (window as IReadiumElectronBrowserWindow).READIUM2.DEBUG_VISUALS) ?
-            "true" : "false";
-
-        // tslint:disable-next-line:no-string-literal
-        data[URL_PARAM_CLIPBOARD_INTERCEPT] = (window as IReadiumElectronBrowserWindow).READIUM2.clipboardInterceptor ?
-            "true" : "false";
-    });
 
     const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
 
-    const webviewNeedsForcedRefresh = activeWebView && activeWebView.READIUM2.forceRefresh;
+    const webviewNeedsForcedRefresh = !isAudio &&
+        activeWebView && activeWebView.READIUM2.forceRefresh;
     if (activeWebView) {
         activeWebView.READIUM2.forceRefresh = undefined;
     }
-    const webviewNeedsHardRefresh =
+    const webviewNeedsHardRefresh = !isAudio &&
         ((window as IReadiumElectronBrowserWindow).READIUM2.enableScreenReaderAccessibilityWebViewHardRefresh
         && isScreenReaderMounted());
 
-    if (!webviewNeedsHardRefresh && !webviewNeedsForcedRefresh &&
+    if (!isAudio && !webviewNeedsHardRefresh && !webviewNeedsForcedRefresh &&
         activeWebView && activeWebView.READIUM2.link === pubLink) {
 
         const goto = useGoto ? linkUri.search(true)[URL_PARAM_GOTO] as string : undefined;
@@ -609,8 +643,204 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         //     debug(linkUri.search(true)[URL_PARAM_CSS]);
         //     debug("####### >>> ---");
         // }
+        if (isAudio) {
+            if (IS_DEV) {
+                debug(`___HARD AUDIO___ WEBVIEW REFRESH: ${uriStr_}`);
+            }
 
-        if (webviewNeedsHardRefresh) {
+            (window as IReadiumElectronBrowserWindow).READIUM2.destroyActiveWebView();
+            (window as IReadiumElectronBrowserWindow).READIUM2.createActiveWebView();
+            const newActiveWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+            if (newActiveWebView) {
+                newActiveWebView.READIUM2.link = pubLink;
+
+                let coverImage: string | undefined;
+                const coverLink = publication.GetCover();
+                if (coverLink) {
+                    coverImage = coverLink.Href;
+                    // if (coverImage && !isHTTP(coverImage)) {
+                    //     coverImage = absoluteURL(coverImage);
+                    // }
+                }
+
+                let title: string | undefined;
+                if (pubLink.Title) {
+                    const regExp = /&(nbsp|amp|quot|lt|gt);/g;
+                    const map: any = {
+                        amp: "&",
+                        gt: ">",
+                        lt: "<",
+                        nbsp: " ",
+                        quot: "\"",
+                    };
+                    title = pubLink.Title.replace(regExp, (_match, entityName) => {
+                        return map[entityName] ? map[entityName] : entityName;
+                    });
+                }
+
+                let htmlMarkup = `<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<head>
+    <meta charset="utf-8" />
+    <title>${title}</title>
+    <base href="${publicationURL}" />
+    <style type="text/css">
+    /*<![CDATA[*/
+        #cover {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 500px;
+        }
+
+        #audio {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 800px;
+            height: 2.5em;
+            width: 80%;
+        }
+
+        #title {
+            margin-top: 1em;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 800px;
+            width: 80%;
+            text-align: center;
+        }
+    /*]]>*/
+    </style>
+
+    <script>
+    //<![CDATA[
+
+    const DEBUG_AUDIO = true;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const _audioElement = document.getElementById("audio");
+
+        if (DEBUG_AUDIO)
+        {
+            _audioElement.addEventListener("load", function()
+                {
+                    console.debug("0) load");
+                }
+            );
+
+            _audioElement.addEventListener("loadstart", function()
+                {
+                    console.debug("1) loadstart");
+                }
+            );
+
+            _audioElement.addEventListener("durationchange", function()
+                {
+                    console.debug("2) durationchange");
+                }
+            );
+
+            _audioElement.addEventListener("loadedmetadata", function()
+                {
+                    console.debug("3) loadedmetadata");
+                }
+            );
+
+            _audioElement.addEventListener("loadeddata", function()
+                {
+                    console.debug("4) loadeddata");
+                }
+            );
+
+            _audioElement.addEventListener("progress", function()
+                {
+                    console.debug("5) progress");
+                }
+            );
+
+            _audioElement.addEventListener("canplay", function()
+                {
+                    console.debug("6) canplay");
+                }
+            );
+
+            _audioElement.addEventListener("canplaythrough", function()
+                {
+                    console.debug("7) canplaythrough");
+                }
+            );
+
+            _audioElement.addEventListener("play", function()
+                {
+                    console.debug("8) play");
+                }
+            );
+
+            _audioElement.addEventListener("pause", function()
+                {
+                    console.debug("9) pause");
+                }
+            );
+
+            _audioElement.addEventListener("ended", function()
+                {
+                    console.debug("10) ended");
+                }
+            );
+
+            _audioElement.addEventListener("seeked", function()
+                {
+                    console.debug("X) seeked");
+                }
+            );
+
+            _audioElement.addEventListener("timeupdate", function()
+                {
+                    console.debug("Y) timeupdate");
+                }
+            );
+
+            _audioElement.addEventListener("seeking", function()
+                {
+                    console.debug("Z) seeking");
+                }
+            );
+        }
+    }, false);
+
+    //]]>
+    </script>
+</head>
+<body>
+${title ? `<h1 id="title">${title}</h1><br />` : ``}
+${coverImage ? `<img id="cover" src="${coverImage}" alt="" /><br />` : ``}
+    <audio id="audio" controls="controls">
+        <source src="${linkPath}" type="${pubLink.TypeLink}" />
+    </audio>
+</body>
+</html>`;
+
+                // const contentType = "text/html";
+                const contentType = "application/xhtml+xml";
+
+                if (rcssJson.setCSS) {
+                    rcssJson.setCSS.paged = false;
+                }
+                htmlMarkup = transformHTML(htmlMarkup, rcssJson, contentType);
+
+                const b64HTML = Buffer.from(htmlMarkup).toString("base64");
+                const dataUri = `data:${contentType};base64,${b64HTML}`;
+                newActiveWebView.setAttribute("src", dataUri);
+                // newActiveWebView.setAttribute("src", uriStr_);
+                // newActiveWebView.setAttribute("srcdoc", "<p>TEST</p>");
+                // setTimeout(async () => {
+                //     await newActiveWebView.getWebContents().loadURL(uriStr_, { extraHeaders: "pragma: no-cache\n" });
+                // }, 0);
+            }
+            return true;
+        } else if (webviewNeedsHardRefresh) {
             if (IS_DEV) {
                 debug(`___HARD___ WEBVIEW REFRESH: ${uriStr_}`);
             }

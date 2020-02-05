@@ -79,7 +79,8 @@ export type IReadiumElectronBrowserWindow = TWindow & IWithReadiumElectronBrowse
 let _isScreenReaderMounted: boolean | undefined;
 export function isScreenReaderMounted() {
     if (typeof _isScreenReaderMounted === "undefined") {
-        _isScreenReaderMounted = remote.app.isAccessibilitySupportEnabled();
+        // DEPRECATED: isAccessibilitySupportEnabled();
+        _isScreenReaderMounted = remote.app.accessibilitySupportEnabled;
 
         // Instead of dynamically updating this state via the app event,
         // the detection of mounted screen reader is done at every launch of a reader window.

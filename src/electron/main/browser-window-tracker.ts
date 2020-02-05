@@ -39,7 +39,10 @@ export function trackBrowserWindow(win: Electron.BrowserWindow, _serverURL?: str
 // https://github.com/electron/electron/blob/master/docs/tutorial/security.md#how-9
 app.on("web-contents-created", (_evt, wc) => {
     wc.on("will-attach-webview", (_event, webPreferences, params) => {
-        debug("WEBVIEW will-attach-webview: " + params.src);
+        debug("WEBVIEW will-attach-webview");
+        if (params.src && !params.src.startsWith("data:")) {
+            debug(params.src);
+        }
 
         // delete webPreferences.preload;
         // delete webPreferences.preloadURL;
