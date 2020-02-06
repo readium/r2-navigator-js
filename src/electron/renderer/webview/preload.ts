@@ -30,12 +30,13 @@ import {
     IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_SCROLLTO,
     IEventPayload_R2_EVENT_SHIFT_VIEW_X, IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
     IEventPayload_R2_EVENT_TTS_DO_PLAY, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
-    R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_HIGHLIGHT_CREATE,
-    R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL, R2_EVENT_LINK,
-    R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION,
-    R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X, R2_EVENT_TTS_CLICK_ENABLE,
-    R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS,
-    R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP, R2_EVENT_WEBVIEW_KEYDOWN,
+    R2_EVENT_AUDIO_DO_PAUSE, R2_EVENT_AUDIO_DO_PLAY, R2_EVENT_CLIPBOARD_COPY,
+    R2_EVENT_DEBUG_VISUALS, R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE,
+    R2_EVENT_HIGHLIGHT_REMOVE_ALL, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN,
+    R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO,
+    R2_EVENT_SHIFT_VIEW_X, R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE,
+    R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
+    R2_EVENT_WEBVIEW_KEYDOWN,
 } from "../../common/events";
 import { IHighlight, IHighlightDefinition } from "../../common/highlight";
 import { IPaginationInfo } from "../../common/pagination";
@@ -1230,6 +1231,7 @@ win.addEventListener("DOMContentLoaded", () => {
 
     if (win.READIUM2.isAudio) {
         const audioElement = win.document.getElementById("audio") as HTMLAudioElement;
+
         function notifyPlaybackLocation() {
             const percent = audioElement.currentTime / audioElement.duration;
 
@@ -2373,89 +2375,100 @@ const notifyReadingLocationDebounced = debounce(() => {
     notifyReadingLocationRaw();
 }, 250);
 
-ipcRenderer.on(R2_EVENT_TTS_DO_PLAY, (_event: any, payload: IEventPayload_R2_EVENT_TTS_DO_PLAY) => {
-    const rootElement = win.document.querySelector(payload.rootElement);
-    const startElement = payload.startElement ? win.document.querySelector(payload.startElement) : null;
-    ttsPlay(
-        focusScrollRaw,
-        rootElement ? rootElement : undefined,
-        startElement ? startElement : undefined,
-        ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
-        ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
-});
-
-ipcRenderer.on(R2_EVENT_TTS_DO_STOP, (_event: any) => {
-    ttsStop();
-});
-
-ipcRenderer.on(R2_EVENT_TTS_DO_PAUSE, (_event: any) => {
-    ttsPause();
-});
-
-ipcRenderer.on(R2_EVENT_TTS_DO_RESUME, (_event: any) => {
-    ttsResume();
-});
-
-ipcRenderer.on(R2_EVENT_TTS_DO_NEXT, (_event: any) => {
-    ttsNext();
-});
-
-ipcRenderer.on(R2_EVENT_TTS_DO_PREVIOUS, (_event: any) => {
-    ttsPrevious();
-});
-
-ipcRenderer.on(R2_EVENT_TTS_CLICK_ENABLE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_CLICK_ENABLE) => {
-    win.READIUM2.ttsClickEnabled = payload.doEnable;
-});
-
-ipcRenderer.on(R2_EVENT_HIGHLIGHT_CREATE, (_event: any, payloadPing: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE) => {
-
-    if (payloadPing.highlightDefinitions &&
-        payloadPing.highlightDefinitions.length === 1 &&
-        payloadPing.highlightDefinitions[0].selectionInfo) {
-        const selection = win.getSelection();
-        if (selection) {
-            // selection.empty();
-            selection.removeAllRanges();
-            // selection.collapseToStart();
-        }
-    }
-
-    const highlightDefinitions = !payloadPing.highlightDefinitions ?
-        [ { color: undefined, selectionInfo: undefined } as IHighlightDefinition ] :
-        payloadPing.highlightDefinitions;
-
-    const highlights: Array<IHighlight | null> = [];
-
-    highlightDefinitions.forEach((highlightDefinition) => {
-        const selInfo = highlightDefinition.selectionInfo ? highlightDefinition.selectionInfo :
-            getCurrentSelectionInfo(win, getCssSelector, computeCFI);
-        if (selInfo) {
-            const highlight = createHighlight(
-                win,
-                selInfo,
-                highlightDefinition.color,
-                true, // mouse / pointer interaction
-            );
-            highlights.push(highlight);
-        } else {
-            highlights.push(null);
-        }
+if (win.READIUM2.isAudio) {
+    ipcRenderer.on(R2_EVENT_AUDIO_DO_PLAY, async (_event: any) => {
+        const audioElement = win.document.getElementById("audio") as HTMLAudioElement;
+        await audioElement.play();
+    });
+    ipcRenderer.on(R2_EVENT_AUDIO_DO_PAUSE, (_event: any) => {
+        const audioElement = win.document.getElementById("audio") as HTMLAudioElement;
+        audioElement.pause();
+    });
+} else {
+    ipcRenderer.on(R2_EVENT_TTS_DO_PLAY, (_event: any, payload: IEventPayload_R2_EVENT_TTS_DO_PLAY) => {
+        const rootElement = win.document.querySelector(payload.rootElement);
+        const startElement = payload.startElement ? win.document.querySelector(payload.startElement) : null;
+        ttsPlay(
+            focusScrollRaw,
+            rootElement ? rootElement : undefined,
+            startElement ? startElement : undefined,
+            ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+            ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
     });
 
-    const payloadPong: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE = {
-        highlightDefinitions: payloadPing.highlightDefinitions,
-        highlights: highlights.length ? highlights : undefined,
-    };
-    ipcRenderer.sendToHost(R2_EVENT_HIGHLIGHT_CREATE, payloadPong);
-});
-
-ipcRenderer.on(R2_EVENT_HIGHLIGHT_REMOVE, (_event: any, payload: IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE) => {
-    payload.highlightIDs.forEach((highlightID) => {
-        destroyHighlight(win.document, highlightID);
+    ipcRenderer.on(R2_EVENT_TTS_DO_STOP, (_event: any) => {
+        ttsStop();
     });
-});
 
-ipcRenderer.on(R2_EVENT_HIGHLIGHT_REMOVE_ALL, (_event: any) => {
-    destroyAllhighlights(win.document);
-});
+    ipcRenderer.on(R2_EVENT_TTS_DO_PAUSE, (_event: any) => {
+        ttsPause();
+    });
+
+    ipcRenderer.on(R2_EVENT_TTS_DO_RESUME, (_event: any) => {
+        ttsResume();
+    });
+
+    ipcRenderer.on(R2_EVENT_TTS_DO_NEXT, (_event: any) => {
+        ttsNext();
+    });
+
+    ipcRenderer.on(R2_EVENT_TTS_DO_PREVIOUS, (_event: any) => {
+        ttsPrevious();
+    });
+
+    ipcRenderer.on(R2_EVENT_TTS_CLICK_ENABLE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_CLICK_ENABLE) => {
+        win.READIUM2.ttsClickEnabled = payload.doEnable;
+    });
+
+    ipcRenderer.on(R2_EVENT_HIGHLIGHT_CREATE, (_event: any, payloadPing: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE) => {
+
+        if (payloadPing.highlightDefinitions &&
+            payloadPing.highlightDefinitions.length === 1 &&
+            payloadPing.highlightDefinitions[0].selectionInfo) {
+            const selection = win.getSelection();
+            if (selection) {
+                // selection.empty();
+                selection.removeAllRanges();
+                // selection.collapseToStart();
+            }
+        }
+
+        const highlightDefinitions = !payloadPing.highlightDefinitions ?
+            [ { color: undefined, selectionInfo: undefined } as IHighlightDefinition ] :
+            payloadPing.highlightDefinitions;
+
+        const highlights: Array<IHighlight | null> = [];
+
+        highlightDefinitions.forEach((highlightDefinition) => {
+            const selInfo = highlightDefinition.selectionInfo ? highlightDefinition.selectionInfo :
+                getCurrentSelectionInfo(win, getCssSelector, computeCFI);
+            if (selInfo) {
+                const highlight = createHighlight(
+                    win,
+                    selInfo,
+                    highlightDefinition.color,
+                    true, // mouse / pointer interaction
+                );
+                highlights.push(highlight);
+            } else {
+                highlights.push(null);
+            }
+        });
+
+        const payloadPong: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE = {
+            highlightDefinitions: payloadPing.highlightDefinitions,
+            highlights: highlights.length ? highlights : undefined,
+        };
+        ipcRenderer.sendToHost(R2_EVENT_HIGHLIGHT_CREATE, payloadPong);
+    });
+
+    ipcRenderer.on(R2_EVENT_HIGHLIGHT_REMOVE, (_event: any, payload: IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE) => {
+        payload.highlightIDs.forEach((highlightID) => {
+            destroyHighlight(win.document, highlightID);
+        });
+    });
+
+    ipcRenderer.on(R2_EVENT_HIGHLIGHT_REMOVE_ALL, (_event: any) => {
+        destroyAllhighlights(win.document);
+    });
+}
