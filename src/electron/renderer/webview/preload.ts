@@ -30,13 +30,12 @@ import {
     IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_SCROLLTO,
     IEventPayload_R2_EVENT_SHIFT_VIEW_X, IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
     IEventPayload_R2_EVENT_TTS_DO_PLAY, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
-    R2_EVENT_AUDIO_DO_PAUSE, R2_EVENT_AUDIO_DO_PLAY, R2_EVENT_CLIPBOARD_COPY,
-    R2_EVENT_DEBUG_VISUALS, R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE,
-    R2_EVENT_HIGHLIGHT_REMOVE_ALL, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN,
-    R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO,
-    R2_EVENT_SHIFT_VIEW_X, R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE,
-    R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
-    R2_EVENT_WEBVIEW_KEYDOWN,
+    R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_HIGHLIGHT_CREATE,
+    R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL, R2_EVENT_LINK,
+    R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION,
+    R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X, R2_EVENT_TTS_CLICK_ENABLE,
+    R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS,
+    R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP, R2_EVENT_WEBVIEW_KEYDOWN,
 } from "../../common/events";
 import { IHighlight, IHighlightDefinition } from "../../common/highlight";
 import { IPaginationInfo } from "../../common/pagination";
@@ -62,6 +61,7 @@ import {
     URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS,
 } from "../common/url-params";
 import { ENABLE_WEBVIEW_RESIZE } from "../common/webview-resize";
+import { setupAudioBook } from "./audiobook";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
     CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, CLASS_HIGHLIGHT_CONTAINER,
@@ -96,7 +96,7 @@ win.READIUM2 = {
     isFixedLayout: false,
     locationHashOverride: undefined,
     locationHashOverrideInfo: {
-        audioIsPlaying: undefined,
+        audioPlaybackInfo: undefined,
         docInfo: undefined,
         href: "",
         locations: {
@@ -427,7 +427,7 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
 
 function resetLocationHashOverrideInfo() {
     win.READIUM2.locationHashOverrideInfo = {
-        audioIsPlaying: undefined,
+        audioPlaybackInfo: undefined,
         docInfo: undefined,
         href: "",
         locations: {
@@ -580,7 +580,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
     clearCurrentSelection(win);
     closePopupDialogs(win.document);
 
-    if (win.READIUM2.isFixedLayout || !win.document.body) {
+    if (win.READIUM2.isAudio || win.READIUM2.isFixedLayout || !win.document.body) {
         ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
         return;
     }
@@ -1215,93 +1215,18 @@ ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVEN
     recreateAllHighlights(win);
 });
 
-function throttle(fn: (...argz: any[]) => any, time: number) {
-    let called = false;
-    return (...args: any[]) => {
-        if (!called) {
-            fn(...args);
-            called = true;
-            setTimeout(() => {
-                called = false;
-            }, time);
-        }
-    };
-}
-
 let _docTitle: string | undefined;
 
 win.addEventListener("DOMContentLoaded", () => {
     debug("############# DOMContentLoaded");
 
-    if (win.READIUM2.isAudio) {
-        const audioElement = win.document.getElementById("audio") as HTMLAudioElement;
-
-        function notifyPlaybackLocation() {
-            const percent = audioElement.currentTime / audioElement.duration;
-
-            win.READIUM2.locationHashOverrideInfo = {
-                audioIsPlaying: (audioElement as any).isPlaying,
-                docInfo: {
-                    isFixedLayout: false,
-                    isRightToLeft: false,
-                    isVerticalWritingMode: false,
-                },
-                href: "", // filled-in from host index.js renderer
-                locations: {
-                    cfi: undefined,
-                    cssSelector: undefined,
-                        // calculated in host index.js renderer, where publication object is available
-                    position: undefined,
-                    progression: percent,
-                },
-                paginationInfo: undefined,
-                selectionInfo: undefined,
-                selectionIsNew: false,
-                text: undefined,
-                title: _docTitle,
-            };
-            const payload: IEventPayload_R2_EVENT_READING_LOCATION = win.READIUM2.locationHashOverrideInfo;
-            ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION, payload);
-        }
-        const notifyPlaybackLocationThrottled = throttle(() => {
-            notifyPlaybackLocation();
-        }, 1000);
-        const notifyPlaybackLocationDebounced = debounce(() => {
-            notifyPlaybackLocation();
-        }, 200);
-
-        audioElement.addEventListener("play", () => {
-            (audioElement as any).isPlaying = true;
-            notifyPlaybackLocation();
-        });
-        audioElement.addEventListener("pause", () => {
-            (audioElement as any).isPlaying = false;
-            notifyPlaybackLocation();
-        });
-        if (IS_DEV) {
-            audioElement.addEventListener("seeked", () => {
-                notifyPlaybackLocationDebounced();
-            });
-        }
-        audioElement.addEventListener("ended", () => {
-            (audioElement as any).isPlaying = false;
-            notifyPlaybackLocation();
-            const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-                direction: "LTR",
-                go: "NEXT",
-            };
-            ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
-        });
-
-        audioElement.addEventListener("timeupdate", () => {
-            // (audioElement as any).isPlaying = true;
-            notifyPlaybackLocationThrottled();
-        });
-    }
-
     const titleElement = win.document.documentElement.querySelector("head > title");
     if (titleElement && titleElement.textContent) {
         _docTitle = titleElement.textContent;
+    }
+
+    if (win.READIUM2.isAudio) {
+        setupAudioBook(_docTitle);
     }
 
     _cancelInitialScrollCheck = true;
@@ -1434,50 +1359,129 @@ function loaded(forced: boolean) {
         debug(">>> LOAD EVENT was not forced.");
     }
 
+    if (!win.READIUM2.isAudio) {
+        if (!win.READIUM2.isFixedLayout) {
+            debug("++++ scrollToHashDebounced FROM LOAD");
+            scrollToHashDebounced();
+            // setTimeout(() => {
+            //     debug("++++ scrollToHashRaw FROM LOAD");
+            //     scrollToHashRaw();
+            // }, 100);
+            _cancelInitialScrollCheck = false;
+            setTimeout(() => {
+                if (_cancelInitialScrollCheck) {
+                    return;
+                }
+                // if (!isPaginated(win.document)) {
+                //     // scrollToHashRaw();
+                //     return;
+                // }
+                // let visible = false;
+                // if (win.READIUM2.locationHashOverride === win.document.body ||
+                //     win.READIUM2.hashElement === win.document.body) {
+                //     visible = true;
+                // } else if (win.READIUM2.locationHashOverride) {
+                //     visible = computeVisibility_(win.READIUM2.locationHashOverride);
+                // } else if (win.READIUM2.hashElement) {
+                //     visible = computeVisibility_(win.READIUM2.hashElement);
+                // }
+                // if (!visible) {
+                //     debug("!visible (delayed layout pass?) => forcing second scrollToHashRaw()...");
+                //     if (win.READIUM2.locationHashOverride) {
+                //         debug(uniqueCssSelector(win.READIUM2.locationHashOverride, win.document, undefined));
+                //     }
+                //     scrollToHashRaw();
+                // }
+            }, 500);
+        } else {
+            // processXYDebounced(0, 0, false);
+
+            win.READIUM2.locationHashOverride = win.document.body;
+            notifyReadingLocationDebounced();
+        }
+    }
+
+    win.document.documentElement.addEventListener("keydown", (ev: KeyboardEvent) => {
+
+        if (win.document && win.document.documentElement) {
+            win.document.documentElement.classList.add(ROOT_CLASS_KEYBOARD_INTERACT);
+        }
+        // DEPRECATED
+        // if (ev.keyCode === 37 || ev.keyCode === 39) { // left / right
+        // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
+        // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code
+        // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code/code_values
+        if (ev.code === "ArrowLeft" || ev.code === "ArrowRight") {
+            if (ev.target && elementCapturesKeyboardArrowKeys(ev.target as Element)) {
+                (ev.target as any).r2_leftrightKeyboardTimeStamp = new Date();
+            }
+        }
+    }, true);
+
+    win.document.documentElement.addEventListener("mousedown", (_ev: MouseEvent) => {
+
+        if (win.document && win.document.documentElement) {
+            win.document.documentElement.classList.remove(ROOT_CLASS_KEYBOARD_INTERACT);
+        }
+    }, true);
+
     if (win.READIUM2.isAudio) {
         debug("AUDIOBOOK RENDER ...");
         return;
     }
 
-    if (!win.READIUM2.isFixedLayout) {
-        debug("++++ scrollToHashDebounced FROM LOAD");
-        scrollToHashDebounced();
-        // setTimeout(() => {
-        //     debug("++++ scrollToHashRaw FROM LOAD");
-        //     scrollToHashRaw();
-        // }, 100);
-        _cancelInitialScrollCheck = false;
-        setTimeout(() => {
-            if (_cancelInitialScrollCheck) {
-                return;
-            }
-            // if (!isPaginated(win.document)) {
-            //     // scrollToHashRaw();
-            //     return;
-            // }
-            // let visible = false;
-            // if (win.READIUM2.locationHashOverride === win.document.body ||
-            //     win.READIUM2.hashElement === win.document.body) {
-            //     visible = true;
-            // } else if (win.READIUM2.locationHashOverride) {
-            //     visible = computeVisibility_(win.READIUM2.locationHashOverride);
-            // } else if (win.READIUM2.hashElement) {
-            //     visible = computeVisibility_(win.READIUM2.hashElement);
-            // }
-            // if (!visible) {
-            //     debug("!visible (delayed layout pass?) => forcing second scrollToHashRaw()...");
-            //     if (win.READIUM2.locationHashOverride) {
-            //         debug(uniqueCssSelector(win.READIUM2.locationHashOverride, win.document, undefined));
-            //     }
-            //     scrollToHashRaw();
-            // }
-        }, 500);
-    } else {
-        // processXYDebounced(0, 0, false);
+    win.document.body.addEventListener("focusin", (ev: any) => {
 
-        win.READIUM2.locationHashOverride = win.document.body;
-        notifyReadingLocationDebounced();
-    }
+        if (_ignoreFocusInEvent) {
+            // debug("focusin --- IGNORE");
+            _ignoreFocusInEvent = false;
+            return;
+        }
+
+        if (isPopupDialogOpen(win.document)) {
+            return;
+        }
+
+        if (ev.target) {
+            let mouseClickOnLink = false;
+            if (win.document && win.document.documentElement) {
+                if (!win.document.documentElement.classList.contains(ROOT_CLASS_KEYBOARD_INTERACT)) {
+                    if ((ev.target as HTMLElement).tagName.toLowerCase() === "a" && (ev.target as any).href) {
+                        // link mouse click, leave it alone!
+                        mouseClickOnLink = true;
+                    }
+                }
+            }
+            if (!mouseClickOnLink) {
+                handleTab(ev.target as HTMLElement, undefined);
+            }
+        }
+        // if (!win.document) {
+        //     return;
+        // }
+        // const isPaged = isPaginated(win.document);
+        // if (isPaged) {
+        // }
+    });
+
+    win.document.body.addEventListener("keydown", (ev: KeyboardEvent) => {
+        if (isPopupDialogOpen(win.document)) {
+            return;
+        }
+
+        const TAB_KEY = 9;
+        if (ev.which === TAB_KEY) {
+            if (ev.target) {
+                handleTab(ev.target as HTMLElement, ev);
+            }
+        }
+        // if (!win.document) {
+        //     return;
+        // }
+        // const isPaged = isPaginated(win.document);
+        // if (isPaged) {
+        // }
+    }, true);
 
     const useResizeObserver = !win.READIUM2.isFixedLayout;
     if (useResizeObserver && win.document.body) {
@@ -1533,83 +1537,6 @@ function loaded(forced: boolean) {
     //         }
     //     }
     // });
-
-    win.document.body.addEventListener("focusin", (ev: any) => {
-
-        if (_ignoreFocusInEvent) {
-            // debug("focusin --- IGNORE");
-            _ignoreFocusInEvent = false;
-            return;
-        }
-
-        if (isPopupDialogOpen(win.document)) {
-            return;
-        }
-
-        if (ev.target) {
-            let mouseClickOnLink = false;
-            if (win.document && win.document.documentElement) {
-                if (!win.document.documentElement.classList.contains(ROOT_CLASS_KEYBOARD_INTERACT)) {
-                    if ((ev.target as HTMLElement).tagName.toLowerCase() === "a" && (ev.target as any).href) {
-                        // link mouse click, leave it alone!
-                        mouseClickOnLink = true;
-                    }
-                }
-            }
-            if (!mouseClickOnLink) {
-                handleTab(ev.target as HTMLElement, undefined);
-            }
-        }
-        // if (!win.document) {
-        //     return;
-        // }
-        // const isPaged = isPaginated(win.document);
-        // if (isPaged) {
-        // }
-    });
-
-    win.document.body.addEventListener("keydown", (ev: KeyboardEvent) => {
-        if (isPopupDialogOpen(win.document)) {
-            return;
-        }
-
-        const TAB_KEY = 9;
-        if (ev.which === TAB_KEY) {
-            if (ev.target) {
-                handleTab(ev.target as HTMLElement, ev);
-            }
-        }
-        // if (!win.document) {
-        //     return;
-        // }
-        // const isPaged = isPaginated(win.document);
-        // if (isPaged) {
-        // }
-    }, true);
-
-    win.document.documentElement.addEventListener("keydown", (ev: KeyboardEvent) => {
-
-        if (win.document && win.document.documentElement) {
-            win.document.documentElement.classList.add(ROOT_CLASS_KEYBOARD_INTERACT);
-        }
-        // DEPRECATED
-        // if (ev.keyCode === 37 || ev.keyCode === 39) { // left / right
-        // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
-        // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code
-        // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code/code_values
-        if (ev.code === "ArrowLeft" || ev.code === "ArrowRight") {
-            if (ev.target && elementCapturesKeyboardArrowKeys(ev.target as Element)) {
-                (ev.target as any).r2_leftrightKeyboardTimeStamp = new Date();
-            }
-        }
-    }, true);
-
-    win.document.documentElement.addEventListener("mousedown", (_ev: MouseEvent) => {
-
-        if (win.document && win.document.documentElement) {
-            win.document.documentElement.classList.remove(ROOT_CLASS_KEYBOARD_INTERACT);
-        }
-    }, true);
 
     win.document.addEventListener("click", (ev: MouseEvent) => {
 
@@ -2359,7 +2286,7 @@ const notifyReadingLocationRaw = () => {
     }
 
     win.READIUM2.locationHashOverrideInfo = {
-        audioIsPlaying: undefined,
+        audioPlaybackInfo: undefined,
         docInfo: {
             isFixedLayout: win.READIUM2.isFixedLayout,
             isRightToLeft: isRTL(),
@@ -2393,16 +2320,7 @@ const notifyReadingLocationDebounced = debounce(() => {
     notifyReadingLocationRaw();
 }, 250);
 
-if (win.READIUM2.isAudio) {
-    ipcRenderer.on(R2_EVENT_AUDIO_DO_PLAY, async (_event: any) => {
-        const audioElement = win.document.getElementById("audio") as HTMLAudioElement;
-        await audioElement.play();
-    });
-    ipcRenderer.on(R2_EVENT_AUDIO_DO_PAUSE, (_event: any) => {
-        const audioElement = win.document.getElementById("audio") as HTMLAudioElement;
-        audioElement.pause();
-    });
-} else {
+if (!win.READIUM2.isAudio) {
     ipcRenderer.on(R2_EVENT_TTS_DO_PLAY, (_event: any, payload: IEventPayload_R2_EVENT_TTS_DO_PLAY) => {
         const rootElement = win.document.querySelector(payload.rootElement);
         const startElement = payload.startElement ? win.document.querySelector(payload.startElement) : null;

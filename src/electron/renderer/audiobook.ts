@@ -8,8 +8,10 @@
 import { R2_EVENT_AUDIO_DO_PAUSE, R2_EVENT_AUDIO_DO_PLAY } from "../common/events";
 import { IReadiumElectronBrowserWindow } from "./webview/state";
 
+const win = window as IReadiumElectronBrowserWindow;
+
 export function audioPlay() {
-    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getActiveWebView();
     if (!activeWebView) {
         return;
     }
@@ -20,7 +22,7 @@ export function audioPlay() {
 }
 
 export function audioPause() {
-    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getActiveWebView();
     if (!activeWebView) {
         return;
     }

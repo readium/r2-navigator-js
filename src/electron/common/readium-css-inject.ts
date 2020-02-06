@@ -11,9 +11,9 @@ import * as xmldom from "xmldom";
 import { IEventPayload_R2_EVENT_READIUMCSS } from "./events";
 import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
 import {
-    ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, focusCssStyles,
-    footnotesCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles, targetCssStyles,
-    ttsCssStyles, visibilityMaskCssStyles,
+    ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, audioCssStyles,
+    focusCssStyles, footnotesCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles,
+    targetCssStyles, ttsCssStyles, visibilityMaskCssStyles,
 } from "./styles";
 
 // now match with :root[style*="readium-night-on"]
@@ -759,6 +759,7 @@ export function injectDefaultCSS(documant: Document) {
     appendCSSInline(documant, "electron-target", targetCssStyles);
     appendCSSInline(documant, "electron-scrollbars", scrollBarCssStyles);
     appendCSSInline(documant, "electron-visibility-mask", visibilityMaskCssStyles);
+    appendCSSInline(documant, "electron-audiobook", audioCssStyles);
 }
 
 export function injectReadPosCSS(documant: Document) {

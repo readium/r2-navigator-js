@@ -14,6 +14,7 @@ import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
 import { Link } from "@r2-shared-js/models/publication-link";
 import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
 
+import { IAudioPlaybackInfo } from "../common/audiobook";
 import { IDocInfo } from "../common/document";
 import {
     IEventPayload_R2_EVENT_LINK, IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
@@ -28,6 +29,11 @@ import { ISelectionInfo } from "../common/selection";
 import {
     READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl, convertHttpUrlToCustomScheme,
 } from "../common/sessions";
+import {
+    AUDIO_BODY_ID, AUDIO_CONTROLS_ID, AUDIO_COVER_ID, AUDIO_ID, AUDIO_NEXT_ID, AUDIO_PERCENT_ID,
+    AUDIO_PLAYPAUSE_ID, AUDIO_PREVIOUS_ID, AUDIO_SECTION_ID, AUDIO_SLIDER_ID, AUDIO_TIME_ID,
+    AUDIO_TITLE_ID,
+} from "../common/styles";
 import {
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
     URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS, URL_PARAM_REFRESH,
@@ -45,12 +51,14 @@ const debug = debug_("r2:navigator#electron/renderer/location");
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
+const win = window as IReadiumElectronBrowserWindow;
+
 export function locationHandleIpcMessage(
     eventChannel: string,
     eventArgs: any[],
     eventCurrentTarget: IReadiumElectronWebview): boolean {
 
-    // (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+    // win.READIUM2.getActiveWebView();
     const activeWebView = eventCurrentTarget;
 
     if (eventChannel === R2_EVENT_LOCATOR_VISIBLE) {
@@ -66,8 +74,8 @@ export function locationHandleIpcMessage(
         // if (!activeWebView) {
         //     return true;
         // }
-        const publication = (window as IReadiumElectronBrowserWindow).READIUM2.publication;
-        const publicationURL = (window as IReadiumElectronBrowserWindow).READIUM2.publicationURL;
+        const publication = win.READIUM2.publication;
+        const publicationURL = win.READIUM2.publicationURL;
         if (!publication) {
             return true;
         }
@@ -157,7 +165,7 @@ export function shiftWebview(webview: IReadiumElectronWebview, offset: number, b
     } else {
         // console.log(`backgroundColor:::::::::: ${backgroundColor}`);
         if (backgroundColor) {
-            const domSlidingViewport = (window as IReadiumElectronBrowserWindow).READIUM2.domSlidingViewport;
+            const domSlidingViewport = win.READIUM2.domSlidingViewport;
             domSlidingViewport.style.backgroundColor = backgroundColor;
         }
         webview.style.transform = `translateX(${offset}px)`;
@@ -165,8 +173,8 @@ export function shiftWebview(webview: IReadiumElectronWebview, offset: number, b
 }
 
 export function navLeftOrRight(left: boolean, spineNav?: boolean) {
-    const publication = (window as IReadiumElectronBrowserWindow).READIUM2.publication;
-    const publicationURL = (window as IReadiumElectronBrowserWindow).READIUM2.publicationURL;
+    const publication = win.READIUM2.publication;
+    const publicationURL = win.READIUM2.publicationURL;
     if (!publication || !publicationURL) {
         return;
     }
@@ -225,7 +233,7 @@ export function navLeftOrRight(left: boolean, spineNav?: boolean) {
             direction: rtl ? "RTL" : "LTR",
             go: goPREVIOUS ? "PREVIOUS" : "NEXT",
         };
-        const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+        const activeWebView = win.READIUM2.getActiveWebView();
         if (activeWebView) {
             setTimeout(async () => {
                 await activeWebView.send(R2_EVENT_PAGE_TURN, payload); // .getWebContents()
@@ -269,8 +277,8 @@ export function handleLinkUrl(href: string) {
 
 export function handleLinkLocator(location: Locator | undefined) {
 
-    const publication = (window as IReadiumElectronBrowserWindow).READIUM2.publication;
-    const publicationURL = (window as IReadiumElectronBrowserWindow).READIUM2.publicationURL;
+    const publication = win.READIUM2.publication;
+    const publicationURL = win.READIUM2.publicationURL;
 
     if (!publication || !publicationURL) {
         return;
@@ -327,7 +335,7 @@ export function handleLinkLocator(location: Locator | undefined) {
 
 let _reloadCounter = 0;
 export function reloadContent() {
-    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getActiveWebView();
     if (!activeWebView) {
         return;
     }
@@ -337,7 +345,7 @@ export function reloadContent() {
         activeWebView.READIUM2.forceRefresh = true;
         if (activeWebView.READIUM2.link) {
             const uri = new URL(activeWebView.READIUM2.link.Href,
-                (window as IReadiumElectronBrowserWindow).READIUM2.publicationURL);
+                win.READIUM2.publicationURL);
             uri.hash = "";
             uri.search = "";
             const urlNoQueryParams = uri.toString();
@@ -349,8 +357,8 @@ export function reloadContent() {
 
 function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: boolean): boolean {
 
-    const publication = (window as IReadiumElectronBrowserWindow).READIUM2.publication;
-    const publicationURL = (window as IReadiumElectronBrowserWindow).READIUM2.publicationURL;
+    const publication = win.READIUM2.publication;
+    const publicationURL = win.READIUM2.publicationURL;
     if (!publication || !publicationURL) {
         return false;
     }
@@ -511,17 +519,17 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
 
             // tslint:disable-next-line:no-string-literal
             data[URL_PARAM_DEBUG_VISUALS] = (IS_DEV &&
-                (window as IReadiumElectronBrowserWindow).READIUM2.DEBUG_VISUALS) ?
+                win.READIUM2.DEBUG_VISUALS) ?
                 "true" : "false";
 
             // tslint:disable-next-line:no-string-literal
             data[URL_PARAM_CLIPBOARD_INTERCEPT] =
-                (window as IReadiumElectronBrowserWindow).READIUM2.clipboardInterceptor ?
+                win.READIUM2.clipboardInterceptor ?
                 "true" : "false";
         });
     }
 
-    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getActiveWebView();
 
     const webviewNeedsForcedRefresh = !isAudio &&
         activeWebView && activeWebView.READIUM2.forceRefresh;
@@ -529,7 +537,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         activeWebView.READIUM2.forceRefresh = undefined;
     }
     const webviewNeedsHardRefresh = !isAudio &&
-        ((window as IReadiumElectronBrowserWindow).READIUM2.enableScreenReaderAccessibilityWebViewHardRefresh
+        (win.READIUM2.enableScreenReaderAccessibilityWebViewHardRefresh
         && isScreenReaderMounted());
 
     if (!isAudio && !webviewNeedsHardRefresh && !webviewNeedsForcedRefresh &&
@@ -665,9 +673,9 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
                 debug(`___HARD AUDIO___ WEBVIEW REFRESH: ${uriStr_}`);
             }
 
-            (window as IReadiumElectronBrowserWindow).READIUM2.destroyActiveWebView();
-            (window as IReadiumElectronBrowserWindow).READIUM2.createActiveWebView();
-            const newActiveWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+            win.READIUM2.destroyActiveWebView();
+            win.READIUM2.createActiveWebView();
+            const newActiveWebView = win.READIUM2.getActiveWebView();
             if (newActiveWebView) {
                 newActiveWebView.READIUM2.link = pubLink;
 
@@ -703,31 +711,6 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     <base href="${publicationURL}" />
     <style type="text/css">
     /*<![CDATA[*/
-        #cover {
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            max-width: 500px;
-        }
-
-        #audio {
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            max-width: 800px;
-            height: 2.5em;
-            width: 80%;
-        }
-
-        #title {
-            margin-top: 1em;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            max-width: 800px;
-            width: 80%;
-            text-align: center;
-        }
     /*]]>*/
     </style>
 
@@ -737,7 +720,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     const DEBUG_AUDIO = ${IS_DEV};
 
     document.addEventListener("DOMContentLoaded", () => {
-        const _audioElement = document.getElementById("audio");
+        const _audioElement = document.getElementById("${AUDIO_ID}");
 
         if (DEBUG_AUDIO)
         {
@@ -830,12 +813,22 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     //]]>
     </script>
 </head>
-<body>
-${title ? `<h1 id="title">${title}</h1><br />` : ``}
-${coverImage ? `<img id="cover" src="${coverImage}" alt="" /><br />` : ``}
-    <audio id="audio" controls="controls" autoplay="autoplay">
+<body id="${AUDIO_BODY_ID}">
+<section id="${AUDIO_SECTION_ID}">
+${title ? `<h3 id="${AUDIO_TITLE_ID}">${title}</h3>` : ``}
+${coverImage ? `<img id="${AUDIO_COVER_ID}" src="${coverImage}" alt="" />` : ``}
+    <audio id="${AUDIO_ID}" controlszz="controlszz" autoplay="autoplay">
         <source src="${uriStr_/*linkPath*/}" type="${pubLink.TypeLink}" />
     </audio>
+    <div id="${AUDIO_CONTROLS_ID}">
+        <button id="${AUDIO_PREVIOUS_ID}"></button>
+        <button id="${AUDIO_PLAYPAUSE_ID}"></button>
+        <button id="${AUDIO_NEXT_ID}"></button>
+        <input id="${AUDIO_SLIDER_ID}" type="range" min="0" max="100" value="0" step="1" />
+        <span id="${AUDIO_TIME_ID}">00:000 / 99:99:999</span>
+        <span id="${AUDIO_PERCENT_ID}">100%</span>
+    </div>
+</section>
 </body>
 </html>`;
 
@@ -862,9 +855,9 @@ ${coverImage ? `<img id="cover" src="${coverImage}" alt="" /><br />` : ``}
                 debug(`___HARD___ WEBVIEW REFRESH: ${uriStr_}`);
             }
 
-            (window as IReadiumElectronBrowserWindow).READIUM2.destroyActiveWebView();
-            (window as IReadiumElectronBrowserWindow).READIUM2.createActiveWebView();
-            const newActiveWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+            win.READIUM2.destroyActiveWebView();
+            win.READIUM2.createActiveWebView();
+            const newActiveWebView = win.READIUM2.getActiveWebView();
             if (newActiveWebView) {
                 newActiveWebView.READIUM2.link = pubLink;
                 newActiveWebView.setAttribute("src", uriStr_);
@@ -958,7 +951,7 @@ ${coverImage ? `<img id="cover" src="${coverImage}" alt="" /><br />` : ``}
 }
 
 export interface LocatorExtended {
-    audioIsPlaying: boolean | undefined;
+    audioPlaybackInfo: IAudioPlaybackInfo | undefined;
     locator: Locator;
     paginationInfo: IPaginationInfo | undefined;
     selectionInfo: ISelectionInfo | undefined;
@@ -973,7 +966,7 @@ export function getCurrentReadingLocation(): LocatorExtended | undefined {
 let _readingLocationSaver: ((locator: LocatorExtended) => void) | undefined;
 const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_READING_LOCATION) => {
 
-    const publication = (window as IReadiumElectronBrowserWindow).READIUM2.publication;
+    const publication = win.READIUM2.publication;
 
     let position: number | undefined;
     if (publication && publication.Spine) {
@@ -1004,12 +997,17 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
             }
             if (typeof timePosition !== "undefined") {
                 position = timePosition / totalDuration;
+                if (locator.audioPlaybackInfo) {
+                    locator.audioPlaybackInfo.globalTime = timePosition;
+                    locator.audioPlaybackInfo.globalDuration = totalDuration;
+                    locator.audioPlaybackInfo.globalProgression = position;
+                }
             }
         }
     }
 
     _lastSavedReadingLocation = {
-        audioIsPlaying: locator.audioIsPlaying,
+        audioPlaybackInfo: locator.audioPlaybackInfo,
         docInfo: locator.docInfo,
         locator: {
             href: docHref,
@@ -1057,7 +1055,7 @@ export function setReadingLocationSaver(func: (locator: LocatorExtended) => void
 
 export async function isLocatorVisible(locator: Locator): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
-        const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+        const activeWebView = win.READIUM2.getActiveWebView();
 
         if (!activeWebView) {
             reject("No navigator webview?!");

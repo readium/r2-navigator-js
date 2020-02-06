@@ -10,6 +10,8 @@ import { Link } from "@r2-shared-js/models/publication-link";
 import { IEventPayload_R2_EVENT_READIUMCSS } from "../common/events";
 import { IReadiumElectronBrowserWindow } from "./webview/state";
 
+const win = window as IReadiumElectronBrowserWindow;
+
 export function isRTL(/* link: Link | undefined */): boolean {
     // if (link && link.Properties) {
     //     if (link.Properties.Direction === "rtl") {
@@ -20,7 +22,7 @@ export function isRTL(/* link: Link | undefined */): boolean {
     //     }
     // }
 
-    const publication = (window as IReadiumElectronBrowserWindow).READIUM2.publication;
+    const publication = win.READIUM2.publication;
 
     if (publication &&
         publication.Metadata &&
@@ -40,7 +42,7 @@ export function isFixedLayout(link: Link | undefined): boolean {
         }
     }
 
-    const publication = (window as IReadiumElectronBrowserWindow).READIUM2.publication;
+    const publication = win.READIUM2.publication;
 
     if (publication &&
         publication.Metadata &&
@@ -53,7 +55,7 @@ export function isFixedLayout(link: Link | undefined): boolean {
 export function __computeReadiumCssJsonMessage(link: Link | undefined): IEventPayload_R2_EVENT_READIUMCSS {
 
     if (isFixedLayout(link)) {
-        const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+        const activeWebView = win.READIUM2.getActiveWebView();
         return {
             fixedLayoutWebViewHeight: activeWebView ? activeWebView.clientHeight : undefined,
             fixedLayoutWebViewWidth: activeWebView ? activeWebView.clientWidth : undefined,

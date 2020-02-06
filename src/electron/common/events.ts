@@ -7,6 +7,7 @@
 
 import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
 
+import { IAudioPlaybackInfo } from "./audiobook";
 import { IDocInfo } from "./document";
 import { IHighlight, IHighlightDefinition } from "./highlight";
 import { IPaginationInfo } from "./pagination";
@@ -77,7 +78,7 @@ export const R2_EVENT_READING_LOCATION = "R2_EVENT_READING_LOCATION";
 
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_READING_LOCATION extends Locator {
-    audioIsPlaying: boolean | undefined;
+    audioPlaybackInfo: IAudioPlaybackInfo | undefined;
     paginationInfo: IPaginationInfo | undefined;
     selectionInfo: ISelectionInfo | undefined;
     docInfo: IDocInfo | undefined;

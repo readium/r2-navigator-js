@@ -495,7 +495,8 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
     _dialogState.ttsUtterance = undefined;
 
     if (_dialogState.domSlider) {
-        _dialogState.domSlider.value = "" + ttsQueueIndex;
+        // _dialogState.domSlider.value = "" + ttsQueueIndex;
+        _dialogState.domSlider.valueAsNumber = ttsQueueIndex;
     }
 
     if (ttsQueueIndex >= _dialogState.ttsQueueLength || ttsQueueIndex < 0) {
@@ -672,7 +673,8 @@ function startTTSSession(
     if (_dialogState.domSlider) {
         _dialogState.domSlider.addEventListener("input", (_ev: Event) => {
             if (_dialogState && _dialogState.domSlider) {
-                const n = parseInt(_dialogState.domSlider.value, 10);
+                // const n = parseInt(_dialogState.domSlider.value, 10);
+                const n = _dialogState.domSlider.valueAsNumber;
 
                 ttsPreviewAndEventuallyPlayQueueIndex(n);
             }

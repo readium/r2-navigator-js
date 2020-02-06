@@ -18,6 +18,8 @@ import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webvie
 // const debug = debug_("r2:navigator#electron/renderer/index");
 // const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
+const win = window as IReadiumElectronBrowserWindow;
+
 export function ttsHandleIpcMessage(
     eventChannel: string,
     _eventArgs: any[],
@@ -52,7 +54,7 @@ export function ttsListen(ttsListener: (ttsState: TTSStateEnum) => void) {
 }
 
 export function ttsPlay() {
-    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getActiveWebView();
     if (!activeWebView) {
         return;
     }
@@ -76,7 +78,7 @@ export function ttsPlay() {
 }
 
 export function ttsPause() {
-    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getActiveWebView();
     if (!activeWebView) {
         return;
     }
@@ -86,7 +88,7 @@ export function ttsPause() {
     }, 0);
 }
 export function ttsStop() {
-    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getActiveWebView();
     if (!activeWebView) {
         return;
     }
@@ -96,7 +98,7 @@ export function ttsStop() {
     }, 0);
 }
 export function ttsResume() {
-    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getActiveWebView();
     if (!activeWebView) {
         return;
     }
@@ -106,7 +108,7 @@ export function ttsResume() {
     }, 0);
 }
 export function ttsPrevious() {
-    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getActiveWebView();
     if (!activeWebView) {
         return;
     }
@@ -116,7 +118,7 @@ export function ttsPrevious() {
     }, 0);
 }
 export function ttsNext() {
-    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getActiveWebView();
     if (!activeWebView) {
         return;
     }
@@ -128,11 +130,11 @@ export function ttsNext() {
 
 export function ttsClickEnable(doEnable: boolean) {
 
-    if ((window as IReadiumElectronBrowserWindow).READIUM2) {
-        (window as IReadiumElectronBrowserWindow).READIUM2.ttsClickEnabled = doEnable;
+    if (win.READIUM2) {
+        win.READIUM2.ttsClickEnabled = doEnable;
     }
 
-    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getActiveWebView();
     if (!activeWebView) {
         return;
     }

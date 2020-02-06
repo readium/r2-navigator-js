@@ -17,13 +17,15 @@ import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webvie
 // const debug = debug_("r2:navigator#electron/renderer/index");
 // const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
+const win = window as IReadiumElectronBrowserWindow;
+
 export function highlightsHandleIpcMessage(
     eventChannel: string,
     eventArgs: any[],
     eventCurrentTarget: IReadiumElectronWebview): boolean {
 
     if (eventChannel === R2_EVENT_HIGHLIGHT_CLICK) {
-        // (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+        // win.READIUM2.getActiveWebView();
         const activeWebView = eventCurrentTarget;
         // if (!activeWebView) {
         //     return true;
@@ -45,7 +47,7 @@ export function highlightsClickListen(highlightsClickListener: (href: string, hi
     _highlightsClickListener = highlightsClickListener;
 }
 export function highlightsRemoveAll(href: string) {
-    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getActiveWebView();
     if (activeWebView && activeWebView.READIUM2.link && activeWebView.READIUM2.link.Href === href) {
 
         setTimeout(async () => {
@@ -54,7 +56,7 @@ export function highlightsRemoveAll(href: string) {
     }
 }
 export function highlightsRemove(href: string, highlightIDs: string[]) {
-    const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getActiveWebView();
     if (activeWebView && activeWebView.READIUM2.link && activeWebView.READIUM2.link.Href === href) {
         const payload: IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE = {
             highlightIDs,
@@ -71,7 +73,7 @@ export async function highlightsCreate(
     Promise<Array<IHighlight | null>> {
     return new Promise<Array<IHighlight | null>>((resolve, reject) => {
 
-        const activeWebView = (window as IReadiumElectronBrowserWindow).READIUM2.getActiveWebView();
+        const activeWebView = win.READIUM2.getActiveWebView();
         if (!activeWebView) {
             reject("No navigator webview?!");
             return;
