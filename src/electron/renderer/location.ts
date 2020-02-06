@@ -30,9 +30,9 @@ import {
     READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl, convertHttpUrlToCustomScheme,
 } from "../common/sessions";
 import {
-    AUDIO_BODY_ID, AUDIO_CONTROLS_ID, AUDIO_COVER_ID, AUDIO_ID, AUDIO_NEXT_ID, AUDIO_PERCENT_ID,
-    AUDIO_PLAYPAUSE_ID, AUDIO_PREVIOUS_ID, AUDIO_SECTION_ID, AUDIO_SLIDER_ID, AUDIO_TIME_ID,
-    AUDIO_TITLE_ID,
+    AUDIO_BODY_ID, AUDIO_CONTROLS_ID, AUDIO_COVER_ID, AUDIO_FORWARD_ID, AUDIO_ID, AUDIO_NEXT_ID,
+    AUDIO_PERCENT_ID, AUDIO_PLAYPAUSE_ID, AUDIO_PREVIOUS_ID, AUDIO_REWIND_ID, AUDIO_SECTION_ID,
+    AUDIO_SLIDER_ID, AUDIO_TIME_ID, AUDIO_TITLE_ID,
 } from "../common/styles";
 import {
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
@@ -822,7 +822,9 @@ ${coverImage ? `<img id="${AUDIO_COVER_ID}" src="${coverImage}" alt="" />` : ``}
     </audio>
     <div id="${AUDIO_CONTROLS_ID}">
         <button id="${AUDIO_PREVIOUS_ID}"></button>
+        <button id="${AUDIO_REWIND_ID}"></button>
         <button id="${AUDIO_PLAYPAUSE_ID}"></button>
+        <button id="${AUDIO_FORWARD_ID}"></button>
         <button id="${AUDIO_NEXT_ID}"></button>
         <input id="${AUDIO_SLIDER_ID}" type="range" min="0" max="100" value="0" step="1" />
         <span id="${AUDIO_TIME_ID}">00:000 / 99:99:999</span>

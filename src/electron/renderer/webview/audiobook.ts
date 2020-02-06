@@ -14,8 +14,8 @@ import {
     R2_EVENT_READING_LOCATION,
 } from "../../common/events";
 import {
-    AUDIO_ID, AUDIO_NEXT_ID, AUDIO_PERCENT_ID, AUDIO_PLAYPAUSE_ID, AUDIO_PREVIOUS_ID,
-    AUDIO_SLIDER_ID, AUDIO_TIME_ID,
+    AUDIO_COVER_ID, AUDIO_FORWARD_ID, AUDIO_ID, AUDIO_NEXT_ID, AUDIO_PERCENT_ID, AUDIO_PLAYPAUSE_ID,
+    AUDIO_PREVIOUS_ID, AUDIO_REWIND_ID, AUDIO_SLIDER_ID, AUDIO_TIME_ID,
 } from "../../common/styles";
 import { IReadiumElectronWebviewWindow } from "./state";
 
@@ -38,6 +38,7 @@ function throttle(fn: (...argz: any[]) => any, time: number) {
 
 export function setupAudioBook(_docTitle: string | undefined) {
 
+    const coverElement = win.document.getElementById(AUDIO_COVER_ID) as HTMLImageElement;
     const audioElement = win.document.getElementById(AUDIO_ID) as HTMLAudioElement;
     const sliderElement = win.document.getElementById(AUDIO_SLIDER_ID) as HTMLInputElement;
     const timeElement = win.document.getElementById(AUDIO_TIME_ID) as HTMLSpanElement;
@@ -45,12 +46,41 @@ export function setupAudioBook(_docTitle: string | undefined) {
     const playPauseElement = win.document.getElementById(AUDIO_PLAYPAUSE_ID) as HTMLButtonElement;
     const previousElement = win.document.getElementById(AUDIO_PREVIOUS_ID) as HTMLButtonElement;
     const nextElement = win.document.getElementById(AUDIO_NEXT_ID) as HTMLButtonElement;
+    const rewindElement = win.document.getElementById(AUDIO_REWIND_ID) as HTMLButtonElement;
+    const forwardElement = win.document.getElementById(AUDIO_FORWARD_ID) as HTMLButtonElement;
 
     ipcRenderer.on(R2_EVENT_AUDIO_DO_PLAY, async (_event: any) => {
         await audioElement.play();
     });
     ipcRenderer.on(R2_EVENT_AUDIO_DO_PAUSE, (_event: any) => {
         audioElement.pause();
+    });
+
+    rewindElement.addEventListener("click", () => {
+        const newTime = Math.max(0, audioElement.currentTime - 30);
+        audioElement.currentTime = newTime;
+        // if (newTime < 0.5) {
+        //     const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+        //         direction: "LTR",
+        //         go: "PREVIOUS",
+        //     };
+        //     ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+        // } else {
+        //     audioElement.currentTime = newTime;
+        // }
+    });
+    forwardElement.addEventListener("click", () => {
+        const newTime = Math.min(audioElement.duration, audioElement.currentTime + 30);
+        audioElement.currentTime = newTime;
+        // if (newTime >= audioElement.duration - 0.5) {
+        //     const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+        //         direction: "LTR",
+        //         go: "NEXT",
+        //     };
+        //     ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+        // } else {
+        //     audioElement.currentTime = newTime;
+        // }
     });
 
     previousElement.addEventListener("click", () => {
@@ -86,8 +116,7 @@ export function setupAudioBook(_docTitle: string | undefined) {
         // audioElement.pause();
         // debounceSlider(wasPlaying);
     });
-
-    playPauseElement.addEventListener("click", () => {
+    function togglePlayPause() {
         if (win.READIUM2.locationHashOverrideInfo &&
             win.READIUM2.locationHashOverrideInfo.audioPlaybackInfo) {
             const isPlaying = win.READIUM2.locationHashOverrideInfo.audioPlaybackInfo.isPlaying;
@@ -107,6 +136,12 @@ export function setupAudioBook(_docTitle: string | undefined) {
                 }
             }
         }
+    }
+    coverElement.addEventListener("mousedown", () => {
+        togglePlayPause();
+    });
+    playPauseElement.addEventListener("click", () => {
+        togglePlayPause();
     });
 
     function formatTime(seconds: number): string {
