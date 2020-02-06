@@ -444,7 +444,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     // ... which it is!
     const linkUri = new URI(hrefFull);
     if (isAudio) {
-        linkUri.hash("").normalizeHash();
+        // linkUri.hash("").normalizeHash();
         linkUri.search((data: any) => {
             // overrides existing (leaves others intact)
             data[URL_PARAM_PREVIOUS] = undefined;
@@ -717,7 +717,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     <script>
     //<![CDATA[
 
-    const DEBUG_AUDIO = true;
+    const DEBUG_AUDIO = ${IS_DEV};
 
     document.addEventListener("DOMContentLoaded", () => {
         const _audioElement = document.getElementById("audio");
@@ -798,7 +798,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
 
             _audioElement.addEventListener("timeupdate", function()
                 {
-                    console.debug("Y) timeupdate");
+                    // console.debug("Y) timeupdate");
                 }
             );
 
@@ -816,8 +816,8 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
 <body>
 ${title ? `<h1 id="title">${title}</h1><br />` : ``}
 ${coverImage ? `<img id="cover" src="${coverImage}" alt="" /><br />` : ``}
-    <audio id="audio" controls="controls">
-        <source src="${linkPath}" type="${pubLink.TypeLink}" />
+    <audio id="audio" controls="controls" autoplay="autoplay">
+        <source src="${uriStr_/*linkPath*/}" type="${pubLink.TypeLink}" />
     </audio>
 </body>
 </html>`;

@@ -90,6 +90,7 @@ win.READIUM2 = {
     fxlViewportScale: 1,
     fxlViewportWidth: 0,
     hashElement: null,
+    isAudio: false,
     isClipboardIntercept: false,
     isFixedLayout: false,
     locationHashOverride: undefined,
@@ -143,7 +144,7 @@ win.prompt = (...args: any[]): string => {
 
 // TODO this feels like a hack! :(
 // (in Electron v1 the top-level app event listener catches the webview-originating events ... not anymore)
-window.document.addEventListener("keydown", (ev: KeyboardEvent) => {
+win.document.addEventListener("keydown", (ev: KeyboardEvent) => {
 
     const payload: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN = {
         altKey: ev.altKey,
@@ -155,6 +156,8 @@ window.document.addEventListener("keydown", (ev: KeyboardEvent) => {
     };
     ipcRenderer.sendToHost(R2_EVENT_WEBVIEW_KEYDOWN, payload);
 });
+
+win.READIUM2.isAudio = win.location.protocol === "data:";
 
 if (win.READIUM2.urlQueryParams) {
     let readiumEpubReadingSystemJson: INameVersion | undefined;
@@ -1207,11 +1210,75 @@ ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVEN
     recreateAllHighlights(win);
 });
 
+function throttle(fn: (...argz: any[]) => any, time: number) {
+    let called = false;
+    return (...args: any[]) => {
+        if (!called) {
+            fn(...args);
+            called = true;
+            setTimeout(() => {
+                called = false;
+            }, time);
+        }
+    };
+}
+
 let _docTitle: string | undefined;
 
 win.addEventListener("DOMContentLoaded", () => {
     debug("############# DOMContentLoaded");
-    // console.log(win.location);
+
+    if (win.READIUM2.isAudio) {
+        const audioElement = win.document.getElementById("audio") as HTMLAudioElement;
+        function notifyPlaybackLocation() {
+            const percent = audioElement.currentTime / audioElement.duration;
+
+            win.READIUM2.locationHashOverrideInfo = {
+                docInfo: {
+                    isFixedLayout: false,
+                    isRightToLeft: false,
+                    isVerticalWritingMode: false,
+                },
+                href: "", // filled-in from host index.js renderer
+                locations: {
+                    cfi: undefined,
+                    cssSelector: undefined,
+                        // calculated in host index.js renderer, where publication object is available
+                    position: undefined,
+                    progression: percent,
+                },
+                paginationInfo: undefined,
+                selectionInfo: undefined,
+                selectionIsNew: false,
+                text: undefined,
+                title: _docTitle,
+            };
+            const payload: IEventPayload_R2_EVENT_READING_LOCATION = win.READIUM2.locationHashOverrideInfo;
+            ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION, payload);
+        }
+        const notifyPlaybackLocationThrottled = throttle(() => {
+            notifyPlaybackLocation();
+        }, 1000);
+
+        audioElement.addEventListener("play", () => {
+            notifyPlaybackLocation();
+        });
+        audioElement.addEventListener("pause", () => {
+            notifyPlaybackLocation();
+        });
+        audioElement.addEventListener("ended", () => {
+            notifyPlaybackLocation();
+            const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+                direction: "LTR",
+                go: "NEXT",
+            };
+            ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+        });
+
+        audioElement.addEventListener("timeupdate", () => {
+            notifyPlaybackLocationThrottled();
+        });
+    }
 
     const titleElement = win.document.documentElement.querySelector("head > title");
     if (titleElement && titleElement.textContent) {
@@ -1222,7 +1289,9 @@ win.addEventListener("DOMContentLoaded", () => {
 
     // const linkUri = new URI(win.location.href);
 
-    if (win.location.hash && win.location.hash.length > 1) {
+    if (!win.READIUM2.isAudio &&
+        win.location.hash && win.location.hash.length > 1) {
+
         win.READIUM2.hashElement = win.document.getElementById(win.location.hash.substr(1));
         if (win.READIUM2.DEBUG_VISUALS) {
             if (win.READIUM2.hashElement) {
@@ -1346,6 +1415,11 @@ function loaded(forced: boolean) {
         debug(">>> LOAD EVENT was not forced.");
     }
 
+    if (win.READIUM2.isAudio) {
+        debug("AUDIOBOOK RENDER ...");
+        return;
+    }
+
     if (!win.READIUM2.isFixedLayout) {
         debug("++++ scrollToHashDebounced FROM LOAD");
         scrollToHashDebounced();
@@ -1421,7 +1495,7 @@ function loaded(forced: boolean) {
             // Also note that ReadiumCSS default to (via stylesheet :root):
             // document.documentElement.style.position = "relative";
         }, 1000);
-        // window.requestAnimationFrame((_timestamp) => {
+        // win.requestAnimationFrame((_timestamp) => {
         // });
     }
 
