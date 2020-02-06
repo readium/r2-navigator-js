@@ -326,7 +326,9 @@ function computeVisibility_(element: Element): boolean {
 function computeVisibility(location: LocatorLocations): boolean {
 
     let visible = false;
-    if (win.READIUM2.isFixedLayout) {
+    if (win.READIUM2.isAudio) {
+        visible = true;
+    } else if (win.READIUM2.isFixedLayout) {
         visible = true;
     } else if (!win.document || !win.document.documentElement || !win.document.body) {
         visible = false;
