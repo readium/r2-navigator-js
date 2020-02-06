@@ -96,6 +96,7 @@ win.READIUM2 = {
     isFixedLayout: false,
     locationHashOverride: undefined,
     locationHashOverrideInfo: {
+        audioIsPlaying: undefined,
         docInfo: undefined,
         href: "",
         locations: {
@@ -426,6 +427,7 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
 
 function resetLocationHashOverrideInfo() {
     win.READIUM2.locationHashOverrideInfo = {
+        audioIsPlaying: undefined,
         docInfo: undefined,
         href: "",
         locations: {
@@ -1238,6 +1240,7 @@ win.addEventListener("DOMContentLoaded", () => {
             const percent = audioElement.currentTime / audioElement.duration;
 
             win.READIUM2.locationHashOverrideInfo = {
+                audioIsPlaying: (audioElement as any).isPlaying,
                 docInfo: {
                     isFixedLayout: false,
                     isRightToLeft: false,
@@ -1268,9 +1271,11 @@ win.addEventListener("DOMContentLoaded", () => {
         }, 200);
 
         audioElement.addEventListener("play", () => {
+            (audioElement as any).isPlaying = true;
             notifyPlaybackLocation();
         });
         audioElement.addEventListener("pause", () => {
+            (audioElement as any).isPlaying = false;
             notifyPlaybackLocation();
         });
         if (IS_DEV) {
@@ -1279,6 +1284,7 @@ win.addEventListener("DOMContentLoaded", () => {
             });
         }
         audioElement.addEventListener("ended", () => {
+            (audioElement as any).isPlaying = false;
             notifyPlaybackLocation();
             const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
                 direction: "LTR",
@@ -1288,6 +1294,7 @@ win.addEventListener("DOMContentLoaded", () => {
         });
 
         audioElement.addEventListener("timeupdate", () => {
+            // (audioElement as any).isPlaying = true;
             notifyPlaybackLocationThrottled();
         });
     }
@@ -2352,6 +2359,7 @@ const notifyReadingLocationRaw = () => {
     }
 
     win.READIUM2.locationHashOverrideInfo = {
+        audioIsPlaying: undefined,
         docInfo: {
             isFixedLayout: win.READIUM2.isFixedLayout,
             isRightToLeft: isRTL(),

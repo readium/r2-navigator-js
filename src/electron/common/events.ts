@@ -77,6 +77,7 @@ export const R2_EVENT_READING_LOCATION = "R2_EVENT_READING_LOCATION";
 
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_READING_LOCATION extends Locator {
+    audioIsPlaying: boolean | undefined;
     paginationInfo: IPaginationInfo | undefined;
     selectionInfo: ISelectionInfo | undefined;
     docInfo: IDocInfo | undefined;

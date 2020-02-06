@@ -958,6 +958,7 @@ ${coverImage ? `<img id="cover" src="${coverImage}" alt="" /><br />` : ``}
 }
 
 export interface LocatorExtended {
+    audioIsPlaying: boolean | undefined;
     locator: Locator;
     paginationInfo: IPaginationInfo | undefined;
     selectionInfo: ISelectionInfo | undefined;
@@ -971,7 +972,44 @@ export function getCurrentReadingLocation(): LocatorExtended | undefined {
 }
 let _readingLocationSaver: ((locator: LocatorExtended) => void) | undefined;
 const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_READING_LOCATION) => {
+
+    const publication = (window as IReadiumElectronBrowserWindow).READIUM2.publication;
+
+    let position: number | undefined;
+    if (publication && publication.Spine) {
+        const isAudio =
+            publication.Metadata &&
+            publication.Metadata.RDFType &&
+            /http[s]?:\/\/schema\.org\/Audiobook$/.test(publication.Metadata.RDFType);
+        if (isAudio) {
+            const metaDuration = publication.Metadata.Duration;
+            let totalDuration = 0;
+            let timePosition: number | undefined;
+            for (const spineItem of publication.Spine) {
+                if (typeof spineItem.Duration !== "undefined") {
+                    if (docHref === spineItem.Href) {
+                        const percent = typeof locator.locations.progression !== "undefined" ?
+                            locator.locations.progression : 0;
+                        const time = percent * spineItem.Duration;
+                        if (typeof timePosition === "undefined") {
+                            timePosition = totalDuration + time;
+                        }
+                    }
+
+                    totalDuration += spineItem.Duration;
+                }
+            }
+            if (totalDuration !== metaDuration) {
+                console.log(`DIFFERENT AUDIO DURATIONS?! ${totalDuration} (spines) !== ${metaDuration} (metadata)`);
+            }
+            if (typeof timePosition !== "undefined") {
+                position = timePosition / totalDuration;
+            }
+        }
+    }
+
     _lastSavedReadingLocation = {
+        audioIsPlaying: locator.audioIsPlaying,
         docInfo: locator.docInfo,
         locator: {
             href: docHref,
@@ -981,7 +1019,7 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
                 cssSelector: locator.locations.cssSelector ?
                     locator.locations.cssSelector : undefined,
                 position: (typeof locator.locations.position !== "undefined") ?
-                    locator.locations.position : undefined,
+                    locator.locations.position : position,
                 progression: (typeof locator.locations.progression !== "undefined") ?
                     locator.locations.progression : undefined,
             },
