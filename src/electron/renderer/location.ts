@@ -444,7 +444,24 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     // ... which it is!
     const linkUri = new URI(hrefFull);
     if (isAudio) {
-        // linkUri.hash("").normalizeHash();
+        if (useGoto) {
+            linkUri.hash("").normalizeHash();
+
+            if (pubLink.Duration) {
+                const gotoBase64 = linkUri.search(true)[URL_PARAM_GOTO];
+
+                if (gotoBase64) {
+                    const str = Buffer.from(gotoBase64, "base64").toString("utf8");
+                    const json = JSON.parse(str);
+                    const gotoProgression = (json as LocatorLocations).progression;
+                    if (typeof gotoProgression !== "undefined") {
+                        const time = gotoProgression * pubLink.Duration;
+                        linkUri.hash(`t=${time}`).normalizeHash();
+                    }
+                }
+            }
+        }
+
         linkUri.search((data: any) => {
             // overrides existing (leaves others intact)
             data[URL_PARAM_PREVIOUS] = undefined;

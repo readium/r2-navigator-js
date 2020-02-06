@@ -1261,6 +1261,9 @@ win.addEventListener("DOMContentLoaded", () => {
         const notifyPlaybackLocationThrottled = throttle(() => {
             notifyPlaybackLocation();
         }, 1000);
+        const notifyPlaybackLocationDebounced = debounce(() => {
+            notifyPlaybackLocation();
+        }, 200);
 
         audioElement.addEventListener("play", () => {
             notifyPlaybackLocation();
@@ -1268,6 +1271,11 @@ win.addEventListener("DOMContentLoaded", () => {
         audioElement.addEventListener("pause", () => {
             notifyPlaybackLocation();
         });
+        if (IS_DEV) {
+            audioElement.addEventListener("seeked", () => {
+                notifyPlaybackLocationDebounced();
+            });
+        }
         audioElement.addEventListener("ended", () => {
             notifyPlaybackLocation();
             const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
