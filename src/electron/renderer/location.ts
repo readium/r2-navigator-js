@@ -718,14 +718,14 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
             if (newActiveWebView) {
                 newActiveWebView.READIUM2.link = pubLink;
 
-                let coverImage: string | undefined;
+                // let coverImage: string | undefined;
                 const coverLink = publication.GetCover();
-                if (coverLink) {
-                    coverImage = coverLink.Href;
-                    // if (coverImage && !isHTTP(coverImage)) {
-                    //     coverImage = absoluteURL(coverImage);
-                    // }
-                }
+                // if (coverLink) {
+                //     coverImage = coverLink.Href;
+                //     // if (coverImage && !isHTTP(coverImage)) {
+                //     //     coverImage = absoluteURL(coverImage);
+                //     // }
+                // }
 
                 let title: string | undefined;
                 if (pubLink.Title) {
@@ -855,7 +855,7 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
 <body id="${AUDIO_BODY_ID}">
 <section id="${AUDIO_SECTION_ID}">
 ${title ? `<h3 id="${AUDIO_TITLE_ID}">${title}</h3>` : ``}
-${coverImage ? `<img id="${AUDIO_COVER_ID}" src="${coverImage}" alt="" />` : ``}
+${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${coverLink.Height ? `height="${coverLink.Height}"` : ""} ${coverLink.Width ? `width="${coverLink.Width}"` : ""} ${coverLink.Width || coverLink.Height ? `style="${coverLink.Height ? `height: ${coverLink.Height}px !important;` : ""} ${coverLink.Width ? `width: ${coverLink.Width}px !important;` : ""}"` : ""}/>` : ``}
     <audio id="${AUDIO_ID}" controlszz="controlszz" autoplay="autoplay">
         <source src="${uriStr_/*linkPath*/}" type="${pubLink.TypeLink}" />
     </audio>

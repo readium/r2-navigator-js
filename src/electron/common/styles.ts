@@ -681,8 +681,8 @@ export const audioCssStyles = `
     display: block;
     margin-left: auto;
     margin-right: auto;
-    max-width: 500px !important;
-    max-height: 270px !important;
+    max-width: 500px;
+    max-height: 250px;
     margin-top: 0.4em;
     margin-bottom: 0.6em;
     cursor: pointer;
