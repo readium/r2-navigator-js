@@ -688,6 +688,10 @@ export const audioCssStyles = `
     cursor: pointer;
 }
 
+:root.${AUDIO_PROGRESS_CLASS} #${AUDIO_COVER_ID} {
+    cursor: wait;
+}
+
 #${AUDIO_ID} {
     display: block;
     margin-left: auto;
@@ -966,6 +970,12 @@ overflow: hidden;
 position: relative;
 }
 
+:root[style].${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID},
+:root.${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID} {
+
+cursor: wait;
+}
+
 :root[style].${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID}:before,
 :root.${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID}:before {
     content: '';
@@ -1072,6 +1082,7 @@ right: -8%; } }
 :root.${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID}::-webkit-slider-thumb,
 :root[style].${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID}::-webkit-slider-thumb {
     background: transparent !important;
+    cursor: wait;
 }
 :root[style*="readium-night-on"].${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID}::-webkit-slider-thumb {
     background: transparent !important;
