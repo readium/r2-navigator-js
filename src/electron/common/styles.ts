@@ -631,6 +631,7 @@ export const readPosCssStyles = `
     outline-offset: 0px !important;
 }`;
 
+export const AUDIO_PROGRESS_CLASS = "r2-audio-progress";
 export const AUDIO_ID = "r2-audio";
 export const AUDIO_BODY_ID = "r2-audio-body";
 export const AUDIO_SECTION_ID = "r2-audio-section";
@@ -702,9 +703,11 @@ export const audioCssStyles = `
     margin: 0;
     margin-left: auto;
     margin-right: auto;
-    max-width: 800px;
+
+    max-width: 500px;
+    min-width: 500px;
+    width: 500px;
     height: auto;
-    width: 80%;
 
     display: grid;
     grid-column-gap: 0px;
@@ -722,6 +725,7 @@ export const audioCssStyles = `
     margin: 0;
     display: block;
     cursor: pointer;
+    position: relative;
 }
 
 #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID} {
@@ -731,6 +735,12 @@ export const audioCssStyles = `
     grid-row-end: 2;
 
     box-sizing: border-box;
+
+    justify-self: center;
+}
+
+:root:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID} {
+
     width: 0;
     height: 40px;
 
@@ -740,27 +750,66 @@ export const audioCssStyles = `
 
     border-style: solid;
     border-width: 20px 0 20px 40px;
-
-    justify-self: center;
 }
 
-#${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID}.pause {
+:root:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID}.pause {
     border-style: double;
     border-width: 0px 0 0px 40px;
 }
 
-#${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID}:hover {
+:root:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID}:hover {
     border-color: transparent transparent transparent #404040;
+}
+
+:root.${AUDIO_PROGRESS_CLASS} #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID} {
+    cursor: wait;
+    width: 40px;
+    height: 40px;
+}
+:root[style].${AUDIO_PROGRESS_CLASS} #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID}:after {
+    content: "";
+    border-radius: 50%;
+
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    left: 0px;
+    top: 0px;
+
+    transform: translateZ(0);
+    animation: readium2ElectronAnimation_audioLoad-spin 1.1s infinite linear;
+
+    border-top: 3px solid #999999;
+    border-right: 3px solid #999999;
+    border-bottom: 3px solid #999999;
+    border-left: 3px solid #333333;
+}
+:root[style*="readium-night-on"].${AUDIO_PROGRESS_CLASS} #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID}:after {
+
+    border-top: 3px solid #202020;
+    border-right: 3px solid #202020;
+    border-bottom: 3px solid #202020;
+    border-left: 3px solid white;
+}
+@keyframes readium2ElectronAnimation_audioLoad-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 #${AUDIO_CONTROLS_ID} #${AUDIO_NEXT_ID},
 #${AUDIO_CONTROLS_ID} #${AUDIO_PREVIOUS_ID},
 #${AUDIO_CONTROLS_ID} #${AUDIO_REWIND_ID},
 #${AUDIO_CONTROLS_ID} #${AUDIO_FORWARD_ID} {
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     position: relative;
+    align-self: center;
 }
+
 #${AUDIO_CONTROLS_ID} #${AUDIO_NEXT_ID}:before, #${AUDIO_CONTROLS_ID} #${AUDIO_NEXT_ID}:after,
 #${AUDIO_CONTROLS_ID} #${AUDIO_PREVIOUS_ID}:before, #${AUDIO_CONTROLS_ID} #${AUDIO_PREVIOUS_ID}:after,
 #${AUDIO_CONTROLS_ID} #${AUDIO_REWIND_ID}:before, #${AUDIO_CONTROLS_ID} #${AUDIO_REWIND_ID}:after,
@@ -779,6 +828,7 @@ export const audioCssStyles = `
 
     justify-self: left;
 }
+
 #${AUDIO_CONTROLS_ID} #${AUDIO_PREVIOUS_ID}:before {
     border: none;
     background-color: #555;
@@ -790,7 +840,7 @@ export const audioCssStyles = `
 #${AUDIO_CONTROLS_ID} #${AUDIO_PREVIOUS_ID}:after {
     left: -50%;
     top: 0;
-    border-width: 20px 20px;
+    border-width: 15px 15px;
     border-right-color: #555;
 }
 
@@ -813,7 +863,7 @@ export const audioCssStyles = `
 #${AUDIO_CONTROLS_ID} #${AUDIO_NEXT_ID}:after {
     left: 50%;
     top: 0;
-    border-width: 20px 20px;
+    border-width: 15px 15px;
     border-left-color: #555;
 }
 
@@ -828,13 +878,13 @@ export const audioCssStyles = `
 #${AUDIO_CONTROLS_ID} #${AUDIO_REWIND_ID}:before {
     left: -20%;
     top: 0;
-    border-width: 20px 20px;
+    border-width: 15px 15px;
     border-right-color: #555;
 }
 #${AUDIO_CONTROLS_ID} #${AUDIO_REWIND_ID}:after {
     left: -50%;
     top: 0;
-    border-width: 20px 20px;
+    border-width: 15px 15px;
     border-right-color: #555;
 }
 
@@ -849,14 +899,20 @@ export const audioCssStyles = `
 #${AUDIO_CONTROLS_ID} #${AUDIO_FORWARD_ID}:before {
     left: 20%;
     top: 0;
-    border-width: 20px 20px;
+    border-width: 15px 15px;
     border-left-color: #555;
 }
 #${AUDIO_CONTROLS_ID} #${AUDIO_FORWARD_ID}:after {
     left: 50%;
     top: 0;
-    border-width: 20px 20px;
+    border-width: 15px 15px;
     border-left-color: #555;
+}
+
+
+:root.${AUDIO_PROGRESS_CLASS} #${AUDIO_FORWARD_ID},
+:root.${AUDIO_PROGRESS_CLASS} #${AUDIO_REWIND_ID} {
+    display: none;
 }
 
 #${AUDIO_PERCENT_ID}, #${AUDIO_TIME_ID} {
@@ -881,6 +937,11 @@ export const audioCssStyles = `
     text-align: right;
 }
 
+:root.${AUDIO_PROGRESS_CLASS} #${AUDIO_PERCENT_ID},
+:root.${AUDIO_PROGRESS_CLASS} #${AUDIO_TIME_ID} {
+    visibility: hidden;
+}
+
 :root[style] #${AUDIO_SLIDER_ID},
 :root #${AUDIO_SLIDER_ID} {
 padding: 0;
@@ -897,39 +958,117 @@ cursor: pointer;
 -webkit-appearance: none;
 
 background: transparent !important;
+
+background-clip: padding-box;
+border-radius: 2px;
+overflow: hidden;
+
+position: relative;
 }
+
+:root[style].${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID}:before,
+:root.${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID}:before {
+    content: '';
+    position: absolute;
+    background-color: #999999;
+    left: 0;
+    top: 0.9em;
+    height: 0.4em;
+    transform: translateZ(0);
+    will-change: left, right;
+    animation: readium2ElectronAnimation_audioLoad 2.1s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+}
+
+:root[style].${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID}:after,
+:root.${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID}:after {
+    content: '';
+    position: absolute;
+    background-color: #999999;
+    left: 0;
+    top: 0.9em;
+    height: 0.4em;
+    transform: translateZ(0);
+    will-change: left, right;
+    animation: readium2ElectronAnimation_audioLoad-short 2.1s cubic-bezier(0.165, 0.84, 0.44, 1) infinite;
+    animation-delay: 1.15s;
+}
+
+:root[style*="readium-night-on"].${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID}:after {
+    background: #545454;
+}
+
+@keyframes readium2ElectronAnimation_audioLoad {
+0% {
+left: -35%;
+right: 100%; }
+60% {
+left: 100%;
+right: -90%; }
+100% {
+left: 100%;
+right: -90%; } }
+
+@keyframes readium2ElectronAnimation_audioLoad-short {
+0% {
+left: -200%;
+right: 100%; }
+60% {
+left: 107%;
+right: -8%; }
+100% {
+left: 107%;
+right: -8%; } }
+
 :root #${AUDIO_SLIDER_ID}::-webkit-slider-runnable-track {
-cursor: pointer;
+    cursor: pointer;
 
-width: 100%;
-height: 0.5em;
+    width: 100%;
+    height: 0.5em;
 
-background: #999999;
+    background: #999999;
 
-padding: 0;
-margin: 0;
+    padding: 0;
+    margin: 0;
+
+    border: none;
+    border-radius: 0.2em;
 }
 :root[style*="readium-night-on"] #${AUDIO_SLIDER_ID}::-webkit-slider-runnable-track {
-background: #545454;
+    background: #545454;
 }
+
+:root.${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID}::-webkit-slider-runnable-track {
+    background: transparent !important;
+}
+:root[style*="readium-night-on"].${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID}::-webkit-slider-runnable-track {
+    background: transparent !important;
+}
+
 :root #${AUDIO_SLIDER_ID}::-webkit-slider-thumb {
--webkit-appearance: none;
+    -webkit-appearance: none;
 
-cursor: pointer;
+    cursor: pointer;
 
-width: 0.5em;
-height: 1em;
+    width: 0.5em;
+    height: 1em;
 
-padding: 0;
-margin: 0;
-margin-top: -0.2em;
+    padding: 0;
+    margin: 0;
+    margin-top: -0.2em;
 
-border: none;
-border-radius: 0.2em;
+    border: none;
+    border-radius: 0.2em;
 
-background: #333333;
+    background: #333333;
 }
 :root[style*="readium-night-on"] #${AUDIO_SLIDER_ID}::-webkit-slider-thumb {
-background: white;
+    background: white;
+}
+
+:root.${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID}::-webkit-slider-thumb {
+    background: transparent !important;
+}
+:root[style*="readium-night-on"].${AUDIO_PROGRESS_CLASS} #${AUDIO_SLIDER_ID}::-webkit-slider-thumb {
+    background: transparent !important;
 }
 `;

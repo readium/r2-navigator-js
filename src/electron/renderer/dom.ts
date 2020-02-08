@@ -15,8 +15,8 @@ import { Publication } from "@r2-shared-js/models/publication";
 
 import {
     IEventPayload_R2_EVENT_CLIPBOARD_COPY, IEventPayload_R2_EVENT_DEBUG_VISUALS,
-    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS,
-    R2_EVENT_READIUMCSS, R2_EVENT_WEBVIEW_KEYDOWN,
+    IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
+    R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_READIUMCSS, R2_EVENT_WEBVIEW_KEYDOWN,
 } from "../common/events";
 import { R2_SESSION_WEBVIEW } from "../common/sessions";
 import { URL_PARAM_DEBUG_VISUALS } from "./common/url-params";
@@ -62,13 +62,14 @@ const win = window as IReadiumElectronBrowserWindow;
 // // tslint:disable-next-line:no-string-literal
 // const lcpHint = queryParams["lcpHint"];
 
-export function readiumCssOnOff() {
+// legacy function, old confusing name (see readiumCssUpdate() below)
+export function readiumCssOnOff(rss?: IEventPayload_R2_EVENT_READIUMCSS) {
 
     const loc = getCurrentReadingLocation();
 
     const activeWebView = win.READIUM2.getActiveWebView();
     if (activeWebView) {
-        const payload1 = __computeReadiumCssJsonMessage(activeWebView.READIUM2.link);
+        const payload1 = rss || __computeReadiumCssJsonMessage(activeWebView.READIUM2.link);
 
         if (activeWebView.style.transform !== "none") {
             setTimeout(async () => {
@@ -91,6 +92,9 @@ export function readiumCssOnOff() {
             handleLinkLocator(loc.locator);
         }, 60);
     }
+}
+export function readiumCssUpdate(rss: IEventPayload_R2_EVENT_READIUMCSS) {
+    return readiumCssOnOff(rss);
 }
 
 let _webview1: IReadiumElectronWebview;

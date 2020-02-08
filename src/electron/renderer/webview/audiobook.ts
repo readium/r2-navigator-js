@@ -5,7 +5,6 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { debounce } from "debounce";
 import { ipcRenderer } from "electron";
 
 import {
@@ -15,11 +14,11 @@ import {
 } from "../../common/events";
 import {
     AUDIO_COVER_ID, AUDIO_FORWARD_ID, AUDIO_ID, AUDIO_NEXT_ID, AUDIO_PERCENT_ID, AUDIO_PLAYPAUSE_ID,
-    AUDIO_PREVIOUS_ID, AUDIO_REWIND_ID, AUDIO_SLIDER_ID, AUDIO_TIME_ID,
+    AUDIO_PREVIOUS_ID, AUDIO_PROGRESS_CLASS, AUDIO_REWIND_ID, AUDIO_SLIDER_ID, AUDIO_TIME_ID,
 } from "../../common/styles";
 import { IReadiumElectronWebviewWindow } from "./state";
 
-const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+// const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
 const win = (global as any).window as IReadiumElectronWebviewWindow;
 
@@ -37,6 +36,8 @@ function throttle(fn: (...argz: any[]) => any, time: number) {
 }
 
 export function setupAudioBook(_docTitle: string | undefined) {
+
+    win.document.documentElement.classList.add(AUDIO_PROGRESS_CLASS);
 
     const coverElement = win.document.getElementById(AUDIO_COVER_ID) as HTMLImageElement;
     const audioElement = win.document.getElementById(AUDIO_ID) as HTMLAudioElement;
@@ -209,9 +210,10 @@ export function setupAudioBook(_docTitle: string | undefined) {
     const notifyPlaybackLocationThrottled = throttle(() => {
         notifyPlaybackLocation();
     }, 1000);
-    const notifyPlaybackLocationDebounced = debounce(() => {
-        notifyPlaybackLocation();
-    }, 200);
+    // import { debounce } from "debounce";
+    // const notifyPlaybackLocationDebounced = debounce(() => {
+    //     notifyPlaybackLocation();
+    // }, 200);
 
     audioElement.addEventListener("play", () => {
         (audioElement as any).isPlaying = true;
@@ -223,11 +225,12 @@ export function setupAudioBook(_docTitle: string | undefined) {
         playPauseElement.classList.remove("pause");
         notifyPlaybackLocation();
     });
-    if (IS_DEV) {
-        audioElement.addEventListener("seeked", () => {
-            notifyPlaybackLocationDebounced();
-        });
-    }
+    audioElement.addEventListener("seeking", () => {
+        win.document.documentElement.classList.add(AUDIO_PROGRESS_CLASS);
+    });
+    audioElement.addEventListener("canplay", () => {
+        win.document.documentElement.classList.remove(AUDIO_PROGRESS_CLASS);
+    });
     audioElement.addEventListener("ended", () => {
         (audioElement as any).isPlaying = false;
         playPauseElement.classList.remove("pause");

@@ -306,6 +306,9 @@ export function handleLinkLocator(location: Locator | undefined) {
         }
     }
     if (!linkToLoad) {
+        debug(`handleLinkLocator FAIL ${publicationURL} + ${location ? location.href : "NIL"}`);
+    }
+    if (!linkToLoad) {
         if (publication.Spine && publication.Spine.length) {
             const firstLinear = publication.Spine[0];
             if (firstLinear) {
@@ -313,7 +316,6 @@ export function handleLinkLocator(location: Locator | undefined) {
             }
         }
     }
-
     if (linkToLoad) {
         const useGoto = typeof linkToLoadGoto !== "undefined"
             // && typeof linkToLoadGoto.cssSelector !== "undefined"
@@ -402,6 +404,8 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
     // because URL.toString() percent-encodes Unicode characters in the path!
     linkPath = decodeURIComponent(linkPath);
 
+    debug(`R2LOADLINK: ${pubJsonUri} (${publicationURL}) + ${hrefFull} ==> ${linkPath}`);
+
     // const pubUri = new URI(pubJsonUri);
     // // "/pub/BASE64_PATH/manifest.json" ==> "/pub/BASE64_PATH/"
     // const pathPrefix = decodeURIComponent(pubUri.path().replace("manifest.json", ""));
@@ -413,13 +417,48 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
         return spineLink.Href === linkPath;
     }) : undefined;
     if (!pubLink && publication.Resources) {
-        pubLink = publication.Resources.find((spineLink) => {
-            return spineLink.Href === linkPath;
+        pubLink = publication.Resources.find((resLink) => {
+            return resLink.Href === linkPath;
         });
+    }
+    if (!pubLink) {
+        let hrefNoHash: string | undefined;
+        try {
+            const u = new URI(hrefFull);
+            u.hash("").normalizeHash();
+            u.search((data: any) => {
+                // overrides existing (leaves others intact)
+                data[URL_PARAM_PREVIOUS] = undefined;
+                data[URL_PARAM_GOTO] = undefined;
+                data[URL_PARAM_CSS] = undefined;
+                data[URL_PARAM_EPUBREADINGSYSTEM] = undefined;
+                data[URL_PARAM_DEBUG_VISUALS] = undefined;
+                data[URL_PARAM_CLIPBOARD_INTERCEPT] = undefined;
+                data[URL_PARAM_REFRESH] = undefined;
+            });
+            hrefNoHash = u.toString();
+        } catch (err) {
+            debug(err);
+        }
+        if (hrefNoHash) {
+            pubLink = publication.Spine ? publication.Spine.find((spineLink) => {
+                return spineLink.Href === hrefNoHash;
+            }) : undefined;
+            if (!pubLink && publication.Resources) {
+                pubLink = publication.Resources.find((resLink) => {
+                    return resLink.Href === hrefNoHash;
+                });
+            }
+        }
+        if (!pubLink) {
+            // tslint:disable-next-line: max-line-length
+            debug(`CANNOT LOAD EXT LINK ${pubJsonUri} (${publicationURL}) + ${hrefFull} (${hrefNoHash}) ==> ${linkPath}`);
+            return false;
+        }
     }
 
     if (!pubLink) {
-        debug("FATAL WEBVIEW READIUM2_LINK ??!! " + hrefFull + " ==> " + linkPath);
+        debug(`CANNOT LOAD LINK ${pubJsonUri} (${publicationURL}) + ${hrefFull} ==> ${linkPath}`);
         return false;
     }
 
@@ -827,8 +866,8 @@ ${coverImage ? `<img id="${AUDIO_COVER_ID}" src="${coverImage}" alt="" />` : ``}
         <button id="${AUDIO_FORWARD_ID}"></button>
         <button id="${AUDIO_NEXT_ID}"></button>
         <input id="${AUDIO_SLIDER_ID}" type="range" min="0" max="100" value="0" step="1" />
-        <span id="${AUDIO_TIME_ID}">00:000 / 99:99:999</span>
-        <span id="${AUDIO_PERCENT_ID}">100%</span>
+        <span id="${AUDIO_TIME_ID}">-</span>
+        <span id="${AUDIO_PERCENT_ID}">-</span>
     </div>
 </section>
 </body>
