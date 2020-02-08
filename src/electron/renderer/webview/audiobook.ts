@@ -5,6 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import { debounce } from "debounce";
 import { ipcRenderer } from "electron";
 
 import {
@@ -210,10 +211,18 @@ export function setupAudioBook(_docTitle: string | undefined) {
     const notifyPlaybackLocationThrottled = throttle(() => {
         notifyPlaybackLocation();
     }, 1000);
-    // import { debounce } from "debounce";
+
     // const notifyPlaybackLocationDebounced = debounce(() => {
     //     notifyPlaybackLocation();
     // }, 200);
+
+    const progressDebounced = debounce((progress: boolean) => {
+        if (progress) {
+            win.document.documentElement.classList.add(AUDIO_PROGRESS_CLASS);
+        } else {
+            win.document.documentElement.classList.remove(AUDIO_PROGRESS_CLASS);
+        }
+    }, 150);
 
     audioElement.addEventListener("play", () => {
         (audioElement as any).isPlaying = true;
@@ -226,10 +235,10 @@ export function setupAudioBook(_docTitle: string | undefined) {
         notifyPlaybackLocation();
     });
     audioElement.addEventListener("seeking", () => {
-        win.document.documentElement.classList.add(AUDIO_PROGRESS_CLASS);
+        progressDebounced(true);
     });
     audioElement.addEventListener("canplay", () => {
-        win.document.documentElement.classList.remove(AUDIO_PROGRESS_CLASS);
+        progressDebounced(false);
     });
     audioElement.addEventListener("ended", () => {
         (audioElement as any).isPlaying = false;
