@@ -1,10 +1,32 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.42...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.43...develop
 
 Changes:
 * TODO
+
+# 1.1.43
+
+> Build environment: NodeJS `12.15.0`, NPM `6.13.7`
+
+Changes:
+* NPM updates
+* Bugfix: protection against publications without Resources
+* API improvement: readiumCssUpdate(rcss) now replaces readiumCssOnOff() which was misnamed and required out-of-line callback to fetch ReadiumCSS info.
+* Content transformers now pass "session info" semantic-agnostic data (serialized string) so that anonymous HTTP requests can be correlated with specific publications and with their reading session (multiple readers scenario). Also see changes in r2-shared, and of course r2-streamer.
+* Support for AudioBook serving/streaming, local-packed (zipped), local-exploded (unzipped), and remote-exploded.
+* Electron v8 (was v7)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.43/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.43/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.43
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.42...v1.1.43
 
 # 1.1.42
 
