@@ -252,6 +252,7 @@ export function installNavigatorDOM(
     location: Locator | undefined,
     enableScreenReaderAccessibilityWebViewHardRefresh: boolean,
     clipboardInterceptor: ((data: IEventPayload_R2_EVENT_CLIPBOARD_COPY) => void) | undefined,
+    sessionInfo: string | undefined,
     ) {
 
     const domRootElement = document.getElementById(rootHtmlElementID) as HTMLElement;
@@ -299,6 +300,7 @@ export function installNavigatorDOM(
         preloadScriptPath,
         publication,
         publicationURL,
+        sessionInfo,
         ttsClickEnabled: false,
     };
 

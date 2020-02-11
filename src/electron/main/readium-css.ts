@@ -10,7 +10,7 @@ import * as express from "express";
 import { Publication } from "@r2-shared-js/models/publication";
 import { Link } from "@r2-shared-js/models/publication-link";
 import { Transformers } from "@r2-shared-js/transform/transformer";
-import { TransformerHTML } from "@r2-shared-js/transform/transformer-html";
+import { TTransformFunction, TransformerHTML } from "@r2-shared-js/transform/transformer-html";
 import { Server } from "@r2-streamer-js/http/server";
 
 import { IEventPayload_R2_EVENT_READIUMCSS } from "../common/events";
@@ -34,9 +34,15 @@ function isFixedLayout(publication: Publication, link: Link | undefined): boolea
     return false;
 }
 
+export type TReadiumCssGetterFunction = (
+    publication: Publication,
+    link: Link,
+    sessionInfo: string | undefined,
+) => IEventPayload_R2_EVENT_READIUMCSS;
+
 export function setupReadiumCSS(
     server: Server, folderPath: string,
-    readiumCssGetter: (publication: Publication, link: Link) => IEventPayload_R2_EVENT_READIUMCSS) {
+    readiumCssGetter: TReadiumCssGetterFunction) {
 
     // https://expressjs.com/en/4x/api.html#express.static
     const staticOptions = {
@@ -57,7 +63,12 @@ export function setupReadiumCSS(
     server.expressUse("/" + READIUM_CSS_URL_PATH, express.static(folderPath, staticOptions));
 
     if (readiumCssGetter) {
-        const transformer = (publication: Publication, link: Link, str: string): string => {
+        const transformer: TTransformFunction = (
+            publication: Publication,
+            link: Link,
+            str: string,
+            sessionInfo: string | undefined,
+        ): string => {
 
             // import * as mime from "mime-types";
             let mediaType = "application/xhtml+xml"; // mime.lookup(link.Href);
@@ -65,10 +76,22 @@ export function setupReadiumCSS(
                 mediaType = link.TypeLink;
             }
 
-            const readiumcssJson: IEventPayload_R2_EVENT_READIUMCSS =
-                isFixedLayout(publication, link) ?
-                { setCSS: undefined, isFixedLayout: true } :
-                readiumCssGetter(publication, link);
+            let readiumcssJson = readiumCssGetter(publication, link, sessionInfo);
+            if (isFixedLayout(publication, link)) {
+                const readiumcssJson_ = { setCSS: undefined, isFixedLayout: true } as IEventPayload_R2_EVENT_READIUMCSS;
+                if (readiumcssJson.setCSS) {
+                    if (readiumcssJson.setCSS.mathJax) {
+                        // TODO: apply MathJax to FXL?
+                        // (reminder: setCSS must remain 'undefined'
+                        // in order to completely remove ReadiumCSS from FXL docs)
+                    }
+                    if (readiumcssJson.setCSS.reduceMotion) {
+                        // TODO: same as MathJax (see above)
+                    }
+                }
+                readiumcssJson = readiumcssJson_;
+            }
+
             if (readiumcssJson) {
                 readiumcssJson.urlRoot = server.serverUrl();
                 return transformHTML(str, readiumcssJson, mediaType);

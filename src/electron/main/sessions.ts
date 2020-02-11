@@ -6,7 +6,9 @@
 // ==LICENSE-END==
 
 import * as debug_ from "debug";
-import { ProcRequest, RedirectRequest, Request, app, protocol, session } from "electron";
+import {
+    CertificateVerifyProcProcRequest, RedirectRequest, Request, app, protocol, session,
+} from "electron";
 
 import { Server } from "@r2-streamer-js/http/server";
 
@@ -107,7 +109,7 @@ export function secureSessions(server: Server) {
 
     // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#session
     const setCertificateVerifyProcCB = (
-        request: ProcRequest,
+        request: CertificateVerifyProcProcRequest,
         callback: (verificationResult: number) => void) => {
         // debug("setCertificateVerifyProc");
         // debug(request);

@@ -36,7 +36,7 @@ import {
 } from "../common/styles";
 import {
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
-    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS, URL_PARAM_REFRESH,
+    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS, URL_PARAM_REFRESH, URL_PARAM_SESSION_INFO,
 } from "./common/url-params";
 import { getEpubReadingSystemInfo } from "./epubReadingSystem";
 import { __computeReadiumCssJsonMessage, isRTL } from "./readium-css";
@@ -685,6 +685,18 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
                 data[URL_PARAM_REFRESH] = `${++_reloadCounter}`;
             });
         }
+
+        if (win.READIUM2.sessionInfo) {
+            linkUri.search((data: any) => {
+                // overrides existing (leaves others intact)
+
+                if (win.READIUM2.sessionInfo) {
+                    const b64SessionInfo = Buffer.from(win.READIUM2.sessionInfo).toString("base64");
+                    data[URL_PARAM_SESSION_INFO] = b64SessionInfo;
+                }
+            });
+        }
+
         const uriStr = linkUri.toString();
 
         const needConvert = publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
