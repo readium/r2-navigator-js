@@ -743,12 +743,14 @@ export const audioCssStyles = `
     justify-self: center;
 }
 
-:root:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID} {
+:root:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID},
+:root[style]:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID} {
 
     width: 0;
     height: 40px;
 
-    border-color: transparent transparent transparent #202020;
+    border-color: transparent transparent transparent #202020 !important;
+
     transition: 100ms all ease;
     will-change: border-width;
 
@@ -761,8 +763,10 @@ export const audioCssStyles = `
     border-width: 0px 0 0px 40px;
 }
 
-:root:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID}:hover {
-    border-color: transparent transparent transparent #404040;
+:root:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID}:hover,
+:root[style]:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID}:hover {
+
+    border-color: transparent transparent transparent #404040 !important;
 }
 
 :root.${AUDIO_PROGRESS_CLASS} #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID} {
