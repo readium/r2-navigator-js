@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.43...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.44...develop
 
 Changes:
 * TODO
+
+# 1.1.44
+
+> Build environment: NodeJS `12.15.0`, NPM `6.13.7`
+
+Changes:
+* NPM updates, notably: removed unused UUID package (breaking API change in newer version, so must avoid unnecessarily import here)
+* CSS fix: ReadiumCSS was taking precedence due to selector specificity (button border colour in night mode, audio player)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.44/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.44/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.44
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.43...v1.1.44
 
 # 1.1.43
 

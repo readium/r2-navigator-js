@@ -45,7 +45,6 @@ import {
 } from "./webview/state";
 
 import URI = require("urijs");
-// import * as uuidv4 from "uuid/v4";
 
 const debug = debug_("r2:navigator#electron/renderer/location");
 
@@ -681,7 +680,6 @@ function loadLink(hrefFull: string, previous: boolean | undefined, useGoto: bool
             linkUri.search((data: any) => {
                 // overrides existing (leaves others intact)
 
-                // uuidv4();
                 data[URL_PARAM_REFRESH] = `${++_reloadCounter}`;
             });
         }
