@@ -157,6 +157,10 @@ win.document.addEventListener("keydown", (ev: KeyboardEvent) => {
         shiftKey: ev.shiftKey,
     };
     ipcRenderer.sendToHost(R2_EVENT_WEBVIEW_KEYDOWN, payload);
+}, {
+    capture: true,
+    once: false,
+    passive: false,
 });
 win.document.addEventListener("keyup", (ev: KeyboardEvent) => {
 
@@ -170,6 +174,10 @@ win.document.addEventListener("keyup", (ev: KeyboardEvent) => {
         shiftKey: ev.shiftKey,
     };
     ipcRenderer.sendToHost(R2_EVENT_WEBVIEW_KEYUP, payload);
+}, {
+    capture: true,
+    once: false,
+    passive: false,
 });
 
 win.READIUM2.isAudio = win.location.protocol === "data:";
