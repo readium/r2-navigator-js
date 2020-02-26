@@ -73,7 +73,7 @@
     "cross-env": "^7.0.0",
     "cson": "^6.9.0",
     "eclint": "^2.8.1",
-    "electron": "^8.0.1",
+    "electron": "^8.0.2",
     "filehound": "^1.17.4",
     "git-rev-sync": "^2.0.0",
     "json": "^9.0.6",
