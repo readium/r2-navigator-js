@@ -191,6 +191,7 @@ export function setupAudioBook(_docTitle: string | undefined) {
                 isRightToLeft: false,
                 isVerticalWritingMode: false,
             },
+            epubPage: undefined,
             href: "", // filled-in from host index.js renderer
             locations: {
                 cfi: undefined,

@@ -99,6 +99,7 @@ win.READIUM2 = {
     locationHashOverrideInfo: {
         audioPlaybackInfo: undefined,
         docInfo: undefined,
+        epubPage: undefined,
         href: "",
         locations: {
             cfi: undefined,
@@ -450,6 +451,7 @@ function resetLocationHashOverrideInfo() {
     win.READIUM2.locationHashOverrideInfo = {
         audioPlaybackInfo: undefined,
         docInfo: undefined,
+        epubPage: undefined,
         href: "",
         locations: {
             cfi: undefined,
@@ -2259,6 +2261,94 @@ function getCssSelector(element: Element): string {
     }
 }
 
+interface IPageBreak {
+    element: Element;
+    text: string;
+}
+let _allEpubPageBreaks: IPageBreak[] | undefined;
+
+const _htmlNamespaces: { [prefix: string]: string } = {
+    epub: "http://www.idpf.org/2007/ops",
+};
+const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): string | undefined => {
+    if (!_allEpubPageBreaks) {
+        // // @namespace epub "http://www.idpf.org/2007/ops";
+        // // [epub|type~="pagebreak"]
+        // const cssSelectorResult = win.document.documentElement.querySelectorAll(`*[epub\\:type~="pagebreak"]`);
+        // cssSelectorResult.forEach((el) => {
+        //     if (el.textContent) {
+        //         const pageBreak: IPageBreak = {
+        //             element: el,
+        //             text: el.textContent,
+        //         };
+        //         if (!_allEpubPageBreaks) {
+        //             _allEpubPageBreaks = [];
+        //         }
+        //         _allEpubPageBreaks.push(pageBreak);
+        //     }
+        // });
+        // // debug("_allEpubPageBreaks CSS selector", JSON.stringify(_allEpubPageBreaks, null, 4));
+        // debug("_allEpubPageBreaks CSS selector", _allEpubPageBreaks.length);
+        // _allEpubPageBreaks = undefined;
+
+        // type XPathNSResolver =
+        // ((prefix: string | null) => string | null) |
+        // { lookupNamespaceURI(prefix: string | null): string | null; };
+        // const namespaceResolver = win.document.createNSResolver(win.document.documentElement);
+        const namespaceResolver = (prefix: string | null): string | null => {
+            if (!prefix) {
+                return null;
+            }
+            return _htmlNamespaces[prefix] || null;
+        };
+        const xpathResult = win.document.evaluate(
+            // `//*[contains(@epub:type,'pagebreak')]`,
+            // `//*[tokenize(@epub:type,'\s+')='pagebreak']`
+            `//*[contains(concat(' ', normalize-space(@epub:type), ' '), ' pagebreak ')]`,
+            win.document.body,
+            namespaceResolver,
+            XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+            null);
+
+        for (let i = 0; i < xpathResult.snapshotLength; i++) {
+            const n = xpathResult.snapshotItem(i);
+            if (n) {
+                const el = n as Element;
+                if (el.textContent) {
+                    const pageBreak: IPageBreak = {
+                        element: el,
+                        text: el.textContent,
+                    };
+                    if (!_allEpubPageBreaks) {
+                        _allEpubPageBreaks = [];
+                    }
+                    _allEpubPageBreaks.push(pageBreak);
+                }
+            }
+        }
+
+        if (!_allEpubPageBreaks) {
+            _allEpubPageBreaks = [];
+        }
+
+        // debug("_allEpubPageBreaks XPath", JSON.stringify(_allEpubPageBreaks, null, 4));
+        debug("_allEpubPageBreaks XPath", _allEpubPageBreaks.length);
+    }
+
+    for (let i = _allEpubPageBreaks.length - 1; i >= 0; i--) {
+        const pageBreak = _allEpubPageBreaks[i];
+
+        const c = element.compareDocumentPosition(pageBreak.element);
+        // tslint:disable-next-line: no-bitwise
+        if (c === 0 || (c & Node.DOCUMENT_POSITION_PRECEDING) || (c & Node.DOCUMENT_POSITION_CONTAINS)) {
+            debug("preceding or containing EPUB page break", pageBreak.text);
+            return pageBreak.text;
+        }
+    }
+
+    return undefined;
+};
+
 const notifyReadingLocationRaw = () => {
     if (!win.READIUM2.locationHashOverride) {
         return;
@@ -2306,6 +2396,8 @@ const notifyReadingLocationRaw = () => {
             !sameSelections(win.READIUM2.locationHashOverrideInfo.selectionInfo, selInfo);
     }
 
+    const epubPage = findPrecedingAncestorSiblingEpubPageBreak(win.READIUM2.locationHashOverride);
+
     win.READIUM2.locationHashOverrideInfo = {
         audioPlaybackInfo: undefined,
         docInfo: {
@@ -2313,6 +2405,7 @@ const notifyReadingLocationRaw = () => {
             isRightToLeft: isRTL(),
             isVerticalWritingMode: isVerticalWritingMode(),
         },
+        epubPage,
         href: "", // filled-in from host index.js renderer
         locations: {
             cfi,

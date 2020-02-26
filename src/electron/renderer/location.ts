@@ -1008,6 +1008,11 @@ export interface LocatorExtended {
     selectionInfo: ISelectionInfo | undefined;
     selectionIsNew: boolean | undefined;
     docInfo: IDocInfo | undefined;
+
+    // not NavDoc epub:type="page-list",
+    // but target HTML document's epub:type="pagebreak"
+    // (nearest preceding ancestor/sibling)
+    epubPage: string | undefined;
 }
 
 let _lastSavedReadingLocation: LocatorExtended | undefined;
@@ -1060,6 +1065,7 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
     _lastSavedReadingLocation = {
         audioPlaybackInfo: locator.audioPlaybackInfo,
         docInfo: locator.docInfo,
+        epubPage: locator.epubPage,
         locator: {
             href: docHref,
             locations: {

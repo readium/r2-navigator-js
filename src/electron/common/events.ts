@@ -83,6 +83,11 @@ export interface IEventPayload_R2_EVENT_READING_LOCATION extends Locator {
     selectionInfo: ISelectionInfo | undefined;
     docInfo: IDocInfo | undefined;
     selectionIsNew: boolean | undefined;
+
+    // not NavDoc epub:type="page-list",
+    // but target HTML document's epub:type="pagebreak"
+    // (nearest preceding ancestor/sibling)
+    epubPage: string | undefined;
 }
 
 // in MAIN: browserWindow.webContents.send()
