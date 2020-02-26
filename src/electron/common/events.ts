@@ -200,6 +200,7 @@ export interface IEventPayload_R2_EVENT_HIGHLIGHT_CLICK {
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
 export const R2_EVENT_WEBVIEW_KEYDOWN = "R2_EVENT_WEBVIEW_KEYDOWN";
+export const R2_EVENT_WEBVIEW_KEYUP = "R2_EVENT_WEBVIEW_KEYUP";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN { // KeyboardEvent
     key: string;
@@ -209,7 +210,10 @@ export interface IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN { // KeyboardEvent
     ctrlKey: boolean;
     metaKey: boolean;
     shiftKey: boolean;
+
+    elementName?: string;
 }
+export type IEventPayload_R2_EVENT_WEBVIEW_KEYUP = IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN;
 
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")

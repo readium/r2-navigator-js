@@ -16,7 +16,8 @@ import { Publication } from "@r2-shared-js/models/publication";
 import {
     IEventPayload_R2_EVENT_CLIPBOARD_COPY, IEventPayload_R2_EVENT_DEBUG_VISUALS,
     IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
-    R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_READIUMCSS, R2_EVENT_WEBVIEW_KEYDOWN,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYUP, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS,
+    R2_EVENT_READIUMCSS, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
 } from "../common/events";
 import { R2_SESSION_WEBVIEW } from "../common/sessions";
 import { URL_PARAM_DEBUG_VISUALS } from "./common/url-params";
@@ -158,6 +159,11 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             const payload = event.args[0] as IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN;
             if (_keyDownEventHandler) {
                 _keyDownEventHandler(payload);
+            }
+        } else if (event.channel === R2_EVENT_WEBVIEW_KEYUP) {
+            const payload = event.args[0] as IEventPayload_R2_EVENT_WEBVIEW_KEYUP;
+            if (_keyUpEventHandler) {
+                _keyUpEventHandler(payload);
             }
         } else if (event.channel === R2_EVENT_CLIPBOARD_COPY) {
             const clipboardInterceptor = win.READIUM2.clipboardInterceptor;
@@ -381,4 +387,9 @@ export function installNavigatorDOM(
 let _keyDownEventHandler: (ev: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN) => void;
 export function setKeyDownEventHandler(func: (ev: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN) => void) {
     _keyDownEventHandler = func;
+}
+
+let _keyUpEventHandler: (ev: IEventPayload_R2_EVENT_WEBVIEW_KEYUP) => void;
+export function setKeyUpEventHandler(func: (ev: IEventPayload_R2_EVENT_WEBVIEW_KEYUP) => void) {
+    _keyUpEventHandler = func;
 }

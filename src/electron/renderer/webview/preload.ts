@@ -30,12 +30,13 @@ import {
     IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_SCROLLTO,
     IEventPayload_R2_EVENT_SHIFT_VIEW_X, IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
     IEventPayload_R2_EVENT_TTS_DO_PLAY, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
-    R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_HIGHLIGHT_CREATE,
-    R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL, R2_EVENT_LINK,
-    R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION,
-    R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X, R2_EVENT_TTS_CLICK_ENABLE,
-    R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS,
-    R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP, R2_EVENT_WEBVIEW_KEYDOWN,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYUP, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS,
+    R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
+    R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
+    R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
+    R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY,
+    R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
+    R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
 } from "../../common/events";
 import { IHighlight, IHighlightDefinition } from "../../common/highlight";
 import { IPaginationInfo } from "../../common/pagination";
@@ -144,19 +145,31 @@ win.prompt = (...args: any[]): string => {
 //     }
 // }, 2000);
 
-// TODO this feels like a hack! :(
-// (in Electron v1 the top-level app event listener catches the webview-originating events ... not anymore)
 win.document.addEventListener("keydown", (ev: KeyboardEvent) => {
 
     const payload: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN = {
         altKey: ev.altKey,
         code: ev.code,
         ctrlKey: ev.ctrlKey,
+        elementName: (ev.target as Element).nodeName,
         key: ev.key,
         metaKey: ev.metaKey,
         shiftKey: ev.shiftKey,
     };
     ipcRenderer.sendToHost(R2_EVENT_WEBVIEW_KEYDOWN, payload);
+});
+win.document.addEventListener("keyup", (ev: KeyboardEvent) => {
+
+    const payload: IEventPayload_R2_EVENT_WEBVIEW_KEYUP = {
+        altKey: ev.altKey,
+        code: ev.code,
+        ctrlKey: ev.ctrlKey,
+        elementName: (ev.target as Element).nodeName,
+        key: ev.key,
+        metaKey: ev.metaKey,
+        shiftKey: ev.shiftKey,
+    };
+    ipcRenderer.sendToHost(R2_EVENT_WEBVIEW_KEYUP, payload);
 });
 
 win.READIUM2.isAudio = win.location.protocol === "data:";
