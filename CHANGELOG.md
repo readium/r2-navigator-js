@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.44...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.45...develop
 
 Changes:
 * TODO
+
+# 1.1.45
+
+> Build environment: NodeJS `12.16.1`, NPM `6.14.0`
+
+Changes:
+* NPM updates, including minor Electron
+* Added key-up event listener (to existing key-down), and target element name (for optional client-side blacklisting). Also now ensures "capture" in top-level document event listen.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.45/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.45/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.45
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.44...v1.1.45
 
 # 1.1.44
 
