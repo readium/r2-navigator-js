@@ -158,12 +158,12 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
         if (event.channel === R2_EVENT_WEBVIEW_KEYDOWN) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN;
             if (_keyDownEventHandler) {
-                _keyDownEventHandler(payload, payload.elementName);
+                _keyDownEventHandler(payload, payload.elementName, payload.elementAttributes);
             }
         } else if (event.channel === R2_EVENT_WEBVIEW_KEYUP) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_WEBVIEW_KEYUP;
             if (_keyUpEventHandler) {
-                _keyUpEventHandler(payload, payload.elementName);
+                _keyUpEventHandler(payload, payload.elementName, payload.elementAttributes);
             }
         } else if (event.channel === R2_EVENT_CLIPBOARD_COPY) {
             const clipboardInterceptor = win.READIUM2.clipboardInterceptor;
@@ -384,16 +384,30 @@ export function installNavigatorDOM(
     }, 100);
 }
 
-let _keyDownEventHandler: (ev: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, elementName?: string) => void;
-export function setKeyDownEventHandler(func:
-    (ev: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, elementName?: string) => void) {
+let _keyDownEventHandler: (
+    ev: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
+    elementName: string,
+    elementAttributes: {[name: string]: string},
+) => void;
+export function setKeyDownEventHandler(func: (
+    ev: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
+    elementName: string,
+    elementAttributes: {[name: string]: string},
+) => void) {
 
     _keyDownEventHandler = func;
 }
 
-let _keyUpEventHandler: (ev: IEventPayload_R2_EVENT_WEBVIEW_KEYUP, elementName?: string) => void;
-export function setKeyUpEventHandler(func:
-    (ev: IEventPayload_R2_EVENT_WEBVIEW_KEYUP, elementName?: string) => void) {
+let _keyUpEventHandler: (
+    ev: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
+    elementName: string,
+    elementAttributes: {[name: string]: string},
+) => void;
+export function setKeyUpEventHandler(func: (
+    ev: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
+    elementName: string,
+    elementAttributes: {[name: string]: string},
+) => void) {
 
     _keyUpEventHandler = func;
 }

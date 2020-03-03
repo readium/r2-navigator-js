@@ -216,7 +216,8 @@ export interface IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN { // KeyboardEvent
     metaKey: boolean;
     shiftKey: boolean;
 
-    elementName?: string;
+    elementName: string;
+    elementAttributes: {[name: string]: string};
 }
 export type IEventPayload_R2_EVENT_WEBVIEW_KEYUP = IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN;
 

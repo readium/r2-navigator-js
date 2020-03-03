@@ -148,11 +148,22 @@ win.prompt = (...args: any[]): string => {
 
 win.document.addEventListener("keydown", (ev: KeyboardEvent) => {
 
+    const elementName = (ev.target && (ev.target as Element).nodeName) ?
+        (ev.target as Element).nodeName : "";
+    const elementAttributes: {[name: string]: string} = {};
+    if (ev.target && (ev.target as Element).attributes) {
+        // tslint:disable-next-line: prefer-for-of
+        for (let i = 0; i < (ev.target as Element).attributes.length; i++) {
+            const attr = (ev.target as Element).attributes[i];
+            elementAttributes[attr.name] = attr.value;
+        }
+    }
     const payload: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN = {
         altKey: ev.altKey,
         code: ev.code,
         ctrlKey: ev.ctrlKey,
-        elementName: (ev.target as Element).nodeName,
+        elementAttributes,
+        elementName,
         key: ev.key,
         metaKey: ev.metaKey,
         shiftKey: ev.shiftKey,
@@ -165,11 +176,22 @@ win.document.addEventListener("keydown", (ev: KeyboardEvent) => {
 });
 win.document.addEventListener("keyup", (ev: KeyboardEvent) => {
 
+    const elementName = (ev.target && (ev.target as Element).nodeName) ?
+        (ev.target as Element).nodeName : "";
+    const elementAttributes: {[name: string]: string} = {};
+    if (ev.target && (ev.target as Element).attributes) {
+        // tslint:disable-next-line: prefer-for-of
+        for (let i = 0; i < (ev.target as Element).attributes.length; i++) {
+            const attr = (ev.target as Element).attributes[i];
+            elementAttributes[attr.name] = attr.value;
+        }
+    }
     const payload: IEventPayload_R2_EVENT_WEBVIEW_KEYUP = {
         altKey: ev.altKey,
         code: ev.code,
         ctrlKey: ev.ctrlKey,
-        elementName: (ev.target as Element).nodeName,
+        elementAttributes,
+        elementName,
         key: ev.key,
         metaKey: ev.metaKey,
         shiftKey: ev.shiftKey,
