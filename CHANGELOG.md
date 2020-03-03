@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.45...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.46...develop
 
 Changes:
 * TODO
+
+# 1.1.46
+
+> Build environment: NodeJS `12.16.1`, NPM `6.14.1`
+
+Changes:
+* NPM updates (minor)
+* Fixed the keyboard event handler callback signature to include the element name and attributes used for blacklisting on the API's client side
+* Added EPUB epub:type=pagebreak info in reading location (nearest preceeding ancestor/sibling in document order)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.46/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.46/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.46
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.45...v1.1.46
 
 # 1.1.45
 
