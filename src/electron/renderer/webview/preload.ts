@@ -45,10 +45,11 @@ import {
 } from "../../common/readium-css-inject";
 import { sameSelections } from "../../common/selection";
 import {
-    POPUP_DIALOG_CLASS, ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX,
-    ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, TTS_CLASS_INJECTED_SPAN,
-    TTS_CLASS_INJECTED_SUBSPAN, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT,
-    readPosCssStylesAttr1, readPosCssStylesAttr2, readPosCssStylesAttr3, readPosCssStylesAttr4,
+    CSS_CLASS_NO_FOCUS_OUTLINE, POPUP_DIALOG_CLASS, ROOT_CLASS_INVISIBLE_MASK,
+    ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
+    ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN,
+    TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, readPosCssStylesAttr1,
+    readPosCssStylesAttr2, readPosCssStylesAttr3, readPosCssStylesAttr4,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector2";
@@ -261,6 +262,11 @@ function computeVisibility_(element: Element): boolean {
     }
     if (element === win.document.body || element === win.document.documentElement) {
         return true;
+    }
+
+    const blacklisted = checkBlacklisted(element);
+    if (blacklisted) {
+        return false;
     }
 
     const elStyle = win.getComputedStyle(element);
@@ -795,7 +801,7 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
     }, 100);
 });
 
-function scrollElementIntoView(element: Element) {
+function scrollElementIntoView(element: Element, doFocus: boolean) {
     if (win.READIUM2.DEBUG_VISUALS) {
         const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr3}]`);
         existings.forEach((existing) => {
@@ -804,34 +810,50 @@ function scrollElementIntoView(element: Element) {
         element.setAttribute(readPosCssStylesAttr3, "scrollElementIntoView");
     }
 
-    const isPaged = isPaginated(win.document);
-    if (isPaged) {
-        scrollIntoView(element as HTMLElement);
-    } else {
-
-        const scrollElement = getScrollingElement(win.document);
-
-        const rect = element.getBoundingClientRect();
-        // calculateMaxScrollShift()
-        // TODO: vertical writing mode
-        const scrollTopMax = scrollElement.scrollHeight - win.document.documentElement.clientHeight;
-        let offset = scrollElement.scrollTop + (rect.top - (win.document.documentElement.clientHeight / 2));
-        if (offset > scrollTopMax) {
-            offset = scrollTopMax;
-        } else if (offset < 0) {
-            offset = 0;
+    if (doFocus) {
+        // const tabbables = lazyTabbables();
+        if (!tabbable.isFocusable(element as HTMLElement)) {
+            const attr = (element as HTMLElement).getAttribute("tabindex");
+            if (!attr) {
+                (element as HTMLElement).setAttribute("tabindex", "-1");
+                (element as HTMLElement).classList.add(CSS_CLASS_NO_FOCUS_OUTLINE);
+                if (IS_DEV) {
+                    console.log("tabindex -1 set (focusable):");
+                    console.log(getCssSelector(element));
+                }
+            }
         }
-        scrollElement.scrollTop = offset;
-        // element.scrollIntoView({
-        //     // TypeScript lib.dom.d.ts difference in 3.2.1
-        //     // ScrollBehavior = "auto" | "instant" | "smooth" VS ScrollBehavior = "auto" | "smooth"
-        //     behavior: "auto",
-        //     // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
-        //     block: "center",
-        //     // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
-        //     inline: "nearest",
-        // } as ScrollIntoViewOptions);
+        (element as HTMLElement).focus();
     }
+
+    setTimeout(() => {
+        const isPaged = isPaginated(win.document);
+        if (isPaged) {
+            scrollIntoView(element as HTMLElement);
+        } else {
+            const scrollElement = getScrollingElement(win.document);
+            const rect = element.getBoundingClientRect();
+            // calculateMaxScrollShift()
+            // TODO: vertical writing mode
+            const scrollTopMax = scrollElement.scrollHeight - win.document.documentElement.clientHeight;
+            let offset = scrollElement.scrollTop + (rect.top - (win.document.documentElement.clientHeight / 2));
+            if (offset > scrollTopMax) {
+                offset = scrollTopMax;
+            } else if (offset < 0) {
+                offset = 0;
+            }
+            scrollElement.scrollTop = offset;
+            // element.scrollIntoView({
+            //     // TypeScript lib.dom.d.ts difference in 3.2.1
+            //     // ScrollBehavior = "auto" | "instant" | "smooth" VS ScrollBehavior = "auto" | "smooth"
+            //     behavior: "auto",
+            //     // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
+            //     block: "center",
+            //     // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
+            //     inline: "nearest",
+            // } as ScrollIntoViewOptions);
+        }
+    }, doFocus ? 100 : 0);
 }
 
 // TODO: vertical writing mode
@@ -899,7 +921,7 @@ const scrollToHashRaw = () => {
         //     return;
         // }
         // _ignoreScrollEvent = true;
-        scrollElementIntoView(win.READIUM2.locationHashOverride);
+        scrollElementIntoView(win.READIUM2.locationHashOverride, true);
 
         notifyReadingLocationDebounced();
         return;
@@ -907,7 +929,7 @@ const scrollToHashRaw = () => {
         win.READIUM2.locationHashOverride = win.READIUM2.hashElement;
 
         // _ignoreScrollEvent = true;
-        scrollElementIntoView(win.READIUM2.hashElement);
+        scrollElementIntoView(win.READIUM2.hashElement, true);
 
         notifyReadingLocationDebounced();
         return;
@@ -1002,7 +1024,7 @@ const scrollToHashRaw = () => {
                     }
 
                     // _ignoreScrollEvent = true;
-                    scrollElementIntoView(selected);
+                    scrollElementIntoView(selected, true);
 
                     notifyReadingLocationDebounced();
                     return;
@@ -1134,104 +1156,124 @@ function showHideContentMask(doHide: boolean) {
 
 function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean) {
     win.READIUM2.locationHashOverride = el as HTMLElement;
-    scrollElementIntoView(win.READIUM2.locationHashOverride);
-    if (doFocus) {
-        setTimeout(() => {
-            el.focus();
-        }, 10);
-    }
+    scrollElementIntoView(win.READIUM2.locationHashOverride, doFocus);
     notifyReadingLocationDebounced();
 }
 const focusScrollDebounced = debounce((el: HTMLOrSVGElement, doFocus: boolean) => {
     focusScrollRaw(el, doFocus);
-}, 80);
+}, 100);
 
-let _ignoreFocusInEvent = false;
+// let _ignoreFocusInEvent = false;
 
-function handleTab(target: HTMLElement, tabKeyDownEvent: KeyboardEvent | undefined) {
+// function lazyTabbables(): HTMLElement[] {
+//     // cache problem: temporary tabbables? (e.g. HTML5 details/summary element, expand/collapse)
+//     // so right now, resize observer resets body.tabbables. Is that enough? (other edge cases?)
+//     const alreadySet: HTMLElement[] = (win.document.body as any).tabbables;
+//     return alreadySet ? alreadySet :
+//         ((win.document.body as any).tabbables = tabbable(win.document.body) as HTMLElement[]);
+// }
+const handleFocusInDebounced = debounce((target: HTMLElement, tabKeyDownEvent: KeyboardEvent | undefined) => {
+    handleFocusInRaw(target, tabKeyDownEvent);
+}, 100);
+function handleFocusInRaw(target: HTMLElement, _tabKeyDownEvent: KeyboardEvent | undefined) {
     if (!target || !win.document.body) {
         return;
     }
-
-    // target
-    // tab-keydown => originating element (will leave focus)
-    // focusin => destination element (focuses in)
-
-    // evt
-    // non-nil when tab-keydown
-    // nil when focusin
-    // const isTabKeyDownEvent = typeof evt !== "undefined";
-    // const isFocusInEvent = !isTabKeyDownEvent;
-
-    _ignoreFocusInEvent = false;
-
-    // cache problem: temporary tabbables? (e.g. HTML5 details/summary element, expand/collapse)
-    // so right now, resize observer resets body.tabbables. Is that enough? (other edge cases?)
-    const tabbables = (win.document.body as any).tabbables ?
-        (win.document.body as any).tabbables :
-        ((win.document.body as any).tabbables = tabbable(win.document.body));
-    // const tabbables = tabbable(win.document.body);
-    // debug(tabbables);
-
-    const i = tabbables.indexOf(target);
-    // debug("TABBABLE: " + i);
-
-    if (i === 0) {
-        // debug("FIRST TABBABLE");
-        // prevent the webview from cycling scroll (does its own unwanted focus)
-        if (!tabKeyDownEvent || tabKeyDownEvent.shiftKey) {
-            // debug("FIRST TABBABLE focusin or shift-tab");
-            _ignoreFocusInEvent = true;
-            focusScrollDebounced(target as HTMLElement, true);
-            return;
-        }
-        if (i < (tabbables.length - 1)) {
-            // debug("TABBABLE FORWARD >>");
-            tabKeyDownEvent.preventDefault();
-            const nextTabbable = tabbables[i + 1];
-            focusScrollDebounced(nextTabbable as HTMLElement, true);
-            return;
-        }
-        // debug("FIRST TABBABLE ??");
-    } else if (i === (tabbables.length - 1)) {
-        // debug("LAST TABBABLE");
-        // prevent the webview from cycling scroll (does its own unwanted focus)
-        if (!tabKeyDownEvent || !tabKeyDownEvent.shiftKey) {
-            // debug("LAST TABBABLE focusin or no-shift-tab");
-            _ignoreFocusInEvent = true;
-            focusScrollDebounced(target as HTMLElement, true);
-            return;
-        }
-        if (i > 0) {
-            // debug("TABBABLE BACKWARD <<");
-            tabKeyDownEvent.preventDefault();
-            const previousTabbable = tabbables[i - 1];
-            focusScrollDebounced(previousTabbable as HTMLElement, true);
-            return;
-        }
-        // debug("LAST TABBABLE??");
-    } else if (i > 0) {
-        if (tabKeyDownEvent) {
-            if (tabKeyDownEvent.shiftKey) {
-                // debug("TABBABLE BACKWARD <<");
-                tabKeyDownEvent.preventDefault();
-                const previousTabbable = tabbables[i - 1];
-                focusScrollDebounced(previousTabbable as HTMLElement, true);
-                return;
-            } else {
-                // debug("TABBABLE FORWARD >>");
-                tabKeyDownEvent.preventDefault();
-                const nextTabbable = tabbables[i + 1];
-                focusScrollDebounced(nextTabbable as HTMLElement, true);
-                return;
-            }
-        }
-    }
-    if (!tabKeyDownEvent) {
-        // debug("FOCUSIN force");
-        focusScrollDebounced(target as HTMLElement, true);
-    }
+    // _ignoreFocusInEvent = true;
+    focusScrollRaw(target, false);
 }
+// function handleTabRaw(target: HTMLElement, tabKeyDownEvent: KeyboardEvent | undefined) {
+//     if (!target || !win.document.body) {
+//         return;
+//     }
+
+//     // target
+//     // tab-keydown => originating element (will leave focus)
+//     // focusin => destination element (focuses in)
+
+//     // evt
+//     // non-nil when tab-keydown
+//     // nil when focusin
+//     // const isTabKeyDownEvent = typeof evt !== "undefined";
+//     // const isFocusInEvent = !isTabKeyDownEvent;
+
+//     _ignoreFocusInEvent = false;
+
+//     const tabbables = lazyTabbables();
+
+//     // freshly-created, let's insert the first tab stop (SKIP_LINK_ID = readium2_skip_link)
+//     // if (!alreadySet && tabbables) {
+//     //     let skipLinkIndex = -1;
+//     //     const skipLink = tabbables.find((t, arrayIndex) => {
+//     //         skipLinkIndex = arrayIndex;
+//     //         return t.getAttribute && t.getAttribute("id") === SKIP_LINK_ID;
+//     //     });
+//     //     if (skipLink && skipLinkIndex >= 0) {
+//     //         (win.document.body as any).tabbables.splice(skipLinkIndex, 1);
+//     //         (win.document.body as any).tabbables.unshift(skipLink);
+//     //         tabbables = (win.document.body as any).tabbables;
+//     //     }
+//     // }
+
+//     const i = tabbables ? tabbables.indexOf(target) : -1;
+//     // debug("TABBABLE: " + i);
+
+//     if (i === 0) {
+//         // debug("FIRST TABBABLE");
+//         // prevent the webview from cycling scroll (does its own unwanted focus)
+//         if (!tabKeyDownEvent || tabKeyDownEvent.shiftKey) {
+//             // debug("FIRST TABBABLE focusin or shift-tab");
+//             _ignoreFocusInEvent = true;
+//             focusScrollDebounced(target, true);
+//             return;
+//         }
+//         if (i < (tabbables.length - 1)) {
+//             // debug("TABBABLE FORWARD >>");
+//             tabKeyDownEvent.preventDefault();
+//             const nextTabbable = tabbables[i + 1];
+//             focusScrollDebounced(nextTabbable, true);
+//             return;
+//         }
+//         // debug("FIRST TABBABLE ??");
+//     } else if (i === (tabbables.length - 1)) {
+//         // debug("LAST TABBABLE");
+//         // prevent the webview from cycling scroll (does its own unwanted focus)
+//         if (!tabKeyDownEvent || !tabKeyDownEvent.shiftKey) {
+//             // debug("LAST TABBABLE focusin or no-shift-tab");
+//             _ignoreFocusInEvent = true;
+//             focusScrollDebounced(target, true);
+//             return;
+//         }
+//         if (i > 0) {
+//             // debug("TABBABLE BACKWARD <<");
+//             tabKeyDownEvent.preventDefault();
+//             const previousTabbable = tabbables[i - 1];
+//             focusScrollDebounced(previousTabbable, true);
+//             return;
+//         }
+//         // debug("LAST TABBABLE??");
+//     } else if (i > 0) {
+//         if (tabKeyDownEvent) {
+//             if (tabKeyDownEvent.shiftKey) {
+//                 // debug("TABBABLE BACKWARD <<");
+//                 tabKeyDownEvent.preventDefault();
+//                 const previousTabbable = tabbables[i - 1];
+//                 focusScrollDebounced(previousTabbable, true);
+//                 return;
+//             } else {
+//                 // debug("TABBABLE FORWARD >>");
+//                 tabKeyDownEvent.preventDefault();
+//                 const nextTabbable = tabbables[i + 1];
+//                 focusScrollDebounced(nextTabbable, true);
+//                 return;
+//             }
+//         }
+//     }
+//     if (!tabKeyDownEvent) {
+//         // debug("FOCUSIN force");
+//         focusScrollDebounced(target, true);
+//     }
+// }
 
 ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVENT_READIUMCSS) => {
     showHideContentMask(false);
@@ -1388,6 +1430,38 @@ function loaded(forced: boolean) {
         if (!win.READIUM2.isFixedLayout) {
             debug("++++ scrollToHashDebounced FROM LOAD");
             scrollToHashDebounced();
+
+            if (win.document.body) {
+                const linkTxt = "__";
+                const focusLink = win.document.createElement("a");
+                focusLink.setAttribute("id", SKIP_LINK_ID);
+                focusLink.appendChild(win.document.createTextNode(linkTxt));
+                focusLink.setAttribute("title", linkTxt);
+                focusLink.setAttribute("aria-label", linkTxt);
+                focusLink.setAttribute("href", "javascript:;");
+                focusLink.setAttribute("tabindex", "0");
+                win.document.body.insertAdjacentElement("afterbegin", focusLink);
+                setTimeout(() => {
+                    focusLink.addEventListener("click", (_ev) => {
+                        if (IS_DEV) {
+                            console.log(win.READIUM2.hashElement ?
+                                getCssSelector(win.READIUM2.hashElement) : "!hashElement");
+                            console.log(win.READIUM2.locationHashOverride ?
+                                getCssSelector(win.READIUM2.locationHashOverride) : "!locationHashOverride");
+                        }
+                        const el = win.READIUM2.hashElement || win.READIUM2.locationHashOverride;
+                        if (el) {
+                            focusScrollDebounced(el as HTMLElement, true);
+                        }
+                    });
+                }, 200);
+                // Does not work! :(
+                // setTimeout(() => {
+                //     console.log("TEST AUTOFOCUS");
+                //     focusLink.focus();
+                // }, 2000);
+            }
+
             // setTimeout(() => {
             //     debug("++++ scrollToHashRaw FROM LOAD");
             //     scrollToHashRaw();
@@ -1457,11 +1531,11 @@ function loaded(forced: boolean) {
 
     win.document.body.addEventListener("focusin", (ev: any) => {
 
-        if (_ignoreFocusInEvent) {
-            // debug("focusin --- IGNORE");
-            _ignoreFocusInEvent = false;
-            return;
-        }
+        // if (_ignoreFocusInEvent) {
+        //     debug("focusin --- IGNORE");
+        //     _ignoreFocusInEvent = false;
+        //     return;
+        // }
 
         if (isPopupDialogOpen(win.document)) {
             return;
@@ -1478,7 +1552,9 @@ function loaded(forced: boolean) {
                 }
             }
             if (!mouseClickOnLink) {
-                handleTab(ev.target as HTMLElement, undefined);
+                handleFocusInDebounced(ev.target as HTMLElement, undefined);
+            } else {
+                debug("focusin mouse click --- IGNORE");
             }
         }
         // if (!win.document) {
@@ -1489,24 +1565,24 @@ function loaded(forced: boolean) {
         // }
     });
 
-    win.document.body.addEventListener("keydown", (ev: KeyboardEvent) => {
-        if (isPopupDialogOpen(win.document)) {
-            return;
-        }
+    // win.document.body.addEventListener("keydown", (ev: KeyboardEvent) => {
+    //     if (isPopupDialogOpen(win.document)) {
+    //         return;
+    //     }
 
-        const TAB_KEY = 9;
-        if (ev.which === TAB_KEY) {
-            if (ev.target) {
-                handleTab(ev.target as HTMLElement, ev);
-            }
-        }
-        // if (!win.document) {
-        //     return;
-        // }
-        // const isPaged = isPaginated(win.document);
-        // if (isPaged) {
-        // }
-    }, true);
+    //     const TAB_KEY = 9;
+    //     if (ev.which === TAB_KEY) {
+    //         if (ev.target) {
+    //             handleTabDebounced(ev.target as HTMLElement, ev);
+    //         }
+    //     }
+    //     // if (!win.document) {
+    //     //     return;
+    //     // }
+    //     // const isPaged = isPaginated(win.document);
+    //     // if (isPaged) {
+    //     // }
+    // }, true);
 
     const useResizeObserver = !win.READIUM2.isFixedLayout;
     if (useResizeObserver && win.document.body) {
@@ -2162,11 +2238,11 @@ export const computeProgressionData = (): IProgressionData => {
 };
 
 // tslint:disable-next-line:max-line-length
-const _blacklistIdClassForCssSelectors = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
+const _blacklistIdClassForCssSelectors = [SKIP_LINK_ID, POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
 const _blacklistIdClassForCssSelectorsMathJax = ["mathjax", "ctxt", "mjx"];
 
 // tslint:disable-next-line:max-line-length
-const _blacklistIdClassForCFI = [POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA];
+const _blacklistIdClassForCFI = [SKIP_LINK_ID, POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA];
 // "CtxtMenu_MenuFrame", "CtxtMenu_Info", "CtxtMenu_MenuItem", "CtxtMenu_ContextMenu",
 // "CtxtMenu_MenuArrow", "CtxtMenu_Attached_0", "mjx-container", "MathJax"
 const _blacklistIdClassForCFIMathJax = ["mathjax", "ctxt", "mjx"];

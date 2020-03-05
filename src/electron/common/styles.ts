@@ -5,6 +5,8 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+export const SKIP_LINK_ID = "r2-skip-link";
+
 export const ROOT_CLASS_REDUCE_MOTION = "r2-reduce-motion";
 export const ROOT_CLASS_NO_FOOTNOTES = "r2-no-popup-foonotes";
 export const ROOT_CLASS_MATHJAX = "r2-mathjax";
@@ -440,6 +442,31 @@ export const visibilityMaskCssStyles = `
 export const ROOT_CLASS_KEYBOARD_INTERACT = "r2-keyboard-interact";
 export const CSS_CLASS_NO_FOCUS_OUTLINE = "r2-no-focus-outline";
 export const focusCssStyles = `
+
+#${SKIP_LINK_ID} {
+    display: block;
+    overflow: hidden;
+    visibility: visible;
+    opacity: 1;
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    width: 1px;
+    height: 1px;
+    background-color: transparent;
+    color: transparent;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    outline: 0;
+}
+/*
+#${SKIP_LINK_ID}:focus {
+    width: auto;
+    height: auto;
+}
+*/
+
 @keyframes readium2ElectronAnimation_FOCUS {
     0% {
     }
@@ -451,12 +478,12 @@ export const focusCssStyles = `
 :root *:focus {
     outline: none;
 }
-:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus,
-:root.${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus {
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus:not(:target),
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus:not(:target) {
     outline: none !important;
 }
-:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *:focus,
-:root.${ROOT_CLASS_KEYBOARD_INTERACT} *:focus {
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *:focus:not(:target),
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} *:focus:not(:target) {
     outline-color: blue !important;
     outline-style: solid !important;
     outline-width: 2px !important;
