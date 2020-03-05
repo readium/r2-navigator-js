@@ -1,10 +1,31 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.46...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.47...develop
 
 Changes:
 * TODO
+
+# 1.1.47
+
+> Build environment: NodeJS `12.16.1`, NPM `6.14.1`
+
+Changes:
+* NPM updates (minor)
+* tabbables now handled via focusin (hyperlinks traversal) => better performance, fewer keyboard-tabbing flashes / visual "bugs"
+* added top-level "skip link" to quickly keyboard-access the current URL hash fragment identifier or "active" target element (the link is CFI and CSS selector blacklisted) ... we need this because the iframe/webview cannot force focus when keyboard is in the app UI (the user must explicitely trigger the navigation)
+* fixed CFI blacklisting (even number element indexing calculations)
+* fixed style animation restart for element target (hyperlinking), added CSS "target" class to mimic the actual pseudo-class (for when URL fragment identifier is not used)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.47/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.47/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.47
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.46...v1.1.47
 
 # 1.1.46
 
