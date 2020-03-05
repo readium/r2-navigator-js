@@ -45,7 +45,7 @@ import {
 } from "../../common/readium-css-inject";
 import { sameSelections } from "../../common/selection";
 import {
-    CSS_CLASS_NO_FOCUS_OUTLINE, POPUP_DIALOG_CLASS, ROOT_CLASS_INVISIBLE_MASK,
+    CSS_CLASS_NO_FOCUS_OUTLINE, LINK_TARGET_CLASS, POPUP_DIALOG_CLASS, ROOT_CLASS_INVISIBLE_MASK,
     ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
     ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN,
     TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, readPosCssStylesAttr1,
@@ -274,7 +274,7 @@ function computeVisibility_(element: Element): boolean {
         const display = elStyle.getPropertyValue("display");
         if (display === "none") {
             if (IS_DEV) {
-                console.log("element DISPLAY NONE");
+                debug("element DISPLAY NONE");
             }
             // console.log(element.outerHTML);
             return false;
@@ -292,7 +292,7 @@ function computeVisibility_(element: Element): boolean {
         const opacity = elStyle.getPropertyValue("opacity");
         if (opacity === "0") {
             if (IS_DEV) {
-                console.log("element OPACITY ZERO");
+                debug("element OPACITY ZERO");
             }
             // console.log(element.outerHTML);
             return false;
@@ -818,11 +818,44 @@ function scrollElementIntoView(element: Element, doFocus: boolean) {
                 (element as HTMLElement).setAttribute("tabindex", "-1");
                 (element as HTMLElement).classList.add(CSS_CLASS_NO_FOCUS_OUTLINE);
                 if (IS_DEV) {
-                    console.log("tabindex -1 set (focusable):");
-                    console.log(getCssSelector(element));
+                    debug("tabindex -1 set (focusable):");
+                    debug(getCssSelector(element));
                 }
             }
         }
+        const targets = win.document.querySelectorAll(`.${LINK_TARGET_CLASS}`);
+        targets.forEach((t) => {
+            // (t as HTMLElement).style.animationPlayState = "paused";
+            t.classList.remove(LINK_TARGET_CLASS);
+        });
+
+        (element as HTMLElement).style.animation = "none";
+        // trigger layout to restart animation
+        // tslint:disable-next-line: no-unused-expression
+        void (element as HTMLElement).offsetWidth;
+        (element as HTMLElement).style.animation = "";
+
+        element.classList.add(LINK_TARGET_CLASS);
+        // (element as HTMLElement).style.animationPlayState = "running";
+
+        // if (!(element as any)._TargetAnimationEnd) {
+        //     (element as any)._TargetAnimationEnd = (ev: Event) => {
+        //         debug("ANIMATION END");
+        //         (ev.target as HTMLElement).style.animationPlayState = "paused";
+        //     };
+        //     element.addEventListener("animationEnd", (element as any)._TargetAnimationEnd);
+        // }
+
+        if ((element as any)._timeoutTargetClass) {
+            clearTimeout((element as any)._timeoutTargetClass);
+            (element as any)._timeoutTargetClass = undefined;
+        }
+        (element as any)._timeoutTargetClass = setTimeout(() => {
+            debug("ANIMATION TIMEOUT REMOVE");
+            // (element as HTMLElement).style.animationPlayState = "paused";
+            element.classList.remove(LINK_TARGET_CLASS);
+        }, 4500);
+
         (element as HTMLElement).focus();
     }
 
@@ -1155,8 +1188,13 @@ function showHideContentMask(doHide: boolean) {
 }
 
 function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean) {
+    scrollElementIntoView(el as HTMLElement, doFocus);
+
+    const blacklisted = checkBlacklisted(el as HTMLElement);
+    if (blacklisted) {
+        return;
+    }
     win.READIUM2.locationHashOverride = el as HTMLElement;
-    scrollElementIntoView(win.READIUM2.locationHashOverride, doFocus);
     notifyReadingLocationDebounced();
 }
 const focusScrollDebounced = debounce((el: HTMLOrSVGElement, doFocus: boolean) => {
@@ -1444,9 +1482,10 @@ function loaded(forced: boolean) {
                 setTimeout(() => {
                     focusLink.addEventListener("click", (_ev) => {
                         if (IS_DEV) {
-                            console.log(win.READIUM2.hashElement ?
+                            debug("focus link click:");
+                            debug(win.READIUM2.hashElement ?
                                 getCssSelector(win.READIUM2.hashElement) : "!hashElement");
-                            console.log(win.READIUM2.locationHashOverride ?
+                            debug(win.READIUM2.locationHashOverride ?
                                 getCssSelector(win.READIUM2.locationHashOverride) : "!locationHashOverride");
                         }
                         const el = win.READIUM2.hashElement || win.READIUM2.locationHashOverride;
@@ -1846,13 +1885,17 @@ function checkBlacklisted(el: Element): boolean {
 
     const id = el.getAttribute("id");
     if (id && _blacklistIdClassForCFI.indexOf(id) >= 0) {
-        console.log("checkBlacklisted ID: " + id);
+        if (IS_DEV && id !== SKIP_LINK_ID) {
+            debug("checkBlacklisted ID: " + id);
+        }
         return true;
     }
 
     for (const item of _blacklistIdClassForCFI) {
         if (el.classList.contains(item)) {
-            console.log("checkBlacklisted CLASS: " + item);
+            if (IS_DEV) {
+                debug("checkBlacklisted CLASS: " + item);
+            }
             return true;
         }
     }
@@ -1862,7 +1905,9 @@ function checkBlacklisted(el: Element): boolean {
         const low = el.tagName.toLowerCase();
         for (const item of _blacklistIdClassForCFIMathJax) {
             if (low.startsWith(item)) {
-                console.log("checkBlacklisted MathJax ELEMENT NAME: " + el.tagName);
+                if (IS_DEV) {
+                    debug("checkBlacklisted MathJax ELEMENT NAME: " + el.tagName);
+                }
                 return true;
             }
         }
@@ -1871,7 +1916,9 @@ function checkBlacklisted(el: Element): boolean {
             const lowId = id.toLowerCase();
             for (const item of _blacklistIdClassForCFIMathJax) {
                 if (lowId.startsWith(item)) {
-                    console.log("checkBlacklisted MathJax ID: " + id);
+                    if (IS_DEV) {
+                        debug("checkBlacklisted MathJax ID: " + id);
+                    }
                     return true;
                 }
             }
@@ -1883,7 +1930,9 @@ function checkBlacklisted(el: Element): boolean {
             const lowCl = cl.toLowerCase();
             for (const item of _blacklistIdClassForCFIMathJax) {
                 if (lowCl.startsWith(item)) {
-                    console.log("checkBlacklisted MathJax CLASS: " + cl);
+                    if (IS_DEV) {
+                        debug("checkBlacklisted MathJax CLASS: " + cl);
+                    }
                     return true;
                 }
             }
@@ -2238,7 +2287,7 @@ export const computeProgressionData = (): IProgressionData => {
 };
 
 // tslint:disable-next-line:max-line-length
-const _blacklistIdClassForCssSelectors = [CSS_CLASS_NO_FOCUS_OUTLINE, SKIP_LINK_ID, POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
+const _blacklistIdClassForCssSelectors = [LINK_TARGET_CLASS, CSS_CLASS_NO_FOCUS_OUTLINE, SKIP_LINK_ID, POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
 const _blacklistIdClassForCssSelectorsMathJax = ["mathjax", "ctxt", "mjx"];
 
 // tslint:disable-next-line:max-line-length
@@ -2262,14 +2311,19 @@ export const computeCFI = (node: Node): string | undefined => {
         if (!blacklisted) {
             const currentElementParentChildren = (currentElement.parentNode as Element).children;
             let currentElementIndex = -1;
+            let j = 0;
             for (let i = 0; i < currentElementParentChildren.length; i++) {
+                const childBlacklisted = checkBlacklisted(currentElementParentChildren[i]);
+                if (childBlacklisted) {
+                    j++;
+                }
                 if (currentElement === currentElementParentChildren[i]) {
                     currentElementIndex = i;
                     break;
                 }
             }
             if (currentElementIndex >= 0) {
-                const cfiIndex = (currentElementIndex + 1) * 2;
+                const cfiIndex = (currentElementIndex - j + 1) * 2;
                 cfi = cfiIndex +
                     (currentElement.id ? ("[" + currentElement.id + "]") : "") +
                     (cfi.length ? ("/" + cfi) : "");
@@ -2429,6 +2483,11 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): string | u
 
 const notifyReadingLocationRaw = () => {
     if (!win.READIUM2.locationHashOverride) {
+        return;
+    }
+
+    const blacklisted = checkBlacklisted(win.READIUM2.locationHashOverride);
+    if (blacklisted) {
         return;
     }
 

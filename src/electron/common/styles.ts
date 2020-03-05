@@ -6,6 +6,7 @@
 // ==LICENSE-END==
 
 export const SKIP_LINK_ID = "r2-skip-link";
+export const LINK_TARGET_CLASS = "r2-link-target";
 
 export const ROOT_CLASS_REDUCE_MOTION = "r2-reduce-motion";
 export const ROOT_CLASS_NO_FOOTNOTES = "r2-no-popup-foonotes";
@@ -478,12 +479,12 @@ export const focusCssStyles = `
 :root *:focus {
     outline: none;
 }
-:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus:not(:target),
-:root.${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus:not(:target) {
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus:not(:target):not(.${LINK_TARGET_CLASS}),
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus:not(:target):not(.${LINK_TARGET_CLASS}) {
     outline: none !important;
 }
-:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *:focus:not(:target),
-:root.${ROOT_CLASS_KEYBOARD_INTERACT} *:focus:not(:target) {
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *:focus:not(:target):not(.${LINK_TARGET_CLASS}),
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} *:focus:not(:target):not(.${LINK_TARGET_CLASS}) {
     outline-color: blue !important;
     outline-style: solid !important;
     outline-width: 2px !important;
@@ -510,7 +511,10 @@ export const targetCssStyles = `
     }
 }
 :root[style] *:target,
-:root *:target {
+:root *:target,
+:root[style] *.${LINK_TARGET_CLASS},
+:root *.${LINK_TARGET_CLASS}
+{
     outline-color: green !important;
     outline-style: solid !important;
     outline-width: 2px !important;
@@ -523,7 +527,9 @@ export const targetCssStyles = `
     animation-timing-function: linear;
 }
 :root[style] *.r2-no-target-outline:target,
-:root *.r2-no-target-outline:target {
+:root *.r2-no-target-outline:target,
+:root[style] *.r2-no-target-outline.${LINK_TARGET_CLASS},
+:root *.r2-no-target-outline.${LINK_TARGET_CLASS} {
     outline: inherit !important;
 }
 `;
