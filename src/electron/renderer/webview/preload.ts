@@ -392,7 +392,7 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
     clearCurrentSelection(win);
     closePopupDialogs(win.document);
 
-    _cancelInitialScrollCheck = true;
+    // _cancelInitialScrollCheck = true;
 
     if (!win.READIUM2.urlQueryParams) {
         win.READIUM2.urlQueryParams = {};
@@ -1050,6 +1050,7 @@ const scrollToHashRaw = () => {
                 }
                 if (selected) {
                     win.READIUM2.locationHashOverride = selected;
+                    win.READIUM2.hashElement = selected;
 
                     resetLocationHashOverrideInfo();
                     if (win.READIUM2.locationHashOverrideInfo) {
@@ -1334,7 +1335,7 @@ win.addEventListener("DOMContentLoaded", () => {
         setupAudioBook(_docTitle);
     }
 
-    _cancelInitialScrollCheck = true;
+    // _cancelInitialScrollCheck = true;
 
     // const linkUri = new URI(win.location.href);
 
@@ -1450,7 +1451,7 @@ win.addEventListener("DOMContentLoaded", () => {
     }, 500);
 });
 
-let _cancelInitialScrollCheck = false;
+// let _cancelInitialScrollCheck = false;
 
 let _loaded = false;
 function loaded(forced: boolean) {
@@ -1505,32 +1506,32 @@ function loaded(forced: boolean) {
             //     debug("++++ scrollToHashRaw FROM LOAD");
             //     scrollToHashRaw();
             // }, 100);
-            _cancelInitialScrollCheck = false;
-            setTimeout(() => {
-                if (_cancelInitialScrollCheck) {
-                    return;
-                }
-                // if (!isPaginated(win.document)) {
-                //     // scrollToHashRaw();
-                //     return;
-                // }
-                // let visible = false;
-                // if (win.READIUM2.locationHashOverride === win.document.body ||
-                //     win.READIUM2.hashElement === win.document.body) {
-                //     visible = true;
-                // } else if (win.READIUM2.locationHashOverride) {
-                //     visible = computeVisibility_(win.READIUM2.locationHashOverride);
-                // } else if (win.READIUM2.hashElement) {
-                //     visible = computeVisibility_(win.READIUM2.hashElement);
-                // }
-                // if (!visible) {
-                //     debug("!visible (delayed layout pass?) => forcing second scrollToHashRaw()...");
-                //     if (win.READIUM2.locationHashOverride) {
-                //         debug(uniqueCssSelector(win.READIUM2.locationHashOverride, win.document, undefined));
-                //     }
-                //     scrollToHashRaw();
-                // }
-            }, 500);
+            // _cancelInitialScrollCheck = false;
+            // setTimeout(() => {
+            //     if (_cancelInitialScrollCheck) {
+            //         return;
+            //     }
+            //     // if (!isPaginated(win.document)) {
+            //     //     // scrollToHashRaw();
+            //     //     return;
+            //     // }
+            //     // let visible = false;
+            //     // if (win.READIUM2.locationHashOverride === win.document.body ||
+            //     //     win.READIUM2.hashElement === win.document.body) {
+            //     //     visible = true;
+            //     // } else if (win.READIUM2.locationHashOverride) {
+            //     //     visible = computeVisibility_(win.READIUM2.locationHashOverride);
+            //     // } else if (win.READIUM2.hashElement) {
+            //     //     visible = computeVisibility_(win.READIUM2.hashElement);
+            //     // }
+            //     // if (!visible) {
+            //     //     debug("!visible (delayed layout pass?) => forcing second scrollToHashRaw()...");
+            //     //     if (win.READIUM2.locationHashOverride) {
+            //     //         debug(uniqueCssSelector(win.READIUM2.locationHashOverride, win.document, undefined));
+            //     //     }
+            //     //     scrollToHashRaw();
+            //     // }
+            // }, 500);
         } else {
             // processXYDebounced(0, 0, false);
 
@@ -1762,6 +1763,11 @@ function loaded(forced: boolean) {
             }
 
             if (!win.document || !win.document.documentElement) {
+                return;
+            }
+
+            const el = win.READIUM2.locationHashOverride; // || win.READIUM2.hashElement
+            if (el && computeVisibility_(el)) {
                 return;
             }
 
