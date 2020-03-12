@@ -9,21 +9,12 @@ import { IEventPayload_R2_EVENT_READIUMCSS } from "../../common/events";
 import {
     isDocRTL, isDocVertical, isPaginated, readiumCSSSet,
 } from "../../common/readium-css-inject";
-import { READIUM_CSS_URL_PATH } from "../../common/readium-css-settings";
-import {
-    READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl,
-} from "../../common/sessions";
 import { FOOTNOTE_FORCE_SHOW, ROOT_CLASS_NO_FOOTNOTES } from "../../common/styles";
 import { IReadiumElectronWebviewWindow } from "./state";
 
 const win = (global as any).window as IReadiumElectronWebviewWindow;
 
-let origin = win.location.origin;
-if (origin.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
-    origin = convertCustomSchemeToHttpUrl(win.location.href);
-    origin = origin.replace(/\/pub\/.*/, "");
-}
-const urlRootReadiumCSS = origin + "/" + READIUM_CSS_URL_PATH + "/";
+const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
 export const getScrollingElement = (documant: Document): Element => {
     if (documant.scrollingElement) {
@@ -306,9 +297,12 @@ export function checkHiddenFootNotes(documant: Document) {
 }
 
 export const readiumCSS = (documant: Document, messageJson: IEventPayload_R2_EVENT_READIUMCSS) => {
-    // console.log("urlRootReadiumCSS: ", urlRootReadiumCSS);
-    // console.log("messageJson.urlRoot: ", messageJson.urlRoot);
-    readiumCSSSet(documant, messageJson, urlRootReadiumCSS, _isVerticalWritingMode, _isRTL);
+
+    if (IS_DEV) {
+        console.log("_____ readiumCssJson.urlRoot (readiumCSS()): ", messageJson.urlRoot);
+    }
+
+    readiumCSSSet(documant, messageJson, _isVerticalWritingMode, _isRTL);
 
     if ((messageJson && messageJson.setCSS && !messageJson.setCSS.noFootnotes)) {
         checkHiddenFootNotes(documant);

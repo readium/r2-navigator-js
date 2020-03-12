@@ -16,8 +16,8 @@ import { Publication } from "@r2-shared-js/models/publication";
 import {
     IEventPayload_R2_EVENT_CLIPBOARD_COPY, IEventPayload_R2_EVENT_DEBUG_VISUALS,
     IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
-    IEventPayload_R2_EVENT_WEBVIEW_KEYUP, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS,
-    R2_EVENT_READIUMCSS, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYUP, IKeyboardEvent, R2_EVENT_CLIPBOARD_COPY,
+    R2_EVENT_DEBUG_VISUALS, R2_EVENT_READIUMCSS, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
 } from "../common/events";
 import { R2_SESSION_WEBVIEW } from "../common/sessions";
 import { URL_PARAM_DEBUG_VISUALS } from "./common/url-params";
@@ -27,7 +27,7 @@ import {
     getCurrentReadingLocation, handleLinkLocator, locationHandleIpcMessage, shiftWebview,
 } from "./location";
 import { ttsClickEnable, ttsHandleIpcMessage } from "./readaloud";
-import { __computeReadiumCssJsonMessage } from "./readium-css";
+import { adjustReadiumCssJsonMessageForFixedLayout, obtainReadiumCss } from "./readium-css";
 import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 // import { registerProtocol } from "@r2-navigator-js/electron/renderer/common/protocol";
@@ -64,13 +64,16 @@ const win = window as IReadiumElectronBrowserWindow;
 // const lcpHint = queryParams["lcpHint"];
 
 // legacy function, old confusing name (see readiumCssUpdate() below)
-export function readiumCssOnOff(rss?: IEventPayload_R2_EVENT_READIUMCSS) {
-
-    const loc = getCurrentReadingLocation();
+export function readiumCssOnOff(rcss?: IEventPayload_R2_EVENT_READIUMCSS) {
 
     const activeWebView = win.READIUM2.getActiveWebView();
     if (activeWebView) {
-        const payload1 = rss || __computeReadiumCssJsonMessage(activeWebView.READIUM2.link);
+        const loc = getCurrentReadingLocation();
+
+        const actualReadiumCss = obtainReadiumCss(rcss);
+        activeWebView.READIUM2.readiumCss = actualReadiumCss;
+
+        const payloadRcss = adjustReadiumCssJsonMessageForFixedLayout(activeWebView.READIUM2.link, actualReadiumCss);
 
         if (activeWebView.style.transform !== "none") {
             setTimeout(async () => {
@@ -79,23 +82,23 @@ export function readiumCssOnOff(rss?: IEventPayload_R2_EVENT_READIUMCSS) {
 
             setTimeout(async () => {
                 shiftWebview(activeWebView, 0, undefined); // reset
-                await activeWebView.send(R2_EVENT_READIUMCSS, payload1);
+                await activeWebView.send(R2_EVENT_READIUMCSS, payloadRcss);
             }, 10);
         } else {
             setTimeout(async () => {
-                await activeWebView.send(R2_EVENT_READIUMCSS, payload1);
+                await activeWebView.send(R2_EVENT_READIUMCSS, payloadRcss);
             }, 0);
         }
-    }
 
-    if (loc) {
-        setTimeout(() => {
-            handleLinkLocator(loc.locator);
-        }, 60);
+        if (loc) {
+            setTimeout(() => {
+                handleLinkLocator(loc.locator, activeWebView.READIUM2.readiumCss);
+            }, 60);
+        }
     }
 }
-export function readiumCssUpdate(rss: IEventPayload_R2_EVENT_READIUMCSS) {
-    return readiumCssOnOff(rss);
+export function readiumCssUpdate(rcss: IEventPayload_R2_EVENT_READIUMCSS) {
+    return readiumCssOnOff(rcss);
 }
 
 let _webview1: IReadiumElectronWebview;
@@ -226,6 +229,7 @@ function createWebView() {
     _webview1.READIUM2 = {
         id: 1,
         link: undefined,
+        readiumCss: undefined,
     };
     _webview1.setAttribute("id", "webview1");
 
@@ -259,6 +263,7 @@ export function installNavigatorDOM(
     enableScreenReaderAccessibilityWebViewHardRefresh: boolean,
     clipboardInterceptor: ((data: IEventPayload_R2_EVENT_CLIPBOARD_COPY) => void) | undefined,
     sessionInfo: string | undefined,
+    rcss: IEventPayload_R2_EVENT_READIUMCSS | undefined,
     ) {
 
     const domRootElement = document.getElementById(rootHtmlElementID) as HTMLElement;
@@ -337,7 +342,10 @@ export function installNavigatorDOM(
             setTimeout(() => {
                 const loc = getCurrentReadingLocation();
                 if (loc) {
-                    handleLinkLocator(loc.locator);
+                    handleLinkLocator(
+                        loc.locator,
+                        activeWebView ? activeWebView.READIUM2.readiumCss : undefined,
+                    );
                 }
             }, 100);
         };
@@ -380,17 +388,17 @@ export function installNavigatorDOM(
     createWebView();
 
     setTimeout(() => {
-        handleLinkLocator(location);
+        handleLinkLocator(location, rcss);
     }, 100);
 }
 
 let _keyDownEventHandler: (
-    ev: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
+    ev: IKeyboardEvent,
     elementName: string,
     elementAttributes: {[name: string]: string},
 ) => void;
 export function setKeyDownEventHandler(func: (
-    ev: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
+    ev: IKeyboardEvent,
     elementName: string,
     elementAttributes: {[name: string]: string},
 ) => void) {
@@ -399,12 +407,12 @@ export function setKeyDownEventHandler(func: (
 }
 
 let _keyUpEventHandler: (
-    ev: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
+    ev: IKeyboardEvent,
     elementName: string,
     elementAttributes: {[name: string]: string},
 ) => void;
 export function setKeyUpEventHandler(func: (
-    ev: IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
+    ev: IKeyboardEvent,
     elementName: string,
     elementAttributes: {[name: string]: string},
 ) => void) {

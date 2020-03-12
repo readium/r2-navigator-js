@@ -10,11 +10,14 @@ import * as xmldom from "xmldom";
 
 import { IEventPayload_R2_EVENT_READIUMCSS } from "./events";
 import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
+import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "./sessions";
 import {
     ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, audioCssStyles,
     focusCssStyles, footnotesCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles,
     targetCssStyles, ttsCssStyles, visibilityMaskCssStyles,
 } from "./styles";
+
+export const READIUM2_BASEURL_ID = "r2_BASEURL_ID";
 
 // now match with :root[style*="readium-night-on"]
 // const CSS_CLASS_DARK_THEME = "mdc-theme--dark";
@@ -141,7 +144,6 @@ export function isPaginated(documant: Document): boolean {
 export function readiumCSSSet(
     documant: Document,
     messageJson: IEventPayload_R2_EVENT_READIUMCSS,
-    urlRootReadiumCSS: string | undefined,
     isVerticalWritingMode: boolean, isRTL: boolean) {
 
     if (!messageJson) {
@@ -150,6 +152,28 @@ export function readiumCSSSet(
 
     if (!documant || !documant.documentElement) {
         return;
+    }
+
+    if (!messageJson.urlRoot) {
+        // can be "null" with data: URL (such as audiobooks HTML template)
+        // let origin = win.location.origin;
+        // let href = win.location.href;
+        const baseEl = documant.getElementById(READIUM2_BASEURL_ID);
+        if (baseEl) {
+            const baseUrl = baseEl.getAttribute("href");
+            if (baseUrl) {
+                let u = baseUrl;
+                if (baseUrl.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+                    u = convertCustomSchemeToHttpUrl(baseUrl);
+                    u = u.replace(/\/pub\/.*/, "");
+                }
+                messageJson.urlRoot = u;
+            }
+        }
+    }
+
+    if (IS_DEV) {
+        debug("_____ readiumCssJson.urlRoot (readiumCSSSet()): ", messageJson.urlRoot);
     }
 
     const docElement = documant.documentElement;
@@ -231,9 +255,7 @@ export function readiumCSSSet(
             }
         }
 
-        const urlRoot = messageJson.urlRoot ?
-            (messageJson.urlRoot + "/" + READIUM_CSS_URL_PATH + "/") :
-            (urlRootReadiumCSS ? urlRootReadiumCSS : ("/" + READIUM_CSS_URL_PATH + "/"));
+        const urlRoot = messageJson.urlRoot + "/" + READIUM_CSS_URL_PATH + "/";
 
         appendCSS(documant, "before", urlRoot);
         if (needsDefaultCSS) {
@@ -1103,8 +1125,13 @@ export function transformHTML(
     const rtl = isDocRTL(documant);
     const vertical = isDocVertical(documant);
     if (readiumcssJson) {
-        readiumCSSSet(documant, readiumcssJson,
-            undefined, // urlRootReadiumCSS
+        if (IS_DEV) {
+            debug("_____ readiumCssJson.urlRoot (transformHTML()): ", readiumcssJson.urlRoot);
+        }
+
+        readiumCSSSet(
+            documant,
+            readiumcssJson,
             vertical,
             rtl);
     }

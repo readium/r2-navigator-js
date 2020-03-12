@@ -12,6 +12,8 @@ import { IReadiumElectronBrowserWindow } from "./webview/state";
 
 const win = window as IReadiumElectronBrowserWindow;
 
+const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+
 export function isRTL(/* link: Link | undefined */): boolean {
     // if (link && link.Properties) {
     //     if (link.Properties.Direction === "rtl") {
@@ -52,7 +54,23 @@ export function isFixedLayout(link: Link | undefined): boolean {
     return false;
 }
 
-export function __computeReadiumCssJsonMessage(link: Link | undefined): IEventPayload_R2_EVENT_READIUMCSS {
+const _defaultReadiumCss: IEventPayload_R2_EVENT_READIUMCSS = { setCSS: undefined, isFixedLayout: false };
+
+export function obtainReadiumCss(rcss?: IEventPayload_R2_EVENT_READIUMCSS) {
+    const r = rcss ? rcss :
+        (_computeReadiumCssJsonMessage ? _computeReadiumCssJsonMessage() :
+            _defaultReadiumCss);
+    if (IS_DEV) {
+        console.log(`ReadiumCSS obtain: ${rcss ? "provided" : (_computeReadiumCssJsonMessage ? "pulled" : "default")}`);
+        console.log(r);
+    }
+    return r;
+}
+
+export function adjustReadiumCssJsonMessageForFixedLayout(
+    link: Link | undefined,
+    rcss: IEventPayload_R2_EVENT_READIUMCSS,
+): IEventPayload_R2_EVENT_READIUMCSS {
 
     if (isFixedLayout(link)) {
         const activeWebView = win.READIUM2.getActiveWebView();
@@ -64,16 +82,13 @@ export function __computeReadiumCssJsonMessage(link: Link | undefined): IEventPa
         };
     }
 
-    if (!_computeReadiumCssJsonMessage) {
-        return { setCSS: undefined, isFixedLayout: false };
-    }
-
-    const readiumCssJsonMessage = _computeReadiumCssJsonMessage();
-    return readiumCssJsonMessage;
+    return rcss;
 }
-let _computeReadiumCssJsonMessage: () => IEventPayload_R2_EVENT_READIUMCSS = () => {
-    return { setCSS: undefined, isFixedLayout: false };
-};
+
+let _computeReadiumCssJsonMessage: (() => IEventPayload_R2_EVENT_READIUMCSS) | undefined;
+// = () => {
+//     return _defaultReadiumCss;
+// };
 export function setReadiumCssJsonGetter(func: () => IEventPayload_R2_EVENT_READIUMCSS) {
     _computeReadiumCssJsonMessage = func;
 }

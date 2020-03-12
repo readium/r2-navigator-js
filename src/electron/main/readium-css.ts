@@ -17,6 +17,8 @@ import { IEventPayload_R2_EVENT_READIUMCSS } from "../common/events";
 import { transformHTML } from "../common/readium-css-inject";
 import { READIUM_CSS_URL_PATH } from "../common/readium-css-settings";
 
+const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+
 function isFixedLayout(publication: Publication, link: Link | undefined): boolean {
     if (link && link.Properties) {
         if (link.Properties.Layout === "fixed") {
@@ -41,7 +43,8 @@ export type TReadiumCssGetterFunction = (
 ) => IEventPayload_R2_EVENT_READIUMCSS;
 
 export function setupReadiumCSS(
-    server: Server, folderPath: string,
+    server: Server,
+    folderPath: string,
     readiumCssGetter: TReadiumCssGetterFunction) {
 
     // https://expressjs.com/en/4x/api.html#express.static
@@ -62,43 +65,49 @@ export function setupReadiumCSS(
 
     server.expressUse("/" + READIUM_CSS_URL_PATH, express.static(folderPath, staticOptions));
 
-    if (readiumCssGetter) {
-        const transformer: TTransformFunction = (
-            publication: Publication,
-            link: Link,
-            str: string,
-            sessionInfo: string | undefined,
-        ): string => {
+    const transformer: TTransformFunction = (
+        publication: Publication,
+        link: Link,
+        str: string,
+        sessionInfo: string | undefined,
+    ): string => {
 
-            // import * as mime from "mime-types";
-            let mediaType = "application/xhtml+xml"; // mime.lookup(link.Href);
-            if (link && link.TypeLink) {
-                mediaType = link.TypeLink;
-            }
+        // import * as mime from "mime-types";
+        let mediaType = "application/xhtml+xml"; // mime.lookup(link.Href);
+        if (link && link.TypeLink) {
+            mediaType = link.TypeLink;
+        }
 
-            let readiumcssJson = readiumCssGetter(publication, link, sessionInfo);
-            if (isFixedLayout(publication, link)) {
-                const readiumcssJson_ = { setCSS: undefined, isFixedLayout: true } as IEventPayload_R2_EVENT_READIUMCSS;
-                if (readiumcssJson.setCSS) {
-                    if (readiumcssJson.setCSS.mathJax) {
-                        // TODO: apply MathJax to FXL?
-                        // (reminder: setCSS must remain 'undefined'
-                        // in order to completely remove ReadiumCSS from FXL docs)
-                    }
-                    if (readiumcssJson.setCSS.reduceMotion) {
-                        // TODO: same as MathJax (see above)
-                    }
+        let readiumcssJson = readiumCssGetter(publication, link, sessionInfo);
+        if (isFixedLayout(publication, link)) {
+            const readiumcssJson_ = { setCSS: undefined, isFixedLayout: true } as IEventPayload_R2_EVENT_READIUMCSS;
+            if (readiumcssJson.setCSS) {
+                if (readiumcssJson.setCSS.mathJax) {
+                    // TODO: apply MathJax to FXL?
+                    // (reminder: setCSS must remain 'undefined'
+                    // in order to completely remove ReadiumCSS from FXL docs)
                 }
-                readiumcssJson = readiumcssJson_;
+                if (readiumcssJson.setCSS.reduceMotion) {
+                    // TODO: same as MathJax (see above)
+                }
             }
+            readiumcssJson = readiumcssJson_;
+        }
 
-            if (readiumcssJson) {
-                readiumcssJson.urlRoot = server.serverUrl();
-                return transformHTML(str, readiumcssJson, mediaType);
-            } else {
-                return str;
+        if (readiumcssJson) {
+            if (!readiumcssJson.urlRoot) {
+                const u = server.serverUrl();
+                if (u) {
+                    readiumcssJson.urlRoot = u;
+                }
             }
-        };
-        Transformers.instance().add(new TransformerHTML(transformer));
-    }
+            if (IS_DEV) {
+                console.log("_____ readiumCssJson.urlRoot (setupReadiumCSS() transformer): ", readiumcssJson.urlRoot);
+            }
+            return transformHTML(str, readiumcssJson, mediaType);
+        } else {
+            return str;
+        }
+    };
+    Transformers.instance().add(new TransformerHTML(transformer));
 }

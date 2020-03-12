@@ -12,6 +12,7 @@ import { Link } from "@r2-shared-js/models/publication-link";
 
 import {
     IEventPayload_R2_EVENT_CLIPBOARD_COPY, IEventPayload_R2_EVENT_READING_LOCATION,
+    IEventPayload_R2_EVENT_READIUMCSS,
 } from "../../common/events";
 import { IStringMap } from "../common/querystring";
 
@@ -45,6 +46,8 @@ export interface IReadiumElectronWebviewState {
     id: number;
     link: Link | undefined;
     forceRefresh?: boolean;
+
+    readiumCss: IEventPayload_R2_EVENT_READIUMCSS | undefined;
 }
 export interface IReadiumElectronWebview extends Electron.WebviewTag {
     READIUM2: IReadiumElectronWebviewState;
