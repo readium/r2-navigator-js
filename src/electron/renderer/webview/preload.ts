@@ -48,8 +48,8 @@ import {
     CSS_CLASS_NO_FOCUS_OUTLINE, LINK_TARGET_CLASS, POPUP_DIALOG_CLASS, ROOT_CLASS_INVISIBLE_MASK,
     ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
     ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN,
-    TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, readPosCssStylesAttr1,
-    readPosCssStylesAttr2, readPosCssStylesAttr3, readPosCssStylesAttr4,
+    TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ZERO_TRANSFORM_CLASS,
+    readPosCssStylesAttr1, readPosCssStylesAttr2, readPosCssStylesAttr3, readPosCssStylesAttr4,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector2";
@@ -67,7 +67,7 @@ import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReading
 import {
     CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, CLASS_HIGHLIGHT_CONTAINER,
     ID_HIGHLIGHTS_CONTAINER, createHighlight, destroyAllhighlights, destroyHighlight,
-    recreateAllHighlights,
+    invalidateBoundingClientRectOfDocumentBody, recreateAllHighlights,
 } from "./highlight";
 import { popupFootNote } from "./popupFootNotes";
 import { ttsNext, ttsPause, ttsPlay, ttsPrevious, ttsResume, ttsStop } from "./readaloud";
@@ -628,6 +628,8 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
 
     const goPREVIOUS = payload.go === "PREVIOUS"; // any other value is NEXT
 
+    const animationTime = 300;
+
     if (_lastAnimState && _lastAnimState.animating) {
         win.cancelAnimationFrame(_lastAnimState.id);
         _lastAnimState.object[_lastAnimState.property] = _lastAnimState.destVal;
@@ -669,6 +671,20 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     _lastAnimState = undefined;
                     targetObj[targetProp] = scrollOffset;
                 } else {
+                    // _lastAnimState = undefined;
+                    // (targetObj as HTMLElement).style.transition = "";
+                    // (targetObj as HTMLElement).style.transform = "none";
+                    // (targetObj as HTMLElement).style.transition =
+                    //     `transform ${animationTime}ms ease-in-out 0s`;
+                    // (targetObj as HTMLElement).style.transform =
+                    //     isVerticalWritingMode() ?
+                    //     `translateY(${unit}px)` :
+                    //     `translateX(${(isRTL() ? -1 : 1) * unit}px)`;
+                    // setTimeout(() => {
+                    //     (targetObj as HTMLElement).style.transition = "";
+                    //     (targetObj as HTMLElement).style.transform = "none";
+                    //     targetObj[targetProp] = scrollOffset;
+                    // }, animationTime);
                     _lastAnimState = animateProperty(
                         win.cancelAnimationFrame,
                         undefined,
@@ -676,7 +692,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                         //     debug(cancelled);
                         // },
                         targetProp,
-                        300,
+                        animationTime,
                         targetObj,
                         scrollOffset,
                         win.requestAnimationFrame,
@@ -705,7 +721,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                         //     debug(cancelled);
                         // },
                         targetProp,
-                        300,
+                        animationTime,
                         targetObj,
                         newVal,
                         win.requestAnimationFrame,
@@ -751,7 +767,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                         //     debug(cancelled);
                         // },
                         targetProp,
-                        300,
+                        animationTime,
                         targetObj,
                         scrollOffset,
                         win.requestAnimationFrame,
@@ -780,7 +796,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                         //     debug(cancelled);
                         // },
                         targetProp,
-                        300,
+                        animationTime,
                         targetObj,
                         newVal,
                         win.requestAnimationFrame,
@@ -1398,6 +1414,15 @@ win.addEventListener("DOMContentLoaded", () => {
         showHideContentMask(false);
     }
 
+    if (!win.READIUM2.isFixedLayout && !win.READIUM2.isAudio) {
+        const scrollElement = getScrollingElement(win.document);
+
+        // without this CSS hack, the paginated scrolling is SUPER janky!
+        if (!(scrollElement as HTMLElement).classList.contains(ZERO_TRANSFORM_CLASS)) {
+            (scrollElement as HTMLElement).classList.add(ZERO_TRANSFORM_CLASS);
+        }
+    }
+
     // testReadiumCSS(readiumcssJson);
 
     // innerWidth/Height can be zero at this rendering stage! :(
@@ -1642,6 +1667,7 @@ function loaded(forced: boolean) {
                 }
                 // debug("ResizeObserver");
 
+                invalidateBoundingClientRectOfDocumentBody(win);
                 (win.document.body as any).tabbables = undefined;
 
                 // debug("++++ scrollToHashDebounced from ResizeObserver");
@@ -1754,6 +1780,22 @@ function loaded(forced: boolean) {
         }
     });
 
+    const onScrollRaw = () => {
+        if (!win.document || !win.document.documentElement) {
+            return;
+        }
+
+        const el = win.READIUM2.locationHashOverride; // || win.READIUM2.hashElement
+        if (el && computeVisibility_(el)) {
+            return;
+        }
+
+        const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
+        processXYRaw(x, 0, false);
+    };
+    const onScrollDebounced = debounce(() => {
+        onScrollRaw();
+    }, 300);
     setTimeout(() => {
         win.addEventListener("scroll", (_ev: Event) => {
 
@@ -1762,17 +1804,15 @@ function loaded(forced: boolean) {
                 return;
             }
 
+            if (_lastAnimState && _lastAnimState.animating) {
+                return;
+            }
+
             if (!win.document || !win.document.documentElement) {
                 return;
             }
 
-            const el = win.READIUM2.locationHashOverride; // || win.READIUM2.hashElement
-            if (el && computeVisibility_(el)) {
-                return;
-            }
-
-            const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
-            processXYDebounced(x, 0, false);
+            onScrollDebounced();
         });
     }, 200);
 

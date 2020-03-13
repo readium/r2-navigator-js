@@ -5,6 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+export const ZERO_TRANSFORM_CLASS = "r2-zeroTransform";
 export const SKIP_LINK_ID = "r2-skip-link";
 export const LINK_TARGET_CLASS = "r2-link-target";
 
@@ -535,6 +536,12 @@ export const targetCssStyles = `
 `;
 
 export const selectionCssStyles = `
+
+.${ZERO_TRANSFORM_CLASS} {
+    will-change: scroll-position;
+    transform: translateX(0px);
+}
+
 :root[style] ::selection,
 :root ::selection {
 background: rgb(155, 179, 240) !important;
