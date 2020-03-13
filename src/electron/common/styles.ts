@@ -671,6 +671,7 @@ export const readPosCssStyles = `
     outline-offset: 0px !important;
 }`;
 
+export const AUDIO_BUFFER_CANVAS_ID = "r2-audio-buffer-canvas";
 export const AUDIO_PROGRESS_CLASS = "r2-audio-progress";
 export const AUDIO_ID = "r2-audio";
 export const AUDIO_BODY_ID = "r2-audio-body";

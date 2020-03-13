@@ -8,18 +8,18 @@
 import { debounce } from "debounce";
 import { ipcRenderer } from "electron";
 
+import { DEBUG_AUDIO } from "../../common/audiobook";
 import {
     IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READING_LOCATION,
     R2_EVENT_AUDIO_DO_PAUSE, R2_EVENT_AUDIO_DO_PLAY, R2_EVENT_PAGE_TURN_RES,
     R2_EVENT_READING_LOCATION,
 } from "../../common/events";
 import {
-    AUDIO_COVER_ID, AUDIO_FORWARD_ID, AUDIO_ID, AUDIO_NEXT_ID, AUDIO_PERCENT_ID, AUDIO_PLAYPAUSE_ID,
-    AUDIO_PREVIOUS_ID, AUDIO_PROGRESS_CLASS, AUDIO_REWIND_ID, AUDIO_SLIDER_ID, AUDIO_TIME_ID,
+    AUDIO_BUFFER_CANVAS_ID, AUDIO_COVER_ID, AUDIO_FORWARD_ID, AUDIO_ID, AUDIO_NEXT_ID,
+    AUDIO_PERCENT_ID, AUDIO_PLAYPAUSE_ID, AUDIO_PREVIOUS_ID, AUDIO_PROGRESS_CLASS, AUDIO_REWIND_ID,
+    AUDIO_SLIDER_ID, AUDIO_TIME_ID,
 } from "../../common/styles";
 import { IReadiumElectronWebviewWindow } from "./state";
-
-// const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
 const win = (global as any).window as IReadiumElectronWebviewWindow;
 
@@ -50,6 +50,54 @@ export function setupAudioBook(_docTitle: string | undefined) {
     const nextElement = win.document.getElementById(AUDIO_NEXT_ID) as HTMLButtonElement;
     const rewindElement = win.document.getElementById(AUDIO_REWIND_ID) as HTMLButtonElement;
     const forwardElement = win.document.getElementById(AUDIO_FORWARD_ID) as HTMLButtonElement;
+
+    const bufferCanvasElement = DEBUG_AUDIO ?
+        win.document.getElementById(AUDIO_BUFFER_CANVAS_ID) as HTMLCanvasElement : undefined;
+    if (bufferCanvasElement) {
+        const context = bufferCanvasElement.getContext("2d");
+        if (context) {
+
+            const refreshBufferCanvas = () => {
+                const pixelsPerSecond = bufferCanvasElement.width / audioElement.duration;
+
+                context.fillStyle = "red";
+                context.fillRect(0, 0, bufferCanvasElement.width, bufferCanvasElement.height);
+
+                context.fillStyle = "green";
+                context.strokeStyle = "magenta";
+
+                console.log(`audio -- buffered.length: ${audioElement.buffered.length}`);
+                for (let i = 0; i < audioElement.buffered.length; i++) {
+
+                    const start = audioElement.buffered.start(i);
+                    const end = audioElement.buffered.end(i);
+
+                    console.log(`audio -- buffered: ${start} ... ${end}`);
+
+                    const x1 = start * pixelsPerSecond;
+                    const x2 = end * pixelsPerSecond;
+                    const w = x2 - x1;
+
+                    context.fillRect(x1, 0, w, bufferCanvasElement.height);
+                    context.rect(x1, 0, w, bufferCanvasElement.height);
+                    context.stroke();
+                }
+            };
+            const refreshBufferCanvasThrottled = throttle(() => {
+                refreshBufferCanvas();
+            }, 500);
+
+            context.fillStyle = "silver";
+            context.fillRect(0, 0, bufferCanvasElement.width, bufferCanvasElement.height);
+
+            audioElement.addEventListener("timeupdate", () => {
+                if (audioElement.duration <= 0) {
+                    return;
+                }
+                refreshBufferCanvasThrottled();
+            });
+        }
+    }
 
     ipcRenderer.on(R2_EVENT_AUDIO_DO_PLAY, async (_event: any) => {
         await audioElement.play();

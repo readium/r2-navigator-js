@@ -14,7 +14,7 @@ import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
 import { Link } from "@r2-shared-js/models/publication-link";
 import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
 
-import { IAudioPlaybackInfo } from "../common/audiobook";
+import { DEBUG_AUDIO, IAudioPlaybackInfo } from "../common/audiobook";
 import { IDocInfo } from "../common/document";
 import {
     IEventPayload_R2_EVENT_LINK, IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
@@ -31,9 +31,9 @@ import {
     READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl, convertHttpUrlToCustomScheme,
 } from "../common/sessions";
 import {
-    AUDIO_BODY_ID, AUDIO_CONTROLS_ID, AUDIO_COVER_ID, AUDIO_FORWARD_ID, AUDIO_ID, AUDIO_NEXT_ID,
-    AUDIO_PERCENT_ID, AUDIO_PLAYPAUSE_ID, AUDIO_PREVIOUS_ID, AUDIO_REWIND_ID, AUDIO_SECTION_ID,
-    AUDIO_SLIDER_ID, AUDIO_TIME_ID, AUDIO_TITLE_ID,
+    AUDIO_BODY_ID, AUDIO_BUFFER_CANVAS_ID, AUDIO_CONTROLS_ID, AUDIO_COVER_ID, AUDIO_FORWARD_ID,
+    AUDIO_ID, AUDIO_NEXT_ID, AUDIO_PERCENT_ID, AUDIO_PLAYPAUSE_ID, AUDIO_PREVIOUS_ID,
+    AUDIO_REWIND_ID, AUDIO_SECTION_ID, AUDIO_SLIDER_ID, AUDIO_TIME_ID, AUDIO_TITLE_ID,
 } from "../common/styles";
 import {
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
@@ -810,12 +810,27 @@ function loadLink(
     //<![CDATA[
 
     const DEBUG_AUDIO = ${IS_DEV};
+    const DEBUG_AUDIO_X = ${DEBUG_AUDIO};
 
     document.addEventListener("DOMContentLoaded", () => {
         const _audioElement = document.getElementById("${AUDIO_ID}");
 
         if (DEBUG_AUDIO)
         {
+            _audioElement.addEventListener("error", function()
+                {
+                    console.debug("-1) error");
+                    if (_audioElement.error) {
+                        // 1 === MEDIA_ERR_ABORTED
+                        // 2 === MEDIA_ERR_NETWORK
+                        // 3 === MEDIA_ERR_DECODE
+                        // 4 === MEDIA_ERR_SRC_NOT_SUPPORTED
+                        console.debug(_audioElement.error.code);
+                        console.debug(_audioElement.error.message);
+                    }
+                }
+            );
+
             _audioElement.addEventListener("load", function()
                 {
                     console.debug("0) load");
@@ -884,19 +899,81 @@ function loadLink(
 
             _audioElement.addEventListener("seeked", function()
                 {
-                    console.debug("X) seeked");
+                    console.debug("11) seeked");
                 }
             );
 
-            _audioElement.addEventListener("timeupdate", function()
-                {
-                    // console.debug("Y) timeupdate");
-                }
-            );
+            if (DEBUG_AUDIO_X) {
+                _audioElement.addEventListener("timeupdate", function()
+                    {
+                        console.debug("12) timeupdate");
+                    }
+                );
+            }
 
             _audioElement.addEventListener("seeking", function()
                 {
-                    console.debug("Z) seeking");
+                    console.debug("13) seeking");
+                }
+            );
+
+            _audioElement.addEventListener("waiting", function()
+                {
+                    console.debug("14) waiting");
+                }
+            );
+
+            _audioElement.addEventListener("volumechange", function()
+                {
+                    console.debug("15) volumechange");
+                }
+            );
+
+            _audioElement.addEventListener("suspend", function()
+                {
+                    console.debug("16) suspend");
+                }
+            );
+
+            _audioElement.addEventListener("stalled", function()
+                {
+                    console.debug("17) stalled");
+                }
+            );
+
+            _audioElement.addEventListener("ratechange", function()
+                {
+                    console.debug("18) ratechange");
+                }
+            );
+
+            _audioElement.addEventListener("playing", function()
+                {
+                    console.debug("19) playing");
+                }
+            );
+
+            _audioElement.addEventListener("interruptend", function()
+                {
+                    console.debug("20) interruptend");
+                }
+            );
+
+            _audioElement.addEventListener("interruptbegin", function()
+                {
+                    console.debug("21) interruptbegin");
+                }
+            );
+
+            _audioElement.addEventListener("emptied", function()
+                {
+                    console.debug("22) emptied");
+                }
+            );
+
+            _audioElement.addEventListener("abort", function()
+                {
+                    console.debug("23) abort");
                 }
             );
         }
@@ -909,9 +986,19 @@ function loadLink(
 <section id="${AUDIO_SECTION_ID}">
 ${title ? `<h3 id="${AUDIO_TITLE_ID}">${title}</h3>` : ``}
 ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${coverLink.Height ? `height="${coverLink.Height}"` : ""} ${coverLink.Width ? `width="${coverLink.Width}"` : ""} ${coverLink.Width || coverLink.Height ? `style="${coverLink.Height ? `height: ${coverLink.Height}px !important;` : ""} ${coverLink.Width ? `width: ${coverLink.Width}px !important;` : ""}"` : ""}/>` : ``}
-    <audio id="${AUDIO_ID}" controlszz="controlszz" autoplay="autoplay">
+    <audio
+        id="${AUDIO_ID}"
+        ${DEBUG_AUDIO ? `controlsx="controlsx"` : ""}
+        autoplay="autoplay"
+        preload="metadata">
+
         <source src="${uriStr_/*linkPath*/}" type="${pubLink.TypeLink}" />
     </audio>
+    ${DEBUG_AUDIO ?
+    `
+<canvas id="${AUDIO_BUFFER_CANVAS_ID}" width="500" height="20"> </canvas>
+    `
+    : ""}
     <div id="${AUDIO_CONTROLS_ID}">
         <button id="${AUDIO_PREVIOUS_ID}"></button>
         <button id="${AUDIO_REWIND_ID}"></button>
