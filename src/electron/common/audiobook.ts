@@ -6,7 +6,7 @@
 // ==LICENSE-END==
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
-export const DEBUG_AUDIO = IS_DEV && true;
+export const DEBUG_AUDIO = IS_DEV && false;
 
 export interface IAudioPlaybackInfo {
     globalDuration: number | undefined;

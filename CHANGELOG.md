@@ -1,10 +1,32 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.47...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.48...develop
 
 Changes:
 * TODO
+
+# 1.1.48
+
+> Build environment: NodeJS `12.16.1`, NPM `6.14.2`
+
+Changes:
+* NPM package updates (minor semantic version increments)
+* ReadiumCSS upgrade + fixed a subtle bug related to 'null' origin in the case of audio book (HTML template with data: URL + base) + API updates to allow app host to pass configuration instead of navigator "pulling" data as needed (this change is required for contextual / per-publication ReadiumCSS presets)
+* Performance: significant improvements in annotations / highlights rendering, ReadiumCSS background-color override, animated page scroll
+* Audiobooks: added debugging UI and console messages to help troubleshoot random playback break problems
+* Usability: avoid unnecessary reading location recording when scrolling, if currently-recorded element is already in the visible viewport (scroll and paginated modes)
+* Accessibility: consider that CSS selector link is equivalent to hash fragment identifier (e.g. typical TOC heading), for the purpose of setting the destination for the top-level skip-hyperlink (which restores previously-linked bookmarks, etc.)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.48/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.48/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.48
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.47...v1.1.48
 
 # 1.1.47
 
