@@ -1142,7 +1142,7 @@ export interface LocatorExtended {
     docInfo: IDocInfo | undefined;
 
     // not NavDoc epub:type="page-list",
-    // but target HTML document's epub:type="pagebreak"
+    // but target HTML document's epub:type="pagebreak" / role="doc-pagebreak"
     // (nearest preceding ancestor/sibling)
     epubPage: string | undefined;
 }

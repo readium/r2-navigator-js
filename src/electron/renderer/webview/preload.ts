@@ -2482,7 +2482,7 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): string | u
         const xpathResult = win.document.evaluate(
             // `//*[contains(@epub:type,'pagebreak')]`,
             // `//*[tokenize(@epub:type,'\s+')='pagebreak']`
-            `//*[contains(concat(' ', normalize-space(@epub:type), ' '), ' pagebreak ')]`,
+            `//*[contains(concat(' ', normalize-space(@epub:type), ' '), ' pagebreak ') or contains(concat(' ', normalize-space(role), ' '), ' doc-pagebreak ')]`,
             win.document.body,
             namespaceResolver,
             XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
@@ -2492,10 +2492,14 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): string | u
             const n = xpathResult.snapshotItem(i);
             if (n) {
                 const el = n as Element;
-                if (el.textContent) {
+                const elTitle = el.getAttribute("title");
+                const elLabel = el.getAttribute("aria-label");
+                const elText = el.textContent;
+                const pageLabel = elTitle || elLabel || elText;
+                if (pageLabel) {
                     const pageBreak: IPageBreak = {
                         element: el,
-                        text: el.textContent,
+                        text: pageLabel,
                     };
                     if (!_allEpubPageBreaks) {
                         _allEpubPageBreaks = [];

@@ -85,7 +85,7 @@ export interface IEventPayload_R2_EVENT_READING_LOCATION extends Locator {
     selectionIsNew: boolean | undefined;
 
     // not NavDoc epub:type="page-list",
-    // but target HTML document's epub:type="pagebreak"
+    // but target HTML document's epub:type="pagebreak" / role="doc-pagebreak"
     // (nearest preceding ancestor/sibling)
     epubPage: string | undefined;
 }
