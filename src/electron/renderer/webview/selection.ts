@@ -386,10 +386,12 @@ export function convertRange(
         cfi,
 
         endContainerChildTextNodeIndex,
+        endContainerElementCFI: endElementCfi,
         endContainerElementCssSelector,
         endOffset: range.endOffset,
 
         startContainerChildTextNodeIndex,
+        startContainerElementCFI: startElementCfi,
         startContainerElementCssSelector,
         startOffset: range.startOffset,
     };

@@ -2541,8 +2541,8 @@ const notifyReadingLocationRaw = () => {
 
     let progressionData: IProgressionData | undefined;
 
-    const cssSelector = getCssSelector(win.READIUM2.locationHashOverride);
-    const cfi = computeCFI(win.READIUM2.locationHashOverride);
+    let cssSelector = getCssSelector(win.READIUM2.locationHashOverride);
+    let cfi = computeCFI(win.READIUM2.locationHashOverride);
     let progression = 0;
     if (win.READIUM2.isFixedLayout) {
         progression = 1;
@@ -2564,6 +2564,13 @@ const notifyReadingLocationRaw = () => {
     //         );
     //     }
     // }
+
+    // text selections created by screen readers do not trigger mouse click on container element,
+    // and this makes sense anyway in the general case (start position of the selection is the location to focus on)
+    if (selInfo) {
+        cssSelector = selInfo.rangeInfo.startContainerElementCssSelector;
+        cfi = selInfo.rangeInfo.startContainerElementCFI;
+    }
 
     const text = selInfo ? {
         after: undefined, // TODO?

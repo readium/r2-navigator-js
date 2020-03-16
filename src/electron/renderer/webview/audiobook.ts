@@ -250,7 +250,7 @@ export function setupAudioBook(_docTitle: string | undefined) {
             },
             paginationInfo: undefined,
             selectionInfo: undefined,
-            selectionIsNew: false,
+            selectionIsNew: undefined,
             text: undefined,
             title: _docTitle,
         };
