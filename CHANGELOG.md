@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.48...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.49...develop
 
 Changes:
 * TODO
+
+# 1.1.49
+
+> Build environment: NodeJS `12.16.1`, NPM `6.14.2`
+
+Changes:
+* fix: when there is a text selection, the reading location is the start container of the selection. Also added CFI indicator for start/end selection containers (in addition to existing CSS selector)
+* fix: role=doc-pagebreak in addition to epub:type=pagebreak, and pagebreak label now obtained from title and aria-label attributes in addition to element's textual descendant
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.49/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.49/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.49
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.48...v1.1.49
 
 # 1.1.48
 
