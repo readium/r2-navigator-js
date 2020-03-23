@@ -733,6 +733,18 @@ export const audioCssStyles = `
     cursor: wait;
 }
 
+#${AUDIO_BUFFER_CANVAS_ID} {
+    width: 500px;
+    height: 20px;
+
+    margin-left: auto;
+    margin-right: auto;
+
+    margin-bottom: 1em;
+
+    display: block;
+}
+
 #${AUDIO_ID} {
     display: block;
     margin-left: auto;
