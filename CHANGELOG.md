@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.49...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.50...develop
 
 Changes:
 * TODO
+
+# 1.1.50
+
+> Build environment: NodeJS `12.16.1`, NPM `6.14.3`
+
+Changes:
+* in debug / development mode: context menu for "inspect element" at x,y coordinates, with automatic forced-focus on devtools window
+* audiobook error event now console logged in normal non-debug mode
+* in development mode with special audio debug enabled: the buffering tracking element (HTML canvas) is now centered correctly
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.50/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.50/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.50
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.49...v1.1.50
 
 # 1.1.49
 
