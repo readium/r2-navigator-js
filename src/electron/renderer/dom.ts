@@ -9,6 +9,7 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 
 import { debounce } from "debounce";
 import * as debug_ from "debug";
+import { remote } from "electron";
 
 import { Locator } from "@r2-shared-js/models/locator";
 import { Publication } from "@r2-shared-js/models/publication";
@@ -144,8 +145,52 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
 
     wv.addEventListener("dom-ready", () => {
         // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webcontents
-        // wc.openDevTools({ mode: "detach" });
+
         wv.clearHistory();
+
+        if (IS_DEV) {
+            const wc = wv.getWebContents();
+            wc.on("context-menu", (_ev, params) => {
+                const { x, y } = params;
+                const openDevToolsAndInspect = () => {
+                    const devToolsOpened = () => {
+                        wc.off("devtools-opened", devToolsOpened);
+                        wc.inspectElement(x, y);
+
+                        setTimeout(() => {
+                            if (wc.isDevToolsOpened()) {
+                                wc.devToolsWebContents.focus();
+                            }
+                        }, 500);
+                    };
+                    wc.on("devtools-opened", devToolsOpened);
+                    wc.openDevTools({ activate: true, mode: "detach" });
+                };
+                remote.Menu.buildFromTemplate([{
+                    click: () => {
+                        const wasOpened = wc.isDevToolsOpened();
+                        if (!wasOpened) {
+                            openDevToolsAndInspect();
+                        } else {
+                            if (!wc.isDevToolsFocused()) {
+                                // wc.toggleDevTools();
+                                wc.closeDevTools();
+
+                                setImmediate(() => {
+                                    openDevToolsAndInspect();
+                                });
+                            } else {
+                                // this should never happen,
+                                // as the right-click context menu occurs with focus
+                                // in BrowserWindow / WebView's WebContents
+                                wc.inspectElement(x, y);
+                            }
+                        }
+                    },
+                    label: "Inspect element",
+                }]).popup({window: remote.getCurrentWindow()});
+            });
+        }
 
         if (win.READIUM2) {
             ttsClickEnable(win.READIUM2.ttsClickEnabled);
