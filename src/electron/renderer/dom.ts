@@ -180,9 +180,10 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
                                     openDevToolsAndInspect();
                                 });
                             } else {
-                                // this should never happen,
-                                // as the right-click context menu occurs with focus
-                                // in BrowserWindow / WebView's WebContents
+                                // right-click context menu normally occurs when focus
+                                // is in BrowserWindow / WebView's WebContents,
+                                // but some platforms (e.g. MacOS) allow mouse interaction
+                                // when the window is in the background.
                                 wc.inspectElement(x, y);
                             }
                         }
