@@ -9,7 +9,7 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 
 import { debounce } from "debounce";
 import * as debug_ from "debug";
-import { remote } from "electron";
+import { remote, webContents } from "electron";
 
 import { Locator } from "@r2-shared-js/models/locator";
 import { Publication } from "@r2-shared-js/models/publication";
@@ -149,7 +149,9 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
         wv.clearHistory();
 
         if (IS_DEV) {
-            const wc = wv.getWebContents();
+            const wc = remote.webContents.fromId(wv.getWebContentsId());
+            // const wc = wv.getWebContents();
+
             wc.on("context-menu", (_ev, params) => {
                 const { x, y } = params;
                 const openDevToolsAndInspect = () => {
@@ -242,7 +244,10 @@ if (ENABLE_WEBVIEW_RESIZE) {
         // scrollW/H: like client, but includes hidden (overflow) areas
         const width = webview.clientWidth;
         const height = webview.clientHeight;
-        const wc = webview.getWebContents();
+
+        const wc = webContents.fromId(webview.getWebContentsId());
+        // const wc = webview.getWebContents();
+
         if (wc && (wc as any).setSize && width && height) {
             (wc as any).setSize({ // wc is WebContents, works in Electron < 3.0
                 normal: {
