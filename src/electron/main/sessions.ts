@@ -7,8 +7,12 @@
 
 import * as debug_ from "debug";
 import {
-    CertificateVerifyProcProcRequest, RedirectRequest, Request, app, protocol, session,
+    CertificateVerifyProcProcRequest, RedirectRequest, Request, StreamProtocolResponse, app,
+    protocol, session,
 } from "electron";
+import * as request from "request";
+import * as requestPromise from "request-promise-native";
+import { PassThrough } from "stream";
 
 import { Server } from "@r2-streamer-js/http/server";
 
@@ -17,6 +21,8 @@ import {
 } from "../common/sessions";
 
 const debug = debug_("r2:navigator#electron/main/sessions");
+
+const USE_STREAM_PROTOCOL_INSTEAD_OF_HTTP = true;
 
 interface PromiseFulfilled<T> {
     status: "fulfilled";
@@ -109,7 +115,7 @@ export function secureSessions(server: Server) {
 
     // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#session
     const setCertificateVerifyProcCB = (
-        request: CertificateVerifyProcProcRequest,
+        req: CertificateVerifyProcProcRequest,
         callback: (verificationResult: number) => void) => {
         // debug("setCertificateVerifyProc");
         // debug(request);
@@ -118,7 +124,7 @@ export function secureSessions(server: Server) {
             const info = server.serverInfo();
             if (info) {
                 // debug(info);
-                if (request.hostname === info.urlHost) {
+                if (req.hostname === info.urlHost) {
                     callback(0); // OK
                     return;
                 }
@@ -187,21 +193,137 @@ export function secureSessions(server: Server) {
     // });
 }
 
+const streamProtocolHandler = async (
+    req: Request,
+    callback: (stream?: (NodeJS.ReadableStream) | (StreamProtocolResponse)) => void) => {
+
+    // debug("streamProtocolHandler:");
+    // debug(req.url);
+    // debug(req.referrer);
+    // debug(req.method);
+    // debug(req.headers);
+
+    const url = convertCustomSchemeToHttpUrl(req.url);
+    // debug(url);
+
+    const u = new URL(url);
+    let ref = u.origin;
+    // debug(ref);
+    if (req.referrer && req.referrer.trim()) {
+        ref = req.referrer;
+        // debug(ref);
+    }
+
+    const failure = (err: any) => {
+        debug(err);
+        callback();
+    };
+
+    const success = (response: request.RequestResponse) => {
+
+        const headers: Record<string, (string) | (string[])> = {};
+        Object.keys(response.headers).forEach((header: string) => {
+            const val = response.headers[header];
+
+            // debug(header + " => " + val);
+
+            if (val) {
+                headers[header] = val;
+            }
+        });
+        if (!headers.referer) {
+            headers.referer = ref;
+        }
+
+        // debug(response);
+        // debug(response.body);
+
+        if (response.statusCode && (response.statusCode < 200 || response.statusCode >= 300)) {
+            failure("HTTP CODE " + response.statusCode);
+            return;
+        }
+
+        // let length = 0;
+        // const lengthStr = response.headers["content-length"];
+        // if (lengthStr) {
+        //     length = parseInt(lengthStr, 10);
+        // }
+
+        const stream = new PassThrough();
+        response.pipe(stream);
+
+        const obj = {
+            data: stream, // NodeJS.ReadableStream
+            headers,
+            statusCode: response.statusCode,
+        };
+        callback(obj);
+
+        // let responseStr: string;
+        // if (response.body) {
+        //     debug("RES BODY");
+        //     responseStr = response.body;
+        // } else {
+        //     debug("RES STREAM");
+        //     let responseData: Buffer;
+        //     try {
+        //         responseData = await streamToBufferPromise(response);
+        //     } catch (err) {
+        //         debug(err);
+        //         return;
+        //     }
+        //     responseStr = responseData.toString("utf8");
+        // }
+    };
+
+    // No response streaming! :(
+    // https://github.com/request/request-promise/issues/90
+    const needsStreamingResponse = true;
+
+    if (needsStreamingResponse) {
+        request.get({
+            headers: req.headers,
+            method: "GET",
+            uri: url,
+        })
+        .on("response", (response: request.RequestResponse) => {
+            success(response);
+        })
+        .on("error", (err: any) => {
+            failure(err);
+        });
+    } else {
+        let response: requestPromise.FullResponse;
+        try {
+            // tslint:disable-next-line:await-promise no-floating-promises
+            response = await requestPromise({
+                headers: req.headers,
+                method: "GET",
+                resolveWithFullResponse: true,
+                uri: url,
+            });
+            success(response);
+        } catch (err) {
+            failure(err);
+        }
+    }
+};
 const httpProtocolHandler = (
-    request: Request,
+    req: Request,
     callback: (redirectRequest: RedirectRequest) => void) => {
 
     // debug("httpProtocolHandler:");
-    // debug(request.url);
-    // debug(request.referrer);
-    // debug(request.method);
+    // debug(req.url);
+    // debug(req.referrer);
+    // debug(req.method);
+    // debug(req.headers);
 
-    const url = convertCustomSchemeToHttpUrl(request.url);
+    const url = convertCustomSchemeToHttpUrl(req.url);
+    // debug(url);
 
     callback({
-        method: request.method,
-        // referrer: request.referrer,
-        // session: getWebViewSession() session.defaultSession
+        method: req.method,
+        session: getWebViewSession(), // session.defaultSession
         url,
     });
 };
@@ -248,29 +370,61 @@ export function initSessions() {
         //         }
         //     });
         if (session.defaultSession) {
-            session.defaultSession.protocol.registerHttpProtocol(
-                READIUM2_ELECTRON_HTTP_PROTOCOL,
-                httpProtocolHandler,
-                (error: Error) => {
-                    if (error) {
-                        debug(error);
-                    } else {
-                        debug("registerHttpProtocol OKAY (default session)");
-                    }
-                });
+            if (USE_STREAM_PROTOCOL_INSTEAD_OF_HTTP) {
+
+                session.defaultSession.protocol.registerStreamProtocol(
+                    READIUM2_ELECTRON_HTTP_PROTOCOL,
+                    streamProtocolHandler,
+                    (error: Error) => {
+                        if (error) {
+                            debug("registerStreamProtocol ERROR (default session)");
+                            debug(error);
+                        } else {
+                            debug("registerStreamProtocol OKAY (default session)");
+                        }
+                    });
+            } else {
+                session.defaultSession.protocol.registerHttpProtocol(
+                    READIUM2_ELECTRON_HTTP_PROTOCOL,
+                    httpProtocolHandler,
+                    (error: Error) => {
+                        if (error) {
+                            debug("registerHttpProtocol ERROR (default session)");
+                            debug(error);
+                        } else {
+                            debug("registerHttpProtocol OKAY (default session)");
+                        }
+                    });
+            }
         }
         const webViewSession = getWebViewSession();
         if (webViewSession) {
-            webViewSession.protocol.registerHttpProtocol(
-                READIUM2_ELECTRON_HTTP_PROTOCOL,
-                httpProtocolHandler,
-                (error: Error) => {
-                    if (error) {
-                        debug(error);
-                    } else {
-                        debug("registerHttpProtocol OKAY (webview session)");
-                    }
-                });
+            if (USE_STREAM_PROTOCOL_INSTEAD_OF_HTTP) {
+
+                webViewSession.protocol.registerStreamProtocol(
+                    READIUM2_ELECTRON_HTTP_PROTOCOL,
+                    streamProtocolHandler,
+                    (error: Error) => {
+                        if (error) {
+                            debug("registerStreamProtocol ERROR (webview session)");
+                            debug(error);
+                        } else {
+                            debug("registerStreamProtocol OKAY (webview session)");
+                        }
+                    });
+            } else {
+                webViewSession.protocol.registerHttpProtocol(
+                    READIUM2_ELECTRON_HTTP_PROTOCOL,
+                    httpProtocolHandler,
+                    (error: Error) => {
+                        if (error) {
+                            debug("registerHttpProtocol ERROR (webview session)");
+                            debug(error);
+                        } else {
+                            debug("registerHttpProtocol OKAY (webview session)");
+                        }
+                    });
+            }
 
             webViewSession.setPermissionRequestHandler((wc, permission, callback) => {
                 debug("setPermissionRequestHandler");
