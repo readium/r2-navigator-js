@@ -54,7 +54,9 @@ async function promiseAllSettled<T>(promises: Array<Promise<T>>):
     return Promise.all(promises_);
 }
 
+let _server: Server | undefined; // hacky (global reference context used in streamProtocolHandler callback)
 export function secureSessions(server: Server) {
+    _server = server;
 
     const filter = { urls: ["*://*/*"] };
 
@@ -118,7 +120,7 @@ export function secureSessions(server: Server) {
         req: CertificateVerifyProcProcRequest,
         callback: (verificationResult: number) => void) => {
         // debug("setCertificateVerifyProc");
-        // debug(request);
+        // debug(req);
 
         if (server.isSecured()) {
             const info = server.serverInfo();
@@ -150,8 +152,8 @@ export function secureSessions(server: Server) {
     app.on("certificate-error", (event, _webContents, url, _error, _certificate, callback) => {
         // debug("certificate-error");
         // debug(url);
-        // debug(error);
-        // debug(certificate);
+        // debug(_error);
+        // debug(_certificate);
 
         if (server.isSecured()) {
             const info = server.serverInfo();
@@ -276,14 +278,30 @@ const streamProtocolHandler = async (
         // }
     };
 
+    const reqHeaders = req.headers;
+    if (_server) {
+        const serverUrl = _server.serverUrl();
+
+        if (_server.isSecured() &&
+            ((serverUrl && url.startsWith(serverUrl)) ||
+            url.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://"))) {
+
+            const header = _server.getSecureHTTPHeader(url);
+            if (header) {
+                reqHeaders[header.name] = header.value;
+            }
+        }
+    }
+
     // No response streaming! :(
     // https://github.com/request/request-promise/issues/90
     const needsStreamingResponse = true;
 
     if (needsStreamingResponse) {
         request.get({
-            headers: req.headers,
+            headers: reqHeaders,
             method: "GET",
+            rejectUnauthorized: false, // self-signed certificate
             uri: url,
         })
         .on("response", (response: request.RequestResponse) => {
@@ -297,8 +315,9 @@ const streamProtocolHandler = async (
         try {
             // tslint:disable-next-line:await-promise no-floating-promises
             response = await requestPromise({
-                headers: req.headers,
+                headers: reqHeaders,
                 method: "GET",
+                rejectUnauthorized: false, // self-signed certificate
                 resolveWithFullResponse: true,
                 uri: url,
             });
