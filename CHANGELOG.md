@@ -1,10 +1,30 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.50...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.51...develop
 
 Changes:
 * TODO
+
+# 1.1.51
+
+> Build environment: NodeJS `12.16.1`, NPM `6.14.4`
+
+Changes:
+* NPM updates
+* Electron getWebContents() WebView API deprecation (upcoming breaking change)
+* replaced registerStreamProtocol() with registerHttpProtocol() as the latter was hanging on large resource requests from the HTTP server / streamer
+* registerStreamProtocol() with self-signed certificate passthrough, and encrypted HTTP headers
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.51/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.51/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.51
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.50...v1.1.51
 
 # 1.1.50
 
