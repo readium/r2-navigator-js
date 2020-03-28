@@ -12,13 +12,20 @@ import {
 } from "electron";
 import * as request from "request";
 import * as requestPromise from "request-promise-native";
-import { PassThrough } from "stream";
 
+import { Publication } from "@r2-shared-js/models/publication";
+import { Link } from "@r2-shared-js/models/publication-link";
+import { Transformers } from "@r2-shared-js/transform/transformer";
+import { TTransformFunction, TransformerHTML } from "@r2-shared-js/transform/transformer-html";
 import { Server } from "@r2-streamer-js/http/server";
 
+import { parseDOM, serializeDOM } from "../common/dom";
 import {
     R2_SESSION_WEBVIEW, READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl,
 } from "../common/sessions";
+
+// import { PassThrough } from "stream";
+// import { CounterPassThroughStream } from "@r2-utils-js/_utils/stream/CounterPassThroughStream";
 
 const debug = debug_("r2:navigator#electron/main/sessions");
 
@@ -195,6 +202,8 @@ export function secureSessions(server: Server) {
     // });
 }
 
+// let _streamCounter = 0;
+
 const streamProtocolHandler = async (
     req: Request,
     callback: (stream?: (NodeJS.ReadableStream) | (StreamProtocolResponse)) => void) => {
@@ -250,12 +259,119 @@ const streamProtocolHandler = async (
         // if (lengthStr) {
         //     length = parseInt(lengthStr, 10);
         // }
+        // const counterStream = new CounterPassThroughStream(++_streamCounter);
 
-        const stream = new PassThrough();
-        response.pipe(stream);
+        // // https://nodejs.org/es/docs/guides/backpressuring-in-streams/
+        // const stream = new PassThrough({
+        //     // allowHalfOpen // default true
+        //     // readableHighWaterMark: 16384 * 2, // default 16384 bytes
+        //     // writableHighWaterMark: 16384 * 2, // default 16384 bytes
+        //     // autoDestroy // default false
+        //     // emitClose // default true
+        // });
+        response
+        // .on("finish", function h(this: request.Response) {
+        //     debug("RESPONSE FINISH " + url);
+        // })
+        // .on("end", function h(this: request.Response) {
+        //     debug("RESPONSE END " + url);
+        // })
+        // .on("close", function h(this: request.Response) {
+        //     debug("RESPONSE CLOSE " + url);
+        // })
+        .on("error", function h(this: request.Response) {
+            debug("RESPONSE ERROR " + url);
+        })
+        // .on("pipe", function h(this: request.Response) {
+        //     debug("RESPONSE PIPE " + url);
+        // })
+        // .on("unpipe", function h(this: request.Response) {
+        //     debug("RESPONSE UNPIPE " + url);
+        // })
+        // .on("drain", function h(this: request.Response) {
+        //     debug("RESPONSE DRAIN " + url);
+        // })
+        // .on("pause", function h(this: request.Response) {
+        //     debug("RESPONSE PAUSE " + url);
+        // })
+        // .on("resume", function h(this: request.Response) {
+        //     debug("RESPONSE RESUME " + url);
+        // })
+        // .pipe(counterStream) // readable (response) --> writable (counterStream is duplex)
+        // .on("progress", function f(this: CounterPassThroughStream) {
+        //     debug("CounterPassThroughStream PROGRESS: " +
+        //         this.id + " -- " + this.bytesReceived + " = " + url);
+        // })
+        // .on("finish", function f(this: CounterPassThroughStream) {
+        //     debug("CounterPassThroughStream FINISH: " +
+        //         this.id +
+        //         " -- " + this.bytesReceived + " = " + url);
+        // })
+        // .on("end", function f(this: CounterPassThroughStream) {
+        //     debug("CounterPassThroughStream END: " +
+        //         this.id + " = " + url);
+        // })
+        // .on("close", function f(this: CounterPassThroughStream) {
+        //     debug("CounterPassThroughStream CLOSE: " +
+        //         this.id + " = " + url);
+        // })
+        // .on("error", function f(this: CounterPassThroughStream) {
+        //     debug("CounterPassThroughStream ERROR: " +
+        //         this.id + " = " + url);
+        // })
+        // .on("pipe", function f(this: CounterPassThroughStream) {
+        //     debug("CounterPassThroughStream PIPE: " +
+        //         this.id + " = " + url);
+        // })
+        // .on("unpipe", function f(this: CounterPassThroughStream) {
+        //     debug("CounterPassThroughStream UNPIPE: " +
+        //         this.id + " = " + url);
+        // })
+        // .on("drain", function f(this: CounterPassThroughStream) {
+        //     debug("CounterPassThroughStream DRAIN: " +
+        //         this.id + " = " + url);
+        // })
+        // .on("pause", function f(this: CounterPassThroughStream) {
+        //     debug("CounterPassThroughStream PAUSE: " +
+        //         this.id + " = " + url);
+        // })
+        // .on("resume", function f(this: CounterPassThroughStream) {
+        //     debug("CounterPassThroughStream RESUME: " +
+        //         this.id + " = " + url);
+        // })
+        ;
+        // .pipe(stream)
+        // .on("finish", function h(this: PassThrough) {
+        //     debug("RESPONSE>STREAM FINISH " + url);
+        // })
+        // .on("end", function h(this: PassThrough) {
+        //     debug("RESPONSE>STREAM END " + url);
+        // })
+        // .on("close", function h(this: PassThrough) {
+        //     debug("RESPONSE>STREAM CLOSE " + url);
+        // })
+        // .on("error", function h(this: PassThrough) {
+        //     debug("RESPONSE>STREAM ERROR " + url);
+        // })
+        // .on("pipe", function h(this: PassThrough) {
+        //     debug("RESPONSE>STREAM PIPE " + url);
+        // })
+        // .on("unpipe", function h(this: PassThrough) {
+        //     debug("RESPONSE>STREAM UNPIPE " + url);
+        // })
+        // .on("drain", function h(this: PassThrough) {
+        //     debug("RESPONSE>STREAM DRAIN " + url);
+        // })
+        // .on("pause", function h(this: PassThrough) {
+        //     debug("RESPONSE>STREAM PAUSE " + url);
+        // })
+        // .on("resume", function h(this: PassThrough) {
+        //     debug("RESPONSE>STREAM RESUME " + url);
+        // })
+        // ;
 
         const obj = {
-            data: stream, // NodeJS.ReadableStream
+            data: response, // NodeJS.ReadableStream
             headers,
             statusCode: response.statusCode,
         };
@@ -347,7 +463,125 @@ const httpProtocolHandler = (
     });
 };
 
+// const _htmlNamespaces: { [prefix: string]: string } = {
+//     epub: "http://www.idpf.org/2007/ops",
+// };
+const transformerAudioVideo: TTransformFunction = (
+    _publication: Publication,
+    link: Link,
+    url: string | undefined,
+    htmlStr: string,
+    _sessionInfo: string | undefined,
+): string => {
+    if (!url) {
+        return htmlStr;
+    }
+
+    if (htmlStr.indexOf("<audio") < 0 && htmlStr.indexOf("<video") < 0) {
+        return htmlStr;
+    }
+
+    // let's remove the DOCTYPE (which can contain entities)
+    // let's replace the body with empty txt (we only need the body start tag, not the element contents)
+
+    const iHtmlStart = htmlStr.indexOf("<html");
+    if (iHtmlStart < 0) {
+        return htmlStr;
+    }
+    const iBodyStart = htmlStr.indexOf("<body");
+    if (iBodyStart < 0) {
+        return htmlStr;
+    }
+    const parseableChunk = htmlStr.substr(iHtmlStart);
+    const htmlStrToParse = `<?xml version="1.0" encoding="utf-8"?>${parseableChunk}`;
+
+    // import * as mime from "mime-types";
+    let mediaType = "application/xhtml+xml"; // mime.lookup(link.Href);
+    if (link && link.TypeLink) {
+        mediaType = link.TypeLink;
+    }
+
+    // debug(htmlStrToParse);
+    const documant = parseDOM(htmlStrToParse, mediaType);
+
+    // debug(url);
+    let urlHttp = url;
+    if (urlHttp.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+        urlHttp = convertCustomSchemeToHttpUrl(urlHttp);
+    }
+    const url_ = new URL(urlHttp);
+    url_.search = "";
+    url_.hash = "";
+    const urlStr = url_.toString();
+    // debug(urlStr);
+
+    const patchElementSrc = (el: Element) => {
+        const src = el.getAttribute("src");
+        if (!src || src[0] === "/" ||
+            /^http[s]?:\/\//.test(src) || /^data:\/\//.test(src)) {
+            return;
+        }
+        let src_ = src;
+        if (src_.startsWith("./")) {
+            src_ = src_.substr(2);
+        }
+        src_ = `${urlStr}/../${src_}`;
+        debug(`VIDEO/AUDIO SRC PATCH: ${src} ==> ${src_}`);
+        el.setAttribute("src", src_);
+    };
+    const processTree = (el: Element) => {
+        let elName = el.nodeName.toLowerCase();
+        if (elName === "audio" || elName === "video") {
+            patchElementSrc(el);
+
+            if (!el.childNodes) {
+                return;
+            }
+            // tslint:disable-next-line: prefer-for-of
+            for (let i = 0; i < el.childNodes.length; i++) {
+                const childNode = el.childNodes[i];
+                if (childNode.nodeType === 1) { // Node.ELEMENT_NODE
+                    elName = (childNode as Element).nodeName.toLowerCase();
+                    if (elName === "source") {
+                        patchElementSrc(childNode as Element);
+                    }
+                }
+            }
+        } else {
+            if (!el.childNodes) {
+                return;
+            }
+            // tslint:disable-next-line: prefer-for-of
+            for (let i = 0; i < el.childNodes.length; i++) {
+                const childNode = el.childNodes[i];
+                if (childNode.nodeType === 1) { // Node.ELEMENT_NODE
+                    processTree(childNode as Element);
+                }
+            }
+        }
+    };
+    processTree(documant.body);
+
+    const serialized = serializeDOM(documant);
+
+    const prefix = htmlStr.substr(0, iHtmlStart);
+
+    const iHtmlStart_ = serialized.indexOf("<html");
+    if (iHtmlStart_ < 0) {
+        return htmlStr;
+    }
+
+    const remaining = serialized.substr(iHtmlStart_);
+    const newStr = `${prefix}${remaining}`;
+    // debug(newStr);
+    return newStr;
+};
+
 export function initSessions() {
+
+    // because registerStreamProtocol() breaks HTTP byte range partial requests
+    // (see streamProtocolHandler() above)
+    Transformers.instance().add(new TransformerHTML(transformerAudioVideo));
 
     // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webframe
     if ((protocol as any).registerStandardSchemes) {

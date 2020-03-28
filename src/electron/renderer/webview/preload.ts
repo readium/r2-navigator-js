@@ -1182,7 +1182,7 @@ let _ignoreScrollEvent = false;
 
 //     let newHTML: string | undefined;
 //     try {
-//         newHTML = transformHTML(oldHTML, readiumcssJson, "application/xhtml+xml");
+//         newHTML = readiumCssTransformHtml(oldHTML, readiumcssJson, "application/xhtml+xml");
 //     } catch (err) {
 //         debug(err);
 //         return;

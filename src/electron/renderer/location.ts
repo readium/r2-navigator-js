@@ -25,7 +25,7 @@ import {
     R2_EVENT_SHIFT_VIEW_X,
 } from "../common/events";
 import { IPaginationInfo } from "../common/pagination";
-import { READIUM2_BASEURL_ID, transformHTML } from "../common/readium-css-inject";
+import { READIUM2_BASEURL_ID, readiumCssTransformHtml } from "../common/readium-css-inject";
 import { ISelectionInfo } from "../common/selection";
 import {
     READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl, convertHttpUrlToCustomScheme,
@@ -800,7 +800,7 @@ function loadLink(
 <head>
     <meta charset="utf-8" />
     <title>${title}</title>
-    <base href="${publicationURL}" id="${READIUM2_BASEURL_ID}" />
+    <base href="${pubJsonUri /* publicationURL */ }" id="${READIUM2_BASEURL_ID}" />
     <style type="text/css">
     /*<![CDATA[*/
     /*]]>*/
@@ -992,7 +992,7 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
         autoplay="autoplay"
         preload="metadata">
 
-        <source src="${uriStr_/*linkPath*/}" type="${pubLink.TypeLink}" />
+        <source src="${uriStr /* linkPath */}" type="${pubLink.TypeLink}" />
     </audio>
     ${DEBUG_AUDIO ?
     `
@@ -1019,7 +1019,7 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
                 if (rcssJson.setCSS) {
                     rcssJson.setCSS.paged = false;
                 }
-                htmlMarkup = transformHTML(htmlMarkup, rcssJson, contentType);
+                htmlMarkup = readiumCssTransformHtml(htmlMarkup, rcssJson, contentType);
 
                 const b64HTML = Buffer.from(htmlMarkup).toString("base64");
                 const dataUri = `data:${contentType};base64,${b64HTML}`;

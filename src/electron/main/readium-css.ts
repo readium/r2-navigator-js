@@ -14,7 +14,7 @@ import { TTransformFunction, TransformerHTML } from "@r2-shared-js/transform/tra
 import { Server } from "@r2-streamer-js/http/server";
 
 import { IEventPayload_R2_EVENT_READIUMCSS } from "../common/events";
-import { transformHTML } from "../common/readium-css-inject";
+import { readiumCssTransformHtml } from "../common/readium-css-inject";
 import { READIUM_CSS_URL_PATH } from "../common/readium-css-settings";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
@@ -65,9 +65,10 @@ export function setupReadiumCSS(
 
     server.expressUse("/" + READIUM_CSS_URL_PATH, express.static(folderPath, staticOptions));
 
-    const transformer: TTransformFunction = (
+    const transformerReadiumCss: TTransformFunction = (
         publication: Publication,
         link: Link,
+        _url: string | undefined,
         str: string,
         sessionInfo: string | undefined,
     ): string => {
@@ -104,10 +105,10 @@ export function setupReadiumCSS(
             if (IS_DEV) {
                 console.log("_____ readiumCssJson.urlRoot (setupReadiumCSS() transformer): ", readiumcssJson.urlRoot);
             }
-            return transformHTML(str, readiumcssJson, mediaType);
+            return readiumCssTransformHtml(str, readiumcssJson, mediaType);
         } else {
             return str;
         }
     };
-    Transformers.instance().add(new TransformerHTML(transformer));
+    Transformers.instance().add(new TransformerHTML(transformerReadiumCss));
 }
