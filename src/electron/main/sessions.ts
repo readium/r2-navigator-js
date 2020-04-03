@@ -22,7 +22,12 @@ import { Server } from "@r2-streamer-js/http/server";
 import { parseDOM, serializeDOM } from "../common/dom";
 import {
     R2_SESSION_WEBVIEW, READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl,
+    convertHttpUrlToCustomScheme,
 } from "../common/sessions";
+import {
+    URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
+    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_SESSION_INFO,
+} from "../renderer/common/url-params";
 
 // import { PassThrough } from "stream";
 // import { CounterPassThroughStream } from "@r2-utils-js/_utils/stream/CounterPassThroughStream";
@@ -204,9 +209,15 @@ export function secureSessions(server: Server) {
 
 // let _streamCounter = 0;
 
+// super hacky!! :(
+// see usages of this boolean...
+let _customUrlProtocolSchemeHandlerWasCalled = false;
+
 const streamProtocolHandler = async (
     req: Request,
     callback: (stream?: (NodeJS.ReadableStream) | (StreamProtocolResponse)) => void) => {
+
+    _customUrlProtocolSchemeHandlerWasCalled = true;
 
     // debug("streamProtocolHandler:");
     // debug(req.url);
@@ -447,6 +458,8 @@ const httpProtocolHandler = (
     req: Request,
     callback: (redirectRequest: RedirectRequest) => void) => {
 
+    _customUrlProtocolSchemeHandlerWasCalled = true;
+
     // debug("httpProtocolHandler:");
     // debug(req.url);
     // debug(req.referrer);
@@ -473,6 +486,13 @@ const transformerAudioVideo: TTransformFunction = (
     htmlStr: string,
     _sessionInfo: string | undefined,
 ): string => {
+    // super hacky! (guarantees that convertCustomSchemeToHttpUrl() is necessary,
+    // unlike this `url` function parameter which is always HTTP as it originates
+    // from the streamer/server)
+    if (!_customUrlProtocolSchemeHandlerWasCalled) {
+        return htmlStr;
+    }
+
     if (!url) {
         return htmlStr;
     }
@@ -576,13 +596,160 @@ const transformerAudioVideo: TTransformFunction = (
     return newStr;
 };
 
-const transformerHttpBase: TTransformFunction = (
+const transformerHttpBaseIframes: TTransformFunction = (
     _publication: Publication,
-    _link: Link,
+    link: Link,
     url: string | undefined,
     htmlStr: string,
     _sessionInfo: string | undefined,
 ): string => {
+    // super hacky! (guarantees that convertCustomSchemeToHttpUrl() is necessary,
+    // unlike this `url` function parameter which is always HTTP as it originates
+    // from the streamer/server)
+    if (!_customUrlProtocolSchemeHandlerWasCalled) {
+        return htmlStr;
+    }
+
+    if (!url) {
+        return htmlStr;
+    }
+
+    if (htmlStr.indexOf("<iframe") < 0) {
+        return htmlStr;
+    }
+
+    // let's remove the DOCTYPE (which can contain entities)
+
+    const iHtmlStart = htmlStr.indexOf("<html");
+    if (iHtmlStart < 0) {
+        return htmlStr;
+    }
+    const iBodyStart = htmlStr.indexOf("<body");
+    if (iBodyStart < 0) {
+        return htmlStr;
+    }
+    const parseableChunk = htmlStr.substr(iHtmlStart);
+    const htmlStrToParse = `<?xml version="1.0" encoding="utf-8"?>${parseableChunk}`;
+
+    // import * as mime from "mime-types";
+    let mediaType = "application/xhtml+xml"; // mime.lookup(link.Href);
+    if (link && link.TypeLink) {
+        mediaType = link.TypeLink;
+    }
+
+    // debug(htmlStrToParse);
+    const documant = parseDOM(htmlStrToParse, mediaType);
+
+    // debug(url);
+    let urlHttp = url;
+    if (!urlHttp.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+        // urlHttp = convertCustomSchemeToHttpUrl(urlHttp);
+        urlHttp = convertHttpUrlToCustomScheme(urlHttp);
+    }
+    const url_ = new URL(urlHttp);
+
+    // const r2_GOTO = url_.searchParams.get(URL_PARAM_GOTO);
+    // const r2_REFRESH = url_.searchParams.get(URL_PARAM_REFRESH);
+    const r2CSS = url_.searchParams.get(URL_PARAM_CSS);
+    const r2ERS = url_.searchParams.get(URL_PARAM_EPUBREADINGSYSTEM);
+    const r2DEBUG = url_.searchParams.get(URL_PARAM_DEBUG_VISUALS);
+    const r2CLIPBOARDINTERCEPT = url_.searchParams.get(URL_PARAM_CLIPBOARD_INTERCEPT);
+    const r2SESSIONINFO = url_.searchParams.get(URL_PARAM_SESSION_INFO);
+
+    // debug(url_.search);
+    // debug(r2CSS);
+    // debug(r2ERS);
+    // debug(r2DEBUG);
+    // debug(r2CLIPBOARDINTERCEPT);
+    // debug(r2SESSIONINFO);
+
+    url_.search = "";
+    url_.hash = "";
+    const urlStr = url_.toString();
+    // debug(urlStr);
+
+    const patchElementSrc = (el: Element) => {
+        const src = el.getAttribute("src");
+        if (!src || src[0] === "/" ||
+            /^http[s]?:\/\//.test(src) || /^data:\/\//.test(src)) {
+            return;
+        }
+        let src_ = src;
+        if (src_.startsWith("./")) {
+            src_ = src_.substr(2);
+        }
+        src_ = `${urlStr}/../${src_}`;
+        const iframeUrl = new URL(src_);
+
+        if (r2CLIPBOARDINTERCEPT) {
+            iframeUrl.searchParams.append(URL_PARAM_CLIPBOARD_INTERCEPT, r2CLIPBOARDINTERCEPT);
+        }
+        if (r2SESSIONINFO) {
+            iframeUrl.searchParams.append(URL_PARAM_SESSION_INFO, r2SESSIONINFO);
+        }
+        if (r2DEBUG) {
+            iframeUrl.searchParams.append(URL_PARAM_DEBUG_VISUALS, r2DEBUG);
+        }
+        if (r2ERS) {
+            iframeUrl.searchParams.append(URL_PARAM_EPUBREADINGSYSTEM, r2ERS);
+        }
+        if (r2CSS) {
+            iframeUrl.searchParams.append(URL_PARAM_CSS, r2CSS);
+        }
+        // debug(iframeUrl.search);
+
+        src_ = iframeUrl.toString();
+        debug(`IFRAME SRC PATCH: ${src} ==> ${src_}`);
+        el.setAttribute("src", src_);
+    };
+    const processTree = (el: Element) => {
+        const elName = el.nodeName.toLowerCase();
+        if (elName === "iframe") {
+            patchElementSrc(el);
+        } else {
+            if (!el.childNodes) {
+                return;
+            }
+            // tslint:disable-next-line: prefer-for-of
+            for (let i = 0; i < el.childNodes.length; i++) {
+                const childNode = el.childNodes[i];
+                if (childNode.nodeType === 1) { // Node.ELEMENT_NODE
+                    processTree(childNode as Element);
+                }
+            }
+        }
+    };
+    processTree(documant.body);
+
+    const serialized = serializeDOM(documant);
+
+    const prefix = htmlStr.substr(0, iHtmlStart);
+
+    const iHtmlStart_ = serialized.indexOf("<html");
+    if (iHtmlStart_ < 0) {
+        return htmlStr;
+    }
+
+    const remaining = serialized.substr(iHtmlStart_);
+    const newStr = `${prefix}${remaining}`;
+    // debug(newStr);
+    return newStr;
+};
+
+const transformerHttpBase: TTransformFunction = (
+    publication: Publication,
+    link: Link,
+    url: string | undefined,
+    htmlStr: string,
+    sessionInfo: string | undefined,
+): string => {
+    // super hacky! (guarantees that convertCustomSchemeToHttpUrl() is necessary,
+    // unlike this `url` function parameter which is always HTTP as it originates
+    // from the streamer/server)
+    if (!_customUrlProtocolSchemeHandlerWasCalled) {
+        return htmlStr;
+    }
+
     if (!url) {
         return htmlStr;
     }
@@ -603,14 +770,25 @@ const transformerHttpBase: TTransformFunction = (
     const urlStr = url_.toString();
     // debug(urlStr);
 
-    const baseStr = `<base href="${urlStr}" />`;
-    const newStr = htmlStr.substr(0, iHead) + baseStr + htmlStr.substr(iHead);
+    const baseStr = `
+<base href="${urlStr}" />
+`;
+    let newStr = htmlStr.substr(0, iHead) + baseStr + htmlStr.substr(iHead);
     // debug(newStr);
+
+    // ensure iframes are fed the original URL base
+    newStr = transformerHttpBaseIframes(
+        publication,
+        link,
+        url,
+        newStr,
+        sessionInfo);
+
     return newStr;
 };
 
-// less costly than statically patching each audio/video src href,
-// and works with any relative URL, even script-generated dynamic ones.
+// this workaround for registerStreamProtocol() woes works with any relative URL,
+// even script-generated dynamic ones.
 const INJECT_HTTP_BASE = true;
 
 export function initSessions() {
