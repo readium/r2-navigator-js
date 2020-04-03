@@ -1,10 +1,32 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.51...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.52...develop
 
 Changes:
 * TODO
+
+# 1.1.52
+
+> Build environment: NodeJS `12.16.1`, NPM `6.14.4`
+
+Changes:
+* NPM updates (minor)
+* workaround for application/xhtml+xml not handled correctly in xmldom lib
+* support for audio/video autoplay (Electron command line switch)
+* support for audio background looping track (epub:type = ibooks:soundtrack)
+* in order to bypass Electron registerStreamProtocol() bugs: instead of static DOM patching of audio and video src URLs (replacement of custom URL protocol/scheme with direct HTTP streamer address), we now inject `<base href="HTTP_URL"/>` (this benefits all resolved absolute URLs, including scripted ones from mutated dynamic DOM, and does not affect the sandboxing of localStorage, IndexedDB etc. which is afforded by the custom URL protocol/scheme)
+* fixed handling of iframes inside publication HTML documents (forwarding of query params, and allows same-origin scripting by bypassing the aforementioned `<base href="HTTP_URL"/>` of the host document, recursively)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.52/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.52/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.52
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.51...v1.1.52
 
 # 1.1.51
 
