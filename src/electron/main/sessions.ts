@@ -615,6 +615,8 @@ const INJECT_HTTP_BASE = true;
 
 export function initSessions() {
 
+    app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
+
     // because registerStreamProtocol() breaks HTTP byte range partial requests
     // (see streamProtocolHandler() above)
     if (INJECT_HTTP_BASE) {
