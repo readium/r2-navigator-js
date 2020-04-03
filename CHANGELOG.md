@@ -1,10 +1,31 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.52...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.53...develop
 
 Changes:
 * TODO
+
+# 1.1.53
+
+> Build environment: NodeJS `12.16.1`, NPM `6.14.4`
+
+Changes:
+* NPM updates (minor)
+* Fixed 'will-navigate' infinite loop introduced by HTML injection of `<base href="HTTP_URL" />`
+* ReadiumCSS is not applied to iframes
+* Improved invisibility "mask" techique, default when ReadiumCSS is HTML-injected, disabled at window.load event
+* Fixed handling of base@href (HTTP URL) vs. the root URL of ReadiumCSS assets
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.53/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.53/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.53
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.52...v1.1.53
 
 # 1.1.52
 
