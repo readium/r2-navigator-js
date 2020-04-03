@@ -78,7 +78,11 @@ export function popupFootNote(
     // debug(htmltxt);
 
     // import * as xmldom from "xmldom";
-    // const dom = new xmldom.DOMParser().parseFromString(htmltxt, "application/xhtml+xml");
+    // not application/xhtml+xml because:
+    // https://github.com/jindw/xmldom/pull/208
+    // https://github.com/jindw/xmldom/pull/242
+    // https://github.com/xmldom/xmldom/blob/3db6ccf3f7ecbde73608490d71f96c727abdd69a/lib/dom-parser.js#L12
+    // const dom = new xmldom.DOMParser().parseFromString(htmltxt, "application/xhtml");
 
     // const payload_: IEventPayload_R2_EVENT_LINK_FOOTNOTE = {
     //     hash: url.hash,
