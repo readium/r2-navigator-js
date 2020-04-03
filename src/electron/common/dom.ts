@@ -19,7 +19,14 @@ export function serializeDOM(documant: Document): string {
 
 export function parseDOM(htmlStrToParse: string, mediaType: string | undefined): Document {
 
-    const documant = typeof mediaType === "string" ?
+    // not application/xhtml+xml because:
+    // https://github.com/jindw/xmldom/pull/208
+    // https://github.com/jindw/xmldom/pull/242
+    // https://github.com/xmldom/xmldom/blob/3db6ccf3f7ecbde73608490d71f96c727abdd69a/lib/dom-parser.js#L12
+    if (mediaType === "application/xhtml+xml") {
+        mediaType = "application/xhtml";
+    }
+    const documant = mediaType ?
         new xmldom.DOMParser().parseFromString(htmlStrToParse, mediaType) :
         new xmldom.DOMParser().parseFromString(htmlStrToParse);
 
