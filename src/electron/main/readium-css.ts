@@ -16,6 +16,7 @@ import { Server } from "@r2-streamer-js/http/server";
 import { IEventPayload_R2_EVENT_READIUMCSS } from "../common/events";
 import { readiumCssTransformHtml } from "../common/readium-css-inject";
 import { READIUM_CSS_URL_PATH } from "../common/readium-css-settings";
+import { URL_PARAM_IS_IFRAME } from "../renderer/common/url-params";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -68,15 +69,21 @@ export function setupReadiumCSS(
     const transformerReadiumCss: TTransformFunction = (
         publication: Publication,
         link: Link,
-        _url: string | undefined,
+        url: string | undefined,
         str: string,
         sessionInfo: string | undefined,
     ): string => {
 
-        // import * as mime from "mime-types";
-        let mediaType = "application/xhtml+xml"; // mime.lookup(link.Href);
-        if (link && link.TypeLink) {
-            mediaType = link.TypeLink;
+        let isIframe = false;
+        if (url) {
+            const url_ = new URL(url);
+            if (url_.searchParams.has(URL_PARAM_IS_IFRAME)) {
+                isIframe = true;
+            }
+        }
+
+        if (isIframe) {
+            return str;
         }
 
         let readiumcssJson = readiumCssGetter(publication, link, sessionInfo);
@@ -105,6 +112,13 @@ export function setupReadiumCSS(
             if (IS_DEV) {
                 console.log("_____ readiumCssJson.urlRoot (setupReadiumCSS() transformer): ", readiumcssJson.urlRoot);
             }
+
+            // import * as mime from "mime-types";
+            let mediaType = "application/xhtml+xml"; // mime.lookup(link.Href);
+            if (link && link.TypeLink) {
+                mediaType = link.TypeLink;
+            }
+
             return readiumCssTransformHtml(str, readiumcssJson, mediaType);
         } else {
             return str;

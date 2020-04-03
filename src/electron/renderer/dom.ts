@@ -93,6 +93,7 @@ export function readiumCssOnOff(rcss?: IEventPayload_R2_EVENT_READIUMCSS) {
 
         if (loc) {
             setTimeout(() => {
+                debug(`readiumCssOnOff -> handleLinkLocator`);
                 handleLinkLocator(loc.locator, activeWebView.READIUM2.readiumCss);
             }, 60);
         }
@@ -393,6 +394,7 @@ export function installNavigatorDOM(
             setTimeout(() => {
                 const loc = getCurrentReadingLocation();
                 if (loc) {
+                    debug(`READIUM2.debug -> handleLinkLocator`);
                     handleLinkLocator(
                         loc.locator,
                         activeWebView ? activeWebView.READIUM2.readiumCss : undefined,
@@ -439,6 +441,7 @@ export function installNavigatorDOM(
     createWebView();
 
     setTimeout(() => {
+        debug(`installNavigatorDOM -> handleLinkLocator`);
         handleLinkLocator(location, rcss);
     }, 100);
 }

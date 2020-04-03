@@ -111,6 +111,7 @@ export function locationHandleIpcMessage(
             uri.hash = "";
             uri.search = "";
             const urlNoQueryParams = uri.toString(); // publicationURL + "/../" + nextOrPreviousSpineItem.Href;
+            debug(`locationHandleIpcMessage R2_EVENT_PAGE_TURN_RES: ${urlNoQueryParams}`);
             // NOTE that decodeURIComponent() must be called on the toString'ed URL urlNoQueryParams
             // tslint:disable-next-line:max-line-length
             // (in case nextOrPreviousSpineItem.Href contains Unicode characters, in which case they get percent-encoded by the URL.toString())
@@ -147,6 +148,7 @@ export function locationHandleIpcMessage(
     } else if (eventChannel === R2_EVENT_LINK) {
         // debug("R2_EVENT_LINK (webview.addEventListener('ipc-message')");
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_LINK;
+        debug(`locationHandleIpcMessage R2_EVENT_LINK: ${payload.url}`);
         handleLinkUrl(payload.url, activeWebView.READIUM2.readiumCss);
     } else if (eventChannel === R2_EVENT_AUDIO_SOUNDTRACK) {
         // debug("R2_EVENT_AUDIO_SOUNDTRACK (webview.addEventListener('ipc-message')");
@@ -256,6 +258,7 @@ export function navLeftOrRight(left: boolean, spineNav?: boolean) {
                 // tslint:disable-next-line:max-line-length
                 // (in case nextOrPreviousSpineItem.Href contains Unicode characters, in which case they get percent-encoded by the URL.toString())
                 const activeWebView = win.READIUM2.getActiveWebView();
+                debug(`navLeftOrRight: ${urlNoQueryParams}`);
                 handleLink(
                     urlNoQueryParams,
                     false,
@@ -289,14 +292,17 @@ export function handleLink(
     useGoto: boolean,
     rcss?: IEventPayload_R2_EVENT_READIUMCSS,
 ) {
+    debug(`handleLink: ${href}`);
 
     const special = href.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
     if (special) {
+        debug(`handleLink R2 URL`);
         const okay = loadLink(href, previous, useGoto, rcss);
         if (!okay) {
             debug(`Readium link fail?! ${href}`);
         }
     } else {
+        debug(`handleLink non-R2 URL`);
         const okay = loadLink(href, previous, useGoto, rcss);
         if (!okay) {
             if (/^http[s]?:\/\/127\.0\.0\.1/.test(href)) { // href.startsWith("https://127.0.0.1")
@@ -321,6 +327,8 @@ export function handleLinkUrl(
     href: string,
     rcss?: IEventPayload_R2_EVENT_READIUMCSS,
 ) {
+    debug(`handleLinkUrl: ${href}`);
+
     handleLink(href, undefined, false, rcss);
 }
 
@@ -328,7 +336,6 @@ export function handleLinkLocator(
     location: Locator | undefined,
     rcss?: IEventPayload_R2_EVENT_READIUMCSS,
 ) {
-
     const publication = win.READIUM2.publication;
     const publicationURL = win.READIUM2.publicationURL;
 
@@ -380,6 +387,8 @@ export function handleLinkLocator(
             ((useGoto) ? ("?" + URL_PARAM_GOTO + "=" +
                 encodeURIComponent_RFC3986(Buffer.from(JSON.stringify(linkToLoadGoto, null, "")).toString("base64"))) :
                 "");
+
+        debug(`handleLinkLocator: ${hrefToLoad}`);
         // NOTE that decodeURIComponent() must be called on the toString'ed URL hrefToLoad
         // tslint:disable-next-line:max-line-length
         // (in case linkToLoad.Href contains Unicode characters, in which case they get percent-encoded by the URL.toString())
@@ -403,6 +412,7 @@ export function reloadContent() {
             uri.hash = "";
             uri.search = "";
             const urlNoQueryParams = uri.toString();
+            debug(`reloadContent: ${urlNoQueryParams}`);
             handleLinkUrl(urlNoQueryParams, activeWebView.READIUM2.readiumCss);
         }
         // activeWebView.reloadIgnoringCache();
@@ -410,7 +420,7 @@ export function reloadContent() {
 }
 
 function loadLink(
-    hrefFull: string,
+    hrefToLoad: string,
     previous: boolean | undefined,
     useGoto: boolean,
     rcss: IEventPayload_R2_EVENT_READIUMCSS | undefined,
@@ -422,26 +432,29 @@ function loadLink(
         return false;
     }
 
-    if (hrefFull.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
-        hrefFull = convertCustomSchemeToHttpUrl(hrefFull);
+    let hrefToLoadHttp = hrefToLoad;
+    if (hrefToLoadHttp.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+        hrefToLoadHttp = convertCustomSchemeToHttpUrl(hrefToLoadHttp);
     }
 
-    const pubJsonUri = publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ?
+    const pubIsServedViaSpecialUrlProtocol = publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
+
+    const publicationURLHttp = pubIsServedViaSpecialUrlProtocol ?
         convertCustomSchemeToHttpUrl(publicationURL) : publicationURL;
 
     let linkPath: string | undefined;
 
-    const urlToLink = new URL(hrefFull);
-    urlToLink.hash = "";
-    urlToLink.search = "";
-    const urlPublication = new URL(pubJsonUri);
-    urlPublication.hash = "";
-    urlPublication.search = "";
+    const hrefToLoadHttpObj = new URL(hrefToLoadHttp);
+    hrefToLoadHttpObj.hash = "";
+    hrefToLoadHttpObj.search = "";
+    const publicationURLHttpObj = new URL(publicationURLHttp);
+    publicationURLHttpObj.hash = "";
+    publicationURLHttpObj.search = "";
     let iBreak = -1;
-    for (let i = 0; i < urlPublication.pathname.length; i++) {
-        const c1 = urlPublication.pathname[i];
-        if (i < urlToLink.pathname.length) {
-            const c2 = urlToLink.pathname[i];
+    for (let i = 0; i < publicationURLHttpObj.pathname.length; i++) {
+        const c1 = publicationURLHttpObj.pathname[i];
+        if (i < hrefToLoadHttpObj.pathname.length) {
+            const c2 = hrefToLoadHttpObj.pathname[i];
             if (c1 !== c2) {
                 iBreak = i;
                 break;
@@ -451,17 +464,19 @@ function loadLink(
         }
     }
     if (iBreak > 0) {
-        linkPath = urlToLink.pathname.substr(iBreak);
+        linkPath = hrefToLoadHttpObj.pathname.substr(iBreak);
     }
 
     if (!linkPath) {
+        debug(`R2LOADLINK?? ${hrefToLoad} ... ${publicationURL} !!! ${hrefToLoadHttp} ... ${publicationURLHttp}`);
+
         return false;
     }
 
     // because URL.toString() percent-encodes Unicode characters in the path!
     linkPath = decodeURIComponent(linkPath);
 
-    debug(`R2LOADLINK: ${pubJsonUri} (${publicationURL}) + ${hrefFull} ==> ${linkPath}`);
+    debug(`R2LOADLINK: ${hrefToLoad} ... ${publicationURL} ==> ${linkPath}`);
 
     // const pubUri = new URI(pubJsonUri);
     // // "/pub/BASE64_PATH/manifest.json" ==> "/pub/BASE64_PATH/"
@@ -479,11 +494,11 @@ function loadLink(
         });
     }
     if (!pubLink) {
-        let hrefNoHash: string | undefined;
+        let hrefToLoadHttpNoHash: string | undefined;
         try {
-            const u = new URI(hrefFull);
-            u.hash("").normalizeHash();
-            u.search((data: any) => {
+            const hrefToLoadHttpObjUri = new URI(hrefToLoadHttp);
+            hrefToLoadHttpObjUri.hash("").normalizeHash();
+            hrefToLoadHttpObjUri.search((data: any) => {
                 // overrides existing (leaves others intact)
                 data[URL_PARAM_PREVIOUS] = undefined;
                 data[URL_PARAM_GOTO] = undefined;
@@ -493,29 +508,29 @@ function loadLink(
                 data[URL_PARAM_CLIPBOARD_INTERCEPT] = undefined;
                 data[URL_PARAM_REFRESH] = undefined;
             });
-            hrefNoHash = u.toString();
+            hrefToLoadHttpNoHash = hrefToLoadHttpObjUri.toString();
         } catch (err) {
             debug(err);
         }
-        if (hrefNoHash) {
+        if (hrefToLoadHttpNoHash) {
             pubLink = publication.Spine ? publication.Spine.find((spineLink) => {
-                return spineLink.Href === hrefNoHash;
+                return spineLink.Href === hrefToLoadHttpNoHash;
             }) : undefined;
             if (!pubLink && publication.Resources) {
                 pubLink = publication.Resources.find((resLink) => {
-                    return resLink.Href === hrefNoHash;
+                    return resLink.Href === hrefToLoadHttpNoHash;
                 });
             }
         }
         if (!pubLink) {
             // tslint:disable-next-line: max-line-length
-            debug(`CANNOT LOAD EXT LINK ${pubJsonUri} (${publicationURL}) + ${hrefFull} (${hrefNoHash}) ==> ${linkPath}`);
+            debug(`CANNOT LOAD EXT LINK ${hrefToLoad} ... ${publicationURL} --- (${hrefToLoadHttpNoHash}) ==> ${linkPath}`);
             return false;
         }
     }
 
     if (!pubLink) {
-        debug(`CANNOT LOAD LINK ${pubJsonUri} (${publicationURL}) + ${hrefFull} ==> ${linkPath}`);
+        debug(`CANNOT LOAD LINK ${hrefToLoad} ... ${publicationURL} ==> ${linkPath}`);
         return false;
     }
 
@@ -549,20 +564,20 @@ function loadLink(
         /\.wma$/.test(ext) ||
         /\.flac$/.test(ext));
 
-    // Note that with URI (unlike URL) if hrefFull contains Unicode characters,
+    // Note that with URI (unlike URL) if hrefToLoadHttp contains Unicode characters,
     // the toString() function does not percent-encode them.
-    // But also note that if hrefFull is already percent-encoded, this is returned as-is!
+    // But also note that if hrefToLoadHttp is already percent-encoded, this is returned as-is!
     // (i.e. do not expect toString() to output Unicode chars from their escaped notation)
     // See decodeURIComponent() above,
-    // which is necessary in cases where loadLink() is called with URL.toString() for hrefFull
+    // which is necessary in cases where loadLink() is called with URL.toString() for hrefToLoadHttp
     // ... which it is!
-    const linkUri = new URI(hrefFull);
+    const hrefToLoadHttpUri = new URI(hrefToLoadHttp);
     if (isAudio) {
         if (useGoto) {
-            linkUri.hash("").normalizeHash();
+            hrefToLoadHttpUri.hash("").normalizeHash();
 
             if (pubLink.Duration) {
-                const gotoBase64 = linkUri.search(true)[URL_PARAM_GOTO];
+                const gotoBase64 = hrefToLoadHttpUri.search(true)[URL_PARAM_GOTO];
 
                 if (gotoBase64) {
                     const str = Buffer.from(gotoBase64, "base64").toString("utf8");
@@ -570,13 +585,13 @@ function loadLink(
                     const gotoProgression = (json as LocatorLocations).progression;
                     if (typeof gotoProgression !== "undefined") {
                         const time = gotoProgression * pubLink.Duration;
-                        linkUri.hash(`t=${time}`).normalizeHash();
+                        hrefToLoadHttpUri.hash(`t=${time}`).normalizeHash();
                     }
                 }
             }
         }
 
-        linkUri.search((data: any) => {
+        hrefToLoadHttpUri.search((data: any) => {
             // overrides existing (leaves others intact)
             data[URL_PARAM_PREVIOUS] = undefined;
             data[URL_PARAM_GOTO] = undefined;
@@ -587,7 +602,7 @@ function loadLink(
             data[URL_PARAM_REFRESH] = undefined;
         });
     } else {
-        linkUri.search((data: any) => {
+        hrefToLoadHttpUri.search((data: any) => {
             // overrides existing (leaves others intact)
 
             if (typeof previous === "undefined") {
@@ -605,7 +620,7 @@ function loadLink(
             }
         });
         if (useGoto) {
-            linkUri.hash("").normalizeHash();
+            hrefToLoadHttpUri.hash("").normalizeHash();
         }
 
         // no need for encodeURIComponent_RFC3986, auto-encoded by URI class
@@ -614,7 +629,7 @@ function loadLink(
         const rersJsonstr = JSON.stringify(rersJson, null, "");
         const rersJsonstrBase64 = Buffer.from(rersJsonstr).toString("base64");
 
-        linkUri.search((data: any) => {
+        hrefToLoadHttpUri.search((data: any) => {
             // overrides existing (leaves others intact)
 
             // tslint:disable-next-line:no-string-literal
@@ -647,8 +662,8 @@ function loadLink(
     if (!isAudio && !webviewNeedsHardRefresh && !webviewNeedsForcedRefresh &&
         activeWebView && activeWebView.READIUM2.link === pubLink) {
 
-        const goto = useGoto ? linkUri.search(true)[URL_PARAM_GOTO] as string : undefined;
-        const hash = useGoto ? undefined : linkUri.fragment(); // without #
+        const goto = useGoto ? hrefToLoadHttpUri.search(true)[URL_PARAM_GOTO] as string : undefined;
+        const hash = useGoto ? undefined : hrefToLoadHttpUri.fragment(); // without #
 
         debug("WEBVIEW ALREADY LOADED: " + pubLink.Href);
 
@@ -743,7 +758,7 @@ function loadLink(
     if (activeWebView) {
 
         if (webviewNeedsForcedRefresh) {
-            linkUri.search((data: any) => {
+            hrefToLoadHttpUri.search((data: any) => {
                 // overrides existing (leaves others intact)
 
                 data[URL_PARAM_REFRESH] = `${++_reloadCounter}`;
@@ -751,7 +766,7 @@ function loadLink(
         }
 
         if (win.READIUM2.sessionInfo) {
-            linkUri.search((data: any) => {
+            hrefToLoadHttpUri.search((data: any) => {
                 // overrides existing (leaves others intact)
 
                 if (win.READIUM2.sessionInfo) {
@@ -761,26 +776,25 @@ function loadLink(
             });
         }
 
-        const uriStr = linkUri.toString();
+        const uriStr = hrefToLoadHttpUri.toString();
 
-        const needConvert = publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
-        const uriStr_ = uriStr.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ?
-            uriStr : (needConvert ? convertHttpUrlToCustomScheme(uriStr) : uriStr);
+        const uriStr_ = uriStr.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ? uriStr :
+            (pubIsServedViaSpecialUrlProtocol ? convertHttpUrlToCustomScheme(uriStr) : uriStr);
 
         // if (IS_DEV) {
         //     debug("####### >>> ---");
         //     debug(activeWebView.READIUM2.id);
         //     debug(pubLink.Href);
         //     debug(uriStr);
-        //     debug(linkUri.hash()); // with #
-        //     debug(linkUri.fragment()); // without #
+        //     debug(hrefToLoadHttpUri.hash()); // with #
+        //     debug(hrefToLoadHttpUri.fragment()); // without #
         //     // tslint:disable-next-line:no-string-literal
-        //     const gto = linkUri.search(true)[URL_PARAM_GOTO];
+        //     const gto = hrefToLoadHttpUri.search(true)[URL_PARAM_GOTO];
         //     debug(gto ? (Buffer.from(gto, "base64").toString("utf8")) : ""); // decodeURIComponent
         //     // tslint:disable-next-line:no-string-literal
-        //     debug(linkUri.search(true)[URL_PARAM_PREVIOUS]);
+        //     debug(hrefToLoadHttpUri.search(true)[URL_PARAM_PREVIOUS]);
         //     // tslint:disable-next-line:no-string-literal
-        //     debug(linkUri.search(true)[URL_PARAM_CSS]);
+        //     debug(hrefToLoadHttpUri.search(true)[URL_PARAM_CSS]);
         //     debug("####### >>> ---");
         // }
         if (isAudio) {
@@ -825,7 +839,7 @@ function loadLink(
 <head>
     <meta charset="utf-8" />
     <title>${title}</title>
-    <base href="${pubJsonUri /* publicationURL */ }" id="${READIUM2_BASEURL_ID}" />
+    <base href="${publicationURLHttp /* publicationURL */ }" id="${READIUM2_BASEURL_ID}" />
     <style type="text/css">
     /*<![CDATA[*/
     /*]]>*/

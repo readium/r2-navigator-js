@@ -41,16 +41,16 @@ import {
 import { IHighlight, IHighlightDefinition } from "../../common/highlight";
 import { IPaginationInfo } from "../../common/pagination";
 import {
-    CLASS_PAGINATED, appendCSSInline, configureFixedLayout, injectDefaultCSS, injectReadPosCSS,
-    isPaginated,
+    appendCSSInline, configureFixedLayout, injectDefaultCSS, injectReadPosCSS, isPaginated,
 } from "../../common/readium-css-inject";
 import { sameSelections } from "../../common/selection";
 import {
-    CSS_CLASS_NO_FOCUS_OUTLINE, LINK_TARGET_CLASS, POPUP_DIALOG_CLASS, ROOT_CLASS_INVISIBLE_MASK,
-    ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
-    ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN,
-    TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ZERO_TRANSFORM_CLASS,
-    readPosCssStylesAttr1, readPosCssStylesAttr2, readPosCssStylesAttr3, readPosCssStylesAttr4,
+    CLASS_PAGINATED, CSS_CLASS_NO_FOCUS_OUTLINE, LINK_TARGET_CLASS, POPUP_DIALOG_CLASS,
+    ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX,
+    ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_CLASS_INJECTED_SPAN,
+    TTS_CLASS_INJECTED_SUBSPAN, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT,
+    ZERO_TRANSFORM_CLASS, readPosCssStylesAttr1, readPosCssStylesAttr2, readPosCssStylesAttr3,
+    readPosCssStylesAttr4,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector2";
@@ -1199,9 +1199,9 @@ ipcRenderer.on("R2_EVENT_HIDE", (_event: any) => {
 
 function showHideContentMask(doHide: boolean) {
     if (doHide) {
-        win.document.body.classList.add(ROOT_CLASS_INVISIBLE_MASK);
+        win.document.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK);
     } else {
-        win.document.body.classList.remove(ROOT_CLASS_INVISIBLE_MASK);
+        win.document.documentElement.classList.remove(ROOT_CLASS_INVISIBLE_MASK);
     }
 }
 
@@ -1332,10 +1332,10 @@ function handleFocusInRaw(target: HTMLElement, _tabKeyDownEvent: KeyboardEvent |
 // }
 
 ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVENT_READIUMCSS) => {
-    showHideContentMask(false);
+    showHideContentMask(true);
     readiumCSS(win.document, payload);
-
     recreateAllHighlights(win);
+    showHideContentMask(false);
 });
 
 let _docTitle: string | undefined;
@@ -1397,23 +1397,23 @@ win.addEventListener("DOMContentLoaded", () => {
             readiumcssJson.isFixedLayout : false;
     }
 
-    let didHide = false;
-    if (!win.READIUM2.isFixedLayout) {
-        // only applies to previous nav spine item reading order
-        if (win.READIUM2.urlQueryParams) {
-            // tslint:disable-next-line:no-string-literal
-            const previous = win.READIUM2.urlQueryParams[URL_PARAM_PREVIOUS];
-            const isPreviousNavDirection = previous === "true";
-            if (isPreviousNavDirection) {
-                didHide = true;
-                showHideContentMask(true);
-            }
-        }
-    }
-    // ensure visible (can be triggered from host)
-    if (!didHide) {
-        showHideContentMask(false);
-    }
+    // let didHide = false;
+    // if (!win.READIUM2.isFixedLayout) {
+    //     // only applies to previous nav spine item reading order
+    //     if (win.READIUM2.urlQueryParams) {
+    //         // tslint:disable-next-line:no-string-literal
+    //         const previous = win.READIUM2.urlQueryParams[URL_PARAM_PREVIOUS];
+    //         const isPreviousNavDirection = previous === "true";
+    //         if (isPreviousNavDirection) {
+    //             didHide = true;
+    //             showHideContentMask(true);
+    //         }
+    //     }
+    //     // ensure visible (can be triggered from host)
+    //     if (!didHide) {
+    //         showHideContentMask(false);
+    //     }
+    // }
 
     if (!win.READIUM2.isFixedLayout && !win.READIUM2.isAudio) {
         const scrollElement = getScrollingElement(win.document);
@@ -1553,11 +1553,12 @@ function loaded(forced: boolean) {
         debug(">>> LOAD EVENT was not forced.");
     }
 
-    if (!win.READIUM2.isAudio) {
-
-        checkSoundtrack(win.document);
-
+    if (win.READIUM2.isAudio) {
+        showHideContentMask(false);
+    } else {
         if (!win.READIUM2.isFixedLayout) {
+            showHideContentMask(false);
+
             debug("++++ scrollToHashDebounced FROM LOAD");
             scrollToHashDebounced();
 
@@ -1626,9 +1627,13 @@ function loaded(forced: boolean) {
         } else {
             // processXYDebounced(0, 0, false);
 
+            showHideContentMask(false);
+
             win.READIUM2.locationHashOverride = win.document.body;
             notifyReadingLocationDebounced();
         }
+
+        checkSoundtrack(win.document);
     }
 
     win.document.documentElement.addEventListener("keydown", (ev: KeyboardEvent) => {
@@ -1778,7 +1783,8 @@ function loaded(forced: boolean) {
         while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
             if (currentElement.tagName.toLowerCase() === "a") {
                 href = (currentElement as HTMLAnchorElement).href;
-                // const href = currentElement.getAttribute("href");
+                const href_ = currentElement.getAttribute("href");
+                debug(`A LINK CLICK: ${href} (${href_})`);
                 break;
             }
             currentElement = currentElement.parentNode as Element;

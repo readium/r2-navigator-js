@@ -5,6 +5,8 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+export const CLASS_PAGINATED = "r2-css-paginated";
+
 export const ZERO_TRANSFORM_CLASS = "r2-zeroTransform";
 export const SKIP_LINK_ID = "r2-skip-link";
 export const LINK_TARGET_CLASS = "r2-link-target";
@@ -433,10 +435,11 @@ export const ttsCssStyles = `
 }
 `;
 
-export const ROOT_CLASS_INVISIBLE_MASK = "r2-visibility-mask";
+export const ROOT_CLASS_INVISIBLE_MASK = "r2-visibility-mask-class";
 export const visibilityMaskCssStyles = `
-:root[style] *.${ROOT_CLASS_INVISIBLE_MASK},
-:root *.${ROOT_CLASS_INVISIBLE_MASK} {
+
+:root.${ROOT_CLASS_INVISIBLE_MASK}[style] > body,
+:root.${ROOT_CLASS_INVISIBLE_MASK} > body {
     visibility: hidden !important;
 }
 `;

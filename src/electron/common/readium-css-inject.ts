@@ -12,17 +12,15 @@ import { IEventPayload_R2_EVENT_READIUMCSS } from "./events";
 import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
 import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "./sessions";
 import {
-    ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, audioCssStyles,
-    focusCssStyles, footnotesCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles,
-    targetCssStyles, ttsCssStyles, visibilityMaskCssStyles,
+    CLASS_PAGINATED, ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
+    ROOT_CLASS_REDUCE_MOTION, audioCssStyles, focusCssStyles, footnotesCssStyles, readPosCssStyles,
+    scrollBarCssStyles, selectionCssStyles, targetCssStyles, ttsCssStyles, visibilityMaskCssStyles,
 } from "./styles";
 
 export const READIUM2_BASEURL_ID = "r2_BASEURL_ID";
 
 // now match with :root[style*="readium-night-on"]
 // const CSS_CLASS_DARK_THEME = "mdc-theme--dark";
-
-export const CLASS_PAGINATED = "r2-css-paginated";
 
 // tslint:disable-next-line:max-line-length
 // https://github.com/readium/readium-css/blob/develop/docs/CSS16-internationalization.md
@@ -165,8 +163,8 @@ export function readiumCSSSet(
                 let u = baseUrl;
                 if (baseUrl.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
                     u = convertCustomSchemeToHttpUrl(baseUrl);
-                    u = u.replace(/\/pub\/.*/, "");
                 }
+                u = u.replace(/\/pub\/.*/, "");
                 messageJson.urlRoot = u;
             }
         }
@@ -823,6 +821,8 @@ export function readiumCssTransformHtml(
     const documant = parseDOM(htmlStrToParse, mediaType);
 
     documant.documentElement.setAttribute("data-readiumcss-injected", "yes");
+
+    documant.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK);
 
     // const wh = configureFixedLayout(doc, win.READIUM2.isFixedLayout,
     //     win.READIUM2.fxlViewportWidth, win.READIUM2.fxlViewportHeight,

@@ -26,7 +26,7 @@ import {
 } from "../common/sessions";
 import {
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
-    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_SESSION_INFO,
+    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_IS_IFRAME, URL_PARAM_SESSION_INFO,
 } from "../renderer/common/url-params";
 
 // import { PassThrough } from "stream";
@@ -696,6 +696,8 @@ const transformerHttpBaseIframes: TTransformFunction = (
         if (r2CSS) {
             iframeUrl.searchParams.append(URL_PARAM_CSS, r2CSS);
         }
+
+        iframeUrl.searchParams.append(URL_PARAM_IS_IFRAME, "1");
         // debug(iframeUrl.search);
 
         src_ = iframeUrl.toString();
