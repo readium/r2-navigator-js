@@ -100,6 +100,16 @@ export interface IEventPayload_R2_EVENT_LINK {
     url: string;
 }
 
+// in MAIN: browserWindow.webContents.send()
+// in RENDERER: ipcRenderer.on()
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_AUDIO_SOUNDTRACK = "R2_EVENT_AUDIO_SOUNDTRACK";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK {
+    url: string;
+}
+
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
 export const R2_EVENT_SHIFT_VIEW_X = "R2_EVENT_SHIFT_VIEW_X";
