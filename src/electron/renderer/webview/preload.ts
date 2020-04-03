@@ -1478,6 +1478,31 @@ win.addEventListener("DOMContentLoaded", () => {
 
 // let _cancelInitialScrollCheck = false;
 
+function checkSoundtrack(documant: Document) {
+
+    const audioNodeList = documant.querySelectorAll("audio");
+    if (!audioNodeList || !audioNodeList.length) {
+        return;
+    }
+    const audio = audioNodeList[0] as HTMLAudioElement;
+
+    let epubType = audio.getAttribute("epub:type");
+    if (!epubType) {
+        epubType = audio.getAttributeNS("http://www.idpf.org/2007/ops", "type");
+    }
+    if (!epubType) {
+        return;
+    }
+    if (epubType.indexOf("ibooks:soundtrack") < 0) {
+        return;
+    }
+    audio.setAttribute("loop", "loop");
+
+    setTimeout(async () => {
+        await audio.play();
+    }, 500);
+}
+
 let _loaded = false;
 function loaded(forced: boolean) {
     if (_loaded) {
@@ -1491,6 +1516,9 @@ function loaded(forced: boolean) {
     }
 
     if (!win.READIUM2.isAudio) {
+
+        checkSoundtrack(win.document);
+
         if (!win.READIUM2.isFixedLayout) {
             debug("++++ scrollToHashDebounced FROM LOAD");
             scrollToHashDebounced();
