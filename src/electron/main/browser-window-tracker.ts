@@ -84,8 +84,13 @@ app.on("web-contents-created", (_evt, wc) => {
             wc.on("will-navigate", (event, url) => {
                 debug("webview.getWebContents().on('will-navigate'");
                 debug(url);
-
                 event.preventDefault();
+
+                // unfortunately 'will-navigate' enters an infinite loop with HTML <base href="HTTP_URL" /> ! :(
+                if (event) { // THIS IS ALWAYS TRUE!
+                    debug("'will-navigate' SKIPPED.");
+                    return;
+                }
 
                 const payload: IEventPayload_R2_EVENT_LINK = {
                     url,
