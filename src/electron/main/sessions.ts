@@ -482,7 +482,6 @@ const transformerAudioVideo: TTransformFunction = (
     }
 
     // let's remove the DOCTYPE (which can contain entities)
-    // let's replace the body with empty txt (we only need the body start tag, not the element contents)
 
     const iHtmlStart = htmlStr.indexOf("<html");
     if (iHtmlStart < 0) {
@@ -577,11 +576,52 @@ const transformerAudioVideo: TTransformFunction = (
     return newStr;
 };
 
+const transformerHttpBase: TTransformFunction = (
+    _publication: Publication,
+    _link: Link,
+    url: string | undefined,
+    htmlStr: string,
+    _sessionInfo: string | undefined,
+): string => {
+    if (!url) {
+        return htmlStr;
+    }
+
+    const iHead = htmlStr.indexOf("</head>");
+    if (iHead < 0) {
+        return htmlStr;
+    }
+
+    // debug(url);
+    let urlHttp = url;
+    if (urlHttp.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+        urlHttp = convertCustomSchemeToHttpUrl(urlHttp);
+    }
+    const url_ = new URL(urlHttp);
+    url_.search = "";
+    url_.hash = "";
+    const urlStr = url_.toString();
+    // debug(urlStr);
+
+    const baseStr = `<base href="${urlStr}" />`;
+    const newStr = htmlStr.substr(0, iHead) + baseStr + htmlStr.substr(iHead);
+    // debug(newStr);
+    return newStr;
+};
+
+// less costly than statically patching each audio/video src href,
+// and works with any relative URL, even script-generated dynamic ones.
+const INJECT_HTTP_BASE = true;
+
 export function initSessions() {
 
     // because registerStreamProtocol() breaks HTTP byte range partial requests
     // (see streamProtocolHandler() above)
-    Transformers.instance().add(new TransformerHTML(transformerAudioVideo));
+    if (INJECT_HTTP_BASE) {
+        Transformers.instance().add(new TransformerHTML(transformerHttpBase));
+    } else {
+        Transformers.instance().add(new TransformerHTML(transformerAudioVideo));
+    }
 
     // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webframe
     if ((protocol as any).registerStandardSchemes) {
