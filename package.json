@@ -95,7 +95,7 @@
     "dist/**/*"
   ],
   "scripts": {
-    "cson2json": "sed -E \"s/#ECMASCRIPT#/es5/g\" package-scripts-build.cson > tmp-build.cson && sed -E \"s/#ECMASCRIPT#/es6-es2015/g\" package-scripts-build.cson >> tmp-build.cson && sed -E \"s/#ECMASCRIPT#/es7-es2016/g\" package-scripts-build.cson >> tmp-build.cson && sed -E \"s/#ECMASCRIPT#/es8-es2017/g\" package-scripts-build.cson >> tmp-build.cson && json -I -f package.json -e \"this.scripts=$(cat package-scripts.cson tmp-build.cson | node node_modules/cson/bin/cson2json)\" && rimraf tmp-*.cson",
+    "cson2json": "sed -E \"s/#ECMASCRIPT#/es5/g\" package-scripts-build.cson > tmp-build.cson && sed -E \"s/#ECMASCRIPT#/es6-es2015/g\" package-scripts-build.cson >> tmp-build.cson && sed -E \"s/#ECMASCRIPT#/es7-es2016/g\" package-scripts-build.cson >> tmp-build.cson && sed -E \"s/#ECMASCRIPT#/es8-es2017/g\" package-scripts-build.cson >> tmp-build.cson && json -I -f package.json -e \"this.scripts=$(cat package-scripts.cson tmp-build.cson | node node_modules/.bin/cson2json)\" && rimraf tmp-*.cson",
     "electron-renderer:all": "cpy \"./ReadiumCSS/**/*\" ../dist/ --cwd=./misc --parents --no-dir",
     "copydist": "cpy \"./dist/**/*\" ../r2-testapp-js/node_modules/r2-navigator-js/ --cwd=./ --parents --no-dir && cpy \"./dist/**/*\" ../readium-desktop/node_modules/r2-navigator-js/ --cwd=./ --parents --no-dir",
     "quick-build-dist": "npm run transpile:typescript:es8-es2017+afterdist && npm run copydist",
