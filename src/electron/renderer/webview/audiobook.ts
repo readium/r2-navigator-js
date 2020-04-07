@@ -218,8 +218,10 @@ export function setupAudioBook(_docTitle: string | undefined) {
             }
         }
     }
-    coverElement.addEventListener("mousedown", () => {
-        togglePlayPause();
+    coverElement.addEventListener("mouseup", (ev) => {
+        if (ev.button === 0) {
+            togglePlayPause();
+        }
     });
     playPauseElement.addEventListener("click", () => {
         togglePlayPause();
