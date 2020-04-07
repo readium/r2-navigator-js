@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.53...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.54...develop
 
 Changes:
 * TODO
+
+# 1.1.54
+
+> Build environment: NodeJS `12.16.1`, NPM `6.14.4`
+
+Changes:
+* NPM updates (minor, including Electron)
+* Fixed CSON-2-JSON build script
+* audiobook player improvements: SVG icons, time indicators, placeholders for localization (translatable titles), cover image play/pause button now reacts on mouse up event and only for left mouse button click (otherwise interferes with right click for context menu), added rate speed control
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.54/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.54/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.54
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.53...v1.1.54
 
 # 1.1.53
 
