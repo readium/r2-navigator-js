@@ -778,8 +778,9 @@ export const audioCssStyles = `
 }
 
 #${AUDIO_CONTROLS_ID} button {
-    border: 0;
-    background-color: transparent;
+    border: 0 !important;
+    background-color: transparent !important;
+    background: transparent !important;
     text-align: center;
     padding: 0;
     margin: 0;
@@ -797,46 +798,46 @@ export const audioCssStyles = `
     box-sizing: border-box;
 
     justify-self: center;
+
+    width: 60px;
+    height: 60px;
 }
 
-:root:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID},
-:root[style]:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID} {
-
-    width: 0;
-    height: 40px;
-
-    border-color: transparent transparent transparent #202020 !important;
-
-    transition: 100ms all ease;
-    will-change: border-width;
-
-    border-style: solid;
-    border-width: 20px 0 20px 40px;
+:root #${AUDIO_CONTROLS_ID} svg,
+:root[style] #${AUDIO_CONTROLS_ID} svg {
+    fill: #202020;
+}
+:root[style*="readium-night-on"] #${AUDIO_CONTROLS_ID} svg {
+    fill: #999999;
 }
 
-:root:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID}.pause {
-    border-style: double;
-    border-width: 0px 0 0px 40px;
+:root:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID} #${AUDIO_PLAYPAUSE_ID}_0,
+:root[style]:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID} #${AUDIO_PLAYPAUSE_ID}_0 {
+
+    display: none;
 }
 
-:root:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID}:hover,
-:root[style]:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID}:hover {
-
-    border-color: transparent transparent transparent #404040 !important;
+:root:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID}.pause #${AUDIO_PLAYPAUSE_ID}_1 {
+    display: none;
 }
 
+:root:not(.${AUDIO_PROGRESS_CLASS}) #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID}.pause #${AUDIO_PLAYPAUSE_ID}_0 {
+    display: block;
+}
+
+:root.${AUDIO_PROGRESS_CLASS} #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID} svg {
+    display: none;
+}
 :root.${AUDIO_PROGRESS_CLASS} #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID} {
     cursor: wait;
-    width: 40px;
-    height: 40px;
 }
 :root[style].${AUDIO_PROGRESS_CLASS} #${AUDIO_CONTROLS_ID} #${AUDIO_PLAYPAUSE_ID}:after {
     content: "";
     border-radius: 50%;
 
     position: absolute;
-    width: 40px;
-    height: 40px;
+    width: 60px;
+    height: 60px;
     left: 0px;
     top: 0px;
 
@@ -868,20 +869,10 @@ export const audioCssStyles = `
 #${AUDIO_CONTROLS_ID} #${AUDIO_PREVIOUS_ID},
 #${AUDIO_CONTROLS_ID} #${AUDIO_REWIND_ID},
 #${AUDIO_CONTROLS_ID} #${AUDIO_FORWARD_ID} {
-    width: 30px;
-    height: 30px;
+    width: 48px;
+    height: 48px;
     position: relative;
     align-self: center;
-}
-
-#${AUDIO_CONTROLS_ID} #${AUDIO_NEXT_ID}:before, #${AUDIO_CONTROLS_ID} #${AUDIO_NEXT_ID}:after,
-#${AUDIO_CONTROLS_ID} #${AUDIO_PREVIOUS_ID}:before, #${AUDIO_CONTROLS_ID} #${AUDIO_PREVIOUS_ID}:after,
-#${AUDIO_CONTROLS_ID} #${AUDIO_REWIND_ID}:before, #${AUDIO_CONTROLS_ID} #${AUDIO_REWIND_ID}:after,
-#${AUDIO_CONTROLS_ID} #${AUDIO_FORWARD_ID}:before, #${AUDIO_CONTROLS_ID} #${AUDIO_FORWARD_ID}:after {
-    content: '';
-    border-color: transparent;
-    border-style: solid;
-    position: absolute;
 }
 
 #${AUDIO_CONTROLS_ID} #${AUDIO_PREVIOUS_ID} {
@@ -893,21 +884,6 @@ export const audioCssStyles = `
     justify-self: left;
 }
 
-#${AUDIO_CONTROLS_ID} #${AUDIO_PREVIOUS_ID}:before {
-    border: none;
-    background-color: #555;
-    height: 30%;
-    width: 30%;
-    top: 35%;
-    left: 50%;
-}
-#${AUDIO_CONTROLS_ID} #${AUDIO_PREVIOUS_ID}:after {
-    left: -50%;
-    top: 0;
-    border-width: 15px 15px;
-    border-right-color: #555;
-}
-
 #${AUDIO_CONTROLS_ID} #${AUDIO_NEXT_ID} {
     grid-column-start: 5;
     grid-column-end: 6;
@@ -916,21 +892,6 @@ export const audioCssStyles = `
 
     justify-self: right;
 }
-#${AUDIO_CONTROLS_ID} #${AUDIO_NEXT_ID}:before {
-    border: none;
-    background-color: #555;
-    height: 30%;
-    width: 30%;
-    top: 35%;
-    left: 20%;
-}
-#${AUDIO_CONTROLS_ID} #${AUDIO_NEXT_ID}:after {
-    left: 50%;
-    top: 0;
-    border-width: 15px 15px;
-    border-left-color: #555;
-}
-
 #${AUDIO_CONTROLS_ID} #${AUDIO_REWIND_ID} {
     grid-column-start: 2;
     grid-column-end: 3;
@@ -939,19 +900,6 @@ export const audioCssStyles = `
 
     justify-self: right;
 }
-#${AUDIO_CONTROLS_ID} #${AUDIO_REWIND_ID}:before {
-    left: -20%;
-    top: 0;
-    border-width: 15px 15px;
-    border-right-color: #555;
-}
-#${AUDIO_CONTROLS_ID} #${AUDIO_REWIND_ID}:after {
-    left: -50%;
-    top: 0;
-    border-width: 15px 15px;
-    border-right-color: #555;
-}
-
 #${AUDIO_CONTROLS_ID} #${AUDIO_FORWARD_ID} {
     grid-column-start: 4;
     grid-column-end: 5;
@@ -960,20 +908,6 @@ export const audioCssStyles = `
 
     justify-self: left;
 }
-#${AUDIO_CONTROLS_ID} #${AUDIO_FORWARD_ID}:before {
-    left: 20%;
-    top: 0;
-    border-width: 15px 15px;
-    border-left-color: #555;
-}
-#${AUDIO_CONTROLS_ID} #${AUDIO_FORWARD_ID}:after {
-    left: 50%;
-    top: 0;
-    border-width: 15px 15px;
-    border-left-color: #555;
-}
-
-
 :root.${AUDIO_PROGRESS_CLASS} #${AUDIO_FORWARD_ID},
 :root.${AUDIO_PROGRESS_CLASS} #${AUDIO_REWIND_ID} {
     display: none;
@@ -986,19 +920,19 @@ export const audioCssStyles = `
 }
 #${AUDIO_TIME_ID} {
     grid-column-start: 1;
-    grid-column-end: 4;
+    grid-column-end: 2;
     grid-row-start: 3;
     grid-row-end: 4;
 
-    text-align: left;
+    text-align: left !important;
 }
 #${AUDIO_PERCENT_ID} {
-    grid-column-start: 4;
+    grid-column-start: 5;
     grid-column-end: 6;
     grid-row-start: 3;
     grid-row-end: 4;
 
-    text-align: right;
+    text-align: right !important;
 }
 
 :root.${AUDIO_PROGRESS_CLASS} #${AUDIO_PERCENT_ID},

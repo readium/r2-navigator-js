@@ -51,6 +51,37 @@ export function setupAudioBook(_docTitle: string | undefined) {
     const rewindElement = win.document.getElementById(AUDIO_REWIND_ID) as HTMLButtonElement;
     const forwardElement = win.document.getElementById(AUDIO_FORWARD_ID) as HTMLButtonElement;
 
+    function refreshTimeElements(p: number) {
+
+        const prettyPercent = (percentElement as any).displayAlt ? `${p}%` : `${formatTime(audioElement.duration)}`;
+        percentElement.innerText = prettyPercent;
+
+        // const prettyTime = `${formatTime(audioElement.currentTime)} / ${formatTime(audioElement.duration)}`;
+        const prettyTime = (timeElement as any).displayAlt ?
+            `-${formatTime(audioElement.duration - audioElement.currentTime)}` :
+            `${formatTime(audioElement.currentTime)}`;
+        timeElement.innerText = prettyTime;
+    }
+
+    function onTimeElementsClick(el: any) {
+
+        if (el.displayAlt) {
+            el.displayAlt = false;
+        } else {
+            el.displayAlt = true;
+        }
+
+        const percent = audioElement.currentTime / audioElement.duration;
+        const p = Math.round(percent * 100);
+        refreshTimeElements(p);
+    }
+    timeElement.addEventListener("click", () => {
+        onTimeElementsClick(timeElement);
+    });
+    percentElement.addEventListener("click", () => {
+        onTimeElementsClick(percentElement);
+    });
+
     const bufferCanvasElement = DEBUG_AUDIO ?
         win.document.getElementById(AUDIO_BUFFER_CANVAS_ID) as HTMLCanvasElement : undefined;
     if (bufferCanvasElement) {
@@ -216,13 +247,11 @@ export function setupAudioBook(_docTitle: string | undefined) {
     function notifyPlaybackLocation() {
         const percent = audioElement.currentTime / audioElement.duration;
         const p = Math.round(percent * 100);
+
+        refreshTimeElements(p);
+
         // sliderElement.value = "" + p;
         sliderElement.valueAsNumber = p;
-
-        percentElement.innerText = `${p}%`;
-
-        const prettyTime = `${formatTime(audioElement.currentTime)} / ${formatTime(audioElement.duration)}`;
-        timeElement.innerText = prettyTime;
 
         win.READIUM2.locationHashOverrideInfo = {
             audioPlaybackInfo: {
