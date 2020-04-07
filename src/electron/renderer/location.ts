@@ -17,10 +17,11 @@ import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
 import { DEBUG_AUDIO, IAudioPlaybackInfo } from "../common/audiobook";
 import { IDocInfo } from "../common/document";
 import {
-    IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK, IEventPayload_R2_EVENT_LINK,
-    IEventPayload_R2_EVENT_LOCATOR_VISIBLE, IEventPayload_R2_EVENT_PAGE_TURN,
-    IEventPayload_R2_EVENT_READING_LOCATION, IEventPayload_R2_EVENT_READIUMCSS,
-    IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X, R2_EVENT_AUDIO_SOUNDTRACK,
+    IEventPayload_R2_EVENT_AUDIO_PLAYBACK_RATE, IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK,
+    IEventPayload_R2_EVENT_LINK, IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
+    IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READING_LOCATION,
+    IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_SCROLLTO,
+    IEventPayload_R2_EVENT_SHIFT_VIEW_X, R2_EVENT_AUDIO_PLAYBACK_RATE, R2_EVENT_AUDIO_SOUNDTRACK,
     R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
     R2_EVENT_READING_LOCATION, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
 } from "../common/events";
@@ -32,9 +33,10 @@ import {
 } from "../common/sessions";
 import {
     AUDIO_BODY_ID, AUDIO_BUFFER_CANVAS_ID, AUDIO_CONTROLS_ID, AUDIO_COVER_ID, AUDIO_FORWARD_ID,
-    AUDIO_ID, AUDIO_NEXT_ID, AUDIO_PERCENT_ID, AUDIO_PLAYPAUSE_ID, AUDIO_PREVIOUS_ID,
+    AUDIO_ID, AUDIO_NEXT_ID, AUDIO_PERCENT_ID, AUDIO_PLAYPAUSE_ID, AUDIO_PREVIOUS_ID, AUDIO_RATE_ID,
     AUDIO_REWIND_ID, AUDIO_SECTION_ID, AUDIO_SLIDER_ID, AUDIO_TIME_ID, AUDIO_TITLE_ID,
 } from "../common/styles";
+import { getCurrentAudioPlaybackRate, setCurrentAudioPlaybackRate } from "./audiobook";
 import {
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
     URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS, URL_PARAM_REFRESH,
@@ -47,7 +49,6 @@ import {
 } from "./webview/state";
 
 import URI = require("urijs");
-
 const debug = debug_("r2:navigator#electron/renderer/location");
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
@@ -154,6 +155,10 @@ export function locationHandleIpcMessage(
         // debug("R2_EVENT_AUDIO_SOUNDTRACK (webview.addEventListener('ipc-message')");
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK;
         handleAudioSoundTrack(payload.url);
+    } else if (eventChannel === R2_EVENT_AUDIO_PLAYBACK_RATE) {
+        // debug("R2_EVENT_AUDIO_PLAYBACK_RATE (webview.addEventListener('ipc-message')");
+        const payload = eventArgs[0] as IEventPayload_R2_EVENT_AUDIO_PLAYBACK_RATE;
+        setCurrentAudioPlaybackRate(payload.speed);
     } else {
         return false;
     }
@@ -834,6 +839,16 @@ function loadLink(
                     });
                 }
 
+                const audioPlaybackRate = getCurrentAudioPlaybackRate();
+                // let audioPlaybackRate = 1;
+                if (rcssJson.setCSS) {
+                    // if (rcssJson.setCSS.audioPlaybackRate) {
+                    //     audioPlaybackRate = rcssJson.setCSS.audioPlaybackRate;
+                    // }
+
+                    rcssJson.setCSS.paged = false;
+                }
+
                 let htmlMarkup = `<?xml version="1.0" encoding="UTF-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
 <head>
@@ -853,6 +868,7 @@ function loadLink(
 
     document.addEventListener("DOMContentLoaded", () => {
         const _audioElement = document.getElementById("${AUDIO_ID}");
+        _audioElement.playbackRate = ${audioPlaybackRate};
 
         _audioElement.addEventListener("error", function()
             {
@@ -1071,6 +1087,17 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
         <input id="${AUDIO_SLIDER_ID}" type="range" min="0" max="100" value="0" step="1" title="progress" />
         <button id="${AUDIO_TIME_ID}" title="time information 1">-</button>
         <button id="${AUDIO_PERCENT_ID}" title="time information 2">-</button>
+        <select id="${AUDIO_RATE_ID}" title="playback speed">
+            <option value="2">2x</option>
+            <option value="1.75">1.75x</option>
+            <option value="1.5">1.5x</option>
+            <option value="1.25">1.25x</option>
+            <option value="1">1x</option>
+            <option value="0.75">0.75x</option>
+            <option value="0.5">0.5x</option>
+            <option value="0.35">0.35x</option>
+            <option value="0.25">0.25x</option>
+        </select>
     </div>
 </section>
 </body>
@@ -1078,10 +1105,6 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
 
                 // const contentType = "text/html";
                 const contentType = "application/xhtml+xml";
-
-                if (rcssJson.setCSS) {
-                    rcssJson.setCSS.paged = false;
-                }
                 htmlMarkup = readiumCssTransformHtml(htmlMarkup, rcssJson, contentType);
 
                 const b64HTML = Buffer.from(htmlMarkup).toString("base64");

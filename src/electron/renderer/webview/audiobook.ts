@@ -10,14 +10,15 @@ import { ipcRenderer } from "electron";
 
 import { DEBUG_AUDIO } from "../../common/audiobook";
 import {
-    IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READING_LOCATION,
-    R2_EVENT_AUDIO_DO_PAUSE, R2_EVENT_AUDIO_DO_PLAY, R2_EVENT_PAGE_TURN_RES,
-    R2_EVENT_READING_LOCATION,
+    IEventPayload_R2_EVENT_AUDIO_PLAYBACK_RATE, IEventPayload_R2_EVENT_PAGE_TURN,
+    IEventPayload_R2_EVENT_READING_LOCATION, R2_EVENT_AUDIO_DO_PAUSE, R2_EVENT_AUDIO_DO_PLAY,
+    R2_EVENT_AUDIO_FORWARD, R2_EVENT_AUDIO_PLAYBACK_RATE, R2_EVENT_AUDIO_REWIND,
+    R2_EVENT_AUDIO_TOGGLE_PLAY_PAUSE, R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION,
 } from "../../common/events";
 import {
     AUDIO_BUFFER_CANVAS_ID, AUDIO_COVER_ID, AUDIO_FORWARD_ID, AUDIO_ID, AUDIO_NEXT_ID,
-    AUDIO_PERCENT_ID, AUDIO_PLAYPAUSE_ID, AUDIO_PREVIOUS_ID, AUDIO_PROGRESS_CLASS, AUDIO_REWIND_ID,
-    AUDIO_SLIDER_ID, AUDIO_TIME_ID,
+    AUDIO_PERCENT_ID, AUDIO_PLAYPAUSE_ID, AUDIO_PREVIOUS_ID, AUDIO_PROGRESS_CLASS, AUDIO_RATE_ID,
+    AUDIO_REWIND_ID, AUDIO_SLIDER_ID, AUDIO_TIME_ID,
 } from "../../common/styles";
 import { IReadiumElectronWebviewWindow } from "./state";
 
@@ -36,7 +37,7 @@ function throttle(fn: (...argz: any[]) => any, time: number) {
     };
 }
 
-export function setupAudioBook(_docTitle: string | undefined) {
+export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate: number | undefined) {
 
     win.document.documentElement.classList.add(AUDIO_PROGRESS_CLASS);
 
@@ -50,6 +51,26 @@ export function setupAudioBook(_docTitle: string | undefined) {
     const nextElement = win.document.getElementById(AUDIO_NEXT_ID) as HTMLButtonElement;
     const rewindElement = win.document.getElementById(AUDIO_REWIND_ID) as HTMLButtonElement;
     const forwardElement = win.document.getElementById(AUDIO_FORWARD_ID) as HTMLButtonElement;
+    const rateElement = win.document.getElementById(AUDIO_RATE_ID) as HTMLSelectElement;
+
+    if (audioPlaybackRate) {
+        rateElement.value = `${audioPlaybackRate}`;
+    } else {
+        rateElement.value = `${audioElement.playbackRate}`;
+    }
+    rateElement.addEventListener("change", () => {
+        const speed = parseFloat(rateElement.value);
+        audioElement.playbackRate = speed;
+
+        const payload: IEventPayload_R2_EVENT_AUDIO_PLAYBACK_RATE = {
+            speed,
+        };
+        ipcRenderer.sendToHost(R2_EVENT_AUDIO_PLAYBACK_RATE, payload);
+    });
+    // audioElement.addEventListener("ratechange", () => {
+    //     // TODO: what if select/option does not include the string value?
+    //     rateElement.value = `${audioElement.playbackRate}`;
+    // });
 
     function refreshTimeElements(p: number) {
 
@@ -130,14 +151,7 @@ export function setupAudioBook(_docTitle: string | undefined) {
         }
     }
 
-    ipcRenderer.on(R2_EVENT_AUDIO_DO_PLAY, async (_event: any) => {
-        await audioElement.play();
-    });
-    ipcRenderer.on(R2_EVENT_AUDIO_DO_PAUSE, (_event: any) => {
-        audioElement.pause();
-    });
-
-    rewindElement.addEventListener("click", () => {
+    function rewind() {
         const newTime = Math.max(0, audioElement.currentTime - 30);
         audioElement.currentTime = newTime;
         // if (newTime < 0.5) {
@@ -149,8 +163,11 @@ export function setupAudioBook(_docTitle: string | undefined) {
         // } else {
         //     audioElement.currentTime = newTime;
         // }
+    }
+    rewindElement.addEventListener("click", () => {
+        rewind();
     });
-    forwardElement.addEventListener("click", () => {
+    function forward() {
         const newTime = Math.min(audioElement.duration, audioElement.currentTime + 30);
         audioElement.currentTime = newTime;
         // if (newTime >= audioElement.duration - 0.5) {
@@ -162,6 +179,9 @@ export function setupAudioBook(_docTitle: string | undefined) {
         // } else {
         //     audioElement.currentTime = newTime;
         // }
+    }
+    forwardElement.addEventListener("click", () => {
+        forward();
     });
 
     previousElement.addEventListener("click", () => {
@@ -335,4 +355,28 @@ export function setupAudioBook(_docTitle: string | undefined) {
         // (audioElement as any).isPlaying = true;
         notifyPlaybackLocationThrottled();
     });
+
+    ipcRenderer.on(R2_EVENT_AUDIO_DO_PLAY, async (_event: any) => {
+        await audioElement.play();
+    });
+    ipcRenderer.on(R2_EVENT_AUDIO_DO_PAUSE, (_event: any) => {
+        audioElement.pause();
+    });
+    ipcRenderer.on(R2_EVENT_AUDIO_DO_PLAY, async (_event: any) => {
+        await audioElement.play();
+    });
+    ipcRenderer.on(R2_EVENT_AUDIO_TOGGLE_PLAY_PAUSE, (_event: any) => {
+        togglePlayPause();
+    });
+    ipcRenderer.on(R2_EVENT_AUDIO_REWIND, (_event: any) => {
+        rewind();
+    });
+    ipcRenderer.on(R2_EVENT_AUDIO_FORWARD, (_event: any) => {
+        forward();
+    });
+    // ipcRenderer.on(R2_EVENT_AUDIO_PLAYBACK_RATE,
+    //     (_event: any, payload: IEventPayload_R2_EVENT_AUDIO_PLAYBACK_RATE) => {
+
+    //     audioElement.playbackRate = payload.speed;
+    // });
 }

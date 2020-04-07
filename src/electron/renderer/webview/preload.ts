@@ -1348,10 +1348,6 @@ win.addEventListener("DOMContentLoaded", () => {
         _docTitle = titleElement.textContent;
     }
 
-    if (win.READIUM2.isAudio) {
-        setupAudioBook(_docTitle);
-    }
-
     // _cancelInitialScrollCheck = true;
 
     // const linkUri = new URI(win.location.href);
@@ -1390,6 +1386,14 @@ win.addEventListener("DOMContentLoaded", () => {
                 debug(str);
             }
         }
+    }
+
+    if (win.READIUM2.isAudio) {
+        // let audioPlaybackRate = 1;
+        // if (readiumcssJson?.setCSS?.audioPlaybackRate) {
+        //     audioPlaybackRate = readiumcssJson.setCSS.audioPlaybackRate;
+        // }
+        setupAudioBook(_docTitle, undefined);
     }
 
     if (readiumcssJson) {

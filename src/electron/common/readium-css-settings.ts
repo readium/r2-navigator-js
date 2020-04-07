@@ -47,6 +47,8 @@ export interface IReadiumCSS {
     mathJax: boolean | undefined;
 
     reduceMotion: boolean | undefined;
+
+    // audioPlaybackRate: number | undefined;
 }
 
 export enum bodyHyphensEnum {
@@ -134,6 +136,9 @@ export const readiumCSSDefaults = {
     paraSpacing: undefined,
 
     reduceMotion: false,
+
+    // 2, 1.75, 1.5, 1, 0.75, 0.5, 0.25
+    // audioPlaybackRate: 1,
 
     sepia: false,
 

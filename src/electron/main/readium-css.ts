@@ -98,6 +98,9 @@ export function setupReadiumCSS(
                 if (readiumcssJson.setCSS.reduceMotion) {
                     // TODO: same as MathJax (see above)
                 }
+                // if (readiumcssJson.setCSS.audioPlaybackRate) {
+                //     // TODO: same as MathJax (see above)
+                // }
             }
             readiumcssJson = readiumcssJson_;
         }

@@ -5,7 +5,10 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { R2_EVENT_AUDIO_DO_PAUSE, R2_EVENT_AUDIO_DO_PLAY } from "../common/events";
+import {
+    R2_EVENT_AUDIO_DO_PAUSE, R2_EVENT_AUDIO_DO_PLAY, R2_EVENT_AUDIO_FORWARD, R2_EVENT_AUDIO_REWIND,
+    R2_EVENT_AUDIO_TOGGLE_PLAY_PAUSE,
+} from "../common/events";
 import { IReadiumElectronBrowserWindow } from "./webview/state";
 
 const win = window as IReadiumElectronBrowserWindow;
@@ -30,4 +33,59 @@ export function audioPause() {
     setTimeout(async () => {
         await activeWebView.send(R2_EVENT_AUDIO_DO_PAUSE);
     }, 0);
+}
+
+export function audioTogglePlayPause() {
+    const activeWebView = win.READIUM2.getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+
+    setTimeout(async () => {
+        await activeWebView.send(R2_EVENT_AUDIO_TOGGLE_PLAY_PAUSE);
+    }, 0);
+}
+
+export function audioRewind() {
+    const activeWebView = win.READIUM2.getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+
+    setTimeout(async () => {
+        await activeWebView.send(R2_EVENT_AUDIO_REWIND);
+    }, 0);
+}
+
+export function audioForward() {
+    const activeWebView = win.READIUM2.getActiveWebView();
+    if (!activeWebView) {
+        return;
+    }
+
+    setTimeout(async () => {
+        await activeWebView.send(R2_EVENT_AUDIO_FORWARD);
+    }, 0);
+}
+
+// export function audioPlaybackRate(speed: number) {
+//     const activeWebView = win.READIUM2.getActiveWebView();
+//     if (!activeWebView) {
+//         return;
+//     }
+
+//     setTimeout(async () => {
+//         const payload: IEventPayload_R2_EVENT_AUDIO_PLAYBACK_RATE = {
+//             speed,
+//         };
+//         await activeWebView.send(R2_EVENT_AUDIO_PLAYBACK_RATE, payload);
+//     }, 0);
+// }
+
+let _playbackRate = 1;
+export function setCurrentAudioPlaybackRate(speed: number) {
+    _playbackRate = speed;
+}
+export function getCurrentAudioPlaybackRate() {
+    return _playbackRate;
 }
