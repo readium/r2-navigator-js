@@ -853,7 +853,7 @@ function loadLink(
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
 <head>
     <meta charset="utf-8" />
-    <title>${title}</title>
+    ${title ? `<title>${title}</title>` : `<!-- NO TITLE -->`}
     <base href="${publicationURLHttp /* publicationURL */ }" id="${READIUM2_BASEURL_ID}" />
     <style type="text/css">
     /*<![CDATA[*/
