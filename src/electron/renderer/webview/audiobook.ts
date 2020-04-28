@@ -213,6 +213,8 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
         const p = sliderElement.valueAsNumber / 100;
         audioElement.currentTime = audioElement.duration * p;
 
+        sliderElement.style.setProperty("--audiopercent", `${sliderElement.valueAsNumber}%`);
+
         // const wasPlaying = win.READIUM2.locationHashOverrideInfo?.audioPlaybackInfo?.isPlaying;
         // audioElement.pause();
         // debounceSlider(wasPlaying);
@@ -274,6 +276,7 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
 
         // sliderElement.value = "" + p;
         sliderElement.valueAsNumber = p;
+        sliderElement.style.setProperty("--audiopercent", `${p}%`);
 
         win.READIUM2.locationHashOverrideInfo = {
             audioPlaybackInfo: {
