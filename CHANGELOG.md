@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.55...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.56...develop
 
 Changes:
 * TODO
+
+# 1.1.56
+
+> Build environment: NodeJS `12.16.2`, NPM `6.14.4`
+
+Changes:
+* NPM updates
+* Audiobooks: improved progress slider timeline (input type range)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.56/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.56/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.56
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.55...v1.1.56
 
 # 1.1.55
 
