@@ -105,10 +105,11 @@ export const footnotesCssStyles = `
     margin: 0.2em;
 }
 
-:root[style] .${FOOTNOTES_CONTAINER_CLASS} > div > *,
-:root .${FOOTNOTES_CONTAINER_CLASS} > div > * {
+:root[style] .${FOOTNOTES_CONTAINER_CLASS} > *,
+:root .${FOOTNOTES_CONTAINER_CLASS} > * {
     margin: 0 !important;
     padding: 0 !important;
+    width: 100%;
 }
 
 /*
