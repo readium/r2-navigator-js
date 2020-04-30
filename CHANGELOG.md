@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.56...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.1.57...develop
 
 Changes:
 * TODO
+
+# 1.1.57
+
+> Build environment: NodeJS `12.16.2`, NPM `6.14.4`
+
+Changes:
+* NPM updates
+* Fix: XML namespaces in popup footnotes (e.g. epub:type attributes, MathML elements)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.1.57/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.1.57/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.1.57
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.56...v1.1.57
 
 # 1.1.56
 

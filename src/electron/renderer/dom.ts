@@ -161,7 +161,7 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
                         wc.inspectElement(x, y);
 
                         setTimeout(() => {
-                            if (wc.isDevToolsOpened()) {
+                            if (wc.devToolsWebContents && wc.isDevToolsOpened()) {
                                 wc.devToolsWebContents.focus();
                             }
                         }, 500);

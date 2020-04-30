@@ -1,6 +1,6 @@
 {
   "name": "r2-navigator-js",
-  "version": "1.1.56",
+  "version": "1.1.57",
   "description": "Readium 2 'navigator' for NodeJS (TypeScript)",
   "keywords": [
     "readium",
@@ -77,7 +77,7 @@
     "cross-env": "^7.0.2",
     "cson": "^7.0.0",
     "eclint": "^2.8.1",
-    "electron": "^8.2.3",
+    "electron": "^8.2.4",
     "filehound": "^1.17.4",
     "git-rev-sync": "^2.0.0",
     "json": "^9.0.6",
