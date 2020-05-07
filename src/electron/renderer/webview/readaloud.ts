@@ -12,15 +12,18 @@ import {
     R2_EVENT_TTS_DOC_END, R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED,
 } from "../../common/events";
 import {
-    CSS_CLASS_NO_FOCUS_OUTLINE, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN,
-    TTS_CLASS_IS_ACTIVE, TTS_CLASS_UTTERANCE, TTS_ID_ACTIVE_UTTERANCE, TTS_ID_ACTIVE_WORD,
-    TTS_ID_CONTAINER, TTS_ID_INFO, TTS_ID_INJECTED_PARENT, TTS_ID_NEXT, TTS_ID_PREVIOUS,
-    TTS_ID_SLIDER, TTS_ID_SPEAKING_DOC_ELEMENT, TTS_NAV_BUTTON_CLASS, TTS_POPUP_DIALOG_CLASS,
+    CSS_CLASS_NO_FOCUS_OUTLINE, ROOT_CLASS_REDUCE_MOTION, TTS_CLASS_INJECTED_SPAN,
+    TTS_CLASS_INJECTED_SUBSPAN, TTS_CLASS_IS_ACTIVE, TTS_CLASS_UTTERANCE, TTS_ID_ACTIVE_UTTERANCE,
+    TTS_ID_ACTIVE_WORD, TTS_ID_CONTAINER, TTS_ID_INFO, TTS_ID_INJECTED_PARENT, TTS_ID_NEXT,
+    TTS_ID_PREVIOUS, TTS_ID_SLIDER, TTS_ID_SPEAKING_DOC_ELEMENT, TTS_NAV_BUTTON_CLASS,
+    TTS_POPUP_DIALOG_CLASS,
 } from "../../common/styles";
+import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import {
     ITtsQueueItem, ITtsQueueItemReference, findTtsQueueItemIndex, generateTtsQueue,
     getTtsQueueItemRef, getTtsQueueItemRefText, getTtsQueueLength, wrapHighlight,
 } from "../common/dom-text-utils";
+import { easings } from "../common/easings";
 import { IHTMLDialogElementWithPopup, PopupDialog } from "../common/popup-dialog";
 import { isRTL } from "./readium-css";
 import { IReadiumElectronWebviewWindow } from "./state";
@@ -307,11 +310,20 @@ function highlights(doHighlight: boolean) {
     }
 }
 
+let _lastAnimState: IPropertyAnimationState | undefined;
+const animationTime = 500;
+
 const scrollIntoViewSpokenTextDebounced = debounce((id: string) => {
     scrollIntoViewSpokenText(id);
-}, 100);
+}, 200);
 function scrollIntoViewSpokenText(id: string) {
 
+    const reduceMotion = win.document.documentElement.classList.contains(ROOT_CLASS_REDUCE_MOTION);
+
+    if (_lastAnimState && _lastAnimState.animating) {
+        win.cancelAnimationFrame(_lastAnimState.id);
+        _lastAnimState.object[_lastAnimState.property] = _lastAnimState.destVal;
+    }
     const span = win.document.getElementById(id) as HTMLElement;
     if (span && _dialogState && _dialogState.domText) {
         const rect = span.getBoundingClientRect();
@@ -323,8 +335,47 @@ function scrollIntoViewSpokenText(id: string) {
         } else if (offset < 0) {
             offset = 0;
         }
-        _dialogState.domText.scrollTop = offset;
+        const diff = Math.abs(_dialogState.domText.scrollTop - offset);
+        console.log(diff);
+        if (diff < 20) {
+            return; // prevents jankiness due to CSS bug
+        }
+        // _dialogState.domText.scrollTop = offset;
 
+        const targetObj = _dialogState.domText;
+        const targetProp = "scrollTop";
+        if (reduceMotion) {
+            _lastAnimState = undefined;
+            targetObj[targetProp] = offset;
+        } else {
+            // _lastAnimState = undefined;
+            // (targetObj as HTMLElement).style.transition = "";
+            // (targetObj as HTMLElement).style.transform = "none";
+            // (targetObj as HTMLElement).style.transition =
+            //     `transform ${animationTime}ms ease-in-out 0s`;
+            // (targetObj as HTMLElement).style.transform =
+            //     isVerticalWritingMode() ?
+            //     `translateY(${unit}px)` :
+            //     `translateX(${(isRTL() ? -1 : 1) * unit}px)`;
+            // setTimeout(() => {
+            //     (targetObj as HTMLElement).style.transition = "";
+            //     (targetObj as HTMLElement).style.transform = "none";
+            //     targetObj[targetProp] = offset;
+            // }, animationTime);
+            _lastAnimState = animateProperty(
+                win.cancelAnimationFrame,
+                undefined,
+                // (cancelled: boolean) => {
+                //     debug(cancelled);
+                // },
+                targetProp,
+                animationTime,
+                targetObj,
+                offset,
+                win.requestAnimationFrame,
+                easings.easeInOutQuad,
+            );
+        }
         // span.focus();
         // span.scrollIntoView({
         //     // TypeScript lib.dom.d.ts difference in 3.2.1
