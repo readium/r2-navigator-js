@@ -416,8 +416,8 @@ export const ttsCssStyles = `
 :root div#${TTS_ID_ACTIVE_UTTERANCE} {
     /* background-color: yellow !important; */
 
-    border: 1px solid #777777;
-    border-radius: 0.4em;
+    border: 1px solid #777777 !important;
+    border-radius: 0.4em !important;
 
     color: black !important;
 }
@@ -435,14 +435,15 @@ export const ttsCssStyles = `
 :root span#${TTS_ID_ACTIVE_WORD} {
     color: black !important;
 
-    /*
     text-decoration: underline;
+    text-decoration-color: #777777 !important;
     text-underline-position: under;
-    */
+    /*
     outline-color: #777777;
     outline-offset: 2px;
-    outline-style: auto;
+    outline-style: solid;
     outline-width: 1px;
+    */
 
     padding: 0;
     margin: 0;

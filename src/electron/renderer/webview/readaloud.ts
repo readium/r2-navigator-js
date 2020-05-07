@@ -734,7 +734,7 @@ function startTTSSession(
     <input id="${TTS_ID_SLIDER}" type="range" min="0" max="${ttsQueueLength - 1}" value="0"
         ${isRTL() ? `dir="rtl"` : `dir="ltr"`}/>`;
 
-    const pop = new PopupDialog(win.document, outerHTML, onDialogClosed, TTS_POPUP_DIALOG_CLASS);
+    const pop = new PopupDialog(win.document, outerHTML, onDialogClosed, TTS_POPUP_DIALOG_CLASS, true);
     pop.show(ttsQueueItemStart.item.parentElement);
 
     _dialogState = pop.dialog as IHTMLDialogElementWithTTSState;

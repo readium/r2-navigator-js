@@ -108,9 +108,9 @@ function onKeyUp(this: PopupDialog, ev: KeyboardEvent) {
 }
 
 function onKeyDown(this: PopupDialog, ev: KeyboardEvent) {
-    // if (!this.shown) {
-    //     return;
-    // }
+    if (this.doNotTrapKeyboardFocusTabIndexCycling) {
+        return;
+    }
 
     const TAB_KEY = 9;
     if (ev.which === TAB_KEY) {
@@ -158,6 +158,7 @@ export class PopupDialog {
 
     public readonly role: string;
     public readonly dialog: IHTMLDialogElementWithPopup;
+    public readonly doNotTrapKeyboardFocusTabIndexCycling: boolean;
 
     private readonly _onKeyUp: () => void;
     private readonly _onKeyDown: () => void;
@@ -171,7 +172,8 @@ export class PopupDialog {
         outerHTML: string,
         // id: string,
         public readonly onDialogClosed: (el: HTMLOrSVGElement | null) => void,
-        optionalCssClass?: string) {
+        optionalCssClass?: string,
+        doNotTrapKeyboardFocusTabIndexCycling?: boolean) {
 
         closePopupDialogs(documant);
 
@@ -180,6 +182,8 @@ export class PopupDialog {
         this._onKeyUp = onKeyUp.bind(this);
         this._onKeyDown = onKeyDown.bind(this);
         // this._onFocus = onFocus.bind(this);
+
+        this.doNotTrapKeyboardFocusTabIndexCycling = doNotTrapKeyboardFocusTabIndexCycling ? true : false;
 
         this.dialog = documant.createElement("dialog") as IHTMLDialogElementWithPopup;
         this.dialog.popDialog = this;
