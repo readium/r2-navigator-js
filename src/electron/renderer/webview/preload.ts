@@ -392,6 +392,11 @@ ipcRenderer.on(R2_EVENT_LOCATOR_VISIBLE, (_event: any, payload: IEventPayload_R2
 });
 
 ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_SCROLLTO) => {
+
+    if (win.READIUM2.isAudio || win.READIUM2.isFixedLayout) {
+        return;
+    }
+
     showHideContentMask(false);
 
     clearCurrentSelection(win);
