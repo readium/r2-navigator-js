@@ -729,10 +729,10 @@ function startTTSSession(
         xml:lang="en"
         tabindex="0" autofocus="autofocus"></div>
     <div id="${TTS_ID_INFO}"> </div>
-    <button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}"><span>&#9668;</span></button>
-    <button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}"><span>&#9658;</span></button>
+    <button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}" title="previous"><span>&#9668;</span></button>
+    <button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}" title="next"><span>&#9658;</span></button>
     <input id="${TTS_ID_SLIDER}" type="range" min="0" max="${ttsQueueLength - 1}" value="0"
-        ${isRTL() ? `dir="rtl"` : `dir="ltr"`}/>`;
+        ${isRTL() ? `dir="rtl"` : `dir="ltr"`}  title="progress"/>`;
 
     const pop = new PopupDialog(win.document, outerHTML, onDialogClosed, TTS_POPUP_DIALOG_CLASS, true);
     pop.show(ttsQueueItemStart.item.parentElement);
