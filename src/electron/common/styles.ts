@@ -399,7 +399,8 @@ export const ttsCssStyles = `
     */
 }
 
-.${TTS_CLASS_UTTERANCE} {
+:root[style] .${TTS_CLASS_UTTERANCE},
+:root .${TTS_CLASS_UTTERANCE} {
     margin-bottom: 0.1em;
     padding-top: 0.3em;
     padding-bottom: 0.3em;
@@ -408,7 +409,7 @@ export const ttsCssStyles = `
     display: block;
 
     box-sizing: border-box;
-    border: 1px solid transparent;
+    border: 1px solid transparent !important;
 }
 
 :root[style] div#${TTS_ID_ACTIVE_UTTERANCE},
