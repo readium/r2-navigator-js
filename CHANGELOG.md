@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.1.57...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.2.0...develop
 
 Changes:
 * TODO
+
+# 1.2.0
+
+> Build environment: NodeJS `12.16.2`, NPM `6.14.4`
+
+Changes:
+* NPM updates
+* TTS read aloud UI improvements (active utterance presentation, smooth scroll), added speech rate control API
+* disabled "will-quit" Electron app event handler for clearSessions()
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.2.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.2.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.2.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.1.57...v1.2.0
 
 # 1.1.57
 
