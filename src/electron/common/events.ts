@@ -134,11 +134,7 @@ export const R2_EVENT_AUDIO_DO_PAUSE = "R2_EVENT_AUDIO_DO_PAUSE";
 export const R2_EVENT_AUDIO_TOGGLE_PLAY_PAUSE = "R2_EVENT_AUDIO_TOGGLE_PLAY_PAUSE";
 export const R2_EVENT_AUDIO_REWIND = "R2_EVENT_AUDIO_REWIND";
 export const R2_EVENT_AUDIO_FORWARD = "R2_EVENT_AUDIO_FORWARD";
-// export const R2_EVENT_AUDIO_PLAYBACK_RATE = "R2_EVENT_AUDIO_PLAYBACK_RATE";
-// // tslint:disable-next-line:class-name
-// export interface IEventPayload_R2_EVENT_AUDIO_PLAYBACK_RATE {
-//     speed: number;
-// }
+
 // in MAIN: browserWindow.webContents.send()
 // in RENDERER: ipcRenderer.on()
 // in WEBVIEW: ipcRenderer.sendToHost()
@@ -151,11 +147,20 @@ export interface IEventPayload_R2_EVENT_AUDIO_PLAYBACK_RATE {
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_TTS_PLAYBACK_RATE = "R2_EVENT_TTS_PLAYBACK_RATE";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE {
+    speed: number;
+}
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_TTS_DO_PLAY = "R2_EVENT_TTS_DO_PLAY";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_TTS_DO_PLAY {
     rootElement: string; // CSS selector
     startElement: string | undefined; // CSS selector
+    speed: number;
 }
 
 // in RENDERER: webview.send()

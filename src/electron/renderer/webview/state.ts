@@ -35,6 +35,7 @@ export interface IReadiumElectronWebviewWindowState {
     DEBUG_VISUALS: boolean;
 
     ttsClickEnabled: boolean;
+    ttsPlaybackRate: number;
 
     isClipboardIntercept: boolean;
 }
@@ -65,6 +66,7 @@ export interface IReadiumElectronBrowserWindowState {
     DEBUG_VISUALS: boolean;
 
     ttsClickEnabled: boolean;
+    ttsPlaybackRate: number;
 
     clipboardInterceptor: ((data: IEventPayload_R2_EVENT_CLIPBOARD_COPY) => void) | undefined;
 

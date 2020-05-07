@@ -83,6 +83,7 @@ function resetState() {
 }
 
 export function ttsPlay(
+    speed: number,
     focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean) => void,
     rootElem: Element | undefined,
     startElem: Element | undefined,
@@ -115,6 +116,7 @@ export function ttsPlay(
     }
     setTimeout(() => {
         startTTSSession(
+            speed,
             rootEl as Element,
             ttsQueue,
             ttsQueueIndex,
@@ -170,6 +172,17 @@ export function ttsPause() {
     ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PAUSED);
 }
 
+export function ttsPlaybackRate(speed: number) {
+    win.READIUM2.ttsPlaybackRate = speed;
+    ttsPause();
+    if (_dialogState && _dialogState.ttsUtterance) {
+        _dialogState.ttsUtterance.rate = speed;
+    }
+    setTimeout(() => {
+        ttsResume();
+    }, 60);
+}
+
 interface IResumableState {
     ttsRootElement: Element;
     ttsQueue: ITtsQueueItem[];
@@ -201,6 +214,7 @@ export function ttsResume() {
         setTimeout(() => {
             if (_resumableState) {
                 startTTSSession(
+                    win.READIUM2.ttsPlaybackRate,
                     _resumableState.ttsRootElement,
                     _resumableState.ttsQueue,
                     _resumableState.ttsQueueIndex,
@@ -311,7 +325,7 @@ function highlights(doHighlight: boolean) {
 }
 
 let _lastAnimState: IPropertyAnimationState | undefined;
-const animationTime = 500;
+const animationTime = 400;
 
 const scrollIntoViewSpokenTextDebounced = debounce((id: string) => {
     scrollIntoViewSpokenText(id);
@@ -320,10 +334,6 @@ function scrollIntoViewSpokenText(id: string) {
 
     const reduceMotion = win.document.documentElement.classList.contains(ROOT_CLASS_REDUCE_MOTION);
 
-    if (_lastAnimState && _lastAnimState.animating) {
-        win.cancelAnimationFrame(_lastAnimState.id);
-        _lastAnimState.object[_lastAnimState.property] = _lastAnimState.destVal;
-    }
     const span = win.document.getElementById(id) as HTMLElement;
     if (span && _dialogState && _dialogState.domText) {
         const rect = span.getBoundingClientRect();
@@ -336,12 +346,16 @@ function scrollIntoViewSpokenText(id: string) {
             offset = 0;
         }
         const diff = Math.abs(_dialogState.domText.scrollTop - offset);
-        console.log(diff);
         if (diff < 20) {
             return; // prevents jankiness due to CSS bug
         }
-        // _dialogState.domText.scrollTop = offset;
 
+        if (_lastAnimState && _lastAnimState.animating) {
+            win.cancelAnimationFrame(_lastAnimState.id);
+            _lastAnimState.object[_lastAnimState.property] = _lastAnimState.destVal;
+        }
+
+        // _dialogState.domText.scrollTop = offset;
         const targetObj = _dialogState.domText;
         const targetProp = "scrollTop";
         if (reduceMotion) {
@@ -598,6 +612,9 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
     if (_dialogState.ttsQueueItem.item.lang) {
         utterance.lang = _dialogState.ttsQueueItem.item.lang;
     }
+    if (win.READIUM2.ttsPlaybackRate >= 0.1 && win.READIUM2.ttsPlaybackRate <= 10) {
+        utterance.rate = win.READIUM2.ttsPlaybackRate;
+    }
 
     utterance.onboundary = (ev: SpeechSynthesisEvent) => {
         if ((utterance as any).r2_cancel) {
@@ -654,6 +671,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
 }
 
 function startTTSSession(
+    speed: number,
     ttsRootElement: Element,
     ttsQueue: ITtsQueueItem[],
     ttsQueueIndexStart: number,
@@ -661,6 +679,7 @@ function startTTSSession(
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: (val: number) => void,
     ) {
+    win.READIUM2.ttsPlaybackRate = speed;
 
     const ttsQueueItemStart = getTtsQueueItemRef(ttsQueue, ttsQueueIndexStart);
     if (!ttsQueueItemStart) {
@@ -722,6 +741,7 @@ function startTTSSession(
     if (!_dialogState) {
         return;
     }
+
     _dialogState.focusScrollRaw = focusScrollRaw;
     _dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable =
         ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable;

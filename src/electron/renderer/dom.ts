@@ -365,6 +365,7 @@ export function installNavigatorDOM(
         publicationURL,
         sessionInfo,
         ttsClickEnabled: false,
+        ttsPlaybackRate: 1,
     };
 
     if (IS_DEV) {
