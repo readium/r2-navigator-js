@@ -9,13 +9,13 @@ import { debounce } from "debounce";
 import { ipcRenderer } from "electron";
 
 import {
-    R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED,
+    R2_EVENT_TTS_DOC_END, R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED,
 } from "../../common/events";
 import {
     CSS_CLASS_NO_FOCUS_OUTLINE, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN,
-    TTS_CLASS_UTTERANCE, TTS_ID_ACTIVE_UTTERANCE, TTS_ID_ACTIVE_WORD, TTS_ID_CONTAINER, TTS_ID_INFO,
-    TTS_ID_INJECTED_PARENT, TTS_ID_NEXT, TTS_ID_PREVIOUS, TTS_ID_SLIDER,
-    TTS_ID_SPEAKING_DOC_ELEMENT, TTS_NAV_BUTTON_CLASS, TTS_POPUP_DIALOG_CLASS,
+    TTS_CLASS_IS_ACTIVE, TTS_CLASS_UTTERANCE, TTS_ID_ACTIVE_UTTERANCE, TTS_ID_ACTIVE_WORD,
+    TTS_ID_CONTAINER, TTS_ID_INFO, TTS_ID_INJECTED_PARENT, TTS_ID_NEXT, TTS_ID_PREVIOUS,
+    TTS_ID_SLIDER, TTS_ID_SPEAKING_DOC_ELEMENT, TTS_NAV_BUTTON_CLASS, TTS_POPUP_DIALOG_CLASS,
 } from "../../common/styles";
 import {
     ITtsQueueItem, ITtsQueueItemReference, findTtsQueueItemIndex, generateTtsQueue,
@@ -75,6 +75,7 @@ function resetState() {
     }
     _dialogState = undefined;
 
+    win.document.documentElement.classList.remove(TTS_CLASS_IS_ACTIVE);
     ipcRenderer.sendToHost(R2_EVENT_TTS_IS_STOPPED);
 }
 
@@ -162,6 +163,7 @@ export function ttsPause() {
         }, 0);
     }
 
+    win.document.documentElement.classList.add(TTS_CLASS_IS_ACTIVE);
     ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PAUSED);
 }
 
@@ -190,6 +192,7 @@ export function ttsResume() {
             }
         }, 0);
 
+        win.document.documentElement.classList.add(TTS_CLASS_IS_ACTIVE);
         ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PLAYING);
     } else if (_resumableState) {
         setTimeout(() => {
@@ -499,8 +502,22 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
         _dialogState.domSlider.valueAsNumber = ttsQueueIndex;
     }
 
-    if (ttsQueueIndex >= _dialogState.ttsQueueLength || ttsQueueIndex < 0) {
+    if (ttsQueueIndex < 0) {
         ttsStop();
+        return;
+    }
+    if (ttsQueueIndex >= _dialogState.ttsQueueLength) {
+        ttsStop();
+
+        setTimeout(() => {
+            ipcRenderer.sendToHost(R2_EVENT_TTS_DOC_END);
+            // const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+            //     direction: "LTR",
+            //     go: "NEXT",
+            // };
+            // ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+        }, 400);
+
         return;
     }
     const ttsQueueItem = getTtsQueueItemRef(_dialogState.ttsQueue, ttsQueueIndex);
@@ -581,6 +598,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
         win.speechSynthesis.speak(utterance);
     }, 0);
 
+    win.document.documentElement.classList.add(TTS_CLASS_IS_ACTIVE);
     ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PLAYING);
 }
 

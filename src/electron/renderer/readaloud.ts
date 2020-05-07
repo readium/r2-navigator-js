@@ -7,11 +7,13 @@
 
 import {
     IEventPayload_R2_EVENT_TTS_CLICK_ENABLE, IEventPayload_R2_EVENT_TTS_DO_PLAY,
-    R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY,
-    R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP, R2_EVENT_TTS_IS_PAUSED,
-    R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED,
+    R2_EVENT_READING_LOCATION, R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DOC_END,
+    R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS,
+    R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP, R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING,
+    R2_EVENT_TTS_IS_STOPPED,
 } from "../common/events";
-import { getCurrentReadingLocation } from "./location";
+import { getCurrentReadingLocation, navLeftOrRight } from "./location";
+import { isRTL } from "./readium-css";
 import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 // import * as debug_ from "debug";
@@ -36,6 +38,42 @@ export function ttsHandleIpcMessage(
     } else if (eventChannel === R2_EVENT_TTS_IS_PLAYING) {
         if (_ttsListener) {
             _ttsListener(TTSStateEnum.PLAYING);
+        }
+    } else if (eventChannel === R2_EVENT_TTS_DOC_END) {
+        const nextSpine = navLeftOrRight(isRTL(), true);
+        if (nextSpine) {
+            setTimeout(() => {
+                const activeWebView = win.READIUM2.getActiveWebView();
+                if (activeWebView) {
+                    let done = false;
+                    const cb = (event: Electron.IpcMessageEvent) => {
+                        if (event.channel === R2_EVENT_READING_LOCATION) {
+                            const webview = event.currentTarget as IReadiumElectronWebview;
+                            if (webview !== activeWebView) {
+                                console.log("Wrong navigator webview?!");
+                                return;
+                            }
+                            done = true;
+                            activeWebView.removeEventListener("ipc-message", cb);
+                            if (activeWebView.READIUM2.link &&
+                                activeWebView.READIUM2.link.Href === nextSpine.Href) {
+                                ttsPlay();
+                            }
+                        }
+                    };
+                    setTimeout(() => {
+                        if (done) {
+                            return;
+                        }
+                        try {
+                            activeWebView.removeEventListener("ipc-message", cb);
+                        } catch (err) {
+                            console.log(err);
+                        }
+                    }, 1000);
+                    activeWebView.addEventListener("ipc-message", cb);
+                }
+            }, 200);
         }
     } else {
         return false;

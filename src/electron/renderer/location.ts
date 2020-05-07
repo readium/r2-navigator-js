@@ -214,11 +214,11 @@ export function shiftWebview(webview: IReadiumElectronWebview, offset: number, b
     }
 }
 
-export function navLeftOrRight(left: boolean, spineNav?: boolean) {
+export function navLeftOrRight(left: boolean, spineNav?: boolean): Link | undefined {
     const publication = win.READIUM2.publication;
     const publicationURL = win.READIUM2.publicationURL;
     if (!publication || !publicationURL) {
-        return;
+        return undefined;
     }
 
     // metadata-level RTL
@@ -226,11 +226,11 @@ export function navLeftOrRight(left: boolean, spineNav?: boolean) {
 
     if (spineNav) {
         if (!publication.Spine) {
-            return;
+            return undefined;
         }
 
         if (!_lastSavedReadingLocation) { // getCurrentReadingLocation()
-            return;
+            return undefined;
         }
         const loc = _lastSavedReadingLocation;
 
@@ -271,7 +271,7 @@ export function navLeftOrRight(left: boolean, spineNav?: boolean) {
                     activeWebView ? activeWebView.READIUM2.readiumCss : undefined,
                 );
 
-                return;
+                return nextOrPreviousSpineItem;
             } else {
                 shell.beep(); // announce boundary overflow (first or last Spine item)
             }
@@ -289,6 +289,8 @@ export function navLeftOrRight(left: boolean, spineNav?: boolean) {
             }, 0);
         }
     }
+
+    return undefined;
 }
 
 export function handleLink(

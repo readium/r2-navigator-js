@@ -137,6 +137,7 @@ export const footnotesCssStyles = `
 */
 `;
 
+export const TTS_CLASS_IS_ACTIVE = "r2-tts-isPlaying";
 export const TTS_ID_PREVIOUS = "r2-tts-previous";
 export const TTS_ID_NEXT = "r2-tts-next";
 export const TTS_ID_SLIDER = "r2-tts-slider";
@@ -174,8 +175,11 @@ export const ttsCssStyles = `
 
     border-radius: 0;
     border-style: solid;
-    border-width: 2px;
-    border-color: black !important;
+    border-width: 1px;
+    border-color: #777777 !important;
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
 }
 
 :root[style] div#${TTS_ID_CONTAINER},
@@ -188,24 +192,35 @@ export const ttsCssStyles = `
     grid-row-start: 1;
     grid-row-end: 2;
 
-    padding: 1em;
+    padding: 0;
+    padding-left: 4em;
+    padding-right: 4em;
     margin: 0;
-    margin-left: 0.2em;
-    margin-top: 0.2em;
-    margin-right: 0.2em;
 
     hyphens: none !important;
     word-break: keep-all !important;
     word-wrap: break-word !important;
 
-    font-size: 120% !important;
-
     line-height: initial !important;
 
-    color: #999999 !important;
+    color: #444444 !important;
+
+    border-radius: 0;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #777777 !important;
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
 }
+
+:root[style] div#${TTS_ID_CONTAINER} *,
+:root div#${TTS_ID_CONTAINER} * {
+    font-size: 1.2rem !important;
+}
+
 :root[style*="--USER__lineHeight"] div#${TTS_ID_CONTAINER} {
-    line-height: calc(var(--USER__lineHeight) * 1.2) !important;
+    line-height: calc(var(--USER__lineHeight) * 1) !important;
 }
 :root[style*="readium-night-on"] div#${TTS_ID_CONTAINER} {
     color: #bbbbbb !important;
@@ -385,14 +400,23 @@ export const ttsCssStyles = `
 }
 
 .${TTS_CLASS_UTTERANCE} {
-    margin-bottom: 1em;
-    padding: 0;
+    margin-bottom: 0.1em;
+    padding-top: 0.3em;
+    padding-bottom: 0.3em;
+    padding-left: 1em;
+    padding-right: 1em;
     display: block;
+
+    box-sizing: border-box;
+    border: 1px solid transparent;
 }
 
 :root[style] div#${TTS_ID_ACTIVE_UTTERANCE},
 :root div#${TTS_ID_ACTIVE_UTTERANCE} {
     /* background-color: yellow !important; */
+
+    border: 1px solid #777777;
+    border-radius: 0.4em;
 
     color: black !important;
 }
@@ -414,9 +438,9 @@ export const ttsCssStyles = `
     text-decoration: underline;
     text-underline-position: under;
     */
-    outline-color: black;
+    outline-color: #777777;
     outline-offset: 2px;
-    outline-style: solid;
+    outline-style: auto;
     outline-width: 1px;
 
     padding: 0;
@@ -575,6 +599,11 @@ background: red;
 ::-webkit-scrollbar {
 width:  14px;
 height: 14px;
+}
+
+html.${POPUP_DIALOG_CLASS}.${TTS_CLASS_IS_ACTIVE} ::-webkit-scrollbar {
+    display: none;
+    /* visibility: hidden; */
 }
 
 ::-webkit-scrollbar-thumb {
