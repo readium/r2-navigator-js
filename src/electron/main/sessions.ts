@@ -910,22 +910,23 @@ export function initSessions() {
         }
     });
 
-    async function willQuitCallback(evt: Electron.Event) {
-        debug("app will quit");
-        evt.preventDefault();
+    // Application-level lifecycle!
+    // async function willQuitCallback(evt: Electron.Event) {
+    //     debug("app will quit");
+    //     evt.preventDefault();
 
-        app.removeListener("will-quit", willQuitCallback);
+    //     app.removeListener("will-quit", willQuitCallback);
 
-        try {
-            await clearSessions();
-        } catch (err) {
-            debug(err);
-        }
-        debug("Cache and StorageData cleared, now quitting...");
-        app.quit();
-    }
+    //     try {
+    //         await clearSessions();
+    //     } catch (err) {
+    //         debug(err);
+    //     }
+    //     debug("Cache and StorageData cleared, now quitting...");
+    //     app.quit();
+    // }
 
-    app.on("will-quit", willQuitCallback);
+    // app.on("will-quit", willQuitCallback);
 }
 
 export async function clearSession(sess: Electron.Session, str: string): Promise<void> {
