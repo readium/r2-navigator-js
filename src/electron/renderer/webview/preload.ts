@@ -26,14 +26,15 @@ import {
     IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK, IEventPayload_R2_EVENT_CLIPBOARD_COPY,
     IEventPayload_R2_EVENT_DEBUG_VISUALS, IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
     IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, IEventPayload_R2_EVENT_LINK,
-    IEventPayload_R2_EVENT_LOCATOR_VISIBLE, IEventPayload_R2_EVENT_PAGE_TURN,
-    IEventPayload_R2_EVENT_READING_LOCATION, IEventPayload_R2_EVENT_READIUMCSS,
-    IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X,
-    IEventPayload_R2_EVENT_TTS_CLICK_ENABLE, IEventPayload_R2_EVENT_TTS_DO_PLAY,
-    IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
-    R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS,
-    R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
-    R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
+    IEventPayload_R2_EVENT_LOCATOR_VISIBLE, IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK,
+    IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READING_LOCATION,
+    IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_SCROLLTO,
+    IEventPayload_R2_EVENT_SHIFT_VIEW_X, IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
+    IEventPayload_R2_EVENT_TTS_DO_PLAY, IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CLIPBOARD_COPY,
+    R2_EVENT_DEBUG_VISUALS, R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE,
+    R2_EVENT_HIGHLIGHT_REMOVE_ALL, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE,
+    R2_EVENT_MEDIA_OVERLAY_CLICK, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
     R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
     R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY,
     R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
@@ -1914,40 +1915,55 @@ function loaded(forced: boolean) {
 
         processXYDebounced(x, y, false);
 
-        if (win.READIUM2.ttsClickEnabled) {
+        // const elems = win.document.elementsFromPoint(x, y);
 
-            // const elems = win.document.elementsFromPoint(x, y);
+        // let element: Element | undefined = elems && elems.length ? elems[0] : undefined;
+        let element: Element | undefined;
 
-            // let element: Element | undefined = elems && elems.length ? elems[0] : undefined;
-            let element: Element | undefined;
+        // if ((win.document as any).caretPositionFromPoint) {
+        //     const range = (win.document as any).caretPositionFromPoint(x, y);
+        //     const node = range.offsetNode;
+        //     const offset = range.offset;
+        // } else if (win.document.caretRangeFromPoint) {
+        // }
 
-            // if ((win.document as any).caretPositionFromPoint) {
-            //     const range = (win.document as any).caretPositionFromPoint(x, y);
-            //     const node = range.offsetNode;
-            //     const offset = range.offset;
-            // } else if (win.document.caretRangeFromPoint) {
-            // }
+        // let textNode: Node | undefined;
+        // let textNodeOffset = 0;
 
-            // let textNode: Node | undefined;
-            // let textNodeOffset = 0;
+        const range = win.document.caretRangeFromPoint(x, y);
+        if (range) {
+            const node = range.startContainer;
+            // const offset = range.startOffset;
 
-            const range = win.document.caretRangeFromPoint(x, y);
-            if (range) {
-                const node = range.startContainer;
-                // const offset = range.startOffset;
-
-                if (node) {
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                        element = node as Element;
-                    } else if (node.nodeType === Node.TEXT_NODE) {
-                        // textNode = node;
-                        // textNodeOffset = offset;
-                        if (node.parentNode && node.parentNode.nodeType === Node.ELEMENT_NODE) {
-                            element = node.parentNode as Element;
-                        }
+            if (node) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    element = node as Element;
+                } else if (node.nodeType === Node.TEXT_NODE) {
+                    // textNode = node;
+                    // textNodeOffset = offset;
+                    if (node.parentNode && node.parentNode.nodeType === Node.ELEMENT_NODE) {
+                        element = node.parentNode as Element;
                     }
                 }
             }
+        }
+
+        if (element) { // win.READIUM2.mediaOverlaysClickEnabled
+            const textFragmentIDChain: Array<string | null> = [];
+            let curEl = element;
+            do {
+                const id = curEl.getAttribute("id");
+                textFragmentIDChain.push(id ? id : null);
+                curEl = curEl.parentNode as Element;
+            } while (curEl && curEl.nodeType === Node.ELEMENT_NODE);
+
+            const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK = {
+                textFragmentIDChain,
+            };
+            ipcRenderer.sendToHost(R2_EVENT_MEDIA_OVERLAY_CLICK, payload);
+        }
+
+        if (element && win.READIUM2.ttsClickEnabled) {
 
             if (element) {
                 if (ev.altKey) {

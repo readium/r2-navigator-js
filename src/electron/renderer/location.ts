@@ -17,13 +17,12 @@ import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
 import { DEBUG_AUDIO, IAudioPlaybackInfo } from "../common/audiobook";
 import { IDocInfo } from "../common/document";
 import {
-    IEventPayload_R2_EVENT_AUDIO_PLAYBACK_RATE, IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK,
-    IEventPayload_R2_EVENT_LINK, IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
-    IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READING_LOCATION,
-    IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_SCROLLTO,
-    IEventPayload_R2_EVENT_SHIFT_VIEW_X, R2_EVENT_AUDIO_PLAYBACK_RATE, R2_EVENT_AUDIO_SOUNDTRACK,
-    R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
-    R2_EVENT_READING_LOCATION, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
+    IEventPayload_R2_EVENT_AUDIO_PLAYBACK_RATE, IEventPayload_R2_EVENT_LINK,
+    IEventPayload_R2_EVENT_LOCATOR_VISIBLE, IEventPayload_R2_EVENT_PAGE_TURN,
+    IEventPayload_R2_EVENT_READING_LOCATION, IEventPayload_R2_EVENT_READIUMCSS,
+    IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X,
+    R2_EVENT_AUDIO_PLAYBACK_RATE, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN,
+    R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
 } from "../common/events";
 import { IPaginationInfo } from "../common/pagination";
 import { READIUM2_BASEURL_ID, readiumCssTransformHtml } from "../common/readium-css-inject";
@@ -151,10 +150,6 @@ export function locationHandleIpcMessage(
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_LINK;
         debug(`locationHandleIpcMessage R2_EVENT_LINK: ${payload.url}`);
         handleLinkUrl(payload.url, activeWebView.READIUM2.readiumCss);
-    } else if (eventChannel === R2_EVENT_AUDIO_SOUNDTRACK) {
-        // debug("R2_EVENT_AUDIO_SOUNDTRACK (webview.addEventListener('ipc-message')");
-        const payload = eventArgs[0] as IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK;
-        handleAudioSoundTrack(payload.url);
     } else if (eventChannel === R2_EVENT_AUDIO_PLAYBACK_RATE) {
         // debug("R2_EVENT_AUDIO_PLAYBACK_RATE (webview.addEventListener('ipc-message')");
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_AUDIO_PLAYBACK_RATE;
@@ -163,27 +158,6 @@ export function locationHandleIpcMessage(
         return false;
     }
     return true;
-}
-
-const AUDIO_SOUNDTRACK_ID = "R2_AUDIO_SOUNDTRACK_ID";
-let _currentAudioSoundTrack: string | undefined;
-function handleAudioSoundTrack(url: string) {
-    if (url === _currentAudioSoundTrack) {
-        return;
-    }
-    _currentAudioSoundTrack = url;
-    let audioEl = document.getElementById(AUDIO_SOUNDTRACK_ID);
-    if (audioEl && audioEl.parentNode) {
-        audioEl.parentNode.removeChild(audioEl);
-    }
-    audioEl = document.createElement("audio"); // no controls => should be invisible
-    audioEl.setAttribute("style", "display: none");
-    audioEl.setAttribute("id", AUDIO_SOUNDTRACK_ID);
-    audioEl.setAttribute("src", url);
-    audioEl.setAttribute("loop", "loop");
-    audioEl.setAttribute("autoplay", "autoplay");
-    audioEl.setAttribute("role", "ibooks:soundtrack"); // epub:type
-    document.body.appendChild(audioEl);
 }
 
 // see webview.addEventListener("ipc-message", ...)

@@ -10,6 +10,7 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 import { debounce } from "debounce";
 import * as debug_ from "debug";
 import { remote, webContents } from "electron";
+import * as util from "util";
 
 import { Locator } from "@r2-shared-js/models/locator";
 import { Publication } from "@r2-shared-js/models/publication";
@@ -27,8 +28,10 @@ import { highlightsHandleIpcMessage } from "./highlight";
 import {
     getCurrentReadingLocation, handleLinkLocator, locationHandleIpcMessage, shiftWebview,
 } from "./location";
+import { mediaOverlaysHandleIpcMessage } from "./media-overlays";
 import { ttsClickEnable, ttsHandleIpcMessage } from "./readaloud";
 import { adjustReadiumCssJsonMessageForFixedLayout, obtainReadiumCss } from "./readium-css";
+import { soundtrackHandleIpcMessage } from "./soundtrack";
 import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 // import { registerProtocol } from "@r2-navigator-js/electron/renderer/common/protocol";
@@ -225,7 +228,9 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             }
         } else if (!highlightsHandleIpcMessage(event.channel, event.args, webview) &&
             !ttsHandleIpcMessage(event.channel, event.args, webview) &&
-            !locationHandleIpcMessage(event.channel, event.args, webview)) {
+            !locationHandleIpcMessage(event.channel, event.args, webview) &&
+            !mediaOverlaysHandleIpcMessage(event.channel, event.args, webview) &&
+            !soundtrackHandleIpcMessage(event.channel, event.args, webview)) {
 
             debug("webview1 ipc-message");
             debug(event.channel);
@@ -317,6 +322,10 @@ export function installNavigatorDOM(
     sessionInfo: string | undefined,
     rcss: IEventPayload_R2_EVENT_READIUMCSS | undefined,
     ) {
+
+    debug(JSON.stringify(publication, null, 4));
+    debug(util.inspect(publication,
+        { showHidden: false, depth: 1000, colors: true, customInspect: true }));
 
     const domRootElement = document.getElementById(rootHtmlElementID) as HTMLElement;
     if (!domRootElement) {
