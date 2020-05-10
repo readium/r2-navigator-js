@@ -27,14 +27,15 @@ import {
     IEventPayload_R2_EVENT_DEBUG_VISUALS, IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
     IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, IEventPayload_R2_EVENT_LINK,
     IEventPayload_R2_EVENT_LOCATOR_VISIBLE, IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK,
-    IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READING_LOCATION,
-    IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_SCROLLTO,
-    IEventPayload_R2_EVENT_SHIFT_VIEW_X, IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
-    IEventPayload_R2_EVENT_TTS_DO_PLAY, IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE,
-    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CLIPBOARD_COPY,
-    R2_EVENT_DEBUG_VISUALS, R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE,
-    R2_EVENT_HIGHLIGHT_REMOVE_ALL, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE,
-    R2_EVENT_MEDIA_OVERLAY_CLICK, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
+    IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, IEventPayload_R2_EVENT_PAGE_TURN,
+    IEventPayload_R2_EVENT_READING_LOCATION, IEventPayload_R2_EVENT_READIUMCSS,
+    IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X,
+    IEventPayload_R2_EVENT_TTS_CLICK_ENABLE, IEventPayload_R2_EVENT_TTS_DO_PLAY,
+    IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
+    R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS,
+    R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
+    R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_MEDIA_OVERLAY_CLICK,
+    R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
     R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
     R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY,
     R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
@@ -48,11 +49,11 @@ import {
 import { sameSelections } from "../../common/selection";
 import {
     CLASS_PAGINATED, CSS_CLASS_NO_FOCUS_OUTLINE, LINK_TARGET_CLASS, POPUP_DIALOG_CLASS,
-    ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX,
-    ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_CLASS_INJECTED_SPAN,
-    TTS_CLASS_INJECTED_SUBSPAN, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT,
-    ZERO_TRANSFORM_CLASS, readPosCssStylesAttr1, readPosCssStylesAttr2, readPosCssStylesAttr3,
-    readPosCssStylesAttr4,
+    R2_MO_CLASS_ACTIVE, R2_MO_CLASS_ACTIVE_PLAYBACK, ROOT_CLASS_INVISIBLE_MASK,
+    ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
+    ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN,
+    TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ZERO_TRANSFORM_CLASS,
+    readPosCssStylesAttr1, readPosCssStylesAttr2, readPosCssStylesAttr3, readPosCssStylesAttr4,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector2";
@@ -2770,6 +2771,30 @@ if (!win.READIUM2.isAudio) {
 
     ipcRenderer.on(R2_EVENT_TTS_CLICK_ENABLE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_CLICK_ENABLE) => {
         win.READIUM2.ttsClickEnabled = payload.doEnable;
+    });
+
+    ipcRenderer.on(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
+        (_event: any, payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT) => {
+
+        const activeClass = payload.classActive ? payload.classActive : R2_MO_CLASS_ACTIVE;
+        const activeClassPlayback =
+            payload.classActivePlayback ? payload.classActivePlayback : R2_MO_CLASS_ACTIVE_PLAYBACK;
+
+        const activeMoElements = win.document.body.querySelectorAll(`.${activeClass}`);
+        activeMoElements.forEach((elem) => {
+            elem.classList.remove(activeClass);
+        });
+
+        if (!payload.id) {
+            win.document.documentElement.classList.remove(activeClassPlayback);
+        } else {
+            win.document.documentElement.classList.add(activeClassPlayback);
+
+            const targetEl = win.document.getElementById(payload.id);
+            if (targetEl) {
+                targetEl.classList.add(activeClass);
+            }
+        }
     });
 
     ipcRenderer.on(R2_EVENT_HIGHLIGHT_CREATE, (_event: any, payloadPing: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE) => {

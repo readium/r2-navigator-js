@@ -100,8 +100,6 @@ export interface IEventPayload_R2_EVENT_LINK {
     url: string;
 }
 
-// in MAIN: browserWindow.webContents.send()
-// in RENDERER: ipcRenderer.on()
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
 export const R2_EVENT_AUDIO_SOUNDTRACK = "R2_EVENT_AUDIO_SOUNDTRACK";
@@ -110,14 +108,22 @@ export interface IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK {
     url: string;
 }
 
-// in MAIN: browserWindow.webContents.send()
-// in RENDERER: ipcRenderer.on()
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
 export const R2_EVENT_MEDIA_OVERLAY_CLICK = "R2_EVENT_MEDIA_OVERLAY_CLICK";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK {
     textFragmentIDChain: Array<string | null> | undefined;
+}
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT = "R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT {
+    id: string | undefined;
+    classActive: string | undefined;
+    classActivePlayback: string | undefined;
 }
 
 // in WEBVIEW: ipcRenderer.sendToHost()

@@ -14,7 +14,8 @@ import { Link } from "@r2-shared-js/models/publication-link";
 
 import { DEBUG_AUDIO } from "../common/audiobook";
 import {
-    IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK, R2_EVENT_MEDIA_OVERLAY_CLICK,
+    IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK, IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
+    R2_EVENT_MEDIA_OVERLAY_CLICK, R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
 } from "../common/events";
 import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "../common/sessions";
 import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
@@ -29,21 +30,76 @@ const AUDIO_MO_ID = "R2_AUDIO_MO_ID";
 
 // URL without t=begin,end media fragment! (pure audio reference)
 let _currentAudioUrl: string | undefined;
+let _previousAudioUrl: string | undefined;
 
 let _currentAudioBegin: number | undefined;
+// let _previousAudioBegin: number | undefined;
+
 let _currentAudioEnd: number | undefined;
+let _previousAudioEnd: number | undefined;
 
 let _currentAudioElement: HTMLAudioElement | undefined;
 
-function playMediaOverlaysAudio(urlPath: string, begin: number | undefined, end: number | undefined) {
+let _mediaOverlayRoot: MediaOverlayNode | undefined;
+let _mediaOverlayTextAudioPair: MediaOverlayNode | undefined;
+
+async function playMediaOverlays(
+    textHref: string,
+    rootMo: MediaOverlayNode,
+    textFragmentIDChain: Array<string | null> | undefined) {
+
+    let moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, textFragmentIDChain);
+    if (!moTextAudioPair && textFragmentIDChain) {
+        moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, undefined);
+    }
+    if (moTextAudioPair) {
+        if (moTextAudioPair.Audio) {
+            _mediaOverlayRoot = rootMo;
+            _mediaOverlayTextAudioPair = moTextAudioPair;
+            await playMediaOverlaysAudio(moTextAudioPair, undefined, undefined);
+        }
+    } else {
+        debug("!moTextAudioPair " + textHref);
+    }
+}
+
+async function playMediaOverlaysAudio(
+    moTextAudioPair: MediaOverlayNode,
+    begin: number | undefined,
+    end: number | undefined) {
+
+    if (moTextAudioPair.Text) {
+        const i = moTextAudioPair.Text.lastIndexOf("#");
+        if (i >= 0) {
+            const id = moTextAudioPair.Text.substr(i + 1);
+            if (id) {
+                const classActive = win.READIUM2.publication.Metadata?.MediaOverlay?.ActiveClass;
+                const classActivePlayback =
+                    win.READIUM2.publication.Metadata?.MediaOverlay?.PlaybackActiveClass;
+                const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT = {
+                    classActive: classActive ? classActive : undefined,
+                    classActivePlayback: classActivePlayback ? classActivePlayback : undefined,
+                    id,
+                };
+                const activeWebView = win.READIUM2.getActiveWebView();
+                if (activeWebView) {
+                    await activeWebView.send(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, payload);
+                }
+            }
+        }
+    }
+
+    if (!moTextAudioPair.Audio) {
+        return; // TODO TTS
+    }
 
     let publicationURL = win.READIUM2.publicationURL;
     if (publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
         publicationURL = convertCustomSchemeToHttpUrl(publicationURL);
     }
 
-    // const url = publicationURL + "/../" + urlPath;
-    const urlObjFull = new URL(urlPath, publicationURL);
+    // const url = publicationURL + "/../" + moTextAudioPair.Audio;
+    const urlObjFull = new URL(moTextAudioPair.Audio, publicationURL);
     const urlFull = urlObjFull.toString();
 
     const urlObjNoQuery = new URL(urlFull);
@@ -51,149 +107,16 @@ function playMediaOverlaysAudio(urlPath: string, begin: number | undefined, end:
     urlObjNoQuery.search = "";
     const urlNoQuery = urlObjNoQuery.toString();
 
-    if (!_currentAudioUrl || urlNoQuery !== _currentAudioUrl) {
-        _currentAudioUrl = urlNoQuery;
-
-        if (IS_DEV) {
-            debug("MO AUDIO RESET: " + _currentAudioUrl + " => " + urlNoQuery);
-        }
-
-        // _currentAudioElement = document.getElementById(AUDIO_MO_ID) as HTMLAudioElement;
-        if (_currentAudioElement) {
-            _currentAudioElement.pause();
-            _currentAudioElement.setAttribute("src", "");
-            if (_currentAudioElement.parentNode) {
-                _currentAudioElement.parentNode.removeChild(_currentAudioElement);
-            }
-        }
-        _currentAudioElement = document.createElement("audio"); // no controls => should be invisible
-        _currentAudioElement.setAttribute("style", "display: none");
-        _currentAudioElement.setAttribute("id", AUDIO_MO_ID);
-        // _currentAudioElement.setAttribute("loop", "loop");
-        // _currentAudioElement.setAttribute("autoplay", "autoplay");
-        _currentAudioElement.setAttribute("role", "media-overlays");
-        document.body.appendChild(_currentAudioElement);
-
-        _currentAudioElement.addEventListener("error", () => {
-            debug("-1) error: " + _currentAudioUrl);
-            if (_currentAudioElement && _currentAudioElement.error) {
-                // 1 === MEDIA_ERR_ABORTED
-                // 2 === MEDIA_ERR_NETWORK
-                // 3 === MEDIA_ERR_DECODE
-                // 4 === MEDIA_ERR_SRC_NOT_SUPPORTED
-                debug(_currentAudioElement.error.code);
-                debug(_currentAudioElement.error.message);
-            }
-        });
-
-        if (IS_DEV) {
-            _currentAudioElement.addEventListener("load", () => {
-                debug("0) load: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("loadstart", () => {
-                debug("1) loadstart: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("durationchange", () => {
-                debug("2) durationchange: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("loadedmetadata", () => {
-                debug("3) loadedmetadata: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("loadeddata", () => {
-                debug("4) loadeddata: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("progress", () => {
-                debug("5) progress: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("canplay", () => {
-                debug("6) canplay: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("canplaythrough", () => {
-                debug("7) canplaythrough: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("play", () => {
-                debug("8) play: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("pause", () => {
-                debug("9) pause: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("ended", () => {
-                debug("10) ended: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("seeked", () => {
-                debug("11) seeked: " + _currentAudioUrl);
-            });
-
-            if (DEBUG_AUDIO) {
-                _currentAudioElement.addEventListener("timeupdate", () => {
-                    debug("12) timeupdate: " + _currentAudioUrl);
-                });
-            }
-
-            _currentAudioElement.addEventListener("seeking", () => {
-                debug("13) seeking: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("waiting", () => {
-                debug("14) waiting: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("volumechange", () => {
-                debug("15) volumechange: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("suspend", () => {
-                debug("16) suspend: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("stalled", () => {
-                debug("17) stalled: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("ratechange", () => {
-                debug("18) ratechange: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("playing", () => {
-                debug("19) playing: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("interruptend", () => {
-                debug("20) interruptend: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("interruptbegin", () => {
-                debug("21) interruptbegin: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("emptied", () => {
-                debug("22) emptied: " + _currentAudioUrl);
-            });
-
-            _currentAudioElement.addEventListener("abort", () => {
-                debug("23) abort: " + _currentAudioUrl);
-            });
-        }
-    }
-
     const hasBegin = typeof begin !== "undefined";
     const hasEnd = typeof end !== "undefined";
 
-    let mediaFragmentUrl = urlFull;
+    // _previousAudioBegin = _currentAudioBegin;
+    _previousAudioEnd = _currentAudioEnd;
+
+    _currentAudioBegin = undefined;
+    _currentAudioEnd = undefined;
+
     if (!hasBegin && !hasEnd) {
-        mediaFragmentUrl = urlFull;
-        // urlObjFull.searchParams.get("t")
         if (urlObjFull.hash) {
             const matches = urlObjFull.hash.match(/t=([0-9\.]+)(,([0-9\.]+))?/);
             if (matches && matches.length >= 1) {
@@ -214,23 +137,291 @@ function playMediaOverlaysAudio(urlPath: string, begin: number | undefined, end:
             }
         }
     } else {
-        mediaFragmentUrl = `${urlNoQuery}${`t=${hasBegin ? begin : ""}${hasEnd ? `,${end}` : ""}`}`;
+        // const mediaFragmentUrl = `${urlNoQuery}${`t=${hasBegin ? begin : ""}${hasEnd ? `,${end}` : ""}`}`;
         _currentAudioBegin = begin;
         _currentAudioEnd = end;
     }
     if (IS_DEV) {
-        debug(`${_currentAudioUrl} => [${_currentAudioBegin}-${_currentAudioEnd}] (${mediaFragmentUrl})`);
+        debug(`${urlFull} => [${_currentAudioBegin}-${_currentAudioEnd}]`);
     }
-    if (_currentAudioElement) {
-        _currentAudioElement.setAttribute("src", mediaFragmentUrl);
 
-        const initialPlay = async (ev: Event) => {
+    const ontimeupdate = async (ev: Event) => {
+        const currentAudioElement = ev.currentTarget as HTMLAudioElement;
+        if (_currentAudioEnd && currentAudioElement.currentTime >= (_currentAudioEnd - 0.05)) {
+
+            (currentAudioElement as any).__ontimeupdate = false;
+            currentAudioElement.removeEventListener("timeupdate", ontimeupdate);
+
+            if (_mediaOverlayRoot && _mediaOverlayTextAudioPair) {
+                const nextTextAudioPair =
+                    findNextTextAudioPair(_mediaOverlayRoot, _mediaOverlayTextAudioPair, undefined);
+                if (!nextTextAudioPair) {
+                    currentAudioElement.pause();
+
+                    const classActive = win.READIUM2.publication.Metadata?.MediaOverlay?.ActiveClass;
+                    const classActivePlayback =
+                        win.READIUM2.publication.Metadata?.MediaOverlay?.PlaybackActiveClass;
+                    const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT = {
+                        classActive: classActive ? classActive : undefined,
+                        classActivePlayback: classActivePlayback ? classActivePlayback : undefined,
+                        id: undefined,
+                    };
+                    const activeWebView = win.READIUM2.getActiveWebView();
+                    if (activeWebView) {
+                        await activeWebView.send(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, payload);
+                    }
+                } else {
+                    _mediaOverlayTextAudioPair = nextTextAudioPair;
+                    await playMediaOverlaysAudio(nextTextAudioPair, undefined, undefined);
+                }
+            }
+        }
+    };
+    const ensureOnTimeUpdate = () => {
+        if (_currentAudioElement && !(_currentAudioElement as any).__ontimeupdate) {
+            (_currentAudioElement as any).__ontimeupdate = true;
+            _currentAudioElement.addEventListener("timeupdate", ontimeupdate);
+        }
+    };
+
+    const playClip = async (initial: boolean, contiguous: boolean) => {
+        if (!_currentAudioElement) {
+            return;
+        }
+
+        const timeToSeekTo = _currentAudioBegin ? _currentAudioBegin : 0;
+
+        if (initial || _currentAudioElement.paused) {
+            if ((initial && !timeToSeekTo) ||
+                _currentAudioElement.currentTime === timeToSeekTo) {
+
+                ensureOnTimeUpdate();
+                await _currentAudioElement.play();
+            } else {
+                const ontimeupdateSeeked = async (ev: Event) => {
+                    const currentAudioElement = ev.currentTarget as HTMLAudioElement;
+                    currentAudioElement.removeEventListener("timeupdate", ontimeupdateSeeked);
+
+                    ensureOnTimeUpdate();
+                    if (_currentAudioElement) {
+                        await _currentAudioElement.play();
+                    }
+                };
+                _currentAudioElement.addEventListener("timeupdate", ontimeupdateSeeked);
+                _currentAudioElement.currentTime = timeToSeekTo;
+            }
+        } else {
+            if (contiguous) {
+                ensureOnTimeUpdate();
+            } else {
+                _currentAudioElement.currentTime = timeToSeekTo;
+            }
+        }
+    };
+
+    _previousAudioUrl = _currentAudioUrl;
+    if (!_currentAudioUrl || urlNoQuery !== _currentAudioUrl) {
+        _currentAudioUrl = urlNoQuery;
+        if (IS_DEV) {
+            debug("MO AUDIO RESET: " + _previousAudioUrl + " => " + _currentAudioUrl);
+        }
+
+        // _currentAudioElement = document.getElementById(AUDIO_MO_ID) as HTMLAudioElement;
+        if (_currentAudioElement) {
+            if ((_currentAudioElement as any).__ontimeupdate) {
+                (_currentAudioElement as any).__ontimeupdate = false;
+                _currentAudioElement.removeEventListener("timeupdate", ontimeupdate);
+            }
+
+            _currentAudioElement.pause();
+            _currentAudioElement.setAttribute("src", "");
+            if (_currentAudioElement.parentNode) {
+                _currentAudioElement.parentNode.removeChild(_currentAudioElement);
+            }
+        }
+        _currentAudioElement = document.createElement("audio"); // no controls => should be invisible
+        _currentAudioElement.setAttribute("style", "display: none");
+        _currentAudioElement.setAttribute("id", AUDIO_MO_ID);
+        // _currentAudioElement.setAttribute("loop", "loop");
+        // _currentAudioElement.setAttribute("autoplay", "autoplay");
+        _currentAudioElement.setAttribute("role", "media-overlays");
+        document.body.appendChild(_currentAudioElement);
+
+        _currentAudioElement.addEventListener("error", (ev) => {
+            debug("-1) error: " + _currentAudioUrl + " -- "
+            + (ev.currentTarget as HTMLAudioElement).src);
+
+            if (_currentAudioElement && _currentAudioElement.error) {
+                // 1 === MEDIA_ERR_ABORTED
+                // 2 === MEDIA_ERR_NETWORK
+                // 3 === MEDIA_ERR_DECODE
+                // 4 === MEDIA_ERR_SRC_NOT_SUPPORTED
+                debug(_currentAudioElement.error.code);
+                debug(_currentAudioElement.error.message);
+            }
+        });
+
+        if (IS_DEV) {
+            _currentAudioElement.addEventListener("load", (ev) => {
+                debug("0) load: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("loadstart", (ev) => {
+                debug("1) loadstart: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("durationchange", (ev) => {
+                debug("2) durationchange: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("loadedmetadata", (ev) => {
+                debug("3) loadedmetadata: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("loadeddata", (ev) => {
+                debug("4) loadeddata: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("progress", (ev) => {
+                debug("5) progress: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("canplay", (ev) => {
+                debug("6) canplay: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("canplaythrough", (ev) => {
+                debug("7) canplaythrough: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("play", (ev) => {
+                debug("8) play: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("pause", (ev) => {
+                debug("9) pause: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("ended", (ev) => {
+                debug("10) ended: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("seeked", (ev) => {
+                debug("11) seeked: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            if (DEBUG_AUDIO) {
+                _currentAudioElement.addEventListener("timeupdate", (ev) => {
+                    debug("12) timeupdate: " + _currentAudioUrl + " -- "
+                    + (ev.currentTarget as HTMLAudioElement).src);
+                });
+            }
+
+            _currentAudioElement.addEventListener("seeking", (ev) => {
+                debug("13) seeking: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("waiting", (ev) => {
+                debug("14) waiting: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("volumechange", (ev) => {
+                debug("15) volumechange: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("suspend", (ev) => {
+                debug("16) suspend: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("stalled", (ev) => {
+                debug("17) stalled: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("ratechange", (ev) => {
+                debug("18) ratechange: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("playing", (ev) => {
+                debug("19) playing: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("interruptend", (ev) => {
+                debug("20) interruptend: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("interruptbegin", (ev) => {
+                debug("21) interruptbegin: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("emptied", (ev) => {
+                debug("22) emptied: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+
+            _currentAudioElement.addEventListener("abort", (ev) => {
+                debug("23) abort: " + _currentAudioUrl + " -- "
+                + (ev.currentTarget as HTMLAudioElement).src);
+            });
+        }
+
+        const oncanplaythrough = async (ev: Event) => {
             const currentAudioElement = ev.currentTarget as HTMLAudioElement;
-            currentAudioElement.removeEventListener("canplaythrough", initialPlay);
-            await currentAudioElement.play();
+            currentAudioElement.removeEventListener("canplaythrough", oncanplaythrough);
+            debug("oncanplaythrough");
+            await playClip(true, false);
         };
-        _currentAudioElement.addEventListener("canplaythrough", initialPlay);
+        _currentAudioElement.addEventListener("canplaythrough", oncanplaythrough);
+        _currentAudioElement.setAttribute("src", _currentAudioUrl);
+    } else {
+        const contiguous = _previousAudioUrl === _currentAudioUrl &&
+            typeof _previousAudioEnd !== "undefined" &&
+            _previousAudioEnd > ((_currentAudioBegin ? _currentAudioBegin : 0) - 0.02) &&
+            _previousAudioEnd <= (_currentAudioBegin ? _currentAudioBegin : 0);
+        await playClip(false, contiguous);
     }
+}
+
+function findNextTextAudioPair(
+    mo: MediaOverlayNode,
+    subMo: MediaOverlayNode,
+    prevMo: MediaOverlayNode | undefined): MediaOverlayNode | undefined {
+
+    if (!mo.Children || !mo.Children.length) {
+        if (prevMo === subMo) {
+            return mo;
+        }
+        return undefined;
+    }
+    let previous = prevMo;
+    for (const child of mo.Children) {
+        const match = findNextTextAudioPair(child, subMo, previous);
+        if (match) {
+            return match;
+        }
+        previous = child;
+    }
+    return undefined;
 }
 
 function findDepthFirstTextAudioPair(
@@ -266,24 +457,6 @@ function findDepthFirstTextAudioPair(
         }
     }
     return undefined;
-}
-
-function playMediaOverlays(
-    textHref: string,
-    rootMo: MediaOverlayNode,
-    textFragmentIDChain: Array<string | null> | undefined) {
-
-    let moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, textFragmentIDChain);
-    if (!moTextAudioPair && textFragmentIDChain) {
-        moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, undefined);
-    }
-    if (moTextAudioPair) {
-        if (moTextAudioPair.Audio) {
-            playMediaOverlaysAudio(moTextAudioPair.Audio, undefined, undefined);
-        }
-    } else {
-        debug("!moTextAudioPair " + textHref);
-    }
 }
 
 async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<string | null> | undefined) {
@@ -379,7 +552,7 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
     const hrefUrlObj = new URL("https://dummy.com/" + href);
     // hrefUrlObj.hash = "";
     // hrefUrlObj.search = "";
-    playMediaOverlays(hrefUrlObj.pathname.substr(1), link.MediaOverlays, textFragmentIDChain);
+    await playMediaOverlays(hrefUrlObj.pathname.substr(1), link.MediaOverlays, textFragmentIDChain);
 }
 
 // win.READIUM2.ttsClickEnabled
