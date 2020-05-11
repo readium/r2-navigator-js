@@ -966,7 +966,7 @@ export function mediaOverlaysHandleIpcMessage(
         if (publicationHasMediaOverlays(win.READIUM2.publication) &&
             (
             // win.READIUM2.mediaOverlaysClickEnabled &&
-            _mediaOverlayRoot) || true) {
+            _mediaOverlayRoot || true)) {
             // TODO: restrict to when MO was play-started at least once (so that rate/speed is set)
 
             if (IS_DEV) {
