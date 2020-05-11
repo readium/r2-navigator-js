@@ -683,6 +683,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     _lastAnimState = undefined;
                     targetObj[targetProp] = scrollOffset;
                 } else {
+                    _ignoreScrollEvent = true;
                     // _lastAnimState = undefined;
                     // (targetObj as HTMLElement).style.transition = "";
                     // (targetObj as HTMLElement).style.transform = "none";
@@ -699,10 +700,12 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     // }, animationTime);
                     _lastAnimState = animateProperty(
                         win.cancelAnimationFrame,
-                        undefined,
-                        // (cancelled: boolean) => {
-                        //     debug(cancelled);
-                        // },
+                        // undefined,
+                        (_cancelled: boolean) => {
+                            // debug(cancelled);
+                            _ignoreScrollEvent = false;
+                            onScrollDebounced();
+                        },
                         targetProp,
                         animationTime,
                         targetObj,
@@ -726,12 +729,15 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     _lastAnimState = undefined;
                     targetObj[targetProp] = newVal;
                 } else {
+                    _ignoreScrollEvent = true;
                     _lastAnimState = animateProperty(
                         win.cancelAnimationFrame,
-                        undefined,
-                        // (cancelled: boolean) => {
-                        //     debug(cancelled);
-                        // },
+                        // undefined,
+                        (_cancelled: boolean) => {
+                            // debug(cancelled);
+                            _ignoreScrollEvent = false;
+                            onScrollDebounced();
+                        },
                         targetProp,
                         animationTime,
                         targetObj,
@@ -772,12 +778,15 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     _lastAnimState = undefined;
                     targetObj[targetProp] = scrollOffset;
                 } else {
+                    _ignoreScrollEvent = true;
                     _lastAnimState = animateProperty(
                         win.cancelAnimationFrame,
-                        undefined,
-                        // (cancelled: boolean) => {
-                        //     debug(cancelled);
-                        // },
+                        // undefined,
+                        (_cancelled: boolean) => {
+                            // debug(cancelled);
+                            _ignoreScrollEvent = false;
+                            onScrollDebounced();
+                        },
                         targetProp,
                         animationTime,
                         targetObj,
@@ -801,12 +810,15 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     _lastAnimState = undefined;
                     targetObj[targetProp] = newVal;
                 } else {
+                    _ignoreScrollEvent = true;
                     _lastAnimState = animateProperty(
                         win.cancelAnimationFrame,
-                        undefined,
-                        // (cancelled: boolean) => {
-                        //     debug(cancelled);
-                        // },
+                        // undefined,
+                        (_cancelled: boolean) => {
+                            // debug(cancelled);
+                            _ignoreScrollEvent = false;
+                            onScrollDebounced();
+                        },
                         targetProp,
                         animationTime,
                         targetObj,
@@ -926,6 +938,7 @@ function scrollElementIntoView_(element: Element, doFocus: boolean, animate: boo
                     _lastAnimState2 = undefined;
                     targetObj[targetProp] = offset;
                 } else {
+                    _ignoreScrollEvent = true;
                     // _lastAnimState = undefined;
                     // (targetObj as HTMLElement).style.transition = "";
                     // (targetObj as HTMLElement).style.transform = "none";
@@ -942,10 +955,12 @@ function scrollElementIntoView_(element: Element, doFocus: boolean, animate: boo
                     // }, animationTime);
                     _lastAnimState2 = animateProperty(
                         win.cancelAnimationFrame,
-                        undefined,
-                        // (cancelled: boolean) => {
-                        //     debug(cancelled);
-                        // },
+                        // undefined,
+                        (_cancelled: boolean) => {
+                            // debug(cancelled);
+                            _ignoreScrollEvent = false;
+                            onScrollDebounced();
+                        },
                         targetProp,
                         animationTime2,
                         targetObj,
@@ -1631,6 +1646,26 @@ function mediaOverlaysClickRaw(element: Element | undefined, userInteract: boole
 //     mediaOverlaysClickRaw(element, userInteract);
 // }, 100);
 
+const onScrollRaw = () => {
+    debug("onScrollRaw");
+
+    if (!win.document || !win.document.documentElement) {
+        return;
+    }
+
+    const el = win.READIUM2.locationHashOverride; // || win.READIUM2.hashElement
+    if (el && computeVisibility_(el)) {
+        debug("onScrollRaw VISIBLE SKIP");
+        return;
+    }
+
+    const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
+    processXYRaw(x, 0, false);
+};
+const onScrollDebounced = debounce(() => {
+    onScrollRaw();
+}, 300);
+
 let _loaded = false;
 function loaded(forced: boolean) {
     if (_loaded) {
@@ -1913,6 +1948,10 @@ function loaded(forced: boolean) {
             notifyReadingLocationDebounced.clear();
             notifyReadingLocationDebouncedImmediate.clear();
             scrollToHashDebounced.clear();
+            onScrollDebounced.clear();
+            onResizeDebounced.clear();
+            handleFocusInDebounced.clear();
+            // mediaOverlaysClickDebounced.clear();
 
             const payload: IEventPayload_R2_EVENT_LINK = {
                 url: href,
@@ -1953,31 +1992,21 @@ function loaded(forced: boolean) {
         }
     });
 
-    const onScrollRaw = () => {
-        if (!win.document || !win.document.documentElement) {
-            return;
-        }
-
-        const el = win.READIUM2.locationHashOverride; // || win.READIUM2.hashElement
-        if (el && computeVisibility_(el)) {
-            return;
-        }
-
-        const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
-        processXYRaw(x, 0, false);
-    };
-    const onScrollDebounced = debounce(() => {
-        onScrollRaw();
-    }, 300);
     setTimeout(() => {
         win.addEventListener("scroll", (_ev: Event) => {
 
             if (_ignoreScrollEvent) {
-                _ignoreScrollEvent = false;
+                // _ignoreScrollEvent = false;
                 return;
             }
 
             if (_lastAnimState && _lastAnimState.animating) {
+                debug("_lastAnimState"); // should never happen, as _ignoreScrollEvent
+                return;
+            }
+
+            if (_lastAnimState2 && _lastAnimState2.animating) {
+                debug("_lastAnimState2"); // should never happen, as _ignoreScrollEvent
                 return;
             }
 
@@ -2239,7 +2268,7 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
             debug("|||||||||||||| cannot find visible element inside BODY / HTML????");
             element = win.document.body;
         }
-    } else if (!computeVisibility_(element)) { // isPaginated(win.document)
+    } else if (!userInteract && !computeVisibility_(element)) { // isPaginated(win.document)
         let next: Element | undefined = element;
         let found: Element | undefined;
         while (next) {

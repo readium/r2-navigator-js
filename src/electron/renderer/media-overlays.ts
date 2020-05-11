@@ -1068,6 +1068,12 @@ export function mediaOverlaysPause() {
 }
 
 export function mediaOverlaysInterrupt() {
+    if (!win.READIUM2 || !win.READIUM2.publication) {
+        return;
+    }
+    if (!publicationHasMediaOverlays(win.READIUM2.publication)) {
+        return;
+    }
     if (IS_DEV) {
         debug("mediaOverlaysInterrupt()");
     }

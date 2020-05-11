@@ -10,7 +10,6 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 import { debounce } from "debounce";
 import * as debug_ from "debug";
 import { remote, webContents } from "electron";
-import * as util from "util";
 
 import { Locator } from "@r2-shared-js/models/locator";
 import { Publication } from "@r2-shared-js/models/publication";
