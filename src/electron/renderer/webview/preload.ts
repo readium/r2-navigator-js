@@ -2226,15 +2226,27 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
         debug("|||||||||||||| BODY/HTML selected????");
     }
     if (element) {
-        win.READIUM2.locationHashOverride = element;
+
+        if (userInteract || !win.READIUM2.locationHashOverride) {
+            win.READIUM2.locationHashOverride = element;
+        } else {
+            const visible = win.READIUM2.isFixedLayout ||
+                win.READIUM2.locationHashOverride === win.document.body ||
+                computeVisibility_(win.READIUM2.locationHashOverride);
+            if (!visible) {
+                win.READIUM2.locationHashOverride = element;
+            }
+        }
+
         notifyReadingLocationDebounced(userInteract);
 
         if (win.READIUM2.DEBUG_VISUALS) {
+            const el = win.READIUM2.locationHashOverride ? win.READIUM2.locationHashOverride : element;
             const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr2}]`);
             existings.forEach((existing) => {
                 existing.removeAttribute(`${readPosCssStylesAttr2}`);
             });
-            element.setAttribute(readPosCssStylesAttr2, "processXYRaw");
+            el.setAttribute(readPosCssStylesAttr2, "processXYRaw");
         }
     }
 };
