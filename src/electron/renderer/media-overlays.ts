@@ -43,6 +43,8 @@ let _currentAudioElement: HTMLAudioElement | undefined;
 let _mediaOverlayRoot: MediaOverlayNode | undefined;
 let _mediaOverlayTextAudioPair: MediaOverlayNode | undefined;
 
+const _mediaOverlaySkippabilityIsEnabled = true;
+
 async function playMediaOverlays(
     textHref: string,
     rootMo: MediaOverlayNode,
@@ -55,7 +57,6 @@ async function playMediaOverlays(
     if (moTextAudioPair) {
         if (moTextAudioPair.Audio) {
             _mediaOverlayRoot = rootMo;
-            _mediaOverlayTextAudioPair = moTextAudioPair;
             await playMediaOverlaysAudio(moTextAudioPair, undefined, undefined);
         }
     } else {
@@ -63,10 +64,35 @@ async function playMediaOverlays(
     }
 }
 
+const ontimeupdate = async (ev: Event) => {
+    const currentAudioElement = ev.currentTarget as HTMLAudioElement;
+    if (_currentAudioEnd && currentAudioElement.currentTime >= (_currentAudioEnd - 0.05)) {
+
+        mediaOverlaysNext();
+    }
+};
+const ensureOnTimeUpdate = (remove: boolean) => {
+    if (_currentAudioElement) {
+        if (remove) {
+            if ((_currentAudioElement as any).__ontimeupdate) {
+                (_currentAudioElement as any).__ontimeupdate = false;
+                _currentAudioElement.removeEventListener("timeupdate", ontimeupdate);
+            }
+        } else {
+            if (!(_currentAudioElement as any).__ontimeupdate) {
+                (_currentAudioElement as any).__ontimeupdate = true;
+                _currentAudioElement.addEventListener("timeupdate", ontimeupdate);
+            }
+        }
+    }
+};
+
 async function playMediaOverlaysAudio(
     moTextAudioPair: MediaOverlayNode,
     begin: number | undefined,
     end: number | undefined) {
+
+    _mediaOverlayTextAudioPair = moTextAudioPair;
 
     if (moTextAudioPair.Text) {
         const i = moTextAudioPair.Text.lastIndexOf("#");
@@ -145,45 +171,6 @@ async function playMediaOverlaysAudio(
         debug(`${urlFull} => [${_currentAudioBegin}-${_currentAudioEnd}]`);
     }
 
-    const ontimeupdate = async (ev: Event) => {
-        const currentAudioElement = ev.currentTarget as HTMLAudioElement;
-        if (_currentAudioEnd && currentAudioElement.currentTime >= (_currentAudioEnd - 0.05)) {
-
-            (currentAudioElement as any).__ontimeupdate = false;
-            currentAudioElement.removeEventListener("timeupdate", ontimeupdate);
-
-            if (_mediaOverlayRoot && _mediaOverlayTextAudioPair) {
-                const nextTextAudioPair =
-                    findNextTextAudioPair(_mediaOverlayRoot, _mediaOverlayTextAudioPair, undefined);
-                if (!nextTextAudioPair) {
-                    currentAudioElement.pause();
-
-                    const classActive = win.READIUM2.publication.Metadata?.MediaOverlay?.ActiveClass;
-                    const classActivePlayback =
-                        win.READIUM2.publication.Metadata?.MediaOverlay?.PlaybackActiveClass;
-                    const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT = {
-                        classActive: classActive ? classActive : undefined,
-                        classActivePlayback: classActivePlayback ? classActivePlayback : undefined,
-                        id: undefined,
-                    };
-                    const activeWebView = win.READIUM2.getActiveWebView();
-                    if (activeWebView) {
-                        await activeWebView.send(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, payload);
-                    }
-                } else {
-                    _mediaOverlayTextAudioPair = nextTextAudioPair;
-                    await playMediaOverlaysAudio(nextTextAudioPair, undefined, undefined);
-                }
-            }
-        }
-    };
-    const ensureOnTimeUpdate = () => {
-        if (_currentAudioElement && !(_currentAudioElement as any).__ontimeupdate) {
-            (_currentAudioElement as any).__ontimeupdate = true;
-            _currentAudioElement.addEventListener("timeupdate", ontimeupdate);
-        }
-    };
-
     const playClip = async (initial: boolean, contiguous: boolean) => {
         if (!_currentAudioElement) {
             return;
@@ -195,24 +182,31 @@ async function playMediaOverlaysAudio(
             if ((initial && !timeToSeekTo) ||
                 _currentAudioElement.currentTime === timeToSeekTo) {
 
-                ensureOnTimeUpdate();
+                ensureOnTimeUpdate(false);
                 await _currentAudioElement.play();
+
+                // if (_mediaOverlaysListener) {
+                //     _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
+                // }
             } else {
                 const ontimeupdateSeeked = async (ev: Event) => {
                     const currentAudioElement = ev.currentTarget as HTMLAudioElement;
                     currentAudioElement.removeEventListener("timeupdate", ontimeupdateSeeked);
 
-                    ensureOnTimeUpdate();
+                    ensureOnTimeUpdate(false);
                     if (_currentAudioElement) {
                         await _currentAudioElement.play();
                     }
+                    // if (_mediaOverlaysListener) {
+                    //     _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
+                    // }
                 };
                 _currentAudioElement.addEventListener("timeupdate", ontimeupdateSeeked);
                 _currentAudioElement.currentTime = timeToSeekTo;
             }
         } else {
             if (contiguous) {
-                ensureOnTimeUpdate();
+                ensureOnTimeUpdate(false);
             } else {
                 _currentAudioElement.currentTime = timeToSeekTo;
             }
@@ -228,10 +222,7 @@ async function playMediaOverlaysAudio(
 
         // _currentAudioElement = document.getElementById(AUDIO_MO_ID) as HTMLAudioElement;
         if (_currentAudioElement) {
-            if ((_currentAudioElement as any).__ontimeupdate) {
-                (_currentAudioElement as any).__ontimeupdate = false;
-                _currentAudioElement.removeEventListener("timeupdate", ontimeupdate);
-            }
+            ensureOnTimeUpdate(true);
 
             _currentAudioElement.pause();
             _currentAudioElement.setAttribute("src", "");
@@ -392,6 +383,24 @@ async function playMediaOverlaysAudio(
             await playClip(true, false);
         };
         _currentAudioElement.addEventListener("canplaythrough", oncanplaythrough);
+
+        const onpause = async (_ev: Event) => {
+            debug("onpause");
+            if (_mediaOverlaysListener) {
+                _mediaOverlaysListener(MediaOverlaysStateEnum.PAUSED);
+            }
+        };
+        _currentAudioElement.addEventListener("pause", onpause);
+
+        const onplay = async (_ev: Event) => {
+            debug("onplay");
+            if (_mediaOverlaysListener) {
+                _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
+            }
+        };
+        _currentAudioElement.addEventListener("play", onplay);
+
+        _currentAudioElement.playbackRate = win.READIUM2.mediaOverlaysPlaybackRate;
         _currentAudioElement.setAttribute("src", _currentAudioUrl);
     } else {
         const contiguous = _previousAudioUrl === _currentAudioUrl &&
@@ -402,20 +411,142 @@ async function playMediaOverlaysAudio(
     }
 }
 
+// https://www.w3.org/publishing/epub3/epub-mediaoverlays.html#sec-skippability
+const _skippables = [
+    "footnote",
+    "endnote",
+    "pagebreak",
+    //
+    "note",
+    "rearnote",
+    "sidebar",
+    "practice",
+    "marginalia",
+    "annotation",
+    "help",
+    "table",
+    "table-row",
+    "table-cell",
+    "list",
+    "list-item",
+];
+function isSkippable(mo: MediaOverlayNode): boolean {
+    return mo.Role && mo.Role.findIndex((r) => {
+        return _skippables.includes(r);
+    }) >= 0;
+}
+
+// https://www.w3.org/publishing/epub3/epub-mediaoverlays.html#sec-escabaility
+// const _escapables = [
+//     "table",
+//     "table-row",
+//     "table-cell",
+//     "list",
+//     "list-item",
+//     "figure",
+//     //
+//     "footnote",
+//     "endnote",
+//     "note",
+//     "rearnote",
+//     "footnotes",
+//     "rearnotes",
+//     "sidebar",
+//     "bibliography",
+//     "toc",
+//     "loi",
+//     "appendix",
+//     "landmarks",
+//     "lot",
+//     "index",
+//     "colophon",
+//     "epigraph",
+//     "conclusion",
+//     "afterword",
+//     "warning",
+//     "epilogue",
+//     "foreword",
+//     "introduction",
+//     "prologue",
+//     "preface",
+//     "preamble",
+//     "notice",
+//     "errata",
+//     "copyright-page",
+//     "acknowledgments",
+//     "other-credits",
+//     "titlepage",
+//     "imprimatur",
+//     "contributors",
+//     "halftitlepage",
+//     "dedication",
+//     "help",
+//     "annotation",
+//     "marginalia",
+//     "practice",
+//     "bridgehead",
+//     "page-list",
+//     "glossary",
+// ];
+// function isEscapable(mo: MediaOverlayNode): boolean {
+//     return mo.Role && mo.Role.findIndex((r) => {
+//         return _escapables.includes(r);
+//     }) >= 0;
+// }
+
 function findNextTextAudioPair(
     mo: MediaOverlayNode,
     subMo: MediaOverlayNode,
-    prevMo: MediaOverlayNode | undefined): MediaOverlayNode | undefined {
+    prevMo: MediaOverlayNode | undefined,
+    escape: boolean): MediaOverlayNode | undefined {
+
+    if (_mediaOverlaySkippabilityIsEnabled && isSkippable(mo)) {
+        return undefined;
+    }
 
     if (!mo.Children || !mo.Children.length) {
-        if (prevMo === subMo) {
+        if (mo.Text &&
+            prevMo === subMo
+            // && (!escape || !isEscapable(mo))
+            ) {
+
             return mo;
         }
         return undefined;
     }
     let previous = prevMo;
     for (const child of mo.Children) {
-        const match = findNextTextAudioPair(child, subMo, previous);
+        const match = findNextTextAudioPair(child, subMo, previous, escape);
+        if (match) {
+            return match;
+        }
+        previous = child;
+    }
+    return undefined;
+}
+
+function findPreviousTextAudioPair(
+    mo: MediaOverlayNode,
+    subMo: MediaOverlayNode,
+    prevMo: MediaOverlayNode | undefined): MediaOverlayNode | undefined {
+
+    if (_mediaOverlaySkippabilityIsEnabled && isSkippable(mo)) {
+        return undefined;
+    }
+
+    if (!mo.Children || !mo.Children.length) {
+        if (mo.Text &&
+            prevMo &&
+            mo === subMo
+            ) {
+
+            return prevMo;
+        }
+        return undefined;
+    }
+    let previous = prevMo;
+    for (const child of mo.Children) {
+        const match = findPreviousTextAudioPair(child, subMo, previous);
         if (match) {
             return match;
         }
@@ -430,7 +561,9 @@ function findDepthFirstTextAudioPair(
     textFragmentIDChain: Array<string | null> | undefined): MediaOverlayNode | undefined {
 
     if (!mo.Children || !mo.Children.length) {
-        if (mo.Text) {
+        if (mo.Text &&
+            (!_mediaOverlaySkippabilityIsEnabled || !isSkippable(mo))) {
+
             const hrefUrlObj = new URL("https://dummy.com/" + mo.Text);
             const toCompare = hrefUrlObj.pathname.substr(1);
             if (toCompare === textHref) {
@@ -555,9 +688,6 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
     await playMediaOverlays(hrefUrlObj.pathname.substr(1), link.MediaOverlays, textFragmentIDChain);
 }
 
-// win.READIUM2.ttsClickEnabled
-// win.READIUM2.ttsPlaybackRate
-
 export function mediaOverlaysHandleIpcMessage(
     eventChannel: string,
     eventArgs: any[],
@@ -568,14 +698,211 @@ export function mediaOverlaysHandleIpcMessage(
 
     if (eventChannel === R2_EVENT_MEDIA_OVERLAY_CLICK) {
         // debug("R2_EVENT_MEDIA_OVERLAY_CLICK (webview.addEventListener('ipc-message')");
-        setTimeout(async () => {
-            const payload = eventArgs[0] as IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK;
-            if (activeWebView?.READIUM2.link) {
-                await playMediaOverlaysForLink(activeWebView.READIUM2.link, payload.textFragmentIDChain);
-            }
-        }, 0);
+        if ((
+            // win.READIUM2.mediaOverlaysClickEnabled &&
+            _mediaOverlayRoot) || true) {
+            // TODO: restrict to when MO was play-started at least once (so that rate/speed is set)
+
+            setTimeout(async () => {
+                const payload = eventArgs[0] as IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK;
+                if (activeWebView?.READIUM2.link) {
+                    await playMediaOverlaysForLink(activeWebView.READIUM2.link, payload.textFragmentIDChain);
+                }
+            }, 0);
+        }
     } else {
         return false;
     }
     return true;
+}
+
+export enum MediaOverlaysStateEnum {
+    PAUSED = "PAUSED",
+    PLAYING = "PLAYING",
+    STOPPED = "STOPPED",
+}
+let _mediaOverlaysListener: ((mediaOverlaysState: MediaOverlaysStateEnum) => void) | undefined;
+export function mediaOverlaysListen(mediaOverlaysListener: (mediaOverlaysState: MediaOverlaysStateEnum) => void) {
+    _mediaOverlaysListener = mediaOverlaysListener;
+}
+
+export function mediaOverlaysPlay(speed: number) {
+    if (!win.READIUM2 || !win.READIUM2.publication) {
+        return;
+    }
+
+    win.READIUM2.mediaOverlaysPlaybackRate = speed;
+
+    if (!_mediaOverlayRoot || !_mediaOverlayTextAudioPair) {
+        setTimeout(async () => {
+            const activeWebView = win.READIUM2.getActiveWebView();
+            if (activeWebView?.READIUM2.link) {
+                await playMediaOverlaysForLink(activeWebView.READIUM2.link, undefined);
+            }
+        }, 0);
+    } else {
+        mediaOverlaysResume();
+    }
+}
+
+export function mediaOverlaysPause() {
+    if (!win.READIUM2 || !win.READIUM2.publication) {
+        return;
+    }
+
+    if (_currentAudioElement) {
+        ensureOnTimeUpdate(true);
+        _currentAudioElement.pause();
+    }
+}
+export function mediaOverlaysStop() {
+    if (!win.READIUM2 || !win.READIUM2.publication) {
+        return;
+    }
+
+    mediaOverlaysPause();
+    if (_mediaOverlaysListener) {
+        _mediaOverlaysListener(MediaOverlaysStateEnum.STOPPED);
+    }
+    _mediaOverlayRoot = undefined;
+    _mediaOverlayTextAudioPair = undefined;
+}
+export function mediaOverlaysResume() {
+    if (!win.READIUM2 || !win.READIUM2.publication) {
+        return;
+    }
+
+    if (_mediaOverlayRoot && _mediaOverlayTextAudioPair) {
+        if (_currentAudioElement) {
+            ensureOnTimeUpdate(false);
+            setTimeout(async () => {
+                if (_currentAudioElement) {
+                    await _currentAudioElement.play();
+                }
+            }, 0);
+        }
+    } else {
+        mediaOverlaysPlay(win.READIUM2.mediaOverlaysPlaybackRate);
+    }
+}
+export function mediaOverlaysPrevious() {
+    if (!win.READIUM2 || !win.READIUM2.publication) {
+        return;
+    }
+    // (currentAudioElement as any).__ontimeupdate = false;
+    // currentAudioElement.removeEventListener("timeupdate", ontimeupdate);
+    ensureOnTimeUpdate(true);
+
+    if (_mediaOverlayRoot && _mediaOverlayTextAudioPair) {
+        const previousTextAudioPair =
+            findPreviousTextAudioPair(_mediaOverlayRoot, _mediaOverlayTextAudioPair, undefined);
+        if (!previousTextAudioPair) {
+            if (_currentAudioElement) {
+                _currentAudioElement.pause();
+            }
+            // if (_mediaOverlaysListener) {
+            //     _mediaOverlaysListener(MediaOverlaysStateEnum.PAUSED);
+            // }
+
+            const classActive = win.READIUM2.publication.Metadata?.MediaOverlay?.ActiveClass;
+            const classActivePlayback =
+                win.READIUM2.publication.Metadata?.MediaOverlay?.PlaybackActiveClass;
+            const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT = {
+                classActive: classActive ? classActive : undefined,
+                classActivePlayback: classActivePlayback ? classActivePlayback : undefined,
+                id: undefined,
+            };
+            const activeWebView = win.READIUM2.getActiveWebView();
+            if (activeWebView) {
+                setTimeout(async () => {
+                    await activeWebView.send(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, payload);
+                }, 0);
+            }
+        } else {
+            setTimeout(async () => {
+                await playMediaOverlaysAudio(previousTextAudioPair, undefined, undefined);
+            }, 0);
+        }
+    } else {
+        mediaOverlaysPlay(win.READIUM2.mediaOverlaysPlaybackRate);
+    }
+}
+export function mediaOverlaysNext(escape?: boolean) {
+    if (!win.READIUM2 || !win.READIUM2.publication) {
+        return;
+    }
+    // (currentAudioElement as any).__ontimeupdate = false;
+    // currentAudioElement.removeEventListener("timeupdate", ontimeupdate);
+    ensureOnTimeUpdate(true);
+
+    if (_mediaOverlayRoot && _mediaOverlayTextAudioPair) {
+        const nextTextAudioPair =
+            findNextTextAudioPair(_mediaOverlayRoot, _mediaOverlayTextAudioPair, undefined, escape ? true : false);
+        if (!nextTextAudioPair) {
+            if (_currentAudioElement) {
+                _currentAudioElement.pause();
+            }
+            // if (_mediaOverlaysListener) {
+            //     _mediaOverlaysListener(MediaOverlaysStateEnum.PAUSED);
+            // }
+
+            const classActive = win.READIUM2.publication.Metadata?.MediaOverlay?.ActiveClass;
+            const classActivePlayback =
+                win.READIUM2.publication.Metadata?.MediaOverlay?.PlaybackActiveClass;
+            const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT = {
+                classActive: classActive ? classActive : undefined,
+                classActivePlayback: classActivePlayback ? classActivePlayback : undefined,
+                id: undefined,
+            };
+            const activeWebView = win.READIUM2.getActiveWebView();
+            if (activeWebView) {
+                setTimeout(async () => {
+                    await activeWebView.send(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, payload);
+                }, 0);
+            }
+        } else {
+            setTimeout(async () => {
+                await playMediaOverlaysAudio(nextTextAudioPair, undefined, undefined);
+            }, 0);
+        }
+    } else {
+        mediaOverlaysPlay(win.READIUM2.mediaOverlaysPlaybackRate);
+    }
+}
+export function mediaOverlaysEscape() {
+    if (!win.READIUM2 || !win.READIUM2.publication) {
+        return;
+    }
+    mediaOverlaysNext(true);
+}
+
+// export function mediaOverlaysClickEnable(doEnable: boolean) {
+//     if (win.READIUM2) {
+//         win.READIUM2.mediaOverlaysClickEnabled = doEnable;
+//     }
+
+//     const activeWebView = win.READIUM2.getActiveWebView();
+//     if (!activeWebView) {
+//         return;
+//     }
+
+//     const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAYS_CLICK_ENABLE = {
+//         doEnable,
+//     };
+
+//     setTimeout(async () => {
+//         await activeWebView.send(R2_EVENT_MEDIA_OVERLAYS_CLICK_ENABLE, payload);
+//     }, 0);
+// }
+
+export function mediaOverlaysPlaybackRate(speed: number) {
+    if (!win.READIUM2 || !win.READIUM2.publication) {
+        return;
+    }
+
+    win.READIUM2.mediaOverlaysPlaybackRate = speed;
+
+    if (_currentAudioElement) {
+        _currentAudioElement.playbackRate = speed;
+    }
 }
