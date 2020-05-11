@@ -1556,6 +1556,26 @@ function checkSoundtrack(documant: Document) {
     ipcRenderer.sendToHost(R2_EVENT_AUDIO_SOUNDTRACK, payload);
 }
 
+function mediaOverlaysClickRaw(element: Element | undefined, userInteract: boolean) {
+    const textFragmentIDChain: Array<string | null> = [];
+    if (element) { // !userInteract || win.READIUM2.mediaOverlaysClickEnabled
+        let curEl = element;
+        do {
+            const id = curEl.getAttribute("id");
+            textFragmentIDChain.push(id ? id : null);
+            curEl = curEl.parentNode as Element;
+        } while (curEl && curEl.nodeType === Node.ELEMENT_NODE);
+    }
+    const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK = {
+        textFragmentIDChain,
+        userInteract,
+    };
+    ipcRenderer.sendToHost(R2_EVENT_MEDIA_OVERLAY_CLICK, payload);
+}
+// const mediaOverlaysClickDebounced = debounce((element: Element | undefined, userInteract: boolean) => {
+//     mediaOverlaysClickRaw(element, userInteract);
+// }, 100);
+
 let _loaded = false;
 function loaded(forced: boolean) {
     if (_loaded) {
@@ -1649,6 +1669,15 @@ function loaded(forced: boolean) {
         }
 
         checkSoundtrack(win.document);
+
+        // if (win.READIUM2.isFixedLayout) {
+        //     mediaOverlaysClickRaw(undefined, false);
+        // } else {
+        //     setTimeout(() => {
+        //         const element = findFirstVisibleElement(win.document.body);
+        //         mediaOverlaysClickDebounced(element, false);
+        //     }, 200);
+        // }
     }
 
     win.document.documentElement.addEventListener("keydown", (ev: KeyboardEvent) => {
@@ -1914,7 +1943,7 @@ function loaded(forced: boolean) {
         const x = ev.clientX;
         const y = ev.clientY;
 
-        processXYDebounced(x, y, false);
+        processXYDebounced(x, y, false, true);
 
         // const elems = win.document.elementsFromPoint(x, y);
 
@@ -1947,21 +1976,6 @@ function loaded(forced: boolean) {
                     }
                 }
             }
-        }
-
-        if (element) { // win.READIUM2.mediaOverlaysClickEnabled
-            const textFragmentIDChain: Array<string | null> = [];
-            let curEl = element;
-            do {
-                const id = curEl.getAttribute("id");
-                textFragmentIDChain.push(id ? id : null);
-                curEl = curEl.parentNode as Element;
-            } while (curEl && curEl.nodeType === Node.ELEMENT_NODE);
-
-            const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK = {
-                textFragmentIDChain,
-            };
-            ipcRenderer.sendToHost(R2_EVENT_MEDIA_OVERLAY_CLICK, payload);
         }
 
         if (element && win.READIUM2.ttsClickEnabled) {
@@ -2122,7 +2136,7 @@ function findFirstVisibleElement(rootElement: Element): Element | undefined {
 }
 
 // relative to fixed window top-left corner
-const processXYRaw = (x: number, y: number, reverse: boolean) => {
+const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boolean) => {
 
     if (isPopupDialogOpen(win.document)) {
         return;
@@ -2213,7 +2227,7 @@ const processXYRaw = (x: number, y: number, reverse: boolean) => {
     }
     if (element) {
         win.READIUM2.locationHashOverride = element;
-        notifyReadingLocationDebounced();
+        notifyReadingLocationDebounced(userInteract);
 
         if (win.READIUM2.DEBUG_VISUALS) {
             const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr2}]`);
@@ -2224,8 +2238,8 @@ const processXYRaw = (x: number, y: number, reverse: boolean) => {
         }
     }
 };
-const processXYDebounced = debounce((x: number, y: number, reverse: boolean) => {
-    processXYRaw(x, y, reverse);
+const processXYDebounced = debounce((x: number, y: number, reverse: boolean, userInteract?: boolean) => {
+    processXYRaw(x, y, reverse, userInteract);
 }, 300);
 
 interface IProgressionData {
@@ -2635,7 +2649,7 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): string | u
     return undefined;
 };
 
-const notifyReadingLocationRaw = () => {
+const notifyReadingLocationRaw = (userInteract?: boolean) => {
     if (!win.READIUM2.locationHashOverride) {
         return;
     }
@@ -2720,6 +2734,8 @@ const notifyReadingLocationRaw = () => {
     const payload: IEventPayload_R2_EVENT_READING_LOCATION = win.READIUM2.locationHashOverrideInfo;
     ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION, payload);
 
+    mediaOverlaysClickRaw(win.READIUM2.locationHashOverride, userInteract ? true : false);
+
     if (win.READIUM2.DEBUG_VISUALS) {
         const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr4}]`);
         existings.forEach((existing) => {
@@ -2728,8 +2744,8 @@ const notifyReadingLocationRaw = () => {
         win.READIUM2.locationHashOverride.setAttribute(readPosCssStylesAttr4, "notifyReadingLocationRaw");
     }
 };
-const notifyReadingLocationDebounced = debounce(() => {
-    notifyReadingLocationRaw();
+const notifyReadingLocationDebounced = debounce((userInteract?: boolean) => {
+    notifyReadingLocationRaw(userInteract);
 }, 250);
 
 if (!win.READIUM2.isAudio) {
@@ -2793,6 +2809,10 @@ if (!win.READIUM2.isAudio) {
             const targetEl = win.document.getElementById(payload.id);
             if (targetEl) {
                 targetEl.classList.add(activeClass);
+
+                if (!win.READIUM2.isFixedLayout) {
+                    scrollElementIntoView(targetEl, false);
+                }
             }
         }
     });

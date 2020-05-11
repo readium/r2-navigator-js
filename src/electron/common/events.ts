@@ -114,6 +114,7 @@ export const R2_EVENT_MEDIA_OVERLAY_CLICK = "R2_EVENT_MEDIA_OVERLAY_CLICK";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK {
     textFragmentIDChain: Array<string | null> | undefined;
+    userInteract: boolean;
 }
 
 // in RENDERER: webview.send()

@@ -42,6 +42,7 @@ import {
     URL_PARAM_SESSION_INFO,
 } from "./common/url-params";
 import { getEpubReadingSystemInfo } from "./epubReadingSystem";
+import { mediaOverlaysInterrupt } from "./media-overlays";
 import { adjustReadiumCssJsonMessageForFixedLayout, isRTL, obtainReadiumCss } from "./readium-css";
 import {
     IReadiumElectronBrowserWindow, IReadiumElectronWebview, isScreenReaderMounted,
@@ -250,7 +251,10 @@ export function navLeftOrRight(left: boolean, spineNav?: boolean): Link | undefi
                 shell.beep(); // announce boundary overflow (first or last Spine item)
             }
         }
+        mediaOverlaysInterrupt(); // done in handleLink() -> loadLink()
     } else {
+        mediaOverlaysInterrupt();
+
         const goPREVIOUS = left ? !rtl : rtl;
         const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
             direction: rtl ? "RTL" : "LTR",
@@ -412,6 +416,8 @@ function loadLink(
     if (!publication || !publicationURL) {
         return false;
     }
+
+    mediaOverlaysInterrupt();
 
     let hrefToLoadHttp = hrefToLoad;
     if (hrefToLoadHttp.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {

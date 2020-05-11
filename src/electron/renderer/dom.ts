@@ -28,7 +28,7 @@ import { highlightsHandleIpcMessage } from "./highlight";
 import {
     getCurrentReadingLocation, handleLinkLocator, locationHandleIpcMessage, shiftWebview,
 } from "./location";
-import { mediaOverlaysHandleIpcMessage, mediaOverlaysNotifyDocumentLoaded } from "./media-overlays";
+import { mediaOverlaysHandleIpcMessage } from "./media-overlays";
 import { ttsClickEnable, ttsHandleIpcMessage } from "./readaloud";
 import { adjustReadiumCssJsonMessageForFixedLayout, obtainReadiumCss } from "./readium-css";
 import { soundtrackHandleIpcMessage } from "./soundtrack";
@@ -203,7 +203,7 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             ttsClickEnable(win.READIUM2.ttsClickEnabled);
         }
 
-        mediaOverlaysNotifyDocumentLoaded();
+        // mediaOverlaysNotifyDocumentLoaded();
     });
 
     wv.addEventListener("ipc-message", (event: Electron.IpcMessageEvent) => {

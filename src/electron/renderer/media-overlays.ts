@@ -238,7 +238,8 @@ async function playMediaOverlaysAudio(
         document.body.appendChild(_currentAudioElement);
 
         _currentAudioElement.addEventListener("error", (ev) => {
-            debug("-1) error: " + _currentAudioUrl + " -- "
+            debug("-1) error: " +
+            (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
             + (ev.currentTarget as HTMLAudioElement).src);
 
             if (_currentAudioElement && _currentAudioElement.error) {
@@ -253,124 +254,148 @@ async function playMediaOverlaysAudio(
 
         if (IS_DEV) {
             _currentAudioElement.addEventListener("load", (ev) => {
-                debug("0) load: " + _currentAudioUrl + " -- "
+                debug("0) load: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("loadstart", (ev) => {
-                debug("1) loadstart: " + _currentAudioUrl + " -- "
+                debug("1) loadstart: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("durationchange", (ev) => {
-                debug("2) durationchange: " + _currentAudioUrl + " -- "
+                debug("2) durationchange: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("loadedmetadata", (ev) => {
-                debug("3) loadedmetadata: " + _currentAudioUrl + " -- "
+                debug("3) loadedmetadata: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("loadeddata", (ev) => {
-                debug("4) loadeddata: " + _currentAudioUrl + " -- "
+                debug("4) loadeddata: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("progress", (ev) => {
-                debug("5) progress: " + _currentAudioUrl + " -- "
+                debug("5) progress: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("canplay", (ev) => {
-                debug("6) canplay: " + _currentAudioUrl + " -- "
+                debug("6) canplay: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("canplaythrough", (ev) => {
-                debug("7) canplaythrough: " + _currentAudioUrl + " -- "
+                debug("7) canplaythrough: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("play", (ev) => {
-                debug("8) play: " + _currentAudioUrl + " -- "
+                debug("8) play: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("pause", (ev) => {
-                debug("9) pause: " + _currentAudioUrl + " -- "
+                debug("9) pause: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("ended", (ev) => {
-                debug("10) ended: " + _currentAudioUrl + " -- "
+                debug("10) ended: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("seeked", (ev) => {
-                debug("11) seeked: " + _currentAudioUrl + " -- "
+                debug("11) seeked: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             if (DEBUG_AUDIO) {
                 _currentAudioElement.addEventListener("timeupdate", (ev) => {
-                    debug("12) timeupdate: " + _currentAudioUrl + " -- "
+                    debug("12) timeupdate: " +
+                    (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                     + (ev.currentTarget as HTMLAudioElement).src);
                 });
             }
 
             _currentAudioElement.addEventListener("seeking", (ev) => {
-                debug("13) seeking: " + _currentAudioUrl + " -- "
+                debug("13) seeking: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("waiting", (ev) => {
-                debug("14) waiting: " + _currentAudioUrl + " -- "
+                debug("14) waiting: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("volumechange", (ev) => {
-                debug("15) volumechange: " + _currentAudioUrl + " -- "
+                debug("15) volumechange: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("suspend", (ev) => {
-                debug("16) suspend: " + _currentAudioUrl + " -- "
+                debug("16) suspend: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("stalled", (ev) => {
-                debug("17) stalled: " + _currentAudioUrl + " -- "
+                debug("17) stalled: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("ratechange", (ev) => {
-                debug("18) ratechange: " + _currentAudioUrl + " -- "
+                debug("18) ratechange: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("playing", (ev) => {
-                debug("19) playing: " + _currentAudioUrl + " -- "
+                debug("19) playing: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("interruptend", (ev) => {
-                debug("20) interruptend: " + _currentAudioUrl + " -- "
+                debug("20) interruptend: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("interruptbegin", (ev) => {
-                debug("21) interruptbegin: " + _currentAudioUrl + " -- "
+                debug("21) interruptbegin: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("emptied", (ev) => {
-                debug("22) emptied: " + _currentAudioUrl + " -- "
+                debug("22) emptied: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
 
             _currentAudioElement.addEventListener("abort", (ev) => {
-                debug("23) abort: " + _currentAudioUrl + " -- "
+                debug("23) abort: " +
+                (_currentAudioUrl !== (ev.currentTarget as HTMLAudioElement).src ? (_currentAudioUrl + " -- ") : "")
                 + (ev.currentTarget as HTMLAudioElement).src);
             });
         }
@@ -652,6 +677,7 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
             }
         }
     }
+    ensureKillAutoNextTimeout();
     if (!moUrl) {
         _timeoutAutoNext = window.setTimeout(() => {
             _timeoutAutoNext = undefined;
@@ -740,12 +766,18 @@ export function mediaOverlaysHandleIpcMessage(
             _mediaOverlayRoot) || true) {
             // TODO: restrict to when MO was play-started at least once (so that rate/speed is set)
 
-            setTimeout(async () => {
-                const payload = eventArgs[0] as IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK;
-                if (activeWebView?.READIUM2.link) {
-                    await playMediaOverlaysForLink(activeWebView.READIUM2.link, payload.textFragmentIDChain);
-                }
-            }, 0);
+            mediaOverlaysInterrupt();
+
+            const payload = eventArgs[0] as IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK;
+
+            if (payload.userInteract || _mediaOverlayActive) {
+
+                setTimeout(async () => {
+                    if (activeWebView?.READIUM2.link) {
+                        await playMediaOverlaysForLink(activeWebView.READIUM2.link, payload.textFragmentIDChain);
+                    }
+                }, 0);
+            }
         }
     } else {
         return false;
@@ -812,6 +844,9 @@ export function mediaOverlaysPause() {
     }
 }
 
+export function mediaOverlaysInterrupt() {
+    mediaOverlaysStop(_mediaOverlayActive);
+}
 export function mediaOverlaysStop(stayActive?: boolean) {
     if (!win.READIUM2 || !win.READIUM2.publication) {
         return;
@@ -938,11 +973,5 @@ export function mediaOverlaysPlaybackRate(speed: number) {
 
     if (_currentAudioElement) {
         _currentAudioElement.playbackRate = speed;
-    }
-}
-
-export function mediaOverlaysNotifyDocumentLoaded() {
-    if (_mediaOverlayActive) { // implies publicationHasMediaOverlays()
-        mediaOverlaysResume();
     }
 }
