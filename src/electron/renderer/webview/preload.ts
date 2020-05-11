@@ -1908,8 +1908,10 @@ function loaded(forced: boolean) {
             ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
         if (!done) {
             focusScrollDebounced.clear();
-            processXYDebounced.clear();
+            // processXYDebounced.clear();
+            processXYDebouncedImmediate.clear();
             notifyReadingLocationDebounced.clear();
+            notifyReadingLocationDebouncedImmediate.clear();
             scrollToHashDebounced.clear();
 
             const payload: IEventPayload_R2_EVENT_LINK = {
@@ -1998,7 +2000,7 @@ function loaded(forced: boolean) {
         const x = ev.clientX;
         const y = ev.clientY;
 
-        processXYDebounced(x, y, false, true);
+        processXYDebouncedImmediate(x, y, false, true);
 
         // const elems = win.document.elementsFromPoint(x, y);
 
@@ -2296,7 +2298,11 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
             }
         }
 
-        notifyReadingLocationDebounced(userInteract);
+        if (userInteract) {
+            notifyReadingLocationDebouncedImmediate(userInteract);
+        } else {
+            notifyReadingLocationDebounced(userInteract);
+        }
 
         if (win.READIUM2.DEBUG_VISUALS) {
             const el = win.READIUM2.locationHashOverride ? win.READIUM2.locationHashOverride : element;
@@ -2308,9 +2314,12 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
         }
     }
 };
-const processXYDebounced = debounce((x: number, y: number, reverse: boolean, userInteract?: boolean) => {
+// const processXYDebounced = debounce((x: number, y: number, reverse: boolean, userInteract?: boolean) => {
+//     processXYRaw(x, y, reverse, userInteract);
+// }, 300);
+const processXYDebouncedImmediate = debounce((x: number, y: number, reverse: boolean, userInteract?: boolean) => {
     processXYRaw(x, y, reverse, userInteract);
-}, 300);
+}, 300, true);
 
 interface IProgressionData {
     percentRatio: number;
@@ -2819,6 +2828,9 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
 const notifyReadingLocationDebounced = debounce((userInteract?: boolean, ignoreMediaOverlays?: boolean) => {
     notifyReadingLocationRaw(userInteract, ignoreMediaOverlays);
 }, 250);
+const notifyReadingLocationDebouncedImmediate = debounce((userInteract?: boolean, ignoreMediaOverlays?: boolean) => {
+    notifyReadingLocationRaw(userInteract, ignoreMediaOverlays);
+}, 250, true);
 
 if (!win.READIUM2.isAudio) {
     ipcRenderer.on(R2_EVENT_TTS_DO_PLAY, (_event: any, payload: IEventPayload_R2_EVENT_TTS_DO_PLAY) => {
