@@ -325,9 +325,9 @@ export function installNavigatorDOM(
     rcss: IEventPayload_R2_EVENT_READIUMCSS | undefined,
     ) {
 
-    debug(JSON.stringify(publication, null, 4));
-    debug(util.inspect(publication,
-        { showHidden: false, depth: 1000, colors: true, customInspect: true }));
+    // debug(JSON.stringify(publication, null, 4));
+    // debug(util.inspect(publication,
+    //     { showHidden: false, depth: 1000, colors: true, customInspect: true }));
 
     const domRootElement = document.getElementById(rootHtmlElementID) as HTMLElement;
     if (!domRootElement) {
