@@ -2715,7 +2715,7 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): string | u
     return undefined;
 };
 
-const notifyReadingLocationRaw = (userInteract?: boolean) => {
+const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: boolean) => {
     if (!win.READIUM2.locationHashOverride) {
         return;
     }
@@ -2800,7 +2800,9 @@ const notifyReadingLocationRaw = (userInteract?: boolean) => {
     const payload: IEventPayload_R2_EVENT_READING_LOCATION = win.READIUM2.locationHashOverrideInfo;
     ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION, payload);
 
-    mediaOverlaysClickRaw(win.READIUM2.locationHashOverride, userInteract ? true : false);
+    if (!ignoreMediaOverlays) {
+        mediaOverlaysClickRaw(win.READIUM2.locationHashOverride, userInteract ? true : false);
+    }
 
     if (win.READIUM2.DEBUG_VISUALS) {
         const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr4}]`);
@@ -2810,8 +2812,8 @@ const notifyReadingLocationRaw = (userInteract?: boolean) => {
         win.READIUM2.locationHashOverride.setAttribute(readPosCssStylesAttr4, "notifyReadingLocationRaw");
     }
 };
-const notifyReadingLocationDebounced = debounce((userInteract?: boolean) => {
-    notifyReadingLocationRaw(userInteract);
+const notifyReadingLocationDebounced = debounce((userInteract?: boolean, ignoreMediaOverlays?: boolean) => {
+    notifyReadingLocationRaw(userInteract, ignoreMediaOverlays);
 }, 250);
 
 if (!win.READIUM2.isAudio) {
@@ -2876,8 +2878,19 @@ if (!win.READIUM2.isAudio) {
             if (targetEl) {
                 targetEl.classList.add(activeClass);
 
+                win.READIUM2.locationHashOverride = targetEl;
                 if (!win.READIUM2.isFixedLayout) {
                     scrollElementIntoView_(targetEl, false, true);
+                }
+                notifyReadingLocationRaw(false, true);
+
+                if (win.READIUM2.DEBUG_VISUALS) {
+                    const el = win.READIUM2.locationHashOverride;
+                    const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr2}]`);
+                    existings.forEach((existing) => {
+                        existing.removeAttribute(`${readPosCssStylesAttr2}`);
+                    });
+                    el.setAttribute(readPosCssStylesAttr2, "R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT");
                 }
             }
         }
