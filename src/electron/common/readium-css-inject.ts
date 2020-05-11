@@ -13,8 +13,9 @@ import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
 import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "./sessions";
 import {
     CLASS_PAGINATED, ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
-    ROOT_CLASS_REDUCE_MOTION, audioCssStyles, focusCssStyles, footnotesCssStyles, readPosCssStyles,
-    scrollBarCssStyles, selectionCssStyles, targetCssStyles, ttsCssStyles, visibilityMaskCssStyles,
+    ROOT_CLASS_REDUCE_MOTION, audioCssStyles, focusCssStyles, footnotesCssStyles,
+    mediaOverlaysCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles,
+    targetCssStyles, ttsCssStyles, visibilityMaskCssStyles,
 } from "./styles";
 
 export const READIUM2_BASEURL_ID = "r2_BASEURL_ID";
@@ -772,6 +773,7 @@ export function removeAllCSS(documant: Document) {
 }
 
 export function injectDefaultCSS(documant: Document) {
+    appendCSSInline(documant, "electron-mo", mediaOverlaysCssStyles);
     appendCSSInline(documant, "electron-tts", ttsCssStyles);
     appendCSSInline(documant, "electron-footnotes", footnotesCssStyles);
     appendCSSInline(documant, "electron-selection", selectionCssStyles);

@@ -2898,6 +2898,7 @@ if (!win.READIUM2.isAudio) {
                 if (!win.READIUM2.isFixedLayout) {
                     scrollElementIntoView_(targetEl, false, true);
                 }
+                scrollToHashDebounced.clear();
                 notifyReadingLocationRaw(false, true);
 
                 if (win.READIUM2.DEBUG_VISUALS) {

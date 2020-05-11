@@ -5,9 +5,6 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-export const R2_MO_CLASS_ACTIVE = "r2-mo-active";
-export const R2_MO_CLASS_ACTIVE_PLAYBACK = "r2-mo-active-playback";
-
 export const CLASS_PAGINATED = "r2-css-paginated";
 
 export const ZERO_TRANSFORM_CLASS = "r2-zeroTransform";
@@ -138,6 +135,17 @@ export const footnotesCssStyles = `
     color: white !important;
 }
 */
+`;
+
+export const R2_MO_CLASS_ACTIVE = "r2-mo-active";
+export const R2_MO_CLASS_ACTIVE_PLAYBACK = "r2-mo-active-playback";
+
+export const mediaOverlaysCssStyles = `
+:root[style] .${R2_MO_CLASS_ACTIVE},
+:root .${R2_MO_CLASS_ACTIVE} {
+    background-color: yellow !important;
+    color: black !important;
+}
 `;
 
 export const TTS_CLASS_IS_ACTIVE = "r2-tts-isPlaying";
