@@ -829,7 +829,14 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
     }, 100);
 });
 
+let _lastAnimState2: IPropertyAnimationState | undefined;
+const animationTime2 = 400;
+
 function scrollElementIntoView(element: Element, doFocus: boolean) {
+    scrollElementIntoView_(element, doFocus, false);
+}
+function scrollElementIntoView_(element: Element, doFocus: boolean, animate: boolean) {
+
     if (win.READIUM2.DEBUG_VISUALS) {
         const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr3}]`);
         existings.forEach((existing) => {
@@ -903,7 +910,54 @@ function scrollElementIntoView(element: Element, doFocus: boolean) {
             } else if (offset < 0) {
                 offset = 0;
             }
-            scrollElement.scrollTop = offset;
+            if (animate) {
+
+                const reduceMotion = win.document.documentElement.classList.contains(ROOT_CLASS_REDUCE_MOTION);
+
+                if (_lastAnimState2 && _lastAnimState2.animating) {
+                    win.cancelAnimationFrame(_lastAnimState2.id);
+                    _lastAnimState2.object[_lastAnimState2.property] = _lastAnimState2.destVal;
+                }
+
+                // scrollElement.scrollTop = offset;
+                const targetObj = scrollElement;
+                const targetProp = "scrollTop";
+                if (reduceMotion) {
+                    _lastAnimState2 = undefined;
+                    targetObj[targetProp] = offset;
+                } else {
+                    // _lastAnimState = undefined;
+                    // (targetObj as HTMLElement).style.transition = "";
+                    // (targetObj as HTMLElement).style.transform = "none";
+                    // (targetObj as HTMLElement).style.transition =
+                    //     `transform ${animationTime}ms ease-in-out 0s`;
+                    // (targetObj as HTMLElement).style.transform =
+                    //     isVerticalWritingMode() ?
+                    //     `translateY(${unit}px)` :
+                    //     `translateX(${(isRTL() ? -1 : 1) * unit}px)`;
+                    // setTimeout(() => {
+                    //     (targetObj as HTMLElement).style.transition = "";
+                    //     (targetObj as HTMLElement).style.transform = "none";
+                    //     targetObj[targetProp] = offset;
+                    // }, animationTime);
+                    _lastAnimState2 = animateProperty(
+                        win.cancelAnimationFrame,
+                        undefined,
+                        // (cancelled: boolean) => {
+                        //     debug(cancelled);
+                        // },
+                        targetProp,
+                        animationTime2,
+                        targetObj,
+                        offset,
+                        win.requestAnimationFrame,
+                        easings.easeInOutQuad,
+                    );
+                }
+            } else {
+                scrollElement.scrollTop = offset;
+            }
+
             // element.scrollIntoView({
             //     // TypeScript lib.dom.d.ts difference in 3.2.1
             //     // ScrollBehavior = "auto" | "instant" | "smooth" VS ScrollBehavior = "auto" | "smooth"
@@ -2823,7 +2877,7 @@ if (!win.READIUM2.isAudio) {
                 targetEl.classList.add(activeClass);
 
                 if (!win.READIUM2.isFixedLayout) {
-                    scrollElementIntoView(targetEl, false);
+                    scrollElementIntoView_(targetEl, false, true);
                 }
             }
         }

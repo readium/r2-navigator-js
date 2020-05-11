@@ -19,7 +19,7 @@ import {
     R2_EVENT_MEDIA_OVERLAY_CLICK, R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
 } from "../common/events";
 import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "../common/sessions";
-import { navLeftOrRight } from "./location";
+import { handleLinkUrl, navLeftOrRight } from "./location";
 import { isRTL } from "./readium-css";
 import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
@@ -62,6 +62,11 @@ async function playMediaOverlays(
 
     let moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, textFragmentIDChain);
     if (!moTextAudioPair && textFragmentIDChain) {
+        if (IS_DEV) {
+            debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE ");
+            debug(JSON.stringify(textFragmentIDChain, null, 4));
+            debug(JSON.stringify(rootMo, null, 4));
+        }
         moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, undefined);
     }
     if (moTextAudioPair) {
@@ -574,13 +579,15 @@ function findNextTextAudioPair(
     mo: MediaOverlayNode,
     subMo: MediaOverlayNode,
     prevMo: MediaOverlayNode | undefined,
-    escape: boolean): MediaOverlayNode | undefined {
+    escape: boolean):
+    MediaOverlayNode | undefined | null { // returns null when skipped
 
-    if (_mediaOverlaySkippabilityIsEnabled && isSkippable(mo)) {
-        return undefined;
+    const isSkip = _mediaOverlaySkippabilityIsEnabled && isSkippable(mo);
+    if (isSkip) {
+        return null;
     }
 
-    if (!mo.Children || !mo.Children.length) {
+    if (!mo.Children || !mo.Children.length) { // leaf === text/audio pair (SMIL par)
         if (mo.Text &&
             prevMo === subMo
             // && (!escape || !isEscapable(mo))
@@ -596,7 +603,9 @@ function findNextTextAudioPair(
         if (match) {
             return match;
         }
-        previous = child;
+        if (!_mediaOverlaySkippabilityIsEnabled || !isSkippable(child)) {
+            previous = child;
+        }
     }
     return undefined;
 }
@@ -604,13 +613,15 @@ function findNextTextAudioPair(
 function findPreviousTextAudioPair(
     mo: MediaOverlayNode,
     subMo: MediaOverlayNode,
-    prevMo: MediaOverlayNode | undefined): MediaOverlayNode | undefined {
+    prevMo: MediaOverlayNode | undefined):
+    MediaOverlayNode | undefined | null { // returns null when skipped
 
-    if (_mediaOverlaySkippabilityIsEnabled && isSkippable(mo)) {
-        return undefined;
+    const isSkip = _mediaOverlaySkippabilityIsEnabled && isSkippable(mo);
+    if (isSkip) {
+        return null;
     }
 
-    if (!mo.Children || !mo.Children.length) {
+    if (!mo.Children || !mo.Children.length) { // leaf === text/audio pair (SMIL par)
         if (mo.Text &&
             prevMo &&
             mo === subMo
@@ -626,7 +637,9 @@ function findPreviousTextAudioPair(
         if (match) {
             return match;
         }
-        previous = child;
+        if (!_mediaOverlaySkippabilityIsEnabled || !isSkippable(child)) {
+            previous = child;
+        }
     }
     return undefined;
 }
@@ -634,35 +647,64 @@ function findPreviousTextAudioPair(
 function findDepthFirstTextAudioPair(
     textHref: string,
     mo: MediaOverlayNode,
-    textFragmentIDChain: Array<string | null> | undefined): MediaOverlayNode | undefined {
+    textFragmentIDChain: Array<string | null> | undefined):
+    MediaOverlayNode | undefined | null { // returns null when skipped
 
-    if (!mo.Children || !mo.Children.length) {
-        if (mo.Text &&
-            (!_mediaOverlaySkippabilityIsEnabled || !isSkippable(mo))) {
+    const isSkip = _mediaOverlaySkippabilityIsEnabled && isSkippable(mo);
 
-            const hrefUrlObj = new URL("https://dummy.com/" + mo.Text);
-            const toCompare = hrefUrlObj.pathname.substr(1);
-            if (toCompare === textHref) {
-                if (textFragmentIDChain) {
-                    if (hrefUrlObj.hash) { // includes #
-                        const id = hrefUrlObj.hash.substr(1);
-                        for (const frag of textFragmentIDChain) {
-                            if (frag === id) {
-                                return mo;
-                            }
-                        }
+    let isTextUrlMatch: boolean | undefined;
+    let isFragmentIDMatch: boolean | undefined;
+    if (mo.Text) {
+        const hrefUrlObj = new URL("https://dummy.com/" + mo.Text);
+        if (hrefUrlObj.pathname.substr(1) === textHref) { // includes leading slash
+            isTextUrlMatch = true;
+
+            if (hrefUrlObj.hash && textFragmentIDChain) {
+                isFragmentIDMatch = false;
+                const id = hrefUrlObj.hash.substr(1); // includes #
+                for (const frag of textFragmentIDChain) {
+                    if (frag === id) {
+                        isFragmentIDMatch = true;
+                        break;
                     }
-                } else {
-                    return mo;
                 }
+            }
+        } else {
+            isTextUrlMatch = false;
+        }
+    }
+
+    if (!mo.Children || !mo.Children.length) { // leaf === text/audio pair (SMIL par)
+        if (!isTextUrlMatch) {
+            return undefined;
+        }
+        if (isFragmentIDMatch || (isTextUrlMatch && !textFragmentIDChain)) {
+            if (isSkip) {
+                return null;
+            } else {
+                return mo;
             }
         }
         return undefined;
     }
+    let frags = textFragmentIDChain;
     for (const child of mo.Children) {
-        const match = findDepthFirstTextAudioPair(textHref, child, textFragmentIDChain);
+        const match = findDepthFirstTextAudioPair(textHref, child, frags);
+        if (match === null) { // match, but skipped ... let's ignore the fragment IDs and just pick the next
+            frags = undefined;
+        }
         if (match) {
             return match;
+        }
+    }
+    if (isFragmentIDMatch) {
+        if (isSkip) {
+            return null;
+        } else {
+            const match = findDepthFirstTextAudioPair(textHref, mo, undefined);
+            if (match) {
+                return match;
+            }
         }
     }
     return undefined;
@@ -704,9 +746,6 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
         debug(JSON.stringify(textFragmentIDChain, null, 4));
     }
     let moUrl: string | undefined;
-    if (IS_DEV) {
-        debug(link.MediaOverlays); // typically undefined, because serialized JSON not init'ed
-    }
     if (link.Properties?.MediaOverlay) {
         moUrl = link.Properties.MediaOverlay;
         if (IS_DEV) {
@@ -731,7 +770,9 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
             }
         }
     }
+
     ensureKillAutoNextTimeout();
+
     if (!moUrl) {
         if (IS_DEV) {
             debug("playMediaOverlaysForLink() - navLeftOrRight()");
@@ -746,6 +787,7 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
         }, 2000);
         return;
     }
+    // typically undefined at first, because serialized JSON not init'ed, lazy-loaded
     if (!link.MediaOverlays || !link.MediaOverlays.initialized) {
 
         let publicationURL = win.READIUM2.publicationURL;
@@ -786,9 +828,11 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
         // link.MediaOverlays.SmilPathInZip = smilFilePath;
         link.MediaOverlays.initialized = true;
 
-        // debug(JSON.stringify(link.MediaOverlays, null, 4));
-        // debug(util.inspect(link.MediaOverlays,
-        //     { showHidden: false, depth: 1000, colors: true, customInspect: true }));
+        if (IS_DEV) {
+            // debug(JSON.stringify(link.MediaOverlays, null, 4));
+            debug(util.inspect(link.MediaOverlays,
+                { showHidden: false, depth: 1000, colors: true, customInspect: true }));
+        }
     }
     if (!link.MediaOverlays || !link.MediaOverlays.initialized) {
         debug("Has MO but no Media Overlays?! " + link.Href);
@@ -851,6 +895,9 @@ export function mediaOverlaysHandleIpcMessage(
 }
 
 function moHighlight(id: string | undefined) {
+    if (IS_DEV) {
+        debug("moHighlight: " + id);
+    }
     const classActive = win.READIUM2.publication.Metadata?.MediaOverlay?.ActiveClass;
     const classActivePlayback =
         win.READIUM2.publication.Metadata?.MediaOverlay?.PlaybackActiveClass;
@@ -1001,12 +1048,43 @@ export function mediaOverlaysPrevious() {
             const rtl = isRTL();
             navLeftOrRight(!rtl, true);
         } else {
-            if (IS_DEV) {
-                debug("mediaOverlaysPrevious() - playMediaOverlaysAudio()");
+            let switchDoc = false;
+            if (_mediaOverlayTextAudioPair.Text && previousTextAudioPair.Text) {
+                const hrefUrlObj1 = new URL("https://dummy.com/" + _mediaOverlayTextAudioPair.Text);
+                const hrefUrlObj2 = new URL("https://dummy.com/" + previousTextAudioPair.Text);
+                if (hrefUrlObj1.pathname !== hrefUrlObj2.pathname) { // includes leading slash
+                    if (IS_DEV) {
+                        debug("mediaOverlaysPrevious SWITCH! " + hrefUrlObj1.pathname + " != " + hrefUrlObj2.pathname);
+                    }
+                    switchDoc = true;
+                }
             }
-            setTimeout(async () => {
-                await playMediaOverlaysAudio(previousTextAudioPair, undefined, undefined);
-            }, 0);
+            if (switchDoc) {
+                mediaOverlaysStop(true);
+
+                const publicationURL = win.READIUM2.publicationURL;
+                // if (publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+                //     publicationURL = convertCustomSchemeToHttpUrl(publicationURL);
+                // }
+
+                // const url = publicationURL + "/../" + previousTextAudioPair.Text;
+                const urlObjFull = new URL(previousTextAudioPair.Text, publicationURL);
+                const urlFull = urlObjFull.toString();
+                if (IS_DEV) {
+                    debug("mediaOverlaysPrevious() - handleLinkUrl()");
+                }
+                const activeWebView = win.READIUM2.getActiveWebView();
+                handleLinkUrl(
+                    urlFull,
+                    activeWebView ? activeWebView.READIUM2.readiumCss : undefined);
+            } else {
+                if (IS_DEV) {
+                    debug("mediaOverlaysPrevious() - playMediaOverlaysAudio()");
+                }
+                setTimeout(async () => {
+                    await playMediaOverlaysAudio(previousTextAudioPair, undefined, undefined);
+                }, 0);
+            }
         }
     } else {
         if (IS_DEV) {
@@ -1039,12 +1117,43 @@ export function mediaOverlaysNext(escape?: boolean) {
             const rtl = isRTL();
             navLeftOrRight(rtl, true);
         } else {
-            if (IS_DEV) {
-                debug("mediaOverlaysNext() - playMediaOverlaysAudio()");
+            let switchDoc = false;
+            if (_mediaOverlayTextAudioPair.Text && nextTextAudioPair.Text) {
+                const hrefUrlObj1 = new URL("https://dummy.com/" + _mediaOverlayTextAudioPair.Text);
+                const hrefUrlObj2 = new URL("https://dummy.com/" + nextTextAudioPair.Text);
+                if (hrefUrlObj1.pathname !== hrefUrlObj2.pathname) { // includes leading slash
+                    if (IS_DEV) {
+                        debug("mediaOverlaysNext() SWITCH! " + hrefUrlObj1.pathname + " != " + hrefUrlObj2.pathname);
+                    }
+                    switchDoc = true;
+                }
             }
-            setTimeout(async () => {
-                await playMediaOverlaysAudio(nextTextAudioPair, undefined, undefined);
-            }, 0);
+            if (switchDoc) {
+                mediaOverlaysStop(true);
+
+                const publicationURL = win.READIUM2.publicationURL;
+                // if (publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+                //     publicationURL = convertCustomSchemeToHttpUrl(publicationURL);
+                // }
+
+                // const url = publicationURL + "/../" + nextTextAudioPair.Text;
+                const urlObjFull = new URL(nextTextAudioPair.Text, publicationURL);
+                const urlFull = urlObjFull.toString();
+                if (IS_DEV) {
+                    debug("mediaOverlaysNext() - handleLinkUrl()");
+                }
+                const activeWebView = win.READIUM2.getActiveWebView();
+                handleLinkUrl(
+                    urlFull,
+                    activeWebView ? activeWebView.READIUM2.readiumCss : undefined);
+            } else {
+                if (IS_DEV) {
+                    debug("mediaOverlaysNext() - playMediaOverlaysAudio()");
+                }
+                setTimeout(async () => {
+                    await playMediaOverlaysAudio(nextTextAudioPair, undefined, undefined);
+                }, 0);
+            }
         }
     } else {
         if (IS_DEV) {
