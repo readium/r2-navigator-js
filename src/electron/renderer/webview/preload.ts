@@ -910,8 +910,8 @@ function scrollElementIntoView_(element: Element, doFocus: boolean, animate: boo
             } else if (offset < 0) {
                 offset = 0;
             }
-            if (animate) {
 
+            if (animate) {
                 const reduceMotion = win.document.documentElement.classList.contains(ROOT_CLASS_REDUCE_MOTION);
 
                 if (_lastAnimState2 && _lastAnimState2.animating) {
@@ -1223,6 +1223,7 @@ const scrollToHashRaw = () => {
         win.READIUM2.locationHashOverride = win.document.body;
         resetLocationHashOverrideInfo();
 
+        debug("processXYRaw BODY");
         processXYRaw(0, 0, false);
 
         // if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
@@ -2280,8 +2281,11 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
         debug("|||||||||||||| BODY/HTML selected????");
     }
     if (element) {
+        if (userInteract ||
+            !win.READIUM2.locationHashOverride ||
+            win.READIUM2.locationHashOverride === win.document.body ||
+            win.READIUM2.locationHashOverride === win.document.documentElement) {
 
-        if (userInteract || !win.READIUM2.locationHashOverride) {
             win.READIUM2.locationHashOverride = element;
         } else {
             const visible = win.READIUM2.isFixedLayout ||

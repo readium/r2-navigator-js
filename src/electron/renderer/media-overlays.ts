@@ -587,14 +587,14 @@ function findNextTextAudioPair(
     escape: boolean):
     MediaOverlayNode | undefined | null { // returns null when skipped
 
-    if (IS_DEV) {
+    if (DEBUG_AUDIO) {
         debug("findNextTextAudioPair()");
         debug(JSON.stringify(moToMatch));
         debug(JSON.stringify(previousMo.prev));
     }
     const isSkip = _mediaOverlaySkippabilityIsEnabled && isSkippable(mo);
     if (isSkip) {
-        if (IS_DEV) {
+        if (DEBUG_AUDIO) {
             debug("findNextTextAudioPair() - isSkippable");
             debug(JSON.stringify(mo));
         }
@@ -602,7 +602,7 @@ function findNextTextAudioPair(
     }
 
     if (!mo.Children || !mo.Children.length) { // leaf === text/audio pair (SMIL par)
-        if (IS_DEV) {
+        if (DEBUG_AUDIO) {
             debug("findNextTextAudioPair() - leaf text/audio pair");
             debug(JSON.stringify(mo));
         }
@@ -610,13 +610,13 @@ function findNextTextAudioPair(
             // && (!escape || !isEscapable(mo))
             ) {
 
-            if (IS_DEV) {
+            if (DEBUG_AUDIO) {
                 debug("findNextTextAudioPair() - prevMo === moToMatch");
             }
             return mo;
         }
         if (!_mediaOverlaySkippabilityIsEnabled || !isSkippable(mo)) {
-            if (IS_DEV) {
+            if (DEBUG_AUDIO) {
                 debug("findNextTextAudioPair() - set previous");
                 debug(JSON.stringify(mo));
             }
@@ -625,13 +625,13 @@ function findNextTextAudioPair(
         return undefined;
     }
     for (const child of mo.Children) {
-        if (IS_DEV) {
+        if (DEBUG_AUDIO) {
             debug("findNextTextAudioPair() - child");
             debug(JSON.stringify(child));
         }
         const match = findNextTextAudioPair(child, moToMatch, previousMo, escape);
         if (match) {
-            if (IS_DEV) {
+            if (DEBUG_AUDIO) {
                 debug("findNextTextAudioPair() - match");
                 debug(JSON.stringify(match));
             }
@@ -647,14 +647,14 @@ function findPreviousTextAudioPair(
     previousMo: {prev: MediaOverlayNode | undefined}):
     MediaOverlayNode | undefined | null { // returns null when skipped
 
-    if (IS_DEV) {
+    if (DEBUG_AUDIO) {
         debug("findPreviousTextAudioPair()");
         debug(JSON.stringify(moToMatch));
         debug(JSON.stringify(previousMo.prev));
     }
     const isSkip = _mediaOverlaySkippabilityIsEnabled && isSkippable(mo);
     if (isSkip) {
-        if (IS_DEV) {
+        if (DEBUG_AUDIO) {
             debug("findPreviousTextAudioPair() - isSkippable");
             debug(JSON.stringify(mo));
         }
@@ -662,7 +662,7 @@ function findPreviousTextAudioPair(
     }
 
     if (!mo.Children || !mo.Children.length) { // leaf === text/audio pair (SMIL par)
-        if (IS_DEV) {
+        if (DEBUG_AUDIO) {
             debug("findPreviousTextAudioPair() - leaf text/audio pair");
             debug(JSON.stringify(mo));
         }
@@ -670,14 +670,14 @@ function findPreviousTextAudioPair(
             mo === moToMatch
             ) {
 
-            if (IS_DEV) {
+            if (DEBUG_AUDIO) {
                 debug("findPreviousTextAudioPair() - mo === moToMatch");
                 debug(JSON.stringify(previousMo.prev));
             }
             return previousMo.prev;
         }
         if (!_mediaOverlaySkippabilityIsEnabled || !isSkippable(mo)) {
-            if (IS_DEV) {
+            if (DEBUG_AUDIO) {
                 debug("findPreviousTextAudioPair() - set previous");
                 debug(JSON.stringify(mo));
             }
@@ -686,13 +686,13 @@ function findPreviousTextAudioPair(
         return undefined;
     }
     for (const child of mo.Children) {
-        if (IS_DEV) {
+        if (DEBUG_AUDIO) {
             debug("findPreviousTextAudioPair() - child");
             debug(JSON.stringify(child));
         }
         const match = findPreviousTextAudioPair(child, moToMatch, previousMo);
         if (match) {
-            if (IS_DEV) {
+            if (DEBUG_AUDIO) {
                 debug("findPreviousTextAudioPair() - match");
                 debug(JSON.stringify(match));
             }
@@ -708,7 +708,7 @@ function findDepthFirstTextAudioPair(
     textFragmentIDChain: Array<string | null> | undefined):
     MediaOverlayNode | undefined | null { // returns null when skipped
 
-    if (IS_DEV) {
+    if (DEBUG_AUDIO) {
         debug("findDepthFirstTextAudioPair()");
     }
     const isSkip = _mediaOverlaySkippabilityIsEnabled && isSkippable(mo);
@@ -735,29 +735,29 @@ function findDepthFirstTextAudioPair(
         }
     }
 
-    if (IS_DEV) {
+    if (DEBUG_AUDIO) {
         debug("isSkip: " + isSkip);
         debug("isFragmentIDMatch: " + isFragmentIDMatch);
         debug("isTextUrlMatch: " + isTextUrlMatch);
     }
     if (!mo.Children || !mo.Children.length) { // leaf === text/audio pair (SMIL par)
-        if (IS_DEV) {
+        if (DEBUG_AUDIO) {
             debug("findDepthFirstTextAudioPair() - leaf text/audio pair");
         }
         if (!isTextUrlMatch) {
-            if (IS_DEV) {
+            if (DEBUG_AUDIO) {
                 debug("findDepthFirstTextAudioPair() - leaf - !isTextUrlMatch");
             }
             return undefined;
         }
         if (isFragmentIDMatch || (isTextUrlMatch && !textFragmentIDChain)) {
             if (isSkip) {
-                if (IS_DEV) {
+                if (DEBUG_AUDIO) {
                     debug("findDepthFirstTextAudioPair() - leaf - isFragmentIDMatch || (isTextUrlMatch && !textFragmentIDChain (isSkip)");
                 }
                 return null;
             } else {
-                if (IS_DEV) {
+                if (DEBUG_AUDIO) {
                     debug("findDepthFirstTextAudioPair() - leaf - isFragmentIDMatch || (isTextUrlMatch && !textFragmentIDChain");
                 }
                 return mo;
@@ -767,19 +767,19 @@ function findDepthFirstTextAudioPair(
     }
     let frags = textFragmentIDChain;
     for (const child of mo.Children) {
-        if (IS_DEV) {
+        if (DEBUG_AUDIO) {
             debug("findDepthFirstTextAudioPair() - child");
             debug(JSON.stringify(child));
         }
         const match = findDepthFirstTextAudioPair(textHref, child, frags);
         if (match === null) { // match, but skipped ... let's ignore the fragment IDs and just pick the next
-            if (IS_DEV) {
+            if (DEBUG_AUDIO) {
                 debug("findDepthFirstTextAudioPair() - child - match null (skip)");
             }
             frags = undefined;
         }
         if (match) {
-            if (IS_DEV) {
+            if (DEBUG_AUDIO) {
                 debug("findDepthFirstTextAudioPair() - child - match");
                 debug(JSON.stringify(match));
             }
@@ -788,17 +788,17 @@ function findDepthFirstTextAudioPair(
     }
     if (isFragmentIDMatch) {
         if (isSkip) {
-            if (IS_DEV) {
+            if (DEBUG_AUDIO) {
                 debug("findDepthFirstTextAudioPair() - post isFragmentIDMatch (skip)");
             }
             return null;
         } else {
-            if (IS_DEV) {
+            if (DEBUG_AUDIO) {
                 debug("findDepthFirstTextAudioPair() - post isFragmentIDMatch");
             }
             const match = findDepthFirstTextAudioPair(textHref, mo, undefined);
             if (match) {
-                if (IS_DEV) {
+                if (DEBUG_AUDIO) {
                     debug("findDepthFirstTextAudioPair() - post isFragmentIDMatch - match");
                     debug(JSON.stringify(match));
                 }
