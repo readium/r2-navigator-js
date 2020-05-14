@@ -370,7 +370,6 @@ export function installNavigatorDOM(
 
             // return activeWebView;
         },
-        mediaOverlaysPlaybackRate: 1,
         preloadScriptPath,
         publication,
         publicationURL,

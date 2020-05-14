@@ -23,7 +23,7 @@ import { handleLinkUrl, navLeftOrRight } from "./location";
 import { isRTL } from "./readium-css";
 import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
-const debug = debug_("r2:navigator#electron/renderer/location");
+const debug = debug_("r2:navigator#electron/renderer/media-overlays");
 
 const IS_DEV = process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev";
 
@@ -52,6 +52,9 @@ export function publicationHasMediaOverlays(publication: Publication) {
     }
     return false;
 }
+
+let _mediaOverlaysClickEnabled = false;
+let _mediaOverlaysPlaybackRate = 1;
 
 // URL without t=begin,end media fragment! (pure audio reference)
 let _currentAudioUrl: string | undefined;
@@ -103,6 +106,9 @@ async function playMediaOverlays(
             }
             _mediaOverlayRoot = rootMo;
             await playMediaOverlaysAudio(moTextAudioPair, undefined, undefined);
+            if (_mediaOverlaysListener) {
+                _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
+            }
         }
     } else {
         if (IS_DEV) {
@@ -152,16 +158,7 @@ async function playMediaOverlaysAudio(
     _mediaOverlayTextAudioPair = moTextAudioPair;
     _mediaOverlayTextId = undefined;
 
-    if (moTextAudioPair.Text) {
-        const i = moTextAudioPair.Text.lastIndexOf("#");
-        if (i >= 0) {
-            const id = moTextAudioPair.Text.substr(i + 1);
-            if (id) {
-                _mediaOverlayTextId = id;
-                moHighlight(_mediaOverlayTextId);
-            }
-        }
-    }
+    moHighlight_(moTextAudioPair);
 
     if (!moTextAudioPair.Audio) {
         return; // TODO TTS
@@ -219,7 +216,7 @@ async function playMediaOverlaysAudio(
         debug(`${urlFull} => [${_currentAudioBegin}-${_currentAudioEnd}]`);
     }
 
-    const playClip = async (initial: boolean, contiguous: boolean) => {
+    const playClip = async (initial: boolean) => {
         if (!_currentAudioElement) {
             return;
         }
@@ -262,9 +259,22 @@ async function playMediaOverlaysAudio(
                 _currentAudioElement.currentTime = timeToSeekTo;
             }
         } else {
+            const contiguous =
+                _previousAudioUrl === _currentAudioUrl &&
+                typeof _previousAudioEnd !== "undefined" &&
+                _previousAudioEnd > (timeToSeekTo - 0.02) &&
+                _previousAudioEnd <= timeToSeekTo &&
+                _currentAudioElement.currentTime >= (timeToSeekTo - 0.1);
+                // _currentAudioElement.currentTime <= (timeToSeekTo + 0.5)
+            ensureOnTimeUpdate(false);
             if (contiguous) {
-                ensureOnTimeUpdate(false);
+                if (IS_DEV) {
+                    debug("playMediaOverlaysAudio() - playClip() - ensureOnTimeUpdate");
+                }
             } else {
+                if (IS_DEV) {
+                    debug("playMediaOverlaysAudio() - playClip() - currentTime = timeToSeekTo");
+                }
                 _currentAudioElement.currentTime = timeToSeekTo;
             }
         }
@@ -485,37 +495,33 @@ async function playMediaOverlaysAudio(
             const currentAudioElement = ev.currentTarget as HTMLAudioElement;
             currentAudioElement.removeEventListener("canplaythrough", oncanplaythrough);
             debug("oncanplaythrough");
-            await playClip(true, false);
+            await playClip(true);
         };
         _currentAudioElement.addEventListener("canplaythrough", oncanplaythrough);
 
         const onpause = async (_ev: Event) => {
             debug("onpause");
-            if (_mediaOverlaysListener) {
-                _mediaOverlaysListener(MediaOverlaysStateEnum.PAUSED);
-            }
+            // if (_mediaOverlaysListener) {
+            //     _mediaOverlaysListener(MediaOverlaysStateEnum.PAUSED);
+            // }
         };
         _currentAudioElement.addEventListener("pause", onpause);
 
         const onplay = async (_ev: Event) => {
             debug("onplay");
-            if (_mediaOverlaysListener) {
-                _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-            }
+            // if (_mediaOverlaysListener) {
+            //     _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
+            // }
         };
         _currentAudioElement.addEventListener("play", onplay);
 
-        _currentAudioElement.playbackRate = win.READIUM2.mediaOverlaysPlaybackRate;
+        _currentAudioElement.playbackRate = _mediaOverlaysPlaybackRate;
         _currentAudioElement.setAttribute("src", _currentAudioUrl);
     } else {
         if (IS_DEV) {
             debug("playMediaOverlaysAudio() - playClip()");
         }
-        const contiguous = _previousAudioUrl === _currentAudioUrl &&
-            typeof _previousAudioEnd !== "undefined" &&
-            _previousAudioEnd > ((_currentAudioBegin ? _currentAudioBegin : 0) - 0.02) &&
-            _previousAudioEnd <= (_currentAudioBegin ? _currentAudioBegin : 0);
-        await playClip(false, contiguous);
+        await playClip(false);
     }
 }
 
@@ -842,14 +848,14 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
 
     if (IS_DEV) {
         debug("playMediaOverlaysForLink()");
+        debug(link.Href);
+        debug(link.HrefDecoded);
         debug(JSON.stringify(textFragmentIDChain, null, 4));
     }
     let moUrl: string | undefined;
     if (link.Properties?.MediaOverlay) {
         moUrl = link.Properties.MediaOverlay;
         if (IS_DEV) {
-            debug(link.Href);
-            debug(link.HrefDecoded);
             debug(link.Properties.MediaOverlay);
             debug(link.Duration);
         }
@@ -884,6 +890,9 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
             const rtl = isRTL();
             navLeftOrRight(rtl, true);
         }, 2000);
+        if (_mediaOverlaysListener) {
+            _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
+        }
         return;
     }
     // typically undefined at first, because serialized JSON not init'ed, lazy-loaded
@@ -953,6 +962,10 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
     await playMediaOverlays(hrefUrlObj.pathname.substr(1), link.MediaOverlays, textFragmentIDChain);
 }
 
+let _lastClickedNotification: {
+    textFragmentIDChain: Array<string | null> | undefined;
+    link: Link | undefined;
+} | undefined;
 export function mediaOverlaysHandleIpcMessage(
     eventChannel: string,
     eventArgs: any[],
@@ -963,11 +976,13 @@ export function mediaOverlaysHandleIpcMessage(
 
     if (eventChannel === R2_EVENT_MEDIA_OVERLAY_CLICK) {
         // debug("R2_EVENT_MEDIA_OVERLAY_CLICK (webview.addEventListener('ipc-message')");
-        if (publicationHasMediaOverlays(win.READIUM2.publication) &&
-            (
-            // win.READIUM2.mediaOverlaysClickEnabled &&
-            _mediaOverlayRoot || true)) {
-            // TODO: restrict to when MO was play-started at least once (so that rate/speed is set)
+        if (publicationHasMediaOverlays(win.READIUM2.publication)
+            // &&
+            // (
+            // // win.READIUM2.mediaOverlaysClickEnabled &&
+            // _mediaOverlayRoot
+            // )
+        ) {
 
             if (IS_DEV) {
                 debug("R2_EVENT_MEDIA_OVERLAY_CLICK");
@@ -975,13 +990,19 @@ export function mediaOverlaysHandleIpcMessage(
             mediaOverlaysInterrupt();
 
             const payload = eventArgs[0] as IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK;
+            _lastClickedNotification = {
+                link: activeWebView.READIUM2.link,
+                textFragmentIDChain: payload.textFragmentIDChain,
+            };
 
-            if (payload.userInteract || _mediaOverlayActive) {
+            if ((payload.userInteract && _mediaOverlaysClickEnabled) ||
+                _mediaOverlayActive) {
+
                 if (IS_DEV) {
                     debug("playMediaOverlaysForLink");
                 }
                 setTimeout(async () => {
-                    if (activeWebView?.READIUM2.link) {
+                    if (activeWebView.READIUM2.link) {
                         await playMediaOverlaysForLink(activeWebView.READIUM2.link, payload.textFragmentIDChain);
                     }
                 }, 0);
@@ -992,7 +1013,21 @@ export function mediaOverlaysHandleIpcMessage(
     }
     return true;
 }
-
+function moHighlight_(moTextAudioPair: MediaOverlayNode) {
+    if (IS_DEV) {
+        debug("moHighlight ...");
+    }
+    if (moTextAudioPair.Text) {
+        const i = moTextAudioPair.Text.lastIndexOf("#");
+        if (i >= 0) {
+            const id = moTextAudioPair.Text.substr(i + 1);
+            if (id) {
+                _mediaOverlayTextId = id;
+                moHighlight(_mediaOverlayTextId);
+            }
+        }
+    }
+}
 function moHighlight(id: string | undefined) {
     if (IS_DEV) {
         debug("moHighlight: " + id);
@@ -1031,7 +1066,7 @@ export function mediaOverlaysPlay(speed: number) {
         return;
     }
 
-    win.READIUM2.mediaOverlaysPlaybackRate = speed;
+    _mediaOverlaysPlaybackRate = speed;
 
     if (!_mediaOverlayRoot || !_mediaOverlayTextAudioPair) {
         if (IS_DEV) {
@@ -1040,7 +1075,11 @@ export function mediaOverlaysPlay(speed: number) {
         setTimeout(async () => {
             const activeWebView = win.READIUM2.getActiveWebView();
             if (activeWebView?.READIUM2.link) {
-                await playMediaOverlaysForLink(activeWebView.READIUM2.link, undefined);
+                const textFragmentIDChain =
+                    _lastClickedNotification?.link?.Href === activeWebView.READIUM2.link.Href ?
+                    _lastClickedNotification.textFragmentIDChain :
+                    undefined;
+                await playMediaOverlaysForLink(activeWebView.READIUM2.link, textFragmentIDChain);
             }
         }, 0);
     } else {
@@ -1064,6 +1103,10 @@ export function mediaOverlaysPause() {
     ensureOnTimeUpdate(true);
     if (_currentAudioElement) {
         _currentAudioElement.pause();
+    }
+
+    if (_mediaOverlaysListener) {
+        _mediaOverlaysListener(MediaOverlaysStateEnum.PAUSED);
     }
 }
 
@@ -1095,11 +1138,11 @@ export function mediaOverlaysStop(stayActive?: boolean) {
     _mediaOverlayTextAudioPair = undefined;
     _mediaOverlayTextId = undefined;
 
-    setTimeout(async () => {
+    if (!_mediaOverlayActive) {
         if (_mediaOverlaysListener) {
             _mediaOverlaysListener(MediaOverlaysStateEnum.STOPPED);
         }
-    }, 100);
+    }
 }
 
 export function mediaOverlaysResume() {
@@ -1122,11 +1165,15 @@ export function mediaOverlaysResume() {
                 }
             }, 0);
         }
+        if (_mediaOverlaysListener) {
+            _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
+        }
+        moHighlight_(_mediaOverlayTextAudioPair);
     } else {
         if (IS_DEV) {
             debug("mediaOverlaysResume() - mediaOverlaysPlay()");
         }
-        mediaOverlaysPlay(win.READIUM2.mediaOverlaysPlaybackRate);
+        mediaOverlaysPlay(_mediaOverlaysPlaybackRate);
     }
 }
 
@@ -1193,9 +1240,16 @@ export function mediaOverlaysPrevious() {
         }
     } else {
         if (IS_DEV) {
-            debug("mediaOverlaysPrevious() - mediaOverlaysPlay()");
+            debug("mediaOverlaysPrevious() - navLeftOrRight() 2");
         }
-        mediaOverlaysPlay(win.READIUM2.mediaOverlaysPlaybackRate);
+        mediaOverlaysStop(true);
+        // metadata-level RTL
+        const rtl = isRTL();
+        navLeftOrRight(!rtl, true);
+        // if (IS_DEV) {
+        //     debug("mediaOverlaysPrevious() - mediaOverlaysPlay()");
+        // }
+        // mediaOverlaysPlay(_mediaOverlaysPlaybackRate);
     }
 }
 
@@ -1263,9 +1317,16 @@ export function mediaOverlaysNext(escape?: boolean) {
         }
     } else {
         if (IS_DEV) {
-            debug("mediaOverlaysNext() - mediaOverlaysPlay()");
+            debug("mediaOverlaysNext() - navLeftOrRight() 2");
         }
-        mediaOverlaysPlay(win.READIUM2.mediaOverlaysPlaybackRate);
+        mediaOverlaysStop(true);
+        // metadata-level RTL
+        const rtl = isRTL();
+        navLeftOrRight(rtl, true);
+        // if (IS_DEV) {
+        //     debug("mediaOverlaysNext() - mediaOverlaysPlay()");
+        // }
+        // mediaOverlaysPlay(_mediaOverlaysPlaybackRate);
     }
 }
 
@@ -1276,31 +1337,32 @@ export function mediaOverlaysEscape() {
     mediaOverlaysNext(true);
 }
 
-// export function mediaOverlaysClickEnable(doEnable: boolean) {
-//     if (win.READIUM2) {
-//         win.READIUM2.mediaOverlaysClickEnabled = doEnable;
-//     }
+export function mediaOverlaysClickEnable(doEnable: boolean) {
+    _mediaOverlaysClickEnabled = doEnable;
+    // if (win.READIUM2) {
+    //     win.READIUM2.mediaOverlaysClickEnabled = doEnable;
+    // }
 
-//     const activeWebView = win.READIUM2.getActiveWebView();
-//     if (!activeWebView) {
-//         return;
-//     }
+    // const activeWebView = win.READIUM2.getActiveWebView();
+    // if (!activeWebView) {
+    //     return;
+    // }
 
-//     const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAYS_CLICK_ENABLE = {
-//         doEnable,
-//     };
+    // const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAYS_CLICK_ENABLE = {
+    //     doEnable,
+    // };
 
-//     setTimeout(async () => {
-//         await activeWebView.send(R2_EVENT_MEDIA_OVERLAYS_CLICK_ENABLE, payload);
-//     }, 0);
-// }
+    // setTimeout(async () => {
+    //     await activeWebView.send(R2_EVENT_MEDIA_OVERLAYS_CLICK_ENABLE, payload);
+    // }, 0);
+}
 
 export function mediaOverlaysPlaybackRate(speed: number) {
     if (!win.READIUM2 || !win.READIUM2.publication) {
         return;
     }
 
-    win.READIUM2.mediaOverlaysPlaybackRate = speed;
+    _mediaOverlaysPlaybackRate = speed;
 
     if (_currentAudioElement) {
         _currentAudioElement.playbackRate = speed;
