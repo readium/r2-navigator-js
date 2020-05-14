@@ -1812,16 +1812,21 @@ function loaded(forced: boolean) {
         }
 
         if (ev.target) {
-            let mouseClickOnLink = false;
+            let ignoreIncomingMouseClickOnFocusable = false;
             if (win.document && win.document.documentElement) {
                 if (!win.document.documentElement.classList.contains(ROOT_CLASS_KEYBOARD_INTERACT)) {
-                    if ((ev.target as HTMLElement).tagName.toLowerCase() === "a" && (ev.target as any).href) {
-                        // link mouse click, leave it alone!
-                        mouseClickOnLink = true;
+                    if (
+                        (ev.target as HTMLElement).tagName.toLowerCase() === "a" &&
+                        (ev.target as any).href
+                        ||
+                        ev.target.getAttribute("tabindex") === "-1" &&
+                        (ev.target as HTMLElement).classList.contains(CSS_CLASS_NO_FOCUS_OUTLINE)
+                    ) {
+                        ignoreIncomingMouseClickOnFocusable = true;
                     }
                 }
             }
-            if (!mouseClickOnLink) {
+            if (!ignoreIncomingMouseClickOnFocusable) {
                 handleFocusInDebounced(ev.target as HTMLElement, undefined);
             } else {
                 debug("focusin mouse click --- IGNORE");
