@@ -31,6 +31,28 @@ const win = window as IReadiumElectronBrowserWindow;
 
 const AUDIO_MO_ID = "R2_AUDIO_MO_ID";
 
+export function publicationHasMediaOverlays(publication: Publication) {
+    if (publication.Spine) {
+        const firstMoLink = publication.Spine.find((link) => {
+            if (link.Properties?.MediaOverlay) {
+                return true;
+            }
+            if (link.Alternate) {
+                for (const altLink of link.Alternate) {
+                    if (altLink.TypeLink === "application/vnd.syncnarr+json") {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
+        if (firstMoLink) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // URL without t=begin,end media fragment! (pure audio reference)
 let _currentAudioUrl: string | undefined;
 let _previousAudioUrl: string | undefined;
@@ -807,28 +829,6 @@ function findDepthFirstTextAudioPair(
         }
     }
     return undefined;
-}
-
-function publicationHasMediaOverlays(publication: Publication) {
-    if (publication.Spine) {
-        const firstMoLink = publication.Spine.find((link) => {
-            if (link.Properties?.MediaOverlay) {
-                return true;
-            }
-            if (link.Alternate) {
-                for (const altLink of link.Alternate) {
-                    if (altLink.TypeLink === "application/vnd.syncnarr+json") {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        });
-        if (firstMoLink) {
-            return true;
-        }
-    }
-    return false;
 }
 
 let _timeoutAutoNext: number | undefined;
