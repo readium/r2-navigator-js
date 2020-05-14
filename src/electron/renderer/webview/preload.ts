@@ -71,7 +71,7 @@ import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReading
 import {
     CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, CLASS_HIGHLIGHT_CONTAINER,
     ID_HIGHLIGHTS_CONTAINER, createHighlight, destroyAllhighlights, destroyHighlight,
-    invalidateBoundingClientRectOfDocumentBody, recreateAllHighlights,
+    recreateAllHighlights,
 } from "./highlight";
 import { popupFootNote } from "./popupFootNotes";
 import {
@@ -1872,7 +1872,7 @@ function loaded(forced: boolean) {
                 }
                 // debug("ResizeObserver");
 
-                invalidateBoundingClientRectOfDocumentBody(win);
+                // invalidateBoundingClientRectOfDocumentBody(win);
                 (win.document.body as any).tabbables = undefined;
 
                 // debug("++++ scrollToHashDebounced from ResizeObserver");

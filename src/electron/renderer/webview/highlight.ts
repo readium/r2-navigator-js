@@ -58,18 +58,40 @@ interface ISVGRectElementWithRect extends SVGRectElement, IWithRect {
 interface ISVGLineElementWithRect extends SVGLineElement, IWithRect {
 }
 
-interface IDocumentBody extends HTMLElement {
-    _CachedBoundingClientRect: DOMRect | undefined;
-}
+// interface IDocumentBody extends HTMLElement {
+//     _CachedBoundingClientRect: DOMRect | undefined;
+//     _CachedMargins: IRect | undefined;
+// }
 export function getBoundingClientRectOfDocumentBody(win: IReadiumElectronWebviewWindow): DOMRect {
-    if (!(win.document.body as IDocumentBody)._CachedBoundingClientRect) {
-        (win.document.body as IDocumentBody)._CachedBoundingClientRect = win.document.body.getBoundingClientRect();
-    }
-    return (win.document.body as IDocumentBody)._CachedBoundingClientRect as DOMRect;
+    // TODO: does this need to be cached? (performance, notably during mouse hover)
+    return win.document.body.getBoundingClientRect();
+
+    // if (!(win.document.body as IDocumentBody)._CachedBoundingClientRect) {
+    //     (win.document.body as IDocumentBody)._CachedBoundingClientRect = win.document.body.getBoundingClientRect();
+    // }
+    // console.log("_CachedBoundingClientRect",
+    //     JSON.stringify((win.document.body as IDocumentBody)._CachedBoundingClientRect));
+    // return (win.document.body as IDocumentBody)._CachedBoundingClientRect as DOMRect;
 }
-export function invalidateBoundingClientRectOfDocumentBody(win: IReadiumElectronWebviewWindow) {
-    (win.document.body as IDocumentBody)._CachedBoundingClientRect = undefined;
-}
+// export function invalidateBoundingClientRectOfDocumentBody(win: IReadiumElectronWebviewWindow) {
+//     (win.document.body as IDocumentBody)._CachedBoundingClientRect = undefined;
+// }
+// function getBodyMargin(win: IReadiumElectronWebviewWindow): IRect {
+//     const bodyStyle = win.getComputedStyle(win.document.body);
+//     if (!(win.document.body as IDocumentBody)._CachedMargins) {
+//         (win.document.body as IDocumentBody)._CachedMargins = {
+//             bottom: parseInt(bodyStyle.marginBottom, 10),
+//             height: 0,
+//             left: parseInt(bodyStyle.marginLeft, 10),
+//             right: parseInt(bodyStyle.marginRight, 10),
+//             top: parseInt(bodyStyle.marginTop, 10),
+//             width: 0,
+//         };
+//     }
+//     console.log("_CachedMargins",
+//         JSON.stringify((win.document.body as IDocumentBody)._CachedMargins));
+//     return (win.document.body as IDocumentBody)._CachedMargins as IRect;
+// }
 
 function resetHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highlightBounding: HTMLElement) {
 
@@ -209,6 +231,7 @@ function processMouseEvent(win: IReadiumElectronWebviewWindow, ev: MouseEvent) {
 
     const paginated = isPaginated(documant);
     const bodyRect = getBoundingClientRectOfDocumentBody(win);
+
     const xOffset = paginated ? (-scrollElement.scrollLeft) : bodyRect.left;
     const yOffset = paginated ? (-scrollElement.scrollTop) : bodyRect.top;
 
@@ -351,7 +374,7 @@ function ensureHighlightsContainer(win: IReadiumElectronWebviewWindow): HTMLElem
 
         _highlightsContainer = documant.createElement("div");
         _highlightsContainer.setAttribute("id", ID_HIGHLIGHTS_CONTAINER);
-        _highlightsContainer.setAttribute("style", "background-color: transparent !important");
+        _highlightsContainer.setAttribute("style", "background-color: transparent !important; position: absolute; width: 1px; height: 1px; top: 0; left: 0; overflow: visible;");
         _highlightsContainer.style.setProperty("pointer-events", "none");
         documant.body.append(_highlightsContainer);
         // documant.documentElement.append(_highlightsContainer);
@@ -474,7 +497,7 @@ function createHighlightDom(win: IReadiumElectronWebviewWindow, highlight: IHigh
     const highlightParent = documant.createElement("div") as IHTMLDivElementWithRect;
     highlightParent.setAttribute("id", highlight.id);
     highlightParent.setAttribute("class", CLASS_HIGHLIGHT_CONTAINER);
-    highlightParent.setAttribute("style", "background-color: transparent !important");
+    highlightParent.setAttribute("style", "background-color: transparent !important; position: absolute; width: 1px; height: 1px; top: 0; left: 0; overflow: visible;");
     highlightParent.style.setProperty("pointer-events", "none");
     if (highlight.pointerInteraction) {
         highlightParent.setAttribute("data-click", "1");
@@ -484,6 +507,7 @@ function createHighlightDom(win: IReadiumElectronWebviewWindow, highlight: IHigh
     // Also note that ReadiumCSS default to (via stylesheet :root):
     // documant.documentElement.style.position = "relative";
     documant.body.style.position = "relative";
+    // documant.body.style.overflow = "hidden";
     // documant.body.style.setProperty("position", "relative !important");
 
     // const docStyle = (documant.defaultView as Window).getComputedStyle(documant.documentElement);
@@ -494,6 +518,7 @@ function createHighlightDom(win: IReadiumElectronWebviewWindow, highlight: IHigh
     // console.log("marginTop: " + marginTop);
 
     const bodyRect = getBoundingClientRectOfDocumentBody(win);
+
     // console.log("==== bodyRect:");
     // console.log("width: " + bodyRect.width);
     // console.log("height: " + bodyRect.height);
@@ -660,6 +685,8 @@ function createHighlightDom(win: IReadiumElectronWebviewWindow, highlight: IHigh
             };
             highlightArea.style.width = `${highlightArea.rect.width * scale}px`;
             highlightArea.style.height = `${highlightArea.rect.height * scale}px`;
+            highlightArea.style.minWidth = highlightArea.style.width;
+            highlightArea.style.minHeight = highlightArea.style.height;
             highlightArea.style.left = `${highlightArea.rect.left * scale}px`;
             highlightArea.style.top = `${highlightArea.rect.top * scale}px`;
 
@@ -692,6 +719,8 @@ function createHighlightDom(win: IReadiumElectronWebviewWindow, highlight: IHigh
                 };
                 highlightAreaLine.style.width = `${highlightAreaLine.rect.width * scale}px`;
                 highlightAreaLine.style.height = `${strikeThroughLineThickness * scale}px`;
+                highlightAreaLine.style.minWidth = highlightAreaLine.style.width;
+                highlightAreaLine.style.minHeight = highlightAreaLine.style.height;
                 highlightAreaLine.style.left = `${highlightAreaLine.rect.left * scale}px`;
                 // tslint:disable-next-line:max-line-length
                 highlightAreaLine.style.top = `${(highlightAreaLine.rect.top + (highlightAreaLine.rect.height / 2) - (strikeThroughLineThickness / 2)) * scale}px`;
@@ -737,6 +766,8 @@ function createHighlightDom(win: IReadiumElectronWebviewWindow, highlight: IHigh
     };
     highlightBounding.style.width = `${highlightBounding.rect.width * scale}px`;
     highlightBounding.style.height = `${highlightBounding.rect.height * scale}px`;
+    highlightBounding.style.minWidth = highlightBounding.style.width;
+    highlightBounding.style.minHeight = highlightBounding.style.height;
     highlightBounding.style.left = `${highlightBounding.rect.left * scale}px`;
     highlightBounding.style.top = `${highlightBounding.rect.top * scale}px`;
     highlightParent.append(highlightBounding);
