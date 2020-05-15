@@ -526,6 +526,7 @@ async function playMediaOverlaysAudio(
 }
 
 // https://www.w3.org/publishing/epub3/epub-mediaoverlays.html#sec-skippability
+// https://idpf.github.io/epub-vocabs/structure/
 const _skippables = [
     "footnote",
     "endnote",
@@ -534,15 +535,10 @@ const _skippables = [
     "note",
     "rearnote",
     "sidebar",
-    "practice",
     "marginalia",
     "annotation",
-    "help",
-    "table",
-    "table-row",
-    "table-cell",
-    "list",
-    "list-item",
+    // "practice",
+    // "help",
 ];
 function isSkippable(mo: MediaOverlayNode): boolean {
     return mo.Role && mo.Role.findIndex((r) => {
