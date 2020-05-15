@@ -74,8 +74,6 @@ let _mediaOverlayTextId: string | undefined;
 
 let _mediaOverlayActive = false;
 
-const _mediaOverlaySkippabilityIsEnabled = true;
-
 async function playMediaOverlays(
     textHref: string,
     rootMo: MediaOverlayNode,
@@ -1367,4 +1365,9 @@ export function mediaOverlaysPlaybackRate(speed: number) {
     if (_currentAudioElement) {
         _currentAudioElement.playbackRate = speed;
     }
+}
+
+let _mediaOverlaySkippabilityIsEnabled = true;
+export function mediaOverlaysEnableSkippability(doEnable: boolean) {
+    _mediaOverlaySkippabilityIsEnabled = doEnable;
 }
