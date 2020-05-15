@@ -6,4 +6,4 @@
 // ==LICENSE-END==
 
 // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webview
-export const ENABLE_WEBVIEW_RESIZE = false;
+// export const ENABLE_WEBVIEW_RESIZE = false;

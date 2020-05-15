@@ -13,7 +13,7 @@ import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
 import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "./sessions";
 import {
     CLASS_PAGINATED, ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
-    ROOT_CLASS_REDUCE_MOTION, audioCssStyles, focusCssStyles, footnotesCssStyles,
+    ROOT_CLASS_REDUCE_MOTION, WebViewSlotEnum, audioCssStyles, focusCssStyles, footnotesCssStyles,
     mediaOverlaysCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles,
     targetCssStyles, ttsCssStyles, visibilityMaskCssStyles,
 } from "./styles";
@@ -509,7 +509,8 @@ export function configureFixedLayout(
         documant: Document,
         isFixedLayout: boolean,
         fxlViewportWidth: number, fxlViewportHeight: number,
-        innerWidth: number, innerHeight: number): IwidthHeight | undefined {
+        innerWidth: number, innerHeight: number,
+        wvSlot: WebViewSlotEnum): IwidthHeight | undefined {
 
     if (!documant || !documant.head || !documant.body) {
         return undefined;
@@ -630,7 +631,8 @@ export function configureFixedLayout(
         const ratioY = visibleHeight / height;
         const ratio = Math.min(ratioX, ratioY);
 
-        const tx = (visibleWidth - (width * ratio)) / 2;
+        const tx = (visibleWidth - (width * ratio)) *
+            (wvSlot === WebViewSlotEnum.center ? 0.5 : (wvSlot === WebViewSlotEnum.right ? 0 : 1));
         const ty = (visibleHeight - (height * ratio)) / 2;
         if (isDEBUG_VISUALS(documant)) {
             debug("FXL trans X: " + tx);

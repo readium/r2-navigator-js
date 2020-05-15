@@ -16,7 +16,8 @@ import { Link } from "@r2-shared-js/models/publication-link";
 import { DEBUG_AUDIO } from "../common/audiobook";
 import {
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK, IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
-    R2_EVENT_MEDIA_OVERLAY_CLICK, R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
+    IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_MEDIA_OVERLAY_CLICK,
+    R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, R2_EVENT_MEDIA_OVERLAY_STARTSTOP,
 } from "../common/events";
 import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "../common/sessions";
 import { handleLinkUrl, navLeftOrRight } from "./location";
@@ -967,7 +968,7 @@ export function mediaOverlaysHandleIpcMessage(
     eventArgs: any[],
     eventCurrentTarget: IReadiumElectronWebview): boolean {
 
-    // win.READIUM2.getActiveWebView();
+    // win.READIUM2.getFirstWebView();
     const activeWebView = eventCurrentTarget;
 
     if (eventChannel === R2_EVENT_MEDIA_OVERLAY_CLICK) {
@@ -1004,6 +1005,29 @@ export function mediaOverlaysHandleIpcMessage(
                 }, 0);
             }
         }
+    } else if (eventChannel === R2_EVENT_MEDIA_OVERLAY_STARTSTOP) {
+        const payload = eventArgs[0] as IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP;
+
+        if (IS_DEV) {
+            debug("R2_EVENT_MEDIA_OVERLAY_STARTSTOP");
+        }
+        mediaOverlaysStop();
+
+        if (payload.start) {
+            const rate = _mediaOverlaysPlaybackRate;
+            mediaOverlaysPlay(1); // iBooks
+            _mediaOverlaysPlaybackRate = rate;
+        } else if (payload.stop) {
+            //
+        } else {
+            if (_currentAudioElement && !_currentAudioElement.paused) {
+                //
+            } else {
+                const rate = _mediaOverlaysPlaybackRate;
+                mediaOverlaysPlay(1); // iBooks
+                _mediaOverlaysPlaybackRate = rate;
+            }
+        }
     } else {
         return false;
     }
@@ -1036,7 +1060,7 @@ function moHighlight(id: string | undefined) {
         classActivePlayback: classActivePlayback ? classActivePlayback : undefined,
         id,
     };
-    const activeWebView = win.READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getFirstWebView();
     if (activeWebView) {
         setTimeout(async () => {
             await activeWebView.send(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, payload);
@@ -1069,7 +1093,7 @@ export function mediaOverlaysPlay(speed: number) {
             debug("mediaOverlaysPlay() - playMediaOverlaysForLink()");
         }
         setTimeout(async () => {
-            const activeWebView = win.READIUM2.getActiveWebView();
+            const activeWebView = win.READIUM2.getFirstWebView();
             if (activeWebView?.READIUM2.link) {
                 const textFragmentIDChain =
                     _lastClickedNotification?.link?.Href === activeWebView.READIUM2.link.Href ?
@@ -1222,7 +1246,7 @@ export function mediaOverlaysPrevious() {
                 if (IS_DEV) {
                     debug("mediaOverlaysPrevious() - handleLinkUrl()");
                 }
-                const activeWebView = win.READIUM2.getActiveWebView();
+                const activeWebView = win.READIUM2.getFirstWebView();
                 handleLinkUrl(
                     urlFull,
                     activeWebView ? activeWebView.READIUM2.readiumCss : undefined);
@@ -1299,7 +1323,7 @@ export function mediaOverlaysNext(escape?: boolean) {
                 if (IS_DEV) {
                     debug("mediaOverlaysNext() - handleLinkUrl()");
                 }
-                const activeWebView = win.READIUM2.getActiveWebView();
+                const activeWebView = win.READIUM2.getFirstWebView();
                 handleLinkUrl(
                     urlFull,
                     activeWebView ? activeWebView.READIUM2.readiumCss : undefined);
@@ -1340,7 +1364,7 @@ export function mediaOverlaysClickEnable(doEnable: boolean) {
     //     win.READIUM2.mediaOverlaysClickEnabled = doEnable;
     // }
 
-    // const activeWebView = win.READIUM2.getActiveWebView();
+    // const activeWebView = win.READIUM2.getFirstWebView();
     // if (!activeWebView) {
     //     return;
     // }

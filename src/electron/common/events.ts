@@ -117,6 +117,16 @@ export interface IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK {
     userInteract: boolean;
 }
 
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_MEDIA_OVERLAY_STARTSTOP = "R2_EVENT_MEDIA_OVERLAY_STARTSTOP";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP {
+    start: boolean | undefined;
+    stop: boolean | undefined;
+    startstop: boolean | undefined;
+}
+
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT = "R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT";

@@ -5,16 +5,6 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
-
-// import { consoleRedirect } from "../common/console-redirect";
-if (IS_DEV) {
-    // tslint:disable-next-line:no-var-requires
-    const cr = require("../common/console-redirect");
-    // const releaseConsoleRedirect =
-    cr.consoleRedirect("r2:navigator#electron/renderer/webview/preload", process.stdout, process.stderr, true);
-}
-
 import { debounce } from "debounce";
 import * as debug_ from "debug";
 import { ipcRenderer } from "electron";
@@ -27,15 +17,16 @@ import {
     IEventPayload_R2_EVENT_DEBUG_VISUALS, IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
     IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, IEventPayload_R2_EVENT_LINK,
     IEventPayload_R2_EVENT_LOCATOR_VISIBLE, IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK,
-    IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, IEventPayload_R2_EVENT_PAGE_TURN,
-    IEventPayload_R2_EVENT_READING_LOCATION, IEventPayload_R2_EVENT_READIUMCSS,
-    IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X,
-    IEventPayload_R2_EVENT_TTS_CLICK_ENABLE, IEventPayload_R2_EVENT_TTS_DO_PLAY,
-    IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
-    R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS,
-    R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
-    R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_MEDIA_OVERLAY_CLICK,
-    R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
+    IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP,
+    IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READING_LOCATION,
+    IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_SCROLLTO,
+    IEventPayload_R2_EVENT_SHIFT_VIEW_X, IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
+    IEventPayload_R2_EVENT_TTS_DO_PLAY, IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CLIPBOARD_COPY,
+    R2_EVENT_DEBUG_VISUALS, R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE,
+    R2_EVENT_HIGHLIGHT_REMOVE_ALL, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE,
+    R2_EVENT_MEDIA_OVERLAY_CLICK, R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
+    R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
     R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
     R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY,
     R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
@@ -52,7 +43,7 @@ import {
     R2_MO_CLASS_ACTIVE, R2_MO_CLASS_ACTIVE_PLAYBACK, ROOT_CLASS_INVISIBLE_MASK,
     ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
     ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN,
-    TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ZERO_TRANSFORM_CLASS,
+    TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, WebViewSlotEnum, ZERO_TRANSFORM_CLASS,
     readPosCssStylesAttr1, readPosCssStylesAttr2, readPosCssStylesAttr3, readPosCssStylesAttr4,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
@@ -63,9 +54,8 @@ import { getURLQueryParams } from "../common/querystring";
 import { IRect, getClientRectsNoOverlap_ } from "../common/rect-utils";
 import {
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
-    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS,
+    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS, URL_PARAM_WEBVIEW_SLOT,
 } from "../common/url-params";
-import { ENABLE_WEBVIEW_RESIZE } from "../common/webview-resize";
 import { setupAudioBook } from "./audiobook";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
@@ -84,6 +74,18 @@ import {
 } from "./readium-css";
 import { clearCurrentSelection, getCurrentSelectionInfo } from "./selection";
 import { IReadiumElectronWebviewWindow } from "./state";
+
+const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+
+// import { consoleRedirect } from "../common/console-redirect";
+if (IS_DEV) {
+    // tslint:disable-next-line:no-var-requires
+    const cr = require("../common/console-redirect");
+    // const releaseConsoleRedirect =
+    cr.consoleRedirect("r2:navigator#electron/renderer/webview/preload", process.stdout, process.stderr, true);
+}
+
+// import { ENABLE_WEBVIEW_RESIZE } from "../common/webview-resize";
 
 // import { registerProtocol } from "@r2-navigator-js/electron/renderer/common/protocol";
 // registerProtocol();
@@ -121,6 +123,7 @@ win.READIUM2 = {
     ttsClickEnabled: false,
     ttsPlaybackRate: 1,
     urlQueryParams: win.location.search ? getURLQueryParams(win.location.search) : undefined,
+    webViewSlot: WebViewSlotEnum.center,
 };
 
 // const _winAlert = win.alert;
@@ -214,6 +217,11 @@ if (win.READIUM2.urlQueryParams) {
     win.READIUM2.DEBUG_VISUALS = win.READIUM2.urlQueryParams[URL_PARAM_DEBUG_VISUALS] === "true";
 
     win.READIUM2.isClipboardIntercept = win.READIUM2.urlQueryParams[URL_PARAM_CLIPBOARD_INTERCEPT] === "true";
+
+    win.READIUM2.webViewSlot =
+        win.READIUM2.urlQueryParams[URL_PARAM_WEBVIEW_SLOT] === "left" ? WebViewSlotEnum.left :
+        (win.READIUM2.urlQueryParams[URL_PARAM_WEBVIEW_SLOT] === "right" ? WebViewSlotEnum.right :
+        WebViewSlotEnum.center);
 }
 
 if (IS_DEV) {
@@ -1516,7 +1524,7 @@ win.addEventListener("DOMContentLoaded", () => {
     const h = (readiumcssJson && readiumcssJson.fixedLayoutWebViewHeight) || win.innerHeight;
     const wh = configureFixedLayout(win.document, win.READIUM2.isFixedLayout,
         win.READIUM2.fxlViewportWidth, win.READIUM2.fxlViewportHeight,
-        w, h);
+        w, h, win.READIUM2.webViewSlot);
     if (wh) {
         win.READIUM2.fxlViewportWidth = wh.width;
         win.READIUM2.fxlViewportHeight = wh.height;
@@ -1970,7 +1978,7 @@ function loaded(forced: boolean) {
     const onResizeRaw = () => {
         const wh = configureFixedLayout(win.document, win.READIUM2.isFixedLayout,
             win.READIUM2.fxlViewportWidth, win.READIUM2.fxlViewportHeight,
-            win.innerWidth, win.innerHeight);
+            win.innerWidth, win.innerHeight, win.READIUM2.webViewSlot);
         if (wh) {
             win.READIUM2.fxlViewportWidth = wh.width;
             win.READIUM2.fxlViewportHeight = wh.height;
@@ -1990,11 +1998,13 @@ function loaded(forced: boolean) {
             _firstWindowResize = false;
             return;
         }
-        if (ENABLE_WEBVIEW_RESIZE) {
-            onResizeRaw();
-        } else {
-            onResizeDebounced();
-        }
+
+        // if (ENABLE_WEBVIEW_RESIZE) {
+        //     onResizeRaw();
+        // } else {
+        //     onResizeDebounced();
+        // }
+        onResizeDebounced();
     });
 
     setTimeout(() => {
@@ -2070,7 +2080,6 @@ function loaded(forced: boolean) {
         }
 
         if (element && win.READIUM2.ttsClickEnabled) {
-
             if (element) {
                 if (ev.altKey) {
                     ttsPlay(
@@ -2100,6 +2109,25 @@ function loaded(forced: boolean) {
     win.document.documentElement.addEventListener("mouseup", (ev: MouseEvent) => {
         handleMouseEvent(ev);
     });
+
+    win.document.addEventListener("mouseup", (ev: MouseEvent) => {
+
+        if (ev.target && (ev.target as any).getAttribute) {
+
+            const iBooksMO = (ev.target as HTMLElement).getAttribute("ibooks:readaloud") ||
+                (ev.target as HTMLElement).getAttribute("readaloud");
+
+            if (iBooksMO) {
+                const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP = {
+                    start: iBooksMO === "start" ? true : undefined,
+                    startstop: iBooksMO === "startstop" ? true : undefined,
+                    stop: iBooksMO === "stop" ? true : undefined,
+                };
+
+                ipcRenderer.sendToHost(R2_EVENT_MEDIA_OVERLAY_STARTSTOP, payload);
+            }
+        }
+    }, true);
 
     win.document.body.addEventListener("copy", (evt: ClipboardEvent) => {
         if (win.READIUM2.isClipboardIntercept) {

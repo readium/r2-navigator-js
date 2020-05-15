@@ -73,7 +73,7 @@ export function adjustReadiumCssJsonMessageForFixedLayout(
 ): IEventPayload_R2_EVENT_READIUMCSS {
 
     if (isFixedLayout(link)) {
-        const activeWebView = win.READIUM2.getActiveWebView();
+        const activeWebView = win.READIUM2.getFirstWebView();
         return {
             fixedLayoutWebViewHeight: activeWebView ? activeWebView.clientHeight : undefined,
             fixedLayoutWebViewWidth: activeWebView ? activeWebView.clientWidth : undefined,

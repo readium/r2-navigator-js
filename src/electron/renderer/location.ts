@@ -11,6 +11,7 @@ import * as path from "path";
 import { URL } from "url";
 
 import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
+import { PageEnum, Properties, SpreadEnum } from "@r2-shared-js/models/metadata-properties";
 import { Link } from "@r2-shared-js/models/publication-link";
 import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
 
@@ -34,16 +35,19 @@ import {
     AUDIO_BODY_ID, AUDIO_BUFFER_CANVAS_ID, AUDIO_CONTROLS_ID, AUDIO_COVER_ID, AUDIO_FORWARD_ID,
     AUDIO_ID, AUDIO_NEXT_ID, AUDIO_PERCENT_ID, AUDIO_PLAYPAUSE_ID, AUDIO_PREVIOUS_ID, AUDIO_RATE_ID,
     AUDIO_REWIND_ID, AUDIO_SECTION_ID, AUDIO_SLIDER_ID, AUDIO_TIME_ID, AUDIO_TITLE_ID,
+    WebViewSlotEnum,
 } from "../common/styles";
 import { getCurrentAudioPlaybackRate, setCurrentAudioPlaybackRate } from "./audiobook";
 import {
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
     URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS, URL_PARAM_REFRESH,
-    URL_PARAM_SESSION_INFO,
+    URL_PARAM_SESSION_INFO, URL_PARAM_WEBVIEW_SLOT,
 } from "./common/url-params";
 import { getEpubReadingSystemInfo } from "./epubReadingSystem";
 import { mediaOverlaysInterrupt } from "./media-overlays";
-import { adjustReadiumCssJsonMessageForFixedLayout, isRTL, obtainReadiumCss } from "./readium-css";
+import {
+    adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, isRTL, obtainReadiumCss,
+} from "./readium-css";
 import {
     IReadiumElectronBrowserWindow, IReadiumElectronWebview, isScreenReaderMounted,
 } from "./webview/state";
@@ -55,12 +59,25 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 
 const win = window as IReadiumElectronBrowserWindow;
 
+const webviewStyleCommon = "display: flex; margin: 0; padding: 0; box-sizing: border-box; position: absolute;";
+const webviewStyleLeft = webviewStyleCommon + "left: 0; width: 50%; bottom: 0; top: 0;";
+const webviewStyleRight = webviewStyleCommon + "left: 50%; right: 0; bottom: 0; top: 0;";
+const webviewStyleCenter = webviewStyleCommon + "left: 0; right: 0; bottom: 0; top: 0;";
+
+export function setWebViewStyle(wv: IReadiumElectronWebview, wvSlot: WebViewSlotEnum) {
+    wv.setAttribute("style",
+        wvSlot === WebViewSlotEnum.center ? webviewStyleCenter :
+            (wvSlot === WebViewSlotEnum.left ? webviewStyleLeft :
+            webviewStyleRight),
+    );
+}
+
 export function locationHandleIpcMessage(
     eventChannel: string,
     eventArgs: any[],
     eventCurrentTarget: IReadiumElectronWebview): boolean {
 
-    // win.READIUM2.getActiveWebView();
+    // win.READIUM2.getFirstWebView();
     const activeWebView = eventCurrentTarget;
 
     if (eventChannel === R2_EVENT_LOCATOR_VISIBLE) {
@@ -167,7 +184,7 @@ ipcRenderer.on(R2_EVENT_LINK, (_event: any, payload: IEventPayload_R2_EVENT_LINK
     debug("R2_EVENT_LINK (ipcRenderer.on)");
     debug(payload.url);
 
-    const activeWebView = win.READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getFirstWebView();
     handleLinkUrl(
         payload.url,
         activeWebView ? activeWebView.READIUM2.readiumCss : undefined);
@@ -196,30 +213,65 @@ export function navLeftOrRight(left: boolean, spineNav?: boolean): Link | undefi
         return undefined;
     }
 
+    if (!publication.Spine) {
+        return undefined;
+    }
+
     // metadata-level RTL
     const rtl = isRTL();
 
+    const loc = _lastSavedReadingLocation; // getCurrentReadingLocation()
+    let href = loc ? loc.locator.href : undefined;
+
+    let linkFirst: Link | undefined;
+    let linkSecond: Link | undefined;
+    const firstWebView = win.READIUM2.getFirstWebView();
+    if (firstWebView) {
+        linkFirst = firstWebView.READIUM2.link;
+    }
+    const secondWebView = win.READIUM2.getSecondWebView(false);
+    if (secondWebView) {
+        linkSecond = secondWebView.READIUM2.link;
+    }
+    if (linkFirst && linkSecond) {
+        const indexFirst = publication.Spine.indexOf(linkFirst);
+        const indexSecond = publication.Spine.indexOf(linkSecond);
+        if (indexSecond >= 0 && indexFirst >= 0) {
+            const lastLink = indexSecond < indexFirst ?
+                (left ? linkSecond : linkFirst) :
+                (left ? linkFirst : linkSecond);
+
+            spineNav = true;
+            href = lastLink.Href;
+            debug("------------------------------------- href");
+            debug("------------------------------------- href");
+            debug("------------------------------------- href");
+            debug("------------------------------------- href");
+            debug("------------------------------------- href");
+            debug("------------------------------------- href");
+            debug("------------------------------------- href");
+            debug(href);
+        }
+    }
+
     if (spineNav) {
-        if (!publication.Spine) {
+        if (!href) {
             return undefined;
         }
 
-        if (!_lastSavedReadingLocation) { // getCurrentReadingLocation()
-            return undefined;
-        }
-        const loc = _lastSavedReadingLocation;
-
-        // document-level RTL
-        const rtl_ = loc.docInfo && loc.docInfo.isRightToLeft;
-        if (rtl_ !== rtl) {
-            debug(`RTL differ?! METADATA ${rtl} vs. DOCUMENT ${rtl_}`);
+        if (IS_DEV) {
+            // document-level RTL
+            const rtl_ = loc ? (loc.docInfo && loc.docInfo.isRightToLeft) : rtl;
+            if (rtl_ !== rtl) {
+                debug(`RTL differ?! METADATA ${rtl} vs. DOCUMENT ${rtl_}`);
+            }
         }
 
         // array boundaries overflow are checked further down ...
         const offset = (left ? -1 : 1) * (rtl ? -1 : 1);
 
         const currentSpineIndex = publication.Spine.findIndex((link) => {
-            return link.Href === loc.locator.href;
+            return link.Href === href;
         });
         if (currentSpineIndex >= 0) {
             const spineIndex = currentSpineIndex + offset;
@@ -237,7 +289,7 @@ export function navLeftOrRight(left: boolean, spineNav?: boolean): Link | undefi
                 // NOTE that decodeURIComponent() must be called on the toString'ed URL urlNoQueryParams
                 // tslint:disable-next-line:max-line-length
                 // (in case nextOrPreviousSpineItem.Href contains Unicode characters, in which case they get percent-encoded by the URL.toString())
-                const activeWebView = win.READIUM2.getActiveWebView();
+                const activeWebView = win.READIUM2.getFirstWebView() || win.READIUM2.getSecondWebView(false);
                 debug(`navLeftOrRight: ${urlNoQueryParams}`);
                 handleLink(
                     urlNoQueryParams,
@@ -260,7 +312,7 @@ export function navLeftOrRight(left: boolean, spineNav?: boolean): Link | undefi
             direction: rtl ? "RTL" : "LTR",
             go: goPREVIOUS ? "PREVIOUS" : "NEXT",
         };
-        const activeWebView = win.READIUM2.getActiveWebView();
+        const activeWebView = win.READIUM2.getFirstWebView();
         if (activeWebView) {
             setTimeout(async () => {
                 await activeWebView.send(R2_EVENT_PAGE_TURN, payload); // .getWebContents()
@@ -383,7 +435,7 @@ export function handleLinkLocator(
 
 let _reloadCounter = 0;
 export function reloadContent() {
-    const activeWebView = win.READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getFirstWebView();
     if (!activeWebView) {
         return;
     }
@@ -409,6 +461,7 @@ function loadLink(
     previous: boolean | undefined,
     useGoto: boolean,
     rcss: IEventPayload_R2_EVENT_READIUMCSS | undefined,
+    secondWebView?: boolean,
     ): boolean {
 
     const publication = win.READIUM2.publication;
@@ -494,6 +547,7 @@ function loadLink(
                 data[URL_PARAM_DEBUG_VISUALS] = undefined;
                 data[URL_PARAM_CLIPBOARD_INTERCEPT] = undefined;
                 data[URL_PARAM_REFRESH] = undefined;
+                data[URL_PARAM_WEBVIEW_SLOT] = undefined;
             });
             hrefToLoadHttpNoHash = hrefToLoadHttpObjUri.toString();
         } catch (err) {
@@ -521,7 +575,8 @@ function loadLink(
         return false;
     }
 
-    const activeWebView = win.READIUM2.getActiveWebView();
+    const secondWebViewWasJustCreated = secondWebView && !win.READIUM2.getSecondWebView(false);
+    const activeWebView = secondWebView ? win.READIUM2.getSecondWebView(true) : win.READIUM2.getFirstWebView();
 
     const actualReadiumCss = (activeWebView && activeWebView.READIUM2.readiumCss) ?
         activeWebView.READIUM2.readiumCss :
@@ -529,11 +584,6 @@ function loadLink(
     if (activeWebView) {
         activeWebView.READIUM2.readiumCss = actualReadiumCss;
     }
-
-    const rcssJson = adjustReadiumCssJsonMessageForFixedLayout(pubLink, actualReadiumCss);
-
-    const rcssJsonstr = JSON.stringify(rcssJson, null, "");
-    const rcssJsonstrBase64 = Buffer.from(rcssJsonstr).toString("base64");
 
     const fileName = path.basename(linkPath);
     const ext = path.extname(fileName).toLowerCase();
@@ -550,6 +600,132 @@ function loadLink(
         /\.aiff$/.test(ext) ||
         /\.wma$/.test(ext) ||
         /\.flac$/.test(ext));
+
+    console.log("pubLink.Properties");
+    console.log("pubLink.Properties");
+    console.log("pubLink.Properties");
+    console.log("pubLink.Properties");
+    console.log("pubLink.Properties");
+    console.log("pubLink.Properties");
+    console.log("pubLink.Properties");
+    console.log("pubLink.Properties");
+    console.log(pubLink.Href);
+    let webViewSlot = WebViewSlotEnum.center;
+
+    let loadingSecondWebView = false;
+
+    const linkIndex = publication.Spine ? publication.Spine.indexOf(pubLink) : -1;
+    if (publication.Spine && // to satisfy the compiler ... implied by linkIndex >= 0
+        linkIndex >= 0 &&
+        isFixedLayout(pubLink)) {
+
+        const rtl = isRTL();
+
+        const publicationSpreadNone = publication.Metadata?.Rendition?.Spread === SpreadEnum.None;
+        const slotOfFirstPageInSpread = rtl ? PageEnum.Right : PageEnum.Left;
+        const slotOfSecondPageInSpread = slotOfFirstPageInSpread === PageEnum.Right ? PageEnum.Left : PageEnum.Right;
+
+        publication.Spine.forEach((spineLink, i) => {
+            if (!isFixedLayout(spineLink)) {
+                (spineLink as any).__notInSpread = true;
+                if (!spineLink.Properties) {
+                    spineLink.Properties = new Properties();
+                }
+                spineLink.Properties.Page = PageEnum.Center;
+                return; // continue
+            }
+            const linkSpreadNone = spineLink.Properties?.Spread === SpreadEnum.None;
+            const linkSpreadOther = !linkSpreadNone && spineLink.Properties?.Spread;
+            const notInSpread = linkSpreadNone || (publicationSpreadNone && !linkSpreadOther);
+            (spineLink as any).__notInSpread = notInSpread;
+            if (spineLink.Properties?.Page &&
+                spineLink.Properties.Page !== PageEnum.Left &&
+                spineLink.Properties.Page !== PageEnum.Right) {
+
+                (spineLink as any).__notInSpread = true;
+            }
+            if (!spineLink.Properties?.Page) {
+                if (!spineLink.Properties) {
+                    spineLink.Properties = new Properties();
+                }
+                if (i === 0) {
+                    (spineLink as any).__notInSpread = true;
+                    spineLink.Properties.Page = slotOfSecondPageInSpread;
+                } else {
+                    const firstPageInSpread = publication.Spine && // to satisfy the compiler
+                        publication.Spine[i - 1].Properties?.Page !== slotOfFirstPageInSpread;
+                    spineLink.Properties.Page = notInSpread ? PageEnum.Center :
+                        (firstPageInSpread ? slotOfFirstPageInSpread : slotOfSecondPageInSpread);
+                }
+            }
+        });
+        console.log(JSON.stringify(publication.Spine, null, 4));
+
+        const page = pubLink.Properties?.Page;
+        if (page === PageEnum.Left) {
+            webViewSlot = WebViewSlotEnum.left;
+            if (activeWebView) {
+                setWebViewStyle(activeWebView, WebViewSlotEnum.left);
+            }
+            if (!secondWebView && !(pubLink as any).__notInSpread) {
+                const otherIndex = linkIndex + (rtl ? -1 : 1);
+                const otherLink = publication.Spine[otherIndex];
+                if (otherLink && !(otherLink as any).__notInSpread &&
+                    otherLink.Properties?.Page === PageEnum.Right) {
+
+                    const otherLinkURLObj = new URL(otherLink.Href, publicationURL);
+                    otherLinkURLObj.hash = "";
+                    otherLinkURLObj.search = "";
+                    loadingSecondWebView = true;
+                    loadLink(
+                        otherLinkURLObj.toString(),
+                        undefined, // previous
+                        false, // useGoto
+                        rcss,
+                        true, // secondWebView
+                    );
+                }
+            }
+        } else if (page === PageEnum.Right) {
+            webViewSlot = WebViewSlotEnum.right;
+            if (activeWebView) {
+                setWebViewStyle(activeWebView, WebViewSlotEnum.right);
+            }
+            if (!secondWebView && !(pubLink as any).__notInSpread) {
+                const otherIndex = linkIndex + (!rtl ? -1 : 1);
+                const otherLink = publication.Spine[otherIndex];
+                if (otherLink && !(otherLink as any).__notInSpread &&
+                    otherLink.Properties?.Page === PageEnum.Left) {
+
+                    const otherLinkURLObj = new URL(otherLink.Href, publicationURL);
+                    otherLinkURLObj.hash = "";
+                    otherLinkURLObj.search = "";
+                    loadingSecondWebView = true;
+                    loadLink(
+                        otherLinkURLObj.toString(),
+                        undefined, // previous
+                        false, // useGoto
+                        rcss,
+                        true, // secondWebView
+                    );
+                }
+            }
+        } else {
+            webViewSlot = WebViewSlotEnum.center;
+            if (activeWebView) {
+                setWebViewStyle(activeWebView, WebViewSlotEnum.center);
+            }
+        }
+    }
+
+    if (!secondWebView && !loadingSecondWebView) {
+        win.READIUM2.destroySecondWebView();
+    }
+
+    const rcssJson = adjustReadiumCssJsonMessageForFixedLayout(pubLink, actualReadiumCss);
+
+    const rcssJsonstr = JSON.stringify(rcssJson, null, "");
+    const rcssJsonstrBase64 = Buffer.from(rcssJsonstr).toString("base64");
 
     // Note that with URI (unlike URL) if hrefToLoadHttp contains Unicode characters,
     // the toString() function does not percent-encode them.
@@ -587,6 +763,7 @@ function loadLink(
             data[URL_PARAM_DEBUG_VISUALS] = undefined;
             data[URL_PARAM_CLIPBOARD_INTERCEPT] = undefined;
             data[URL_PARAM_REFRESH] = undefined;
+            data[URL_PARAM_WEBVIEW_SLOT] = undefined;
         });
     } else {
         hrefToLoadHttpUri.search((data: any) => {
@@ -634,6 +811,8 @@ function loadLink(
             data[URL_PARAM_CLIPBOARD_INTERCEPT] =
                 win.READIUM2.clipboardInterceptor ?
                 "true" : "false";
+
+            data[URL_PARAM_WEBVIEW_SLOT] = webViewSlot;
         });
     }
 
@@ -646,7 +825,9 @@ function loadLink(
         (win.READIUM2.enableScreenReaderAccessibilityWebViewHardRefresh
         && isScreenReaderMounted());
 
-    if (!isAudio && !webviewNeedsHardRefresh && !webviewNeedsForcedRefresh &&
+    if (// !secondWebView && !loadingSecondWebView &&
+        // !win.READIUM2.getSecondWebView(false) &&
+        !isAudio && !webviewNeedsHardRefresh && !webviewNeedsForcedRefresh &&
         activeWebView && activeWebView.READIUM2.link === pubLink) {
 
         const goto = useGoto ? hrefToLoadHttpUri.search(true)[URL_PARAM_GOTO] as string : undefined;
@@ -665,7 +846,8 @@ function loadLink(
             debug(msgStr);
         }
         if (activeWebView) {
-            if (activeWebView.style.transform !== "none") {
+            if (activeWebView.style.transform &&
+                activeWebView.style.transform !== "none") {
 
                 setTimeout(async () => {
                     await activeWebView.send("R2_EVENT_HIDE");
@@ -683,57 +865,6 @@ function loadLink(
         }
 
         return true;
-
-        // const webviewToReuse = wv1AlreadyLoaded ? _webview1 : _webview2;
-        // // const otherWebview = webviewToReuse === _webview2 ? _webview1 : _webview2;
-        // if (webviewToReuse !== activeWebView) {
-
-        //     debug("INTO VIEW ...");
-
-        //     const slidingView = document.getElementById(ELEMENT_ID_SLIDING_VIEWPORT) as HTMLElement;
-        //     if (slidingView) {
-        //         let animate = true;
-        //         if (goto || hash) {
-        //             debug("DISABLE ANIM");
-        //             animate = false;
-        //         } else if (previous) {
-        //             if (!slidingView.classList.contains(CLASS_SHIFT_LEFT)) {
-        //                 debug("DISABLE ANIM");
-        //                 animate = false;
-        //             }
-        //         }
-        //         if (animate) {
-        //             if (!slidingView.classList.contains(CLASS_ANIMATED)) {
-        //                 slidingView.classList.add(CLASS_ANIMATED);
-        //                 slidingView.style.transition = "left 500ms ease-in-out";
-        //             }
-        //         } else {
-        //             if (slidingView.classList.contains(CLASS_ANIMATED)) {
-        //                 slidingView.classList.remove(CLASS_ANIMATED);
-        //                 slidingView.style.transition = "none";
-        //             }
-        //         }
-        //         if (slidingView.classList.contains(CLASS_SHIFT_LEFT)) {
-        //             slidingView.classList.remove(CLASS_SHIFT_LEFT);
-        //             slidingView.style.left = "0";
-
-        //             // if (_webview1.classList.contains(CLASS_POS_RIGHT)) {
-        //             //     // activeWebView === _webview1;
-        //             // } else {
-        //             //     // activeWebView === _webview2;
-        //             // }
-        //         } else {
-        //             slidingView.classList.add(CLASS_SHIFT_LEFT);
-        //             slidingView.style.left = "-100%";
-
-        //             // if (_webview2.classList.contains(CLASS_POS_RIGHT)) {
-        //             //     // activeWebView === _webview1;
-        //             // } else {
-        //             //     // activeWebView === _webview2;
-        //             // }
-        //         }
-        //     }
-        // }
     }
 
     // if (!isFixedLayout(pubLink)) {
@@ -790,9 +921,18 @@ function loadLink(
             }
 
             const readiumCssBackup = activeWebView.READIUM2.readiumCss;
-            win.READIUM2.destroyActiveWebView();
-            win.READIUM2.createActiveWebView();
-            const newActiveWebView = win.READIUM2.getActiveWebView();
+            if (secondWebView) {
+                if (!secondWebViewWasJustCreated) {
+                    win.READIUM2.destroySecondWebView();
+                    win.READIUM2.createSecondWebView();
+                }
+            } else {
+                win.READIUM2.destroyFirstWebView();
+                win.READIUM2.createFirstWebView();
+            }
+            const newActiveWebView = secondWebView ?
+                win.READIUM2.getSecondWebView(false) :
+                win.READIUM2.getFirstWebView();
             if (newActiveWebView) {
                 newActiveWebView.READIUM2.readiumCss = readiumCssBackup;
                 newActiveWebView.READIUM2.link = pubLink;
@@ -1105,9 +1245,18 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
             }
 
             const readiumCssBackup = activeWebView.READIUM2.readiumCss;
-            win.READIUM2.destroyActiveWebView();
-            win.READIUM2.createActiveWebView();
-            const newActiveWebView = win.READIUM2.getActiveWebView();
+            if (secondWebView) {
+                if (!secondWebViewWasJustCreated) {
+                    win.READIUM2.destroySecondWebView();
+                    win.READIUM2.createSecondWebView();
+                }
+            } else {
+                win.READIUM2.destroyFirstWebView();
+                win.READIUM2.createFirstWebView();
+            }
+            const newActiveWebView = secondWebView ?
+                win.READIUM2.getSecondWebView(false) :
+                win.READIUM2.getFirstWebView();
             if (newActiveWebView) {
                 newActiveWebView.READIUM2.readiumCss = readiumCssBackup;
                 newActiveWebView.READIUM2.link = pubLink;
@@ -1123,11 +1272,11 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
                 && activeWebView.READIUM2.link !== null;
             activeWebView.READIUM2.link = pubLink;
 
-            if (activeWebView.style.transform !== "none") {
+            if (activeWebView.style.transform &&
+                activeWebView.style.transform !== "none") {
                 // activeWebView.setAttribute("src", "data:, ");
 
                 if (webviewAlreadyHasContent) {
-
                     setTimeout(async () => {
                         await activeWebView.send("R2_EVENT_HIDE");
                     }, 0);
@@ -1145,58 +1294,6 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
 
     // activeWebView.getWebContents().loadURL(uriStr_, { extraHeaders: "pragma: no-cache\n" });
     // activeWebView.loadURL(uriStr_, { extraHeaders: "pragma: no-cache\n" });
-
-    // ALWAYS FALSE => let's comment for now...
-    // const enableOffScreenRenderPreload = false;
-    // if (enableOffScreenRenderPreload) {
-    //     setTimeout(() => {
-    //         if (!publication || !pubLink) {
-    //             return;
-    //         }
-
-    //         const otherWebview = activeWebView === _webview2 ? _webview1 : _webview2;
-
-    //         // let inSpine = true;
-    //         const index = publication.Spine.indexOf(pubLink);
-    //         // if (!index) {
-    //         //     inSpine = false;
-    //         //     index = publication.Resources.indexOf(pubLink);
-    //         // }
-    //         if (index >= 0 &&
-    //             previous && (index - 1) >= 0 ||
-    //             !previous && (index + 1) < publication.Spine.length
-    //             // (index + 1) < (inSpine ? publication.Spine.length : publication.Resources.length)
-    //         ) {
-    //             const nextPubLink = publication.Spine[previous ? (index - 1) : (index + 1)];
-    //             // (inSpine ? publication.Spine[index + 1] : publication.Resources[index + 1]);
-
-    //             if (otherWebview.READIUM2.link !== nextPubLink) {
-    //                 const linkUriNext = new URI(publicationURL + "/../" + nextPubLink.Href);
-    //                 linkUriNext.normalizePath();
-    //                 linkUriNext.search((data: any) => {
-    //                     // overrides existing (leaves others intact)
-
-    //                     // tslint:disable-next-line:no-string-literal
-    //                     data[URL_PARAM_CSS] = rcssJsonstrBase64;
-    //                 });
-    //                 const uriStrNext = linkUriNext.toString();
-
-    //                 debug("####### ======");
-    //                 debug(otherWebview.READIUM2.id);
-    //                 debug(nextPubLink.Href);
-    //                 debug(linkUriNext.hash()); // with #
-    //                 debug(linkUriNext.fragment()); // without #
-    //                 // tslint:disable-next-line:no-string-literal
-    //                 debug(linkUriNext.search(true)[URL_PARAM_GOTO]);
-    //                 // tslint:disable-next-line:no-string-literal
-    //                 debug(linkUriNext.search(true)[URL_PARAM_PREVIOUS]);
-    //                 debug("####### ======");
-    //                 otherWebview.READIUM2.link = nextPubLink;
-    //                 otherWebview.setAttribute("src", uriStrNext);
-    //             }
-    //         }
-    //     }, 300);
-    // }
 
     return true;
 }
@@ -1312,7 +1409,7 @@ export function setReadingLocationSaver(func: (locator: LocatorExtended) => void
 
 export async function isLocatorVisible(locator: Locator): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
-        const activeWebView = win.READIUM2.getActiveWebView();
+        const activeWebView = win.READIUM2.getFirstWebView();
 
         if (!activeWebView) {
             reject("No navigator webview?!");

@@ -25,7 +25,7 @@ export function highlightsHandleIpcMessage(
     eventCurrentTarget: IReadiumElectronWebview): boolean {
 
     if (eventChannel === R2_EVENT_HIGHLIGHT_CLICK) {
-        // win.READIUM2.getActiveWebView();
+        // win.READIUM2.getFirstWebView();
         const activeWebView = eventCurrentTarget;
         // if (!activeWebView) {
         //     return true;
@@ -47,7 +47,7 @@ export function highlightsClickListen(highlightsClickListener: (href: string, hi
     _highlightsClickListener = highlightsClickListener;
 }
 export function highlightsRemoveAll(href: string) {
-    const activeWebView = win.READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getFirstWebView();
     if (activeWebView && activeWebView.READIUM2.link && activeWebView.READIUM2.link.Href === href) {
 
         setTimeout(async () => {
@@ -56,7 +56,7 @@ export function highlightsRemoveAll(href: string) {
     }
 }
 export function highlightsRemove(href: string, highlightIDs: string[]) {
-    const activeWebView = win.READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getFirstWebView();
     if (activeWebView && activeWebView.READIUM2.link && activeWebView.READIUM2.link.Href === href) {
         const payload: IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE = {
             highlightIDs,
@@ -73,7 +73,7 @@ export async function highlightsCreate(
     Promise<Array<IHighlight | null>> {
     return new Promise<Array<IHighlight | null>>((resolve, reject) => {
 
-        const activeWebView = win.READIUM2.getActiveWebView();
+        const activeWebView = win.READIUM2.getFirstWebView();
         if (!activeWebView) {
             reject("No navigator webview?!");
             return;

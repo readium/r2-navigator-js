@@ -26,7 +26,7 @@ import {
 } from "../common/sessions";
 import {
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
-    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_IS_IFRAME, URL_PARAM_SESSION_INFO,
+    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_IS_IFRAME, URL_PARAM_SESSION_INFO, URL_PARAM_WEBVIEW_SLOT,
 } from "../renderer/common/url-params";
 
 // import { PassThrough } from "stream";
@@ -655,13 +655,7 @@ const transformerHttpBaseIframes: TTransformFunction = (
     const r2DEBUG = url_.searchParams.get(URL_PARAM_DEBUG_VISUALS);
     const r2CLIPBOARDINTERCEPT = url_.searchParams.get(URL_PARAM_CLIPBOARD_INTERCEPT);
     const r2SESSIONINFO = url_.searchParams.get(URL_PARAM_SESSION_INFO);
-
-    // debug(url_.search);
-    // debug(r2CSS);
-    // debug(r2ERS);
-    // debug(r2DEBUG);
-    // debug(r2CLIPBOARDINTERCEPT);
-    // debug(r2SESSIONINFO);
+    const r2WEBVIEWSLOT = url_.searchParams.get(URL_PARAM_WEBVIEW_SLOT);
 
     url_.search = "";
     url_.hash = "";
@@ -695,6 +689,9 @@ const transformerHttpBaseIframes: TTransformFunction = (
         }
         if (r2CSS) {
             iframeUrl.searchParams.append(URL_PARAM_CSS, r2CSS);
+        }
+        if (r2WEBVIEWSLOT) {
+            iframeUrl.searchParams.append(URL_PARAM_WEBVIEW_SLOT, r2WEBVIEWSLOT);
         }
 
         iframeUrl.searchParams.append(URL_PARAM_IS_IFRAME, "1");

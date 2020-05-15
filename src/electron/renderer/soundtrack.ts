@@ -18,9 +18,6 @@ export function soundtrackHandleIpcMessage(
     eventArgs: any[],
     _eventCurrentTarget: IReadiumElectronWebview): boolean {
 
-    // win.READIUM2.getActiveWebView();
-    // const activeWebView = eventCurrentTarget;
-
     if (eventChannel === R2_EVENT_AUDIO_SOUNDTRACK) {
         // debug("R2_EVENT_AUDIO_SOUNDTRACK (webview.addEventListener('ipc-message')");
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK;

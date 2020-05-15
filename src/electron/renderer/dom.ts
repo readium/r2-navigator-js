@@ -7,9 +7,8 @@
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-import { debounce } from "debounce";
 import * as debug_ from "debug";
-import { remote, webContents } from "electron";
+import { remote } from "electron";
 
 import { Locator } from "@r2-shared-js/models/locator";
 import { Publication } from "@r2-shared-js/models/publication";
@@ -21,11 +20,12 @@ import {
     R2_EVENT_DEBUG_VISUALS, R2_EVENT_READIUMCSS, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
 } from "../common/events";
 import { R2_SESSION_WEBVIEW } from "../common/sessions";
+import { WebViewSlotEnum } from "../common/styles";
 import { URL_PARAM_DEBUG_VISUALS } from "./common/url-params";
-import { ENABLE_WEBVIEW_RESIZE } from "./common/webview-resize";
 import { highlightsHandleIpcMessage } from "./highlight";
 import {
-    getCurrentReadingLocation, handleLinkLocator, locationHandleIpcMessage, shiftWebview,
+    getCurrentReadingLocation, handleLinkLocator, locationHandleIpcMessage, setWebViewStyle,
+    shiftWebview,
 } from "./location";
 import { mediaOverlaysHandleIpcMessage } from "./media-overlays";
 import { ttsClickEnable, ttsHandleIpcMessage } from "./readaloud";
@@ -69,7 +69,7 @@ const win = window as IReadiumElectronBrowserWindow;
 // legacy function, old confusing name (see readiumCssUpdate() below)
 export function readiumCssOnOff(rcss?: IEventPayload_R2_EVENT_READIUMCSS) {
 
-    const activeWebView = win.READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getFirstWebView();
     if (activeWebView) {
         const loc = getCurrentReadingLocation();
 
@@ -78,7 +78,9 @@ export function readiumCssOnOff(rcss?: IEventPayload_R2_EVENT_READIUMCSS) {
 
         const payloadRcss = adjustReadiumCssJsonMessageForFixedLayout(activeWebView.READIUM2.link, actualReadiumCss);
 
-        if (activeWebView.style.transform !== "none") {
+        if (activeWebView.style.transform &&
+            activeWebView.style.transform !== "none") {
+
             setTimeout(async () => {
                 await activeWebView.send("R2_EVENT_HIDE");
             }, 0);
@@ -106,19 +108,9 @@ export function readiumCssUpdate(rcss: IEventPayload_R2_EVENT_READIUMCSS) {
 }
 
 let _webview1: IReadiumElectronWebview;
+let _webview2: IReadiumElectronWebview;
 
 function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebview {
-
-    // Unfortunately the Chromium web inspector crashes when closing preload :(
-    // Also, the debugger fails to open the sourcemaps (maybe related issue?)
-    // process.stderr.write("\n####\n" + preloadScriptPath + "\n####\n");
-    // TODO: what are the critical features needed from Node context
-    // that justify using webview.preload? Can we instead use regular DOM code?
-    // The ReadiumCSS injection is now streamer-based (best performance / timing)
-    // and we can use postMessage instead of Electron IPC.
-    // Also, preload really does most of its processing once DOM-ready.
-    // Perhaps the main problem would be exposing the internal logic of navigator
-    // into EPUB content documents? (preload is good for isolating app code)
 
     const wv = document.createElement("webview");
     // tslint:disable-next-line:max-line-length
@@ -134,13 +126,12 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
         //     publicationURL_ : convertHttpUrlToCustomScheme(publicationURL_);
         wv.setAttribute("httpreferrer", publicationURL_);
     }
-    wv.setAttribute("style", "display: flex; margin: 0; padding: 0; box-sizing: border-box; " +
-        "position: absolute; left: 0; width: 50%; bottom: 0; top: 0;");
+    setWebViewStyle(wv as IReadiumElectronWebview, WebViewSlotEnum.center);
     wv.setAttribute("preload", preloadScriptPath); // "file://"
 
-    if (ENABLE_WEBVIEW_RESIZE) {
-        wv.setAttribute("disableguestresize", "");
-    }
+    // if (ENABLE_WEBVIEW_RESIZE) {
+    //     wv.setAttribute("disableguestresize", "");
+    // }
 
     setTimeout(() => {
         wv.removeAttribute("tabindex");
@@ -207,8 +198,12 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
 
     wv.addEventListener("ipc-message", (event: Electron.IpcMessageEvent) => {
         const webview = event.currentTarget as IReadiumElectronWebview;
-        const activeWebView = win.READIUM2.getActiveWebView();
-        if (webview !== activeWebView) {
+        // const secondWebView = win.READIUM2.getSecondWebView(false);
+        // if (webview !== win.READIUM2.getFirstWebView() &&
+        //     secondWebView && webview !== secondWebView) {
+        //     return;
+        // }
+        if (webview !== wv) {
             return;
         }
         if (event.channel === R2_EVENT_WEBVIEW_KEYDOWN) {
@@ -233,83 +228,101 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             !mediaOverlaysHandleIpcMessage(event.channel, event.args, webview) &&
             !soundtrackHandleIpcMessage(event.channel, event.args, webview)) {
 
-            debug("webview1 ipc-message");
+            debug("webview ipc-message");
             debug(event.channel);
         }
     });
 
     return wv as IReadiumElectronWebview;
 }
-if (ENABLE_WEBVIEW_RESIZE) {
-    // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webcontents
-    // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webview
-    // wv.setAttribute("disableguestresize", "");
-    const adjustResize = (webview: IReadiumElectronWebview) => {
-        // https://javascript.info/size-and-scroll
-        // offsetW/H: excludes margin, includes border, scrollbar, padding.
-        // clientW/H: excludes margin, border, scrollbar, includes padding.
-        // scrollW/H: like client, but includes hidden (overflow) areas
-        const width = webview.clientWidth;
-        const height = webview.clientHeight;
 
-        const wc = webContents.fromId(webview.getWebContentsId());
-        // const wc = webview.getWebContents();
+// if (ENABLE_WEBVIEW_RESIZE) {
+//     // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webcontents
+//     // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webview
+//     // wv.setAttribute("disableguestresize", "");
+//     const adjustResize = (webview: IReadiumElectronWebview) => {
+//         // https://javascript.info/size-and-scroll
+//         // offsetW/H: excludes margin, includes border, scrollbar, padding.
+//         // clientW/H: excludes margin, border, scrollbar, includes padding.
+//         // scrollW/H: like client, but includes hidden (overflow) areas
+//         const width = webview.clientWidth;
+//         const height = webview.clientHeight;
 
-        if (wc && (wc as any).setSize && width && height) {
-            (wc as any).setSize({ // wc is WebContents, works in Electron < 3.0
-                normal: {
-                    height,
-                    width,
-                },
-            });
-        }
-    };
-    const onResizeDebounced = debounce(() => {
-        const activeWebView = win.READIUM2.getActiveWebView();
-        if (activeWebView) {
-            adjustResize(activeWebView);
-        }
-    }, 200);
-    window.addEventListener("resize", () => {
-        // const activeWebView = win.READIUM2.getActiveWebView();
-        // if (!isFixedLayout(activeWebView.READIUM2.link)) {
-        //     if (_rootHtmlElement) {
-        //         _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_HIDE_VIEWPORT));
-        //     }
-        // }
-        onResizeDebounced();
-    });
-}
+//         const wc = webContents.fromId(webview.getWebContentsId());
+//         // const wc = webview.getWebContents();
 
-function createWebView() {
+//         if (wc && (wc as any).setSize && width && height) {
+//             (wc as any).setSize({ // wc is WebContents, works in Electron < 3.0
+//                 normal: {
+//                     height,
+//                     width,
+//                 },
+//             });
+//         }
+//     };
+//     const onResizeDebounced = debounce(() => {
+//         const activeWebView = win.READIUM2.getFirstWebView();
+//         if (activeWebView) {
+//             adjustResize(activeWebView);
+//         }
+//     }, 200);
+//     window.addEventListener("resize", () => {
+//         // const activeWebView = win.READIUM2.getFirstWebView();
+//         // if (!isFixedLayout(activeWebView.READIUM2.link)) {
+//         //     if (_rootHtmlElement) {
+//         //         _rootHtmlElement.dispatchEvent(new Event(DOM_EVENT_HIDE_VIEWPORT));
+//         //     }
+//         // }
+//         onResizeDebounced();
+//     });
+// }
+
+function createWebView(second?: boolean) {
     const preloadScriptPath = win.READIUM2.preloadScriptPath;
-    _webview1 = createWebViewInternal(preloadScriptPath);
-    _webview1.READIUM2 = {
-        id: 1,
-        link: undefined,
-        readiumCss: undefined,
-    };
-    _webview1.setAttribute("id", "webview1");
-
     const domSlidingViewport = win.READIUM2.domSlidingViewport;
-    domSlidingViewport.appendChild(_webview1 as Node);
-    // domSlidingViewport.appendChild(_webview2 as Node);
 
-    // if (isRTL()) {
-    //     _webview1.classList.add(CLASS_POS_RIGHT);
-    //     _webview1.style.left = "50%";
-    // }
-    // else {
-    //     _webview2.classList.add(CLASS_POS_RIGHT);
-    //     _webview2.style.left = "50%";
-    // }
+    if (second) {
+        if (_webview2) {
+            destroyWebView(true);
+        }
+        _webview2 = createWebViewInternal(preloadScriptPath);
+        _webview2.READIUM2 = {
+            id: 2,
+            link: undefined,
+            readiumCss: undefined,
+        };
+        _webview2.setAttribute("id", "r2_webview2");
+        domSlidingViewport.appendChild(_webview2 as Node);
+    } else {
+        if (_webview1) {
+            destroyWebView(false);
+        }
+        _webview1 = createWebViewInternal(preloadScriptPath);
+        _webview1.READIUM2 = {
+            id: 1,
+            link: undefined,
+            readiumCss: undefined,
+        };
+        _webview1.setAttribute("id", "r2_webview1");
+        domSlidingViewport.appendChild(_webview1 as Node);
+    }
 }
 
-function destroyWebView(): void {
+function destroyWebView(second?: boolean): void {
     const domSlidingViewport = win.READIUM2.domSlidingViewport;
-    domSlidingViewport.removeChild(_webview1 as Node);
-    (_webview1 as any).READIUM2 = undefined;
-    (_webview1 as any) = undefined;
+    if (second) {
+        if (_webview2) {
+            domSlidingViewport.removeChild(_webview2 as Node);
+            (_webview2 as any).READIUM2 = undefined;
+            (_webview2 as any) = undefined;
+        }
+    } else {
+        if (_webview1) {
+            domSlidingViewport.removeChild(_webview1 as Node);
+            (_webview1 as any).READIUM2 = undefined;
+            (_webview1 as any) = undefined;
+        }
+    }
 }
 
 export function installNavigatorDOM(
@@ -336,39 +349,32 @@ export function installNavigatorDOM(
 
     const domSlidingViewport = document.createElement("div");
     domSlidingViewport.setAttribute("id", ELEMENT_ID_SLIDING_VIEWPORT);
-    domSlidingViewport.setAttribute("style", "display: block; position: absolute; left: 0; width: 200%; " +
+    domSlidingViewport.setAttribute("style", "display: block; position: absolute; left: 0; right: 0; " +
         "top: 0; bottom: 0; margin: 0; padding: 0; box-sizing: border-box; background: white; overflow: hidden;");
 
     win.READIUM2 = {
         DEBUG_VISUALS: false,
         clipboardInterceptor,
-        createActiveWebView: createWebView,
-        destroyActiveWebView: destroyWebView,
+        createFirstWebView: createWebView,
+        createSecondWebView: () => {
+            createWebView(true);
+        },
+        destroyFirstWebView: destroyWebView,
+        destroySecondWebView: () => {
+            destroyWebView(true);
+        },
         domRootElement,
         domSlidingViewport,
         enableScreenReaderAccessibilityWebViewHardRefresh:
-            enableScreenReaderAccessibilityWebViewHardRefresh ? true : false,
-        getActiveWebView: (): IReadiumElectronWebview => {
+        enableScreenReaderAccessibilityWebViewHardRefresh ? true : false,
+        getFirstWebView: (): IReadiumElectronWebview => {
             return _webview1;
-
-            // let activeWebView: IReadiumElectronWebview;
-
-            // const slidingViewport = document.getElementById(ELEMENT_ID_SLIDING_VIEWPORT) as HTMLElement;
-            // if (slidingViewport.classList.contains(CLASS_SHIFT_LEFT)) {
-            //     if (_webview1.classList.contains(CLASS_POS_RIGHT)) {
-            //         activeWebView = _webview1;
-            //     } else {
-            //         activeWebView = _webview2;
-            //     }
-            // } else {
-            //     if (_webview2.classList.contains(CLASS_POS_RIGHT)) {
-            //         activeWebView = _webview1;
-            //     } else {
-            //         activeWebView = _webview2;
-            //     }
-            // }
-
-            // return activeWebView;
+        },
+        getSecondWebView: (create: boolean): IReadiumElectronWebview => {
+            if (!_webview2 && create) {
+                createWebView(true);
+            }
+            return _webview2;
         },
         preloadScriptPath,
         publication,
@@ -391,7 +397,7 @@ export function installNavigatorDOM(
             debug("debugVisuals SET: ", debugVisuals);
             win.READIUM2.DEBUG_VISUALS = debugVisuals;
 
-            const activeWebView = win.READIUM2.getActiveWebView();
+            const activeWebView = win.READIUM2.getFirstWebView();
             if (activeWebView) {
                 const payload: IEventPayload_R2_EVENT_DEBUG_VISUALS
                     = { debugVisuals };
@@ -421,7 +427,7 @@ export function installNavigatorDOM(
                     debug("debugVisuals ITEMS: ", `${cssSelector} --- ${cssClass} --- ${cssStyles}`);
                 }
 
-                const activeWebView = win.READIUM2.getActiveWebView();
+                const activeWebView = win.READIUM2.getFirstWebView();
                 // let delay = 0;
                 // if (!win.READIUM2.DEBUG_VISUALS) {
                 //     (window as any).READIUM2.debug(true);

@@ -43,7 +43,7 @@ export function ttsHandleIpcMessage(
         const nextSpine = navLeftOrRight(isRTL(), true);
         if (nextSpine) {
             setTimeout(() => {
-                const activeWebView = win.READIUM2.getActiveWebView();
+                const activeWebView = win.READIUM2.getFirstWebView();
                 if (activeWebView) {
                     let done = false;
                     const cb = (event: Electron.IpcMessageEvent) => {
@@ -100,7 +100,7 @@ export function ttsPlay(speed: number) {
     if (win.READIUM2) {
         win.READIUM2.ttsPlaybackRate = speed;
     }
-    const activeWebView = win.READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getFirstWebView();
     if (!activeWebView) {
         return;
     }
@@ -125,7 +125,7 @@ export function ttsPlay(speed: number) {
 }
 
 export function ttsPause() {
-    const activeWebView = win.READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getFirstWebView();
     if (!activeWebView) {
         return;
     }
@@ -135,7 +135,7 @@ export function ttsPause() {
     }, 0);
 }
 export function ttsStop() {
-    const activeWebView = win.READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getFirstWebView();
     if (!activeWebView) {
         return;
     }
@@ -145,7 +145,7 @@ export function ttsStop() {
     }, 0);
 }
 export function ttsResume() {
-    const activeWebView = win.READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getFirstWebView();
     if (!activeWebView) {
         return;
     }
@@ -155,7 +155,7 @@ export function ttsResume() {
     }, 0);
 }
 export function ttsPrevious() {
-    const activeWebView = win.READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getFirstWebView();
     if (!activeWebView) {
         return;
     }
@@ -165,7 +165,7 @@ export function ttsPrevious() {
     }, 0);
 }
 export function ttsNext() {
-    const activeWebView = win.READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getFirstWebView();
     if (!activeWebView) {
         return;
     }
@@ -180,7 +180,7 @@ export function ttsClickEnable(doEnable: boolean) {
         win.READIUM2.ttsClickEnabled = doEnable;
     }
 
-    const activeWebView = win.READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getFirstWebView();
     if (!activeWebView) {
         return;
     }
@@ -199,7 +199,7 @@ export function ttsPlaybackRate(speed: number) {
         win.READIUM2.ttsPlaybackRate = speed;
     }
 
-    const activeWebView = win.READIUM2.getActiveWebView();
+    const activeWebView = win.READIUM2.getFirstWebView();
     if (!activeWebView) {
         return;
     }
