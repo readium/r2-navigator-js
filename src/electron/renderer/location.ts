@@ -240,6 +240,9 @@ export function navLeftOrRight(
     // metadata-level RTL
     const rtl = isRTL();
 
+    // const goPrevious = left && !rtl || !left && rtl;
+    const goPREVIOUS = left ? !rtl : rtl;
+
     const loc = _lastSavedReadingLocation; // getCurrentReadingLocation()
     let href = loc ? loc.locator.href : undefined;
 
@@ -258,12 +261,12 @@ export function navLeftOrRight(
             const indexFirst = publication.Spine.indexOf(linkFirst);
             const indexSecond = publication.Spine.indexOf(linkSecond);
             if (indexSecond >= 0 && indexFirst >= 0) {
-                const lastLink = indexSecond < indexFirst ?
+                const boundaryLink = indexSecond < indexFirst ?
                     (left ? linkSecond : linkFirst) :
                     (left ? linkFirst : linkSecond);
 
                 spineNav = true;
-                href = lastLink.Href;
+                href = boundaryLink.Href;
             }
         }
     }
@@ -307,7 +310,7 @@ export function navLeftOrRight(
                 debug(`navLeftOrRight: ${urlNoQueryParams}`);
                 handleLink(
                     urlNoQueryParams,
-                    false,
+                    goPREVIOUS,
                     false,
                     activeWebView ? activeWebView.READIUM2.readiumCss : undefined,
                 );
@@ -321,7 +324,6 @@ export function navLeftOrRight(
     } else {
         mediaOverlaysInterrupt();
 
-        const goPREVIOUS = left ? !rtl : rtl;
         const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
             direction: rtl ? "RTL" : "LTR",
             go: goPREVIOUS ? "PREVIOUS" : "NEXT",
@@ -592,8 +594,16 @@ function loadLink(
         return false;
     }
 
-    const secondWebViewWasJustCreated = secondWebView && !win.READIUM2.getSecondWebView(false);
-    const activeWebView = secondWebView ? win.READIUM2.getSecondWebView(true) : win.READIUM2.getFirstWebView();
+    const webview1 = win.READIUM2.getFirstWebView();
+    const webview2 = win.READIUM2.getSecondWebView(false);
+    const webviewSpreadSwap = secondWebView ?
+        (webview2 && webview1 && webview1.READIUM2.link === pubLink) :
+        (webview2 && webview2.READIUM2.link === pubLink);
+
+    const secondWebViewWasJustCreated = secondWebView && !webviewSpreadSwap && !webview2;
+    const activeWebView = webviewSpreadSwap ?
+        (secondWebView ? webview1 : win.READIUM2.getSecondWebView(true)) :
+        (secondWebView ? win.READIUM2.getSecondWebView(true) : webview1);
 
     const actualReadiumCss = (activeWebView && activeWebView.READIUM2.readiumCss) ?
         activeWebView.READIUM2.readiumCss :
@@ -668,41 +678,18 @@ function loadLink(
             }
         });
 
+        const prev = previous ? true : false;
         const page = pubLink.Properties?.Page;
         if (page === PageEnum.Left) {
             webViewSlot = WebViewSlotEnum.left;
-            if (activeWebView) {
-                setWebViewStyle(activeWebView, WebViewSlotEnum.left);
-            }
             if (!secondWebView && !(pubLink as any).__notInSpread) {
                 const otherIndex = linkIndex + (rtl ? -1 : 1);
                 const otherLink = publication.Spine[otherIndex];
                 if (otherLink && !(otherLink as any).__notInSpread &&
                     otherLink.Properties?.Page === PageEnum.Right) {
 
-                    const otherLinkURLObj = new URL(otherLink.Href, publicationURL);
-                    otherLinkURLObj.hash = "";
-                    otherLinkURLObj.search = "";
-                    loadingSecondWebView = true;
-                    loadLink(
-                        otherLinkURLObj.toString(),
-                        undefined, // previous
-                        false, // useGoto
-                        rcss,
-                        true, // secondWebView
-                    );
-                }
-            }
-        } else if (page === PageEnum.Right) {
-            webViewSlot = WebViewSlotEnum.right;
-            if (activeWebView) {
-                setWebViewStyle(activeWebView, WebViewSlotEnum.right);
-            }
-            if (!secondWebView && !(pubLink as any).__notInSpread) {
-                const otherIndex = linkIndex + (!rtl ? -1 : 1);
-                const otherLink = publication.Spine[otherIndex];
-                if (otherLink && !(otherLink as any).__notInSpread &&
-                    otherLink.Properties?.Page === PageEnum.Left) {
+                    const needToInverse = !webviewSpreadSwap &&
+                        prev && publication.Spine.indexOf(pubLink) > otherIndex;
 
                     const otherLinkURLObj = new URL(otherLink.Href, publicationURL);
                     otherLinkURLObj.hash = "";
@@ -713,9 +700,45 @@ function loadLink(
                         undefined, // previous
                         false, // useGoto
                         rcss,
-                        true, // secondWebView
+                        needToInverse ? false : true, // secondWebView
                     );
+                    if (needToInverse) {
+                        return true;
+                    }
                 }
+            }
+            if (activeWebView) {
+                setWebViewStyle(activeWebView, WebViewSlotEnum.left);
+            }
+        } else if (page === PageEnum.Right) {
+            webViewSlot = WebViewSlotEnum.right;
+            if (!secondWebView && !(pubLink as any).__notInSpread) {
+                const otherIndex = linkIndex + (!rtl ? -1 : 1);
+                const otherLink = publication.Spine[otherIndex];
+                if (otherLink && !(otherLink as any).__notInSpread &&
+                    otherLink.Properties?.Page === PageEnum.Left) {
+
+                    const needToInverse = !webviewSpreadSwap &&
+                        prev && publication.Spine.indexOf(pubLink) > otherIndex;
+
+                    const otherLinkURLObj = new URL(otherLink.Href, publicationURL);
+                    otherLinkURLObj.hash = "";
+                    otherLinkURLObj.search = "";
+                    loadingSecondWebView = true;
+                    loadLink(
+                        otherLinkURLObj.toString(),
+                        undefined, // previous
+                        false, // useGoto
+                        rcss,
+                        needToInverse ? false : true, // secondWebView
+                    );
+                    if (needToInverse) {
+                        return true;
+                    }
+                }
+            }
+            if (activeWebView) {
+                setWebViewStyle(activeWebView, WebViewSlotEnum.right);
             }
         } else {
             webViewSlot = WebViewSlotEnum.center;
@@ -725,7 +748,7 @@ function loadLink(
         }
     }
 
-    if (!secondWebView && !loadingSecondWebView) {
+    if (!secondWebView && !loadingSecondWebView && !webviewSpreadSwap) {
         win.READIUM2.destroySecondWebView();
     }
 

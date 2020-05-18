@@ -887,7 +887,7 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
             // metadata-level RTL
             const rtl = isRTL();
             navLeftOrRight(rtl, true, true);
-        }, 2000);
+        }, 600); // was 2 seconds, but transition too slow (user thinks playback is stalled)
         if (_mediaOverlaysListener) {
             _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
         }
