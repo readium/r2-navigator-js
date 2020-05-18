@@ -1478,6 +1478,6 @@ export async function isLocatorVisible(locator: Locator): Promise<boolean> {
             return;
         }
 
-        reject("isLocatorVisible - no webview match?!");
+        reject("isLocatorVisible - no webview href match.");
     });
 }
