@@ -152,6 +152,14 @@ export const mediaOverlaysCssStyles = `
     background-color: yellow !important;
     color: black !important;
 }
+:root[style*="readium-night-on"] .${R2_MO_CLASS_ACTIVE} {
+    background-color: #333333 !important;
+    color: white !important;
+}
+:root[style*="readium-sepia-on"] .${R2_MO_CLASS_ACTIVE} {
+    background-color: silver !important;
+    color: black !important;
+}
 `;
 
 export const TTS_CLASS_IS_ACTIVE = "r2-tts-isPlaying";

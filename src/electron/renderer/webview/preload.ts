@@ -2968,16 +2968,31 @@ if (!win.READIUM2.isAudio) {
     ipcRenderer.on(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
         (_event: any, payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT) => {
 
-        const activeClass = payload.classActive ? payload.classActive : R2_MO_CLASS_ACTIVE;
+        const styleAttr = win.document.documentElement.getAttribute("style");
+        const isNight = styleAttr ? styleAttr.indexOf("readium-night-on") > 0 : false;
+        const isSepia = styleAttr ? styleAttr.indexOf("readium-sepia-on") > 0 : false;
+        // "--USER__backgroundColor" "--USER__backgroundColor"
+
+        const activeClass = (isNight || isSepia) ? R2_MO_CLASS_ACTIVE :
+            (payload.classActive ? payload.classActive : R2_MO_CLASS_ACTIVE);
         const activeClassPlayback =
             payload.classActivePlayback ? payload.classActivePlayback : R2_MO_CLASS_ACTIVE_PLAYBACK;
 
-        const activeMoElements = win.document.body.querySelectorAll(`.${activeClass}`);
-        activeMoElements.forEach((elem) => {
-            elem.classList.remove(activeClass);
+        if (payload.classActive) {
+            const activeMoElements = win.document.body.querySelectorAll(`.${payload.classActive}`);
+            activeMoElements.forEach((elem) => {
+                if (payload.classActive) {
+                    elem.classList.remove(payload.classActive);
+                }
+            });
+        }
+        const activeMoElements_ = win.document.body.querySelectorAll(`.${R2_MO_CLASS_ACTIVE}`);
+        activeMoElements_.forEach((elem) => {
+            elem.classList.remove(R2_MO_CLASS_ACTIVE);
         });
 
         if (!payload.id) {
+            win.document.documentElement.classList.remove(R2_MO_CLASS_ACTIVE_PLAYBACK);
             win.document.documentElement.classList.remove(activeClassPlayback);
         } else {
             win.document.documentElement.classList.add(activeClassPlayback);
