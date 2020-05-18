@@ -8,7 +8,7 @@
 import { Link } from "@r2-shared-js/models/publication-link";
 
 import { IEventPayload_R2_EVENT_READIUMCSS } from "../common/events";
-import { IReadiumElectronBrowserWindow } from "./webview/state";
+import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 const win = window as IReadiumElectronBrowserWindow;
 
@@ -68,15 +68,18 @@ export function obtainReadiumCss(rcss?: IEventPayload_R2_EVENT_READIUMCSS) {
 }
 
 export function adjustReadiumCssJsonMessageForFixedLayout(
-    link: Link | undefined,
+    webview: IReadiumElectronWebview | undefined,
     rcss: IEventPayload_R2_EVENT_READIUMCSS,
 ): IEventPayload_R2_EVENT_READIUMCSS {
 
-    if (isFixedLayout(link)) {
-        const activeWebView = win.READIUM2.getFirstWebView();
+    if (!webview) {
+        return rcss;
+    }
+
+    if (isFixedLayout(webview.READIUM2.link)) {
         return {
-            fixedLayoutWebViewHeight: activeWebView ? activeWebView.clientHeight : undefined,
-            fixedLayoutWebViewWidth: activeWebView ? activeWebView.clientWidth : undefined,
+            fixedLayoutWebViewHeight: webview.clientHeight,
+            fixedLayoutWebViewWidth: webview.clientWidth,
             isFixedLayout: true,
             setCSS: undefined,
         };

@@ -22,28 +22,35 @@ import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webvie
 
 const win = window as IReadiumElectronBrowserWindow;
 
+let _lastTTSWebView: IReadiumElectronWebview | undefined;
+
 export function ttsHandleIpcMessage(
     eventChannel: string,
     _eventArgs: any[],
-    _eventCurrentTarget: IReadiumElectronWebview): boolean {
+    eventCurrentTarget: IReadiumElectronWebview): boolean {
 
     if (eventChannel === R2_EVENT_TTS_IS_PAUSED) {
+        _lastTTSWebView = eventCurrentTarget;
         if (_ttsListener) {
             _ttsListener(TTSStateEnum.PAUSED);
         }
     } else if (eventChannel === R2_EVENT_TTS_IS_STOPPED) {
+        _lastTTSWebView = undefined;
         if (_ttsListener) {
             _ttsListener(TTSStateEnum.STOPPED);
         }
     } else if (eventChannel === R2_EVENT_TTS_IS_PLAYING) {
+        _lastTTSWebView = eventCurrentTarget;
         if (_ttsListener) {
             _ttsListener(TTSStateEnum.PLAYING);
         }
     } else if (eventChannel === R2_EVENT_TTS_DOC_END) {
-        const nextSpine = navLeftOrRight(isRTL(), true);
+        const nextSpine = navLeftOrRight(isRTL(), true, true);
         if (nextSpine) {
             setTimeout(() => {
-                const activeWebView = win.READIUM2.getFirstWebView();
+                const activeWebView = win.READIUM2.getActiveWebViews().find((webview) => {
+                    return webview.READIUM2.link?.Href === nextSpine.Href;
+                });
                 if (activeWebView) {
                     let done = false;
                     const cb = (event: Electron.IpcMessageEvent) => {
@@ -55,8 +62,7 @@ export function ttsHandleIpcMessage(
                             }
                             done = true;
                             activeWebView.removeEventListener("ipc-message", cb);
-                            if (activeWebView.READIUM2.link &&
-                                activeWebView.READIUM2.link.Href === nextSpine.Href) {
+                            if (activeWebView.READIUM2.link?.Href === nextSpine.Href) {
                                 ttsPlay(win.READIUM2.ttsPlaybackRate);
                             }
                         }
@@ -100,17 +106,22 @@ export function ttsPlay(speed: number) {
     if (win.READIUM2) {
         win.READIUM2.ttsPlaybackRate = speed;
     }
-    const activeWebView = win.READIUM2.getFirstWebView();
-    if (!activeWebView) {
-        return;
-    }
 
     let startElementCSSSelector: string | undefined;
     const loc = getCurrentReadingLocation();
-    if (loc && activeWebView.READIUM2 && activeWebView.READIUM2.link) {
-        if (loc.locator.href === activeWebView.READIUM2.link.Href) {
-            startElementCSSSelector = loc.locator.locations.cssSelector;
-        }
+
+    let activeWebView = win.READIUM2.getActiveWebViews().find((webview) => {
+        return loc && loc.locator.href && loc.locator.href === webview.READIUM2.link?.Href;
+    });
+    if (loc && activeWebView) {
+        startElementCSSSelector = loc.locator.locations.cssSelector;
+    }
+    if (!activeWebView) {
+        activeWebView = win.READIUM2.getFirstWebView();
+    }
+    _lastTTSWebView = activeWebView;
+    if (!activeWebView) {
+        return;
     }
 
     const payload: IEventPayload_R2_EVENT_TTS_DO_PLAY = {
@@ -120,59 +131,67 @@ export function ttsPlay(speed: number) {
     };
 
     setTimeout(async () => {
-        await activeWebView.send(R2_EVENT_TTS_DO_PLAY, payload);
+        if (activeWebView) {
+            await activeWebView.send(R2_EVENT_TTS_DO_PLAY, payload);
+        }
     }, 0);
 }
 
 export function ttsPause() {
-    const activeWebView = win.READIUM2.getFirstWebView();
-    if (!activeWebView) {
-        return;
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        if (_lastTTSWebView && _lastTTSWebView !== activeWebView) {
+            continue;
+        }
+        setTimeout(async () => {
+            await activeWebView.send(R2_EVENT_TTS_DO_PAUSE);
+        }, 0);
     }
-
-    setTimeout(async () => {
-        await activeWebView.send(R2_EVENT_TTS_DO_PAUSE);
-    }, 0);
 }
 export function ttsStop() {
-    const activeWebView = win.READIUM2.getFirstWebView();
-    if (!activeWebView) {
-        return;
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        if (_lastTTSWebView && _lastTTSWebView !== activeWebView) {
+            continue;
+        }
+        _lastTTSWebView = undefined;
+        setTimeout(async () => {
+            await activeWebView.send(R2_EVENT_TTS_DO_STOP);
+        }, 0);
     }
-
-    setTimeout(async () => {
-        await activeWebView.send(R2_EVENT_TTS_DO_STOP);
-    }, 0);
 }
 export function ttsResume() {
-    const activeWebView = win.READIUM2.getFirstWebView();
-    if (!activeWebView) {
-        return;
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        if (_lastTTSWebView && _lastTTSWebView !== activeWebView) {
+            continue;
+        }
+        setTimeout(async () => {
+            await activeWebView.send(R2_EVENT_TTS_DO_RESUME);
+        }, 0);
     }
-
-    setTimeout(async () => {
-        await activeWebView.send(R2_EVENT_TTS_DO_RESUME);
-    }, 0);
 }
 export function ttsPrevious() {
-    const activeWebView = win.READIUM2.getFirstWebView();
-    if (!activeWebView) {
-        return;
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        if (_lastTTSWebView && _lastTTSWebView !== activeWebView) {
+            continue;
+        }
+        setTimeout(async () => {
+            await activeWebView.send(R2_EVENT_TTS_DO_PREVIOUS);
+        }, 0);
     }
-
-    setTimeout(async () => {
-        await activeWebView.send(R2_EVENT_TTS_DO_PREVIOUS);
-    }, 0);
 }
 export function ttsNext() {
-    const activeWebView = win.READIUM2.getFirstWebView();
-    if (!activeWebView) {
-        return;
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        if (_lastTTSWebView && _lastTTSWebView !== activeWebView) {
+            continue;
+        }
+        setTimeout(async () => {
+            await activeWebView.send(R2_EVENT_TTS_DO_NEXT);
+        }, 0);
     }
-
-    setTimeout(async () => {
-        await activeWebView.send(R2_EVENT_TTS_DO_NEXT);
-    }, 0);
 }
 
 export function ttsClickEnable(doEnable: boolean) {
@@ -180,18 +199,18 @@ export function ttsClickEnable(doEnable: boolean) {
         win.READIUM2.ttsClickEnabled = doEnable;
     }
 
-    const activeWebView = win.READIUM2.getFirstWebView();
-    if (!activeWebView) {
-        return;
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        setTimeout(async () => {
+            const payload: IEventPayload_R2_EVENT_TTS_CLICK_ENABLE = {
+                doEnable,
+            };
+
+            setTimeout(async () => {
+                await activeWebView.send(R2_EVENT_TTS_CLICK_ENABLE, payload);
+            }, 0);
+        }, 0);
     }
-
-    const payload: IEventPayload_R2_EVENT_TTS_CLICK_ENABLE = {
-        doEnable,
-    };
-
-    setTimeout(async () => {
-        await activeWebView.send(R2_EVENT_TTS_CLICK_ENABLE, payload);
-    }, 0);
 }
 
 export function ttsPlaybackRate(speed: number) {
@@ -199,15 +218,13 @@ export function ttsPlaybackRate(speed: number) {
         win.READIUM2.ttsPlaybackRate = speed;
     }
 
-    const activeWebView = win.READIUM2.getFirstWebView();
-    if (!activeWebView) {
-        return;
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        const payload: IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE = {
+            speed,
+        };
+        setTimeout(async () => {
+            await activeWebView.send(R2_EVENT_TTS_PLAYBACK_RATE, payload);
+        }, 0);
     }
-
-    const payload: IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE = {
-        speed,
-    };
-    setTimeout(async () => {
-        await activeWebView.send(R2_EVENT_TTS_PLAYBACK_RATE, payload);
-    }, 0);
 }

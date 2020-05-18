@@ -41,7 +41,7 @@ import { getCurrentAudioPlaybackRate, setCurrentAudioPlaybackRate } from "./audi
 import {
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
     URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS, URL_PARAM_REFRESH,
-    URL_PARAM_SESSION_INFO, URL_PARAM_WEBVIEW_SLOT,
+    URL_PARAM_SECOND_WEBVIEW, URL_PARAM_SESSION_INFO, URL_PARAM_WEBVIEW_SLOT,
 } from "./common/url-params";
 import { getEpubReadingSystemInfo } from "./epubReadingSystem";
 import { mediaOverlaysInterrupt } from "./media-overlays";
@@ -77,22 +77,15 @@ export function locationHandleIpcMessage(
     eventArgs: any[],
     eventCurrentTarget: IReadiumElectronWebview): boolean {
 
-    // win.READIUM2.getFirstWebView();
     const activeWebView = eventCurrentTarget;
 
     if (eventChannel === R2_EVENT_LOCATOR_VISIBLE) {
         // noop
     } else if (eventChannel === R2_EVENT_SHIFT_VIEW_X) {
-        // if (!activeWebView) {
-        //     return true;
-        // }
         shiftWebview(activeWebView,
             (eventArgs[0] as IEventPayload_R2_EVENT_SHIFT_VIEW_X).offset,
             (eventArgs[0] as IEventPayload_R2_EVENT_SHIFT_VIEW_X).backgroundColor);
     } else if (eventChannel === R2_EVENT_PAGE_TURN_RES) {
-        // if (!activeWebView) {
-        //     return true;
-        // }
         const publication = win.READIUM2.publication;
         const publicationURL = win.READIUM2.publicationURL;
         if (!publication) {
@@ -143,10 +136,32 @@ export function locationHandleIpcMessage(
     } else if (eventChannel === R2_EVENT_READING_LOCATION) {
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_READING_LOCATION;
 
-        // if (!activeWebView) {
-        //     return true;
+        // if (!payload.userInteract) {
+        //     let linkFirst: Link | undefined;
+        //     let linkSecond: Link | undefined;
+        //     const firstWebView = win.READIUM2.getFirstWebView();
+        //     if (firstWebView) {
+        //         linkFirst = firstWebView.READIUM2.link;
+        //     }
+        //     const secondWebView = win.READIUM2.getSecondWebView(false);
+        //     if (secondWebView) {
+        //         linkSecond = secondWebView.READIUM2.link;
+        //     }
+        //     if (linkFirst && linkSecond && win.READIUM2.publication.Spine) {
+        //         const indexFirst = win.READIUM2.publication.Spine.indexOf(linkFirst);
+        //         const indexSecond = win.READIUM2.publication.Spine.indexOf(linkSecond);
+        //         if (indexSecond >= 0 && indexFirst >= 0) {
+        //             const firstLink = indexSecond < indexFirst ? linkSecond : linkFirst;
+        //             if (// payload.href is nil
+        //                 activeWebView.READIUM2.link?.Href && activeWebView.READIUM2.link?.Href !== firstLink.Href) {
+        //                 debug(`R2_EVENT_READING_LOCATION skipped spread ${activeWebView.READIUM2.link?.Href}`);
+        //                 return true;
+        //             }
+        //         }
+        //     }
         // }
-        if (activeWebView.READIUM2.link && _saveReadingLocation) {
+
+        if (activeWebView.READIUM2.link) {
             // TODO: position metrics, based on arbitrary number of characters (1034)
             // https://github.com/readium/architecture/tree/master/positions
             // https://github.com/readium/architecture/tree/master/locators#about-the-notion-of-position
@@ -184,7 +199,7 @@ ipcRenderer.on(R2_EVENT_LINK, (_event: any, payload: IEventPayload_R2_EVENT_LINK
     debug("R2_EVENT_LINK (ipcRenderer.on)");
     debug(payload.url);
 
-    const activeWebView = win.READIUM2.getFirstWebView();
+    const activeWebView = win.READIUM2.getFirstOrSecondWebView();
     handleLinkUrl(
         payload.url,
         activeWebView ? activeWebView.READIUM2.readiumCss : undefined);
@@ -206,7 +221,12 @@ export function shiftWebview(webview: IReadiumElectronWebview, offset: number, b
     }
 }
 
-export function navLeftOrRight(left: boolean, spineNav?: boolean): Link | undefined {
+export function navLeftOrRight(
+    left: boolean,
+    spineNav?: boolean,
+    ignorePageSpreadHandling?: boolean,
+    ): Link | undefined {
+
     const publication = win.READIUM2.publication;
     const publicationURL = win.READIUM2.publicationURL;
     if (!publication || !publicationURL) {
@@ -223,34 +243,28 @@ export function navLeftOrRight(left: boolean, spineNav?: boolean): Link | undefi
     const loc = _lastSavedReadingLocation; // getCurrentReadingLocation()
     let href = loc ? loc.locator.href : undefined;
 
-    let linkFirst: Link | undefined;
-    let linkSecond: Link | undefined;
-    const firstWebView = win.READIUM2.getFirstWebView();
-    if (firstWebView) {
-        linkFirst = firstWebView.READIUM2.link;
-    }
-    const secondWebView = win.READIUM2.getSecondWebView(false);
-    if (secondWebView) {
-        linkSecond = secondWebView.READIUM2.link;
-    }
-    if (linkFirst && linkSecond) {
-        const indexFirst = publication.Spine.indexOf(linkFirst);
-        const indexSecond = publication.Spine.indexOf(linkSecond);
-        if (indexSecond >= 0 && indexFirst >= 0) {
-            const lastLink = indexSecond < indexFirst ?
-                (left ? linkSecond : linkFirst) :
-                (left ? linkFirst : linkSecond);
+    if (!ignorePageSpreadHandling) {
+        let linkFirst: Link | undefined;
+        let linkSecond: Link | undefined;
+        const firstWebView = win.READIUM2.getFirstWebView();
+        if (firstWebView) {
+            linkFirst = firstWebView.READIUM2.link;
+        }
+        const secondWebView = win.READIUM2.getSecondWebView(false);
+        if (secondWebView) {
+            linkSecond = secondWebView.READIUM2.link;
+        }
+        if (linkFirst && linkSecond) {
+            const indexFirst = publication.Spine.indexOf(linkFirst);
+            const indexSecond = publication.Spine.indexOf(linkSecond);
+            if (indexSecond >= 0 && indexFirst >= 0) {
+                const lastLink = indexSecond < indexFirst ?
+                    (left ? linkSecond : linkFirst) :
+                    (left ? linkFirst : linkSecond);
 
-            spineNav = true;
-            href = lastLink.Href;
-            debug("------------------------------------- href");
-            debug("------------------------------------- href");
-            debug("------------------------------------- href");
-            debug("------------------------------------- href");
-            debug("------------------------------------- href");
-            debug("------------------------------------- href");
-            debug("------------------------------------- href");
-            debug(href);
+                spineNav = true;
+                href = lastLink.Href;
+            }
         }
     }
 
@@ -289,7 +303,7 @@ export function navLeftOrRight(left: boolean, spineNav?: boolean): Link | undefi
                 // NOTE that decodeURIComponent() must be called on the toString'ed URL urlNoQueryParams
                 // tslint:disable-next-line:max-line-length
                 // (in case nextOrPreviousSpineItem.Href contains Unicode characters, in which case they get percent-encoded by the URL.toString())
-                const activeWebView = win.READIUM2.getFirstWebView() || win.READIUM2.getSecondWebView(false);
+                const activeWebView = win.READIUM2.getFirstOrSecondWebView();
                 debug(`navLeftOrRight: ${urlNoQueryParams}`);
                 handleLink(
                     urlNoQueryParams,
@@ -312,7 +326,7 @@ export function navLeftOrRight(left: boolean, spineNav?: boolean): Link | undefi
             direction: rtl ? "RTL" : "LTR",
             go: goPREVIOUS ? "PREVIOUS" : "NEXT",
         };
-        const activeWebView = win.READIUM2.getFirstWebView();
+        const activeWebView = win.READIUM2.getFirstOrSecondWebView();
         if (activeWebView) {
             setTimeout(async () => {
                 await activeWebView.send(R2_EVENT_PAGE_TURN, payload); // .getWebContents()
@@ -435,10 +449,12 @@ export function handleLinkLocator(
 
 let _reloadCounter = 0;
 export function reloadContent() {
-    const activeWebView = win.READIUM2.getFirstWebView();
-    if (!activeWebView) {
-        return;
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        reloadWebView(activeWebView);
     }
+}
+function reloadWebView(activeWebView: IReadiumElectronWebview) {
 
     setTimeout(() => {
         // const src = activeWebView.getAttribute("src");
@@ -548,6 +564,7 @@ function loadLink(
                 data[URL_PARAM_CLIPBOARD_INTERCEPT] = undefined;
                 data[URL_PARAM_REFRESH] = undefined;
                 data[URL_PARAM_WEBVIEW_SLOT] = undefined;
+                data[URL_PARAM_SECOND_WEBVIEW] = undefined;
             });
             hrefToLoadHttpNoHash = hrefToLoadHttpObjUri.toString();
         } catch (err) {
@@ -601,15 +618,6 @@ function loadLink(
         /\.wma$/.test(ext) ||
         /\.flac$/.test(ext));
 
-    console.log("pubLink.Properties");
-    console.log("pubLink.Properties");
-    console.log("pubLink.Properties");
-    console.log("pubLink.Properties");
-    console.log("pubLink.Properties");
-    console.log("pubLink.Properties");
-    console.log("pubLink.Properties");
-    console.log("pubLink.Properties");
-    console.log(pubLink.Href);
     let webViewSlot = WebViewSlotEnum.center;
 
     let loadingSecondWebView = false;
@@ -659,7 +667,6 @@ function loadLink(
                 }
             }
         });
-        console.log(JSON.stringify(publication.Spine, null, 4));
 
         const page = pubLink.Properties?.Page;
         if (page === PageEnum.Left) {
@@ -722,7 +729,7 @@ function loadLink(
         win.READIUM2.destroySecondWebView();
     }
 
-    const rcssJson = adjustReadiumCssJsonMessageForFixedLayout(pubLink, actualReadiumCss);
+    const rcssJson = adjustReadiumCssJsonMessageForFixedLayout(activeWebView, actualReadiumCss);
 
     const rcssJsonstr = JSON.stringify(rcssJson, null, "");
     const rcssJsonstrBase64 = Buffer.from(rcssJsonstr).toString("base64");
@@ -764,6 +771,7 @@ function loadLink(
             data[URL_PARAM_CLIPBOARD_INTERCEPT] = undefined;
             data[URL_PARAM_REFRESH] = undefined;
             data[URL_PARAM_WEBVIEW_SLOT] = undefined;
+            data[URL_PARAM_SECOND_WEBVIEW] = undefined;
         });
     } else {
         hrefToLoadHttpUri.search((data: any) => {
@@ -813,6 +821,8 @@ function loadLink(
                 "true" : "false";
 
             data[URL_PARAM_WEBVIEW_SLOT] = webViewSlot;
+
+            data[URL_PARAM_SECOND_WEBVIEW] = secondWebView ? "1" : "0";
         });
     }
 
@@ -838,6 +848,7 @@ function loadLink(
         const payload: IEventPayload_R2_EVENT_SCROLLTO = {
             goto,
             hash,
+            isSecondWebView: secondWebView ? true : false,
             previous: previous ? true : false,
         };
 
@@ -1409,46 +1420,41 @@ export function setReadingLocationSaver(func: (locator: LocatorExtended) => void
 
 export async function isLocatorVisible(locator: Locator): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
-        const activeWebView = win.READIUM2.getFirstWebView();
-
-        if (!activeWebView) {
-            reject("No navigator webview?!");
-            return;
-        }
-        if (!activeWebView.READIUM2.link) {
-            reject("No navigator webview link?!");
-            return;
-        }
-        if (activeWebView.READIUM2.link.Href !== locator.href) {
-            // debug(`isLocatorVisible FALSE: ${activeWebView.READIUM2.link.Href} !== ${locator.href}`);
-            resolve(false);
-            return;
-        }
-
-        // const cb = (_event: any, payload: IEventPayload_R2_EVENT_LOCATOR_VISIBLE) => {
-        //     debug("R2_EVENT_LOCATOR_VISIBLE");
-        //     debug(payload.visible);
-        // };
-        // ipcRenderer.once(R2_EVENT_LOCATOR_VISIBLE, cb);
-
-        const cb = (event: Electron.IpcMessageEvent) => {
-            if (event.channel === R2_EVENT_LOCATOR_VISIBLE) {
-                const webview = event.currentTarget as IReadiumElectronWebview;
-                if (webview !== activeWebView) {
-                    reject("Wrong navigator webview?!");
-                    return;
-                }
-                const payloadPong = event.args[0] as IEventPayload_R2_EVENT_LOCATOR_VISIBLE;
-                // debug(`isLocatorVisible: ${payload_.visible}`);
-                activeWebView.removeEventListener("ipc-message", cb);
-                resolve(payloadPong.visible);
+        const activeWebViews = win.READIUM2.getActiveWebViews();
+        for (const activeWebView of activeWebViews) {
+            if (activeWebView.READIUM2.link?.Href !== locator.href) {
+                continue;
             }
-        };
-        activeWebView.addEventListener("ipc-message", cb);
-        const payloadPing: IEventPayload_R2_EVENT_LOCATOR_VISIBLE = { location: locator.locations, visible: false };
 
-        setTimeout(async () => {
-            await activeWebView.send(R2_EVENT_LOCATOR_VISIBLE, payloadPing);
-        }, 0);
+            // const cb = (_event: any, payload: IEventPayload_R2_EVENT_LOCATOR_VISIBLE) => {
+            //     debug("R2_EVENT_LOCATOR_VISIBLE");
+            //     debug(payload.visible);
+            // };
+            // ipcRenderer.once(R2_EVENT_LOCATOR_VISIBLE, cb);
+
+            const cb = (event: Electron.IpcMessageEvent) => {
+                if (event.channel === R2_EVENT_LOCATOR_VISIBLE) {
+                    const webview = event.currentTarget as IReadiumElectronWebview;
+                    if (webview !== activeWebView) {
+                        console.log("Wrong navigator webview?!");
+                        return;
+                    }
+                    const payloadPong = event.args[0] as IEventPayload_R2_EVENT_LOCATOR_VISIBLE;
+                    // debug(`isLocatorVisible: ${payload_.visible}`);
+                    activeWebView.removeEventListener("ipc-message", cb);
+                    resolve(payloadPong.visible);
+                }
+            };
+            activeWebView.addEventListener("ipc-message", cb);
+
+            const payloadPing: IEventPayload_R2_EVENT_LOCATOR_VISIBLE = { location: locator.locations, visible: false };
+            setTimeout(async () => {
+                await activeWebView.send(R2_EVENT_LOCATOR_VISIBLE, payloadPing);
+            }, 0);
+
+            return;
+        }
+
+        reject("isLocatorVisible - no webview match?!");
     });
 }

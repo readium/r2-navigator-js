@@ -14,7 +14,7 @@ import { IReadiumElectronBrowserWindow } from "./webview/state";
 const win = window as IReadiumElectronBrowserWindow;
 
 export function audioPlay() {
-    const activeWebView = win.READIUM2.getFirstWebView();
+    const activeWebView = win.READIUM2.getFirstOrSecondWebView();
     if (!activeWebView) {
         return;
     }
@@ -25,7 +25,7 @@ export function audioPlay() {
 }
 
 export function audioPause() {
-    const activeWebView = win.READIUM2.getFirstWebView();
+    const activeWebView = win.READIUM2.getFirstOrSecondWebView();
     if (!activeWebView) {
         return;
     }
@@ -36,7 +36,7 @@ export function audioPause() {
 }
 
 export function audioTogglePlayPause() {
-    const activeWebView = win.READIUM2.getFirstWebView();
+    const activeWebView = win.READIUM2.getFirstOrSecondWebView();
     if (!activeWebView) {
         return;
     }
@@ -47,7 +47,7 @@ export function audioTogglePlayPause() {
 }
 
 export function audioRewind() {
-    const activeWebView = win.READIUM2.getFirstWebView();
+    const activeWebView = win.READIUM2.getFirstOrSecondWebView();
     if (!activeWebView) {
         return;
     }
@@ -58,7 +58,7 @@ export function audioRewind() {
 }
 
 export function audioForward() {
-    const activeWebView = win.READIUM2.getFirstWebView();
+    const activeWebView = win.READIUM2.getFirstOrSecondWebView();
     if (!activeWebView) {
         return;
     }
@@ -69,7 +69,7 @@ export function audioForward() {
 }
 
 // export function audioPlaybackRate(speed: number) {
-//     const activeWebView = win.READIUM2.getFirstWebView();
+//     const activeWebView = win.READIUM2.getFirstOrSecondWebView();
 //     if (!activeWebView) {
 //         return;
 //     }

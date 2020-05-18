@@ -307,6 +307,7 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
             selectionIsNew: undefined,
             text: undefined,
             title: _docTitle,
+            userInteract: false,
         };
         const payload: IEventPayload_R2_EVENT_READING_LOCATION = win.READIUM2.locationHashOverrideInfo;
         ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION, payload);

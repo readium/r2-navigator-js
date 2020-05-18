@@ -82,6 +82,10 @@ export interface IReadiumElectronBrowserWindowState {
     destroySecondWebView: () => void;
     createSecondWebView: () => void;
 
+    getFirstOrSecondWebView: () => IReadiumElectronWebview | undefined;
+
+    getActiveWebViews: () => IReadiumElectronWebview[];
+
     enableScreenReaderAccessibilityWebViewHardRefresh: boolean;
 }
 

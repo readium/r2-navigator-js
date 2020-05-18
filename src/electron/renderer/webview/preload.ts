@@ -54,7 +54,8 @@ import { getURLQueryParams } from "../common/querystring";
 import { IRect, getClientRectsNoOverlap_ } from "../common/rect-utils";
 import {
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
-    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS, URL_PARAM_WEBVIEW_SLOT,
+    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS, URL_PARAM_SECOND_WEBVIEW,
+    URL_PARAM_WEBVIEW_SLOT,
 } from "../common/url-params";
 import { setupAudioBook } from "./audiobook";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
@@ -119,6 +120,7 @@ win.READIUM2 = {
         selectionInfo: undefined,
         selectionIsNew: undefined,
         title: undefined,
+        userInteract: false,
     },
     ttsClickEnabled: false,
     ttsPlaybackRate: 1,
@@ -222,6 +224,8 @@ if (win.READIUM2.urlQueryParams) {
         win.READIUM2.urlQueryParams[URL_PARAM_WEBVIEW_SLOT] === "left" ? WebViewSlotEnum.left :
         (win.READIUM2.urlQueryParams[URL_PARAM_WEBVIEW_SLOT] === "right" ? WebViewSlotEnum.right :
         WebViewSlotEnum.center);
+
+    // win.READIUM2.isSecondWebView = win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW] === "1" ? true : false;
 }
 
 if (IS_DEV) {
@@ -403,7 +407,7 @@ ipcRenderer.on(R2_EVENT_LOCATOR_VISIBLE, (_event: any, payload: IEventPayload_R2
 
 ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_SCROLLTO) => {
 
-    if (win.READIUM2.isAudio || win.READIUM2.isFixedLayout) {
+    if (win.READIUM2.isAudio) {
         return;
     }
 
@@ -416,6 +420,11 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
 
     if (!win.READIUM2.urlQueryParams) {
         win.READIUM2.urlQueryParams = {};
+    }
+    if (payload.isSecondWebView) {
+        win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW] = "1";
+    } else {
+        win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW] = "0";
     }
     if (payload.previous) {
         // tslint:disable-next-line:no-string-literal
@@ -436,6 +445,17 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
             // tslint:disable-next-line:no-string-literal
             delete win.READIUM2.urlQueryParams[URL_PARAM_GOTO];
         }
+    }
+
+    if (win.READIUM2.isFixedLayout) {
+        win.READIUM2.locationHashOverride = win.document.body;
+        resetLocationHashOverrideInfo();
+
+        debug("processXYRaw BODY");
+        processXYRaw(0, 0, false);
+
+        notifyReadingLocationDebounced();
+        return;
     }
 
     let delayScrollIntoView = false;
@@ -491,6 +511,7 @@ function resetLocationHashOverrideInfo() {
         selectionInfo: undefined,
         selectionIsNew: undefined,
         title: undefined,
+        userInteract: false,
     };
 }
 
@@ -2795,6 +2816,14 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
         return;
     }
 
+    // skips the first render notification because the first primary webview takes precedence
+    // as it has been explicitly linked into (contrary to the second webview which is ancillary)
+    if (// !userInteract &&
+        win.READIUM2.urlQueryParams && win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW] === "1") {
+        win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW] = "2";
+        return;
+    }
+
     const blacklisted = checkBlacklisted(win.READIUM2.locationHashOverride);
     if (blacklisted) {
         return;
@@ -2871,6 +2900,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
         selectionIsNew,
         text,
         title: _docTitle,
+        userInteract: userInteract ? true : false,
     };
     const payload: IEventPayload_R2_EVENT_READING_LOCATION = win.READIUM2.locationHashOverrideInfo;
     ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION, payload);

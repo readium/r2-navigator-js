@@ -57,6 +57,7 @@ export interface IEventPayload_R2_EVENT_SCROLLTO {
     goto: string | undefined;
     hash: string | undefined;
     previous: boolean;
+    isSecondWebView: boolean;
 }
 
 // in RENDERER: webview.send()
@@ -88,6 +89,8 @@ export interface IEventPayload_R2_EVENT_READING_LOCATION extends Locator {
     // but target HTML document's epub:type="pagebreak" / role="doc-pagebreak"
     // (nearest preceding ancestor/sibling)
     epubPage: string | undefined;
+
+    userInteract: boolean;
 }
 
 // in MAIN: browserWindow.webContents.send()
