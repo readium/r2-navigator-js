@@ -1,10 +1,33 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.3.2...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.4.0...develop
 
 Changes:
 * TODO
+
+# 1.4.0
+
+> Build environment: NodeJS `12.16.2`, NPM `6.14.4`
+
+Changes:
+* NPM package updates
+* Support for fixed-layout / FXL two-page spread in EPUB publications, works for Media Overlays synchronized text/audio playback, concurrent reading locations depending on "active" focused page, selection / highlights, etc. (TTS readloud is currently not polished in two-page mode, needs to be mutually-exclusive per page)
+* Fixed Media Overlays night and sepia highlights
+* Fixed SVG xlink:href relative URL handling
+* Disabled FXL scroll during element focusing (mouse, keyboard interactions)
+* Workaround for fixed layout documents that do not size the body correctly (force width + height dimensions)
+* Visibility mask improved for fixed layout documents (smooth fade effect)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.4.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.4.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.4.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.3.2...v1.4.0
 
 # 1.3.2
 
