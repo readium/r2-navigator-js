@@ -12,10 +12,10 @@ import { IEventPayload_R2_EVENT_READIUMCSS } from "./events";
 import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
 import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "./sessions";
 import {
-    CLASS_PAGINATED, ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
-    ROOT_CLASS_REDUCE_MOTION, WebViewSlotEnum, audioCssStyles, focusCssStyles, footnotesCssStyles,
-    mediaOverlaysCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles,
-    targetCssStyles, ttsCssStyles, visibilityMaskCssStyles,
+    CLASS_PAGINATED, ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_INVISIBLE_MASK_REMOVED,
+    ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, WebViewSlotEnum,
+    audioCssStyles, focusCssStyles, footnotesCssStyles, mediaOverlaysCssStyles, readPosCssStyles,
+    scrollBarCssStyles, selectionCssStyles, targetCssStyles, ttsCssStyles, visibilityMaskCssStyles,
 } from "./styles";
 
 export const READIUM2_BASEURL_ID = "r2_BASEURL_ID";
@@ -827,6 +827,7 @@ export function readiumCssTransformHtml(
     documant.documentElement.setAttribute("data-readiumcss-injected", "yes");
 
     documant.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK);
+    documant.documentElement.classList.remove(ROOT_CLASS_INVISIBLE_MASK_REMOVED);
 
     // const wh = configureFixedLayout(doc, win.READIUM2.isFixedLayout,
     //     win.READIUM2.fxlViewportWidth, win.READIUM2.fxlViewportHeight,

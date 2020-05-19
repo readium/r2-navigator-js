@@ -41,10 +41,11 @@ import { sameSelections } from "../../common/selection";
 import {
     CLASS_PAGINATED, CSS_CLASS_NO_FOCUS_OUTLINE, LINK_TARGET_CLASS, POPUP_DIALOG_CLASS,
     R2_MO_CLASS_ACTIVE, R2_MO_CLASS_ACTIVE_PLAYBACK, ROOT_CLASS_INVISIBLE_MASK,
-    ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
-    ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN,
-    TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, WebViewSlotEnum, ZERO_TRANSFORM_CLASS,
-    readPosCssStylesAttr1, readPosCssStylesAttr2, readPosCssStylesAttr3, readPosCssStylesAttr4,
+    ROOT_CLASS_INVISIBLE_MASK_REMOVED, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX,
+    ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_CLASS_INJECTED_SPAN,
+    TTS_CLASS_INJECTED_SUBSPAN, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT,
+    WebViewSlotEnum, ZERO_TRANSFORM_CLASS, readPosCssStylesAttr1, readPosCssStylesAttr2,
+    readPosCssStylesAttr3, readPosCssStylesAttr4,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector2";
@@ -411,7 +412,7 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
         return;
     }
 
-    showHideContentMask(false);
+    showHideContentMask(false, win.READIUM2.isFixedLayout);
 
     clearCurrentSelection(win);
     closePopupDialogs(win.document);
@@ -1150,7 +1151,7 @@ const scrollToHashRaw = () => {
                     // processXYRaw(0, y, true);
                     processXYRaw(0, 0, false);
 
-                    showHideContentMask(false);
+                    showHideContentMask(false, win.READIUM2.isFixedLayout);
 
                     if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
                         notifyReadingLocationDebounced();
@@ -1312,14 +1313,18 @@ let _ignoreScrollEvent = false;
 //     debug(newHTML.substr(0, iBody_ + 100));
 // }
 
-ipcRenderer.on("R2_EVENT_HIDE", (_event: any) => {
-    showHideContentMask(true);
+ipcRenderer.on("R2_EVENT_HIDE", (_event: any, payload: boolean | null) => {
+    showHideContentMask(true, payload);
 });
 
-function showHideContentMask(doHide: boolean) {
+function showHideContentMask(doHide: boolean, isFixedLayout: boolean | null) {
     if (doHide) {
         win.document.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK);
+        win.document.documentElement.classList.remove(ROOT_CLASS_INVISIBLE_MASK_REMOVED);
     } else {
+        if (isFixedLayout) {
+            win.document.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK_REMOVED);
+        }
         win.document.documentElement.classList.remove(ROOT_CLASS_INVISIBLE_MASK);
     }
 }
@@ -1451,10 +1456,10 @@ function handleFocusInRaw(target: HTMLElement, _tabKeyDownEvent: KeyboardEvent |
 // }
 
 ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVENT_READIUMCSS) => {
-    showHideContentMask(true);
+    showHideContentMask(true, payload.isFixedLayout || win.READIUM2.isFixedLayout);
     readiumCSS(win.document, payload);
     recreateAllHighlights(win);
-    showHideContentMask(false);
+    showHideContentMask(false, payload.isFixedLayout || win.READIUM2.isFixedLayout);
 });
 
 let _docTitle: string | undefined;
@@ -1529,12 +1534,12 @@ win.addEventListener("DOMContentLoaded", () => {
     //         const isPreviousNavDirection = previous === "true";
     //         if (isPreviousNavDirection) {
     //             didHide = true;
-    //             showHideContentMask(true);
+    //             showHideContentMask(true, win.READIUM2.isFixedLayout);
     //         }
     //     }
     //     // ensure visible (can be triggered from host)
     //     if (!didHide) {
-    //         showHideContentMask(false);
+    //         showHideContentMask(false, win.READIUM2.isFixedLayout);
     //     }
     // }
 
@@ -1717,10 +1722,10 @@ function loaded(forced: boolean) {
     }
 
     if (win.READIUM2.isAudio) {
-        showHideContentMask(false);
+        showHideContentMask(false, win.READIUM2.isFixedLayout);
     } else {
         if (!win.READIUM2.isFixedLayout) {
-            showHideContentMask(false);
+            showHideContentMask(false, win.READIUM2.isFixedLayout);
 
             debug("++++ scrollToHashDebounced FROM LOAD");
             scrollToHashDebounced();
@@ -1790,7 +1795,7 @@ function loaded(forced: boolean) {
         } else {
             // processXYDebounced(0, 0, false);
 
-            showHideContentMask(false);
+            showHideContentMask(false, win.READIUM2.isFixedLayout);
 
             win.READIUM2.locationHashOverride = win.document.body;
             notifyReadingLocationDebounced();
@@ -2637,7 +2642,7 @@ export const computeProgressionData = (): IProgressionData => {
 };
 
 // tslint:disable-next-line:max-line-length
-const _blacklistIdClassForCssSelectors = [LINK_TARGET_CLASS, CSS_CLASS_NO_FOCUS_OUTLINE, SKIP_LINK_ID, POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
+const _blacklistIdClassForCssSelectors = [LINK_TARGET_CLASS, CSS_CLASS_NO_FOCUS_OUTLINE, SKIP_LINK_ID, POPUP_DIALOG_CLASS, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, TTS_ID_INJECTED_PARENT, TTS_ID_SPEAKING_DOC_ELEMENT, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_INVISIBLE_MASK_REMOVED, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES];
 const _blacklistIdClassForCssSelectorsMathJax = ["mathjax", "ctxt", "mjx"];
 
 // tslint:disable-next-line:max-line-length

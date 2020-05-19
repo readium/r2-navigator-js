@@ -488,11 +488,29 @@ export const ttsCssStyles = `
 `;
 
 export const ROOT_CLASS_INVISIBLE_MASK = "r2-visibility-mask-class";
+export const ROOT_CLASS_INVISIBLE_MASK_REMOVED = "r2-visibility-mask-removed-class";
 export const visibilityMaskCssStyles = `
 
 :root.${ROOT_CLASS_INVISIBLE_MASK}[style] > body,
 :root.${ROOT_CLASS_INVISIBLE_MASK} > body {
-    visibility: hidden !important;
+    /* visibility: hidden !important; */
+    opacity: 0;
+}
+:root.${ROOT_CLASS_INVISIBLE_MASK_REMOVED}[style] > body,
+:root.${ROOT_CLASS_INVISIBLE_MASK_REMOVED} > body {
+    animation-name: readium2ElectronAnimation_INVISIBLE_MASK;
+    animation-duration: 0.5s;
+    animation-delay: 0s;
+    /* animation-fill-mode: forwards; */
+    animation-timing-function: linear;
+}
+@keyframes readium2ElectronAnimation_INVISIBLE_MASK {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
 }
 `;
 

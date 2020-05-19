@@ -29,7 +29,9 @@ import {
 } from "./location";
 import { mediaOverlaysHandleIpcMessage } from "./media-overlays";
 import { ttsClickEnable, ttsHandleIpcMessage } from "./readaloud";
-import { adjustReadiumCssJsonMessageForFixedLayout, obtainReadiumCss } from "./readium-css";
+import {
+    adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, obtainReadiumCss,
+} from "./readium-css";
 import { soundtrackHandleIpcMessage } from "./soundtrack";
 import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
@@ -80,7 +82,8 @@ function readiumCssApplyToWebview(
         activeWebView.style.transform !== "none") {
 
         setTimeout(async () => {
-            await activeWebView.send("R2_EVENT_HIDE");
+            await activeWebView.send("R2_EVENT_HIDE",
+                activeWebView.READIUM2.link ? isFixedLayout(activeWebView.READIUM2.link) : null);
         }, 0);
 
         setTimeout(async () => {

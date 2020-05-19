@@ -609,9 +609,23 @@ function loadLink(
 
     const webview1 = win.READIUM2.getFirstWebView();
     const webview2 = win.READIUM2.getSecondWebView(false);
+
     const webviewSpreadSwap = secondWebView ?
         (webview2 && webview1 && webview1.READIUM2.link === pubLink) :
         (webview2 && webview2.READIUM2.link === pubLink);
+
+    if (!webviewSpreadSwap) {
+        if (webview1 && webview1.READIUM2.link && isFixedLayout(webview1.READIUM2.link)) {
+            setTimeout(async () => {
+                await webview1.send("R2_EVENT_HIDE", true);
+            }, 0);
+        }
+        if (webview2 && webview2.READIUM2.link && isFixedLayout(webview2.READIUM2.link)) {
+            setTimeout(async () => {
+                await webview2.send("R2_EVENT_HIDE", true);
+            }, 0);
+        }
+    }
 
     const secondWebViewWasJustCreated = secondWebView && !webviewSpreadSwap && !webview2;
     const activeWebView = webviewSpreadSwap ?
@@ -681,7 +695,7 @@ function loadLink(
                 }
                 if (i === 0) {
                     (spineLink as any).__notInSpread = true;
-                    spineLink.Properties.Page = slotOfSecondPageInSpread;
+                    spineLink.Properties.Page = notInSpread ? PageEnum.Center : slotOfSecondPageInSpread;
                 } else {
                     const firstPageInSpread = publication.Spine && // to satisfy the compiler
                         publication.Spine[i - 1].Properties?.Page !== slotOfFirstPageInSpread;
@@ -897,7 +911,8 @@ function loadLink(
                 activeWebView.style.transform !== "none") {
 
                 setTimeout(async () => {
-                    await activeWebView.send("R2_EVENT_HIDE");
+                    await activeWebView.send("R2_EVENT_HIDE",
+                        activeWebView.READIUM2.link ? isFixedLayout(activeWebView.READIUM2.link) : null);
                 }, 0);
 
                 setTimeout(async () => {
@@ -1325,7 +1340,8 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
 
                 if (webviewAlreadyHasContent) {
                     setTimeout(async () => {
-                        await activeWebView.send("R2_EVENT_HIDE");
+                        await activeWebView.send("R2_EVENT_HIDE",
+                            activeWebView.READIUM2.link ? isFixedLayout(activeWebView.READIUM2.link) : null);
                     }, 0);
                 }
 
