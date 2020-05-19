@@ -91,6 +91,8 @@ export interface IEventPayload_R2_EVENT_READING_LOCATION extends Locator {
     epubPage: string | undefined;
 
     userInteract: boolean;
+
+    secondWebViewHref: string | undefined;
 }
 
 // in MAIN: browserWindow.webContents.send()

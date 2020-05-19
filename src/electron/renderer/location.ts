@@ -657,7 +657,7 @@ function loadLink(
 
     let webViewSlot = WebViewSlotEnum.center;
 
-    let loadingSecondWebView = false;
+    let loadingSecondWebView: Link | undefined;
 
     const linkIndex = publication.Spine ? publication.Spine.indexOf(pubLink) : -1;
     if (publication.Spine && // to satisfy the compiler ... implied by linkIndex >= 0
@@ -721,7 +721,7 @@ function loadLink(
                     const otherLinkURLObj = new URL(otherLink.Href, publicationURL);
                     otherLinkURLObj.hash = "";
                     otherLinkURLObj.search = "";
-                    loadingSecondWebView = true;
+                    loadingSecondWebView = otherLink;
                     loadLink(
                         otherLinkURLObj.toString(),
                         undefined, // previous
@@ -751,7 +751,7 @@ function loadLink(
                     const otherLinkURLObj = new URL(otherLink.Href, publicationURL);
                     otherLinkURLObj.hash = "";
                     otherLinkURLObj.search = "";
-                    loadingSecondWebView = true;
+                    loadingSecondWebView = otherLink;
                     loadLink(
                         otherLinkURLObj.toString(),
                         undefined, // previous
@@ -872,7 +872,8 @@ function loadLink(
 
             data[URL_PARAM_WEBVIEW_SLOT] = webViewSlot;
 
-            data[URL_PARAM_SECOND_WEBVIEW] = secondWebView ? "1" : "0";
+            data[URL_PARAM_SECOND_WEBVIEW] = secondWebView ? "1" :
+                (loadingSecondWebView ? `0${loadingSecondWebView.Href}` : "0");
         });
     }
 
@@ -1373,6 +1374,8 @@ export interface LocatorExtended {
     // but target HTML document's epub:type="pagebreak" / role="doc-pagebreak"
     // (nearest preceding ancestor/sibling)
     epubPage: string | undefined;
+
+    secondWebViewHref: string | undefined;
 }
 
 let _lastSavedReadingLocation: LocatorExtended | undefined;
@@ -1442,6 +1445,7 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
             title: locator.title,
         },
         paginationInfo: locator.paginationInfo,
+        secondWebViewHref: locator.secondWebViewHref,
         selectionInfo: locator.selectionInfo,
         selectionIsNew: locator.selectionIsNew,
     };

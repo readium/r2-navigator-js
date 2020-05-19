@@ -118,6 +118,7 @@ win.READIUM2 = {
             progression: undefined,
         },
         paginationInfo: undefined,
+        secondWebViewHref: undefined,
         selectionInfo: undefined,
         selectionIsNew: undefined,
         title: undefined,
@@ -225,8 +226,6 @@ if (win.READIUM2.urlQueryParams) {
         win.READIUM2.urlQueryParams[URL_PARAM_WEBVIEW_SLOT] === "left" ? WebViewSlotEnum.left :
         (win.READIUM2.urlQueryParams[URL_PARAM_WEBVIEW_SLOT] === "right" ? WebViewSlotEnum.right :
         WebViewSlotEnum.center);
-
-    // win.READIUM2.isSecondWebView = win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW] === "1" ? true : false;
 }
 
 if (IS_DEV) {
@@ -509,6 +508,7 @@ function resetLocationHashOverrideInfo() {
             progression: undefined,
         },
         paginationInfo: undefined,
+        secondWebViewHref: undefined,
         selectionInfo: undefined,
         selectionIsNew: undefined,
         title: undefined,
@@ -1073,14 +1073,14 @@ const scrollToHashRaw = () => {
         return;
     }
 
+    recreateAllHighlights(win);
+
     if (win.READIUM2.isFixedLayout) {
         debug("scrollToHashRaw skipped, FXL");
         return;
     }
 
     debug("++++ scrollToHashRaw");
-
-    recreateAllHighlights(win);
 
     const isPaged = isPaginated(win.document);
 
@@ -2909,6 +2909,13 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
 
     const epubPage = findPrecedingAncestorSiblingEpubPageBreak(win.READIUM2.locationHashOverride);
 
+    const secondWebViewHref = win.READIUM2.urlQueryParams &&
+        win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW] &&
+        win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW].length > 1 &&
+        win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW].startsWith("0") ?
+        win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW].substr(1) :
+        undefined;
+
     win.READIUM2.locationHashOverrideInfo = {
         audioPlaybackInfo: undefined,
         docInfo: {
@@ -2925,6 +2932,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
             progression,
         },
         paginationInfo: pinfo,
+        secondWebViewHref,
         selectionInfo: selInfo,
         selectionIsNew,
         text,

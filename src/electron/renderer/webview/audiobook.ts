@@ -303,6 +303,7 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
                 progression: percent,
             },
             paginationInfo: undefined,
+            secondWebViewHref: undefined,
             selectionInfo: undefined,
             selectionIsNew: undefined,
             text: undefined,
