@@ -885,6 +885,10 @@ function scrollElementIntoView_(element: Element, doFocus: boolean, animate: boo
         });
         element.setAttribute(readPosCssStylesAttr3, "scrollElementIntoView");
     }
+    if (win.READIUM2.isFixedLayout) {
+        debug("scrollElementIntoView_ SKIP FXL");
+        return;
+    }
 
     if (doFocus) {
         // const tabbables = lazyTabbables();
@@ -1065,6 +1069,11 @@ function scrollIntoView(element: HTMLElement) {
 
 const scrollToHashRaw = () => {
     if (!win.document || !win.document.body || !win.document.documentElement) {
+        return;
+    }
+
+    if (win.READIUM2.isFixedLayout) {
+        debug("scrollToHashRaw skipped, FXL");
         return;
     }
 
@@ -1947,11 +1956,16 @@ function loaded(forced: boolean) {
     win.document.addEventListener("click", (ev: MouseEvent) => {
 
         let currentElement = ev.target as Element;
-        let href: string | undefined;
+        let href: string | SVGAnimatedString | undefined;
         while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
             if (currentElement.tagName.toLowerCase() === "a") {
-                href = (currentElement as HTMLAnchorElement).href;
+
+                // includes SVG xlink:href, absolute URL
+                href = (currentElement as HTMLAnchorElement | SVGAElement).href;
+
+                // excludes SVG xlink:href, relative URL
                 const href_ = currentElement.getAttribute("href");
+
                 debug(`A LINK CLICK: ${href} (${href_})`);
                 break;
             }
@@ -1962,7 +1976,17 @@ function loaded(forced: boolean) {
             return;
         }
 
-        if (/^javascript:/.test(href)) {
+        if ((href as SVGAnimatedString).animVal) {
+            href = (href as SVGAnimatedString).animVal;
+
+            if (!href) {
+                return;
+            }
+        }
+
+        const hrefStr = href as string;
+
+        if (/^javascript:/.test(hrefStr)) {
             return;
         }
 
@@ -1972,7 +1996,7 @@ function loaded(forced: boolean) {
         const done = popupFootNote(
             currentElement as HTMLElement,
             focusScrollRaw,
-            href,
+            hrefStr,
             ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
             ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
         if (!done) {
@@ -1988,7 +2012,7 @@ function loaded(forced: boolean) {
             // mediaOverlaysClickDebounced.clear();
 
             const payload: IEventPayload_R2_EVENT_LINK = {
-                url: href,
+                url: hrefStr,
             };
             ipcRenderer.sendToHost(R2_EVENT_LINK, payload);
         }
@@ -3002,9 +3026,7 @@ if (!win.READIUM2.isAudio) {
                 targetEl.classList.add(activeClass);
 
                 win.READIUM2.locationHashOverride = targetEl;
-                if (!win.READIUM2.isFixedLayout) {
-                    scrollElementIntoView_(targetEl, false, true);
-                }
+                scrollElementIntoView_(targetEl, false, true);
                 scrollToHashDebounced.clear();
                 notifyReadingLocationRaw(false, true);
 

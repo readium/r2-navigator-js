@@ -182,7 +182,19 @@ export function locationHandleIpcMessage(
         // debug("R2_EVENT_LINK (webview.addEventListener('ipc-message')");
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_LINK;
         debug(`locationHandleIpcMessage R2_EVENT_LINK: ${payload.url}`);
-        handleLinkUrl(payload.url, activeWebView.READIUM2.readiumCss);
+        let href = payload.url;
+
+        if (!/^http[s]?:\/\//.test(href) &&
+            !href.startsWith((READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) &&
+            activeWebView.READIUM2.link) {
+
+            const sourceUrl = new URL(activeWebView.READIUM2.link.Href, win.READIUM2.publicationURL);
+            const destUrl = new URL(href, sourceUrl);
+            href = destUrl.toString();
+            debug(`R2_EVENT_LINK ABSOLUTE-ized: ${href}`);
+        }
+
+        handleLinkUrl(href, activeWebView.READIUM2.readiumCss);
     } else if (eventChannel === R2_EVENT_AUDIO_PLAYBACK_RATE) {
         // debug("R2_EVENT_AUDIO_PLAYBACK_RATE (webview.addEventListener('ipc-message')");
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_AUDIO_PLAYBACK_RATE;
