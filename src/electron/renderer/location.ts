@@ -274,9 +274,10 @@ export function navLeftOrRight(
             const indexSecond = publication.Spine.indexOf(linkSecond);
             if (indexSecond >= 0 && indexFirst >= 0) {
                 const boundaryLink = indexSecond < indexFirst ?
-                    (left ? linkSecond : linkFirst) :
-                    (left ? linkFirst : linkSecond);
+                    (goPREVIOUS ? linkSecond : linkFirst) :
+                    (goPREVIOUS ? linkFirst : linkSecond);
 
+                debug(`navLeftOrRight spineNav = true force ${href} => ${boundaryLink.Href}`);
                 spineNav = true;
                 href = boundaryLink.Href;
             }

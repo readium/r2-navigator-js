@@ -610,10 +610,10 @@ export function configureFixedLayout(
         documant.documentElement.style.overflow = "hidden";
 
         // Many FXL EPUBs lack the body dimensions (only viewport meta)
-        // documant.body.style.width = width + "px";
-        // documant.body.style.height = height + "px";
-        // documant.body.style.overflow = "hidden";
-        // documant.body.style.margin = "0"; // 8px by default!
+        documant.body.style.width = width + "px";
+        documant.body.style.height = height + "px";
+        documant.body.style.overflow = "hidden";
+        documant.body.style.margin = "0"; // 8px by default!
 
         if (isDEBUG_VISUALS(documant)) {
             debug("FXL width: " + width);
