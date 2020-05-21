@@ -174,7 +174,7 @@ export function createOrderedRange(startNode: Node, startOffset: number, endNode
     range.setStart(startNode, startOffset);
     range.setEnd(endNode, endOffset);
     if (!range.collapsed) {
-        console.log(">>> createOrderedRange RANGE OK");
+        // console.log(">>> createOrderedRange RANGE OK");
         return range;
     }
 

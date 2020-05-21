@@ -5,7 +5,9 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+const VERBOSE = false;
+const IS_DEV = VERBOSE &&
+    (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
 // interface DOMRect extends DOMRectReadOnly {
 //     height: number;

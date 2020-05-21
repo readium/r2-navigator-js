@@ -12,7 +12,7 @@ import { ipcRenderer } from "electron";
 import {
     IEventPayload_R2_EVENT_HIGHLIGHT_CLICK, R2_EVENT_HIGHLIGHT_CLICK,
 } from "../../common/events";
-import { IColor, IHighlight } from "../../common/highlight";
+import { IColor, IHighlight, IHighlightDefinition } from "../../common/highlight";
 import { isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";
 import { IRectSimple, getClientRectsNoOverlap } from "../common/rect-utils";
@@ -230,6 +230,8 @@ function processMouseEvent(win: IReadiumElectronWebviewWindow, ev: MouseEvent) {
     const y = ev.clientY;
 
     const paginated = isPaginated(documant);
+
+    // COSTLY! TODO: cache DOMRect
     const bodyRect = getBoundingClientRectOfDocumentBody(win);
 
     const xOffset = paginated ? (-scrollElement.scrollLeft) : bodyRect.left;
@@ -350,6 +352,13 @@ function ensureHighlightsContainer(win: IReadiumElectronWebviewWindow): HTMLElem
 
     if (!_highlightsContainer) {
 
+        // Note that legacy ResizeSensor sets body position to "relative" (default static).
+        // Also note that ReadiumCSS default to (via stylesheet :root):
+        // documant.documentElement.style.position = "relative";
+        documant.body.style.position = "relative";
+        // documant.body.style.overflow = "hidden";
+        // documant.body.style.setProperty("position", "relative !important");
+
         if (!bodyEventListenersSet) {
             bodyEventListenersSet = true;
 
@@ -428,10 +437,21 @@ export function destroyHighlight(documant: Document, id: string) {
 }
 
 export function recreateAllHighlightsRaw(win: IReadiumElectronWebviewWindow) {
-    hideAllhighlights(win.document);
+    const documant = win.document;
+    hideAllhighlights(documant);
+
+    const bodyRect = getBoundingClientRectOfDocumentBody(win);
+
+    const docFrag = documant.createDocumentFragment();
     for (const highlight of _highlights) {
-        createHighlightDom(win, highlight);
+        const div = createHighlightDom(win, highlight, bodyRect);
+        if (div) {
+            docFrag.append(div);
+        }
     }
+
+    const highlightsContainer = ensureHighlightsContainer(win);
+    highlightsContainer.append(docFrag);
 }
 
 export const recreateAllHighlightsDebounced = debounce((win: IReadiumElectronWebviewWindow) => {
@@ -443,11 +463,46 @@ export function recreateAllHighlights(win: IReadiumElectronWebviewWindow) {
     recreateAllHighlightsDebounced(win);
 }
 
+export function createHighlights(
+    win: IReadiumElectronWebviewWindow,
+    highDefs: IHighlightDefinition[],
+    pointerInteraction: boolean): Array<IHighlight | null> {
+
+    const documant = win.document;
+    const highlights: Array<IHighlight | null> = [];
+
+    const bodyRect = getBoundingClientRectOfDocumentBody(win);
+
+    const docFrag = documant.createDocumentFragment();
+    for (const highDef of highDefs) {
+        if (!highDef.selectionInfo) {
+            highlights.push(null);
+            continue;
+        }
+        const [high, div] = createHighlight(
+            win,
+            highDef.selectionInfo,
+            highDef.color,
+            pointerInteraction,
+            bodyRect);
+        highlights.push(high);
+
+        if (div) {
+            docFrag.append(div);
+        }
+    }
+
+    const highlightsContainer = ensureHighlightsContainer(win);
+    highlightsContainer.append(docFrag);
+
+    return highlights;
+}
 export function createHighlight(
     win: IReadiumElectronWebviewWindow,
     selectionInfo: ISelectionInfo,
     color: IColor | undefined,
-    pointerInteraction: boolean): IHighlight {
+    pointerInteraction: boolean,
+    bodyRect: DOMRect): [IHighlight, HTMLDivElement | null] {
 
     // tslint:disable-next-line:no-string-literal
     // console.log("Chromium: " + process.versions["chrome"]);
@@ -472,19 +527,21 @@ export function createHighlight(
     };
     _highlights.push(highlight);
 
-    createHighlightDom(win, highlight);
-
-    return highlight;
+    const div = createHighlightDom(win, highlight, bodyRect);
+    return [highlight, div];
 }
 
-function createHighlightDom(win: IReadiumElectronWebviewWindow, highlight: IHighlight): HTMLDivElement | undefined {
+function createHighlightDom(
+    win: IReadiumElectronWebviewWindow,
+    highlight: IHighlight,
+    bodyRect: DOMRect): HTMLDivElement | null {
 
     const documant = win.document;
     const scrollElement = getScrollingElement(documant);
 
     const range = convertRangeInfo(documant, highlight.selectionInfo.rangeInfo);
     if (!range) {
-        return undefined;
+        return null;
     }
 
     const paginated = isPaginated(documant);
@@ -492,7 +549,7 @@ function createHighlightDom(win: IReadiumElectronWebviewWindow, highlight: IHigh
 
     // checkRangeFix(documant);
 
-    const highlightsContainer = ensureHighlightsContainer(win);
+    // const highlightsContainer = ensureHighlightsContainer(win);
 
     const highlightParent = documant.createElement("div") as IHTMLDivElementWithRect;
     highlightParent.setAttribute("id", highlight.id);
@@ -503,21 +560,12 @@ function createHighlightDom(win: IReadiumElectronWebviewWindow, highlight: IHigh
         highlightParent.setAttribute("data-click", "1");
     }
 
-    // Note that legacy ResizeSensor sets body position to "relative" (default static).
-    // Also note that ReadiumCSS default to (via stylesheet :root):
-    // documant.documentElement.style.position = "relative";
-    documant.body.style.position = "relative";
-    // documant.body.style.overflow = "hidden";
-    // documant.body.style.setProperty("position", "relative !important");
-
     // const docStyle = (documant.defaultView as Window).getComputedStyle(documant.documentElement);
     // const bodyStyle = (documant.defaultView as Window).getComputedStyle(documant.body);
     // const marginLeft = bodyStyle.getPropertyValue("margin-left");
     // console.log("marginLeft: " + marginLeft);
     // const marginTop = bodyStyle.getPropertyValue("margin-top");
     // console.log("marginTop: " + marginTop);
-
-    const bodyRect = getBoundingClientRectOfDocumentBody(win);
 
     // console.log("==== bodyRect:");
     // console.log("width: " + bodyRect.width);
@@ -772,6 +820,6 @@ function createHighlightDom(win: IReadiumElectronWebviewWindow, highlight: IHigh
     highlightBounding.style.top = `${highlightBounding.rect.top * scale}px`;
     highlightParent.append(highlightBounding);
 
-    highlightsContainer.append(highlightParent);
+    // highlightsContainer.append(highlightParent);
     return highlightParent;
 }

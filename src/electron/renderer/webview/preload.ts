@@ -32,7 +32,7 @@ import {
     R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
     R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
 } from "../../common/events";
-import { IHighlight, IHighlightDefinition } from "../../common/highlight";
+import { IHighlightDefinition } from "../../common/highlight";
 import { IPaginationInfo } from "../../common/pagination";
 import {
     appendCSSInline, configureFixedLayout, injectDefaultCSS, injectReadPosCSS, isPaginated,
@@ -62,7 +62,7 @@ import { setupAudioBook } from "./audiobook";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
     CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, CLASS_HIGHLIGHT_CONTAINER,
-    ID_HIGHLIGHTS_CONTAINER, createHighlight, destroyAllhighlights, destroyHighlight,
+    ID_HIGHLIGHTS_CONTAINER, createHighlights, destroyAllhighlights, destroyHighlight,
     recreateAllHighlights,
 } from "./highlight";
 import { popupFootNote } from "./popupFootNotes";
@@ -3067,29 +3067,20 @@ if (!win.READIUM2.isAudio) {
                 // selection.collapseToStart();
             }
         }
-
         const highlightDefinitions = !payloadPing.highlightDefinitions ?
             [ { color: undefined, selectionInfo: undefined } as IHighlightDefinition ] :
             payloadPing.highlightDefinitions;
 
-        const highlights: Array<IHighlight | null> = [];
-
-        highlightDefinitions.forEach((highlightDefinition) => {
-            const selInfo = highlightDefinition.selectionInfo ? highlightDefinition.selectionInfo :
-                getCurrentSelectionInfo(win, getCssSelector, computeCFI);
-            if (selInfo) {
-                const highlight = createHighlight(
-                    win,
-                    selInfo,
-                    highlightDefinition.color,
-                    true, // mouse / pointer interaction
-                );
-                highlights.push(highlight);
-            } else {
-                highlights.push(null);
+        for (const highlightDefinition of highlightDefinitions) {
+            if (!highlightDefinition.selectionInfo) {
+                highlightDefinition.selectionInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI);
             }
-        });
-
+        }
+        const highlights = createHighlights(
+            win,
+            highlightDefinitions,
+            true, // mouse / pointer interaction
+        );
         const payloadPong: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE = {
             highlightDefinitions: payloadPing.highlightDefinitions,
             highlights: highlights.length ? highlights : undefined,
