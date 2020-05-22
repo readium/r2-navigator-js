@@ -437,7 +437,7 @@ function ensureHighlightsContainer(win: IReadiumElectronWebviewWindow): HTMLElem
 
         _highlightsContainer = documant.createElement("div");
         _highlightsContainer.setAttribute("id", ID_HIGHLIGHTS_CONTAINER);
-        _highlightsContainer.setAttribute("style", "background-color: transparent !important; position: absolute; width: 1px; height: 1px; top: 0; left: 0; overflow: visible;");
+        _highlightsContainer.setAttribute("style", "background-color: transparent !important; position: absolute; width: auto; height: auto; top: 0; left: 0; overflow: visible;");
         _highlightsContainer.style.setProperty("pointer-events", "none");
         // if (useBlendMode) {
         //     const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
