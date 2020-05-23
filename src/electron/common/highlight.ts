@@ -18,11 +18,17 @@ export interface IHighlight {
     selectionInfo: ISelectionInfo;
     color: IColor;
     pointerInteraction: boolean;
+
+    // 0 is full background (default), 1 is underline, 2 is strikethrough
+    drawType?: number;
 }
 
 export interface IHighlightDefinition {
     selectionInfo: ISelectionInfo | undefined;
     color: IColor | undefined;
+
+    // 0 is full background (default), 1 is underline, 2 is strikethrough
+    drawType?: number;
 }
 
 export function convertColorHexadecimalToRGBA(cssHex: string, alpha?: number): string | undefined {

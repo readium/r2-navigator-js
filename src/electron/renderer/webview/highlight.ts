@@ -28,10 +28,10 @@ export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
 export const CLASS_HIGHLIGHT_BOUNDING_AREA = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA";
 
 const USE_SVG = false;
-const useBlendMode = true;
+const USE_BLEND_MODE = true;
 
-const DEFAULT_BACKGROUND_COLOR_OPACITY = useBlendMode ? 0.6 : 0.3;
-const ALT_BACKGROUND_COLOR_OPACITY = useBlendMode ? 0.9 : 0.45;
+const DEFAULT_BACKGROUND_COLOR_OPACITY = USE_BLEND_MODE ? 0.6 : 0.3;
+const ALT_BACKGROUND_COLOR_OPACITY = USE_BLEND_MODE ? 0.9 : 0.45;
 const ALT_OTHER_BACKGROUND_COLOR_OPACITY = 0.35;
 const DEFAULT_BACKGROUND_COLOR: IColor = {
     blue: 100,
@@ -119,11 +119,11 @@ function setHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highligh
     // tslint:disable-next-line:max-line-length
     highlightBounding.style.setProperty(
         "background-color",
-        useBlendMode ?
+        USE_BLEND_MODE ?
             `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` :
             `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`,
         "important");
-    // if (useBlendMode) {
+    // if (USE_BLEND_MODE) {
     //     highlightBounding.style.setProperty("mix-blend-mode", "multiply");
     //     highlightBounding.style.opacity = `${opacity}`;
     // }
@@ -136,6 +136,10 @@ function setHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highligh
 }
 
 function resetHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightArea: HTMLElement | SVGElement) {
+
+    if (USE_BLEND_MODE) {
+        return;
+    }
 
     if (!(highlightArea as unknown as IAreaWithActiveFlag).active) {
         return;
@@ -159,26 +163,31 @@ function resetHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightAr
         if (highlight) {
             // highlightArea as ElementCSSInlineStyle (implied by HTMLElement | SVGElement)
             if (isSVG) {
-                // tslint:disable-next-line:max-line-length
-                highlightArea.style.setProperty("fill", `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`, "important");
+                if (!highlight.drawType) {
+                    // tslint:disable-next-line:max-line-length
+                    highlightArea.style.setProperty("fill", `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`, "important");
+                }
                 // tslint:disable-next-line:max-line-length
                 highlightArea.style.setProperty("stroke", `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`, "important");
-                if (!useBlendMode) {
-                    // tslint:disable-next-line:max-line-length
-                    highlightArea.style.setProperty("fill-opacity", `${opacity}`, "important");
+                if (!USE_BLEND_MODE) {
+                    if (!highlight.drawType) {
+                        // tslint:disable-next-line:max-line-length
+                        highlightArea.style.setProperty("fill-opacity", `${opacity}`, "important");
+                    }
                     // tslint:disable-next-line:max-line-length
                     highlightArea.style.setProperty("stroke-opacity", `${opacity}`, "important");
                 }
             } else {
                 // tslint:disable-next-line:max-line-length
                 highlightArea.style.setProperty("background-color",
-                    useBlendMode ?
+                    highlight.drawType === 1 ? "transparent" : // underline is border bottom
+                    (USE_BLEND_MODE ?
                         `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` :
-                        `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`,
+                        `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`),
                     "important");
             }
 
-            // if (useBlendMode) {
+            // if (USE_BLEND_MODE) {
             //     highlightArea.style.setProperty("mix-blend-mode", "multiply");
             //     highlightArea.style.opacity = `${opacity}`;
             // }
@@ -187,15 +196,20 @@ function resetHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightAr
 }
 
 // tslint:disable-next-line:max-line-length
-function setHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightAreas: Array<HTMLElement | SVGElement>, highlight: IHighlight) {
+function setHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightAreas: NodeList, highlight: IHighlight) {
+
+    if (USE_BLEND_MODE) {
+        return;
+    }
 
     const opacity = ALT_BACKGROUND_COLOR_OPACITY;
 
     const useSVG = !win.READIUM2.DEBUG_VISUALS && USE_SVG;
-    for (const highlightArea of highlightAreas) {
+    for (const highlightArea_ of highlightAreas) {
+        const highlightArea = highlightArea_ as HTMLElement;
 
         if ((highlightArea as unknown as IAreaWithActiveFlag).active) {
-            return;
+            continue;
         }
         (highlightArea as unknown as IAreaWithActiveFlag).active = true;
 
@@ -203,27 +217,32 @@ function setHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightArea
 
         // highlightArea as ElementCSSInlineStyle (implied by HTMLElement | SVGElement)
         if (isSVG) {
-            // tslint:disable-next-line:max-line-length
-            highlightArea.style.setProperty("fill", `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`, "important");
+            if (!highlight.drawType) {
+                // tslint:disable-next-line:max-line-length
+                highlightArea.style.setProperty("fill", `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`, "important");
+            }
             // tslint:disable-next-line:max-line-length
             highlightArea.style.setProperty("stroke", `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`, "important");
 
-            if (!useBlendMode) {
-                // tslint:disable-next-line:max-line-length
-                highlightArea.style.setProperty("fill-opacity", `${opacity}`, "important");
+            if (!USE_BLEND_MODE) {
+                if (!highlight.drawType) {
+                    // tslint:disable-next-line:max-line-length
+                    highlightArea.style.setProperty("fill-opacity", `${opacity}`, "important");
+                }
                 // tslint:disable-next-line:max-line-length
                 highlightArea.style.setProperty("stroke-opacity", `${opacity}`, "important");
             }
         } else {
             // tslint:disable-next-line:max-line-length
             highlightArea.style.setProperty("background-color",
-                useBlendMode ?
+                highlight.drawType === 1 ? "transparent" : // underline is border bottom
+                (USE_BLEND_MODE ?
                     `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` :
-                    `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`,
+                    `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`),
                 "important");
         }
 
-        // if (useBlendMode) {
+        // if (USE_BLEND_MODE) {
         //     highlightArea.style.setProperty("mix-blend-mode", "multiply");
         //     highlightArea.style.opacity = `${opacity}`;
         // }
@@ -272,6 +291,26 @@ function processMouseEvent(win: IReadiumElectronWebviewWindow, ev: MouseEvent) {
     const xOffset = paginated ? (-scrollElement.scrollLeft) : bodyRect.left;
     const yOffset = paginated ? (-scrollElement.scrollTop) : bodyRect.top;
 
+    const testHit = (highlightFragment: Element) => {
+        const withRect = (highlightFragment as unknown) as IWithRect;
+        // tslint:disable-next-line:max-line-length
+        // console.log(`RECT: ${withRect.rect.left} | ${withRect.rect.top} // ${withRect.rect.width} | ${withRect.rect.height}`);
+
+        const left = withRect.rect.left + xOffset; // (paginated ? withRect.xOffset : xOffset);
+        const top = withRect.rect.top + yOffset; // (paginated ? withRect.yOffset : yOffset);
+        if (x >= left &&
+            x < (left + withRect.rect.width) &&
+            y >= top &&
+            y < (top + withRect.rect.height)
+            ) {
+
+            return true;
+        }
+        return false;
+    };
+
+    const useSVG = !win.READIUM2.DEBUG_VISUALS && USE_SVG;
+
     let foundHighlight: IHighlight | undefined;
     let foundElement: IHTMLDivElementWithRect | undefined;
     // for (const highlight of _highlights) {
@@ -287,24 +326,32 @@ function processMouseEvent(win: IReadiumElectronWebviewWindow, ev: MouseEvent) {
         }
 
         let hit = false;
-        const highlightFragments = highlightParent.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
-        for (const highlightFragment of highlightFragments) {
-            const withRect = (highlightFragment as unknown) as IWithRect;
-            // tslint:disable-next-line:max-line-length
-            // console.log(`RECT: ${withRect.rect.left} | ${withRect.rect.top} // ${withRect.rect.width} | ${withRect.rect.height}`);
+        let highlightFragment = highlightParent.firstElementChild;
+        while (highlightFragment) {
+            if (useSVG && highlightFragment.namespaceURI === SVG_XML_NAMESPACE) {
+                let svgRect = highlightFragment.firstElementChild;
+                while (svgRect) {
+                    if (testHit(svgRect)) {
+                        hit = true;
+                        break;
+                    }
+                    svgRect = svgRect.nextElementSibling;
+                }
+                if (hit) {
+                    break;
+                }
+            } else if (highlightFragment.classList.contains(CLASS_HIGHLIGHT_AREA)) {
 
-            const left = withRect.rect.left + xOffset; // (paginated ? withRect.xOffset : xOffset);
-            const top = withRect.rect.top + yOffset; // (paginated ? withRect.yOffset : yOffset);
-            if (x >= left &&
-                x < (left + withRect.rect.width) &&
-                y >= top &&
-                y < (top + withRect.rect.height)
-                ) {
-
-                hit = true;
-                break;
+                if (testHit(highlightFragment)) {
+                    hit = true;
+                    break;
+                }
             }
+            highlightFragment = highlightFragment.nextElementSibling;
         }
+        // const highlightFragments = highlightParent.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
+        // for (const highlightFragment of highlightFragments) {
+        // }
         if (hit) {
             foundHighlight = highlight;
             foundElement = highlightParent as IHTMLDivElementWithRect;
@@ -335,59 +382,114 @@ function processMouseEvent(win: IReadiumElectronWebviewWindow, ev: MouseEvent) {
     }
     const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
     if (!foundHighlight || !foundElement) {
-        const highlightBoundings = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
-        for (const highlightBounding of highlightBoundings) {
-            resetHighlightBoundingStyle(win, highlightBounding as HTMLElement);
-        }
-        const allHighlightAreas = Array.from(_highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`));
-        for (const highlightArea of allHighlightAreas) {
-            resetHighlightAreaStyle(win, highlightArea as HTMLElement); // can also be SVGElement
-        }
-        if (useBlendMode) {
-            const allHighlightContainers =
-                Array.from(_highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_CONTAINER}`));
-            for (const highlightContainer of allHighlightContainers) {
+
+        let highlightContainer = _highlightsContainer.firstElementChild;
+        while (highlightContainer) {
+            // if (highlightContainer.classList.contains(CLASS_HIGHLIGHT_CONTAINER)) {
+            // }
+            if (USE_BLEND_MODE) {
                 (highlightContainer as HTMLElement).style.opacity = `${opacity}`;
             }
+
+            if (win.READIUM2.DEBUG_VISUALS) {
+                let highlightContainerChild = highlightContainer.firstElementChild;
+                while (highlightContainerChild) {
+                    if (highlightContainerChild.classList.contains(CLASS_HIGHLIGHT_BOUNDING_AREA)) {
+                        resetHighlightBoundingStyle(win, highlightContainerChild as HTMLElement);
+                    } else if (!USE_BLEND_MODE && highlightContainerChild.classList.contains(CLASS_HIGHLIGHT_AREA)) {
+                        resetHighlightAreaStyle(win, highlightContainerChild as HTMLElement);
+                    } else if (!USE_BLEND_MODE &&
+                        useSVG && highlightContainerChild.namespaceURI === SVG_XML_NAMESPACE) {
+                        let svgRect = highlightContainerChild.firstElementChild;
+                        while (svgRect) {
+                            resetHighlightAreaStyle(win, highlightContainerChild as HTMLElement);
+                            svgRect = svgRect.nextElementSibling;
+                        }
+                    }
+                    highlightContainerChild = highlightContainerChild.nextElementSibling;
+                }
+            }
+
+            highlightContainer = highlightContainer.nextElementSibling;
         }
+        // const highlightBoundings = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
+        // for (const highlightBounding of highlightBoundings) {
+        // }
+        // const allHighlightAreas = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
+        // for (const highlightArea of allHighlightAreas) {
+        // }
+        // if (USE_BLEND_MODE) {
+        //     const allHighlightContainers =
+        //         _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_CONTAINER}`);
+        //     for (const highlightContainer of allHighlightContainers) {
+        //     }
+        // }
         return;
     }
     if (foundElement.getAttribute("data-click")) {
         if (isMouseMove) {
+
             // tslint:disable-next-line:max-line-length
-            const foundElementHighlightAreas = Array.from(foundElement.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`));
-            const allHighlightAreas = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
-            for (const highlightArea of allHighlightAreas) {
-                if (foundElementHighlightAreas.indexOf(highlightArea) < 0) {
-                    resetHighlightAreaStyle(win, highlightArea as HTMLElement); // can also be SVGElement
-                }
-            }
-            if (useBlendMode) {
-                const allHighlightContainers =
-                    Array.from(_highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_CONTAINER}`));
-                for (const highlightContainer of allHighlightContainers) {
+            const foundElementHighlightAreas = foundElement.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
+            const foundElementHighlightBounding = foundElement.querySelector(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
+
+            let highlightContainer = _highlightsContainer.firstElementChild;
+            while (highlightContainer) {
+                // if (highlightContainer.classList.contains(CLASS_HIGHLIGHT_CONTAINER)) {
+                // }
+
+                if (USE_BLEND_MODE) {
                     if (highlightContainer !== foundElement) {
                         (highlightContainer as HTMLElement).style.opacity = `${ALT_OTHER_BACKGROUND_COLOR_OPACITY}`;
                     }
                 }
 
-                foundElement.style.opacity = `${ALT_BACKGROUND_COLOR_OPACITY}`;
-            }
-            // tslint:disable-next-line:max-line-length
-            setHighlightAreaStyle(win, foundElementHighlightAreas as HTMLElement[], foundHighlight); // can also be SVGElement[]
-
-            const foundElementHighlightBounding = foundElement.querySelector(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
-            const allHighlightBoundings = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
-            for (const highlightBounding of allHighlightBoundings) {
-                if (!foundElementHighlightBounding || highlightBounding !== foundElementHighlightBounding) {
-                    resetHighlightBoundingStyle(win, highlightBounding as HTMLElement);
-                }
-            }
-            if (foundElementHighlightBounding) {
                 if (win.READIUM2.DEBUG_VISUALS) {
-                    setHighlightBoundingStyle(win, foundElementHighlightBounding as HTMLElement, foundHighlight);
+                    let highlightContainerChild: Element | null = highlightContainer.firstElementChild;
+                    while (highlightContainerChild) {
+                        if (highlightContainerChild.classList.contains(CLASS_HIGHLIGHT_BOUNDING_AREA)) {
+                            if (!foundElementHighlightBounding ||
+                                highlightContainerChild !== foundElementHighlightBounding) {
+                                resetHighlightBoundingStyle(win, highlightContainerChild as HTMLElement);
+                            }
+                        } else if (!USE_BLEND_MODE &&
+                            highlightContainerChild.classList.contains(CLASS_HIGHLIGHT_AREA)) {
+                            // if (foundElementHighlightAreas.indexOf(highlightContainerChild) < 0) {
+                            if (highlightContainerChild.parentNode !== foundElement) {
+                                // can also be SVGElement
+                                resetHighlightAreaStyle(win, highlightContainerChild as HTMLElement);
+                            }
+                        }
+                        highlightContainerChild = highlightContainerChild.nextElementSibling;
+                    }
                 }
+
+                highlightContainer = highlightContainer.nextElementSibling;
             }
+            if (USE_BLEND_MODE) {
+                foundElement.style.opacity = `${ALT_BACKGROUND_COLOR_OPACITY}`;
+            } else {
+                // tslint:disable-next-line:max-line-length
+                setHighlightAreaStyle(win, foundElementHighlightAreas, foundHighlight); // can also be SVGElement[]
+            }
+
+            if (foundElementHighlightBounding && win.READIUM2.DEBUG_VISUALS) {
+                setHighlightBoundingStyle(win, foundElementHighlightBounding as HTMLElement, foundHighlight);
+            }
+
+            // const allHighlightAreas = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_AREA}`);
+            // for (const highlightArea of allHighlightAreas) {
+            // }
+            // if (USE_BLEND_MODE) {
+            //     const allHighlightContainers =
+            //         _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_CONTAINER}`);
+            //     for (const highlightContainer of allHighlightContainers) {
+            //     }
+            // }
+
+            // const allHighlightBoundings = _highlightsContainer.querySelectorAll(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
+            // for (const highlightBounding of allHighlightBoundings) {
+            // }
         } else if (ev.type === "mouseup" || ev.type === "click") {
             const payload: IEventPayload_R2_EVENT_HIGHLIGHT_CLICK = {
                 highlight: foundHighlight,
@@ -439,7 +541,7 @@ function ensureHighlightsContainer(win: IReadiumElectronWebviewWindow): HTMLElem
         _highlightsContainer.setAttribute("id", ID_HIGHLIGHTS_CONTAINER);
         _highlightsContainer.setAttribute("style", "background-color: transparent !important; position: absolute; width: auto; height: auto; top: 0; left: 0; overflow: visible;");
         _highlightsContainer.style.setProperty("pointer-events", "none");
-        // if (useBlendMode) {
+        // if (USE_BLEND_MODE) {
         //     const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
         //     _highlightsContainer.style.setProperty("mix-blend-mode", "multiply");
         //     _highlightsContainer.style.opacity = `${opacity}`;
@@ -543,6 +645,7 @@ export function createHighlights(
             highDef.selectionInfo,
             highDef.color,
             pointerInteraction,
+            highDef.drawType,
             bodyRect);
         highlights.push(high);
 
@@ -561,6 +664,7 @@ export function createHighlight(
     selectionInfo: ISelectionInfo,
     color: IColor | undefined,
     pointerInteraction: boolean,
+    drawType: number | undefined,
     bodyRect: DOMRect): [IHighlight, HTMLDivElement | null] {
 
     // tslint:disable-next-line:no-string-literal
@@ -580,6 +684,7 @@ export function createHighlight(
 
     const highlight: IHighlight = {
         color: color ? color : DEFAULT_BACKGROUND_COLOR,
+        drawType,
         id,
         pointerInteraction,
         selectionInfo,
@@ -620,7 +725,7 @@ function createHighlightDom(
     if (highlight.pointerInteraction) {
         highlightParent.setAttribute("data-click", "1");
     }
-    if (useBlendMode) {
+    if (USE_BLEND_MODE) {
         highlightParent.style.setProperty("mix-blend-mode", "multiply");
         highlightParent.style.opacity = `${opacity}`;
     }
@@ -652,8 +757,8 @@ function createHighlightDom(
     // console.log("scrollElement.scrollTop: " + scrollElement.scrollTop);
 
     const useSVG = !win.READIUM2.DEBUG_VISUALS && USE_SVG;
-    const drawUnderline = !useBlendMode;
-    const drawStrikeThrough = false;
+    const drawUnderline = highlight.drawType === 1 && !win.READIUM2.DEBUG_VISUALS;
+    const drawStrikeThrough = highlight.drawType === 2 && !win.READIUM2.DEBUG_VISUALS;
 
     const doNotMergeHorizontallyAlignedRects = drawUnderline || drawStrikeThrough;
     // const clientRects = range.getClientRects(); // ClientRectList | DOMRectList
@@ -663,248 +768,8 @@ function createHighlightDom(
     let highlightAreaSVGDocFrag: DocumentFragment | undefined;
 
     const roundedCorner = 3;
-    const underlineThickness = 2;
+    const underlineThickness = 3;
     const strikeThroughLineThickness = 3;
-
-    for (const clientRect of clientRects) {
-
-        if (useSVG) {
-            const borderThickness = 0;
-
-            if (!highlightAreaSVGDocFrag) {
-                highlightAreaSVGDocFrag = documant.createDocumentFragment();
-            }
-
-            const highlightAreaSVGRect = documant.createElementNS(SVG_XML_NAMESPACE, "rect") as ISVGRectElementWithRect;
-            highlightAreaSVGRect.setAttribute("class", CLASS_HIGHLIGHT_AREA);
-
-            // tslint:disable-next-line:max-line-length
-            highlightAreaSVGRect.setAttribute("style",
-                `fill: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important; stroke-width: 0;` +
-                (useBlendMode ? "" : ` fill-opacity: ${opacity} !important;`));
-
-            // tslint:disable-next-line:max-line-length
-            // stroke-width: ${borderThickness}; stroke: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important; stroke-opacity: ${opacity} !important
-
-            highlightAreaSVGRect.scale = scale;
-            // highlightAreaSVGRect.xOffset = xOffset;
-            // highlightAreaSVGRect.yOffset = yOffset;
-            highlightAreaSVGRect.rect = {
-                height: clientRect.height,
-                left: clientRect.left - xOffset,
-                top: clientRect.top - yOffset,
-                width: clientRect.width,
-            };
-            highlightAreaSVGRect.setAttribute("rx", `${roundedCorner * scale}`);
-            highlightAreaSVGRect.setAttribute("ry", `${roundedCorner * scale}`);
-            highlightAreaSVGRect.setAttribute("x", `${(highlightAreaSVGRect.rect.left - borderThickness) * scale}`);
-            highlightAreaSVGRect.setAttribute("y", `${(highlightAreaSVGRect.rect.top - borderThickness) * scale}`);
-            // tslint:disable-next-line:max-line-length
-            highlightAreaSVGRect.setAttribute("height", `${(highlightAreaSVGRect.rect.height + (borderThickness * 2)) * scale}`);
-            // tslint:disable-next-line:max-line-length
-            highlightAreaSVGRect.setAttribute("width", `${(highlightAreaSVGRect.rect.width + (borderThickness * 2)) * scale}`);
-
-            // if (useBlendMode) {
-            //     highlightAreaSVGRect.style.setProperty("mix-blend-mode", "multiply");
-            //     highlightAreaSVGRect.style.opacity = `${opacity}`;
-            // }
-
-            highlightAreaSVGDocFrag.appendChild(highlightAreaSVGRect);
-
-            if (drawUnderline) {
-                // tslint:disable-next-line:max-line-length
-                const highlightAreaSVGLine = documant.createElementNS(SVG_XML_NAMESPACE, "line") as ISVGLineElementWithRect;
-                highlightAreaSVGLine.setAttribute("class", CLASS_HIGHLIGHT_AREA);
-
-                // tslint:disable-next-line:max-line-length
-                highlightAreaSVGLine.setAttribute("style",
-                    `stroke-linecap: round; stroke-width: ${underlineThickness * scale}; stroke: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;` +
-                    (useBlendMode ? "" : ` stroke-opacity: ${opacity} !important`));
-                highlightAreaSVGLine.scale = scale;
-                // highlightAreaSVGLine.xOffset = xOffset;
-                // highlightAreaSVGLine.yOffset = yOffset;
-                highlightAreaSVGLine.rect = {
-                    height: clientRect.height,
-                    left: clientRect.left - xOffset,
-                    top: clientRect.top - yOffset,
-                    width: clientRect.width,
-                };
-                const lineOffset = (highlightAreaSVGLine.rect.width > roundedCorner) ? roundedCorner : 0;
-                highlightAreaSVGLine.setAttribute("x1", `${(highlightAreaSVGLine.rect.left + lineOffset) * scale}`);
-                // tslint:disable-next-line:max-line-length
-                highlightAreaSVGLine.setAttribute("x2", `${(highlightAreaSVGLine.rect.left + highlightAreaSVGLine.rect.width - lineOffset) * scale}`);
-                // tslint:disable-next-line:max-line-length
-                const y = (highlightAreaSVGLine.rect.top + highlightAreaSVGLine.rect.height - (underlineThickness / 2)) * scale;
-                highlightAreaSVGLine.setAttribute("y1", `${y}`);
-                highlightAreaSVGLine.setAttribute("y2", `${y}`);
-
-                highlightAreaSVGLine.setAttribute("height", `${highlightAreaSVGLine.rect.height * scale}`);
-                highlightAreaSVGLine.setAttribute("width", `${highlightAreaSVGLine.rect.width * scale}`);
-
-                // if (useBlendMode) {
-                //     highlightAreaSVGLine.style.setProperty("mix-blend-mode", "multiply");
-                //     highlightAreaSVGLine.style.opacity = `${opacity}`;
-                // }
-
-                highlightAreaSVGDocFrag.appendChild(highlightAreaSVGLine);
-            }
-            if (drawStrikeThrough) {
-                // tslint:disable-next-line:max-line-length
-                const highlightAreaSVGLine = documant.createElementNS(SVG_XML_NAMESPACE, "line") as ISVGLineElementWithRect;
-                highlightAreaSVGLine.setAttribute("class", CLASS_HIGHLIGHT_AREA);
-
-                // tslint:disable-next-line:max-line-length
-                highlightAreaSVGLine.setAttribute("style",
-                    `stroke-linecap: butt; stroke-width: ${strikeThroughLineThickness * scale}; stroke: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;` +
-                    (useBlendMode ? "" : ` stroke-opacity: ${opacity} !important`));
-                    // stroke-dasharray: ${lineThickness * 2},${lineThickness * 2};
-
-                highlightAreaSVGLine.scale = scale;
-                // highlightAreaSVGLine.xOffset = xOffset;
-                // highlightAreaSVGLine.yOffset = yOffset;
-                highlightAreaSVGLine.rect = {
-                    height: clientRect.height,
-                    left: clientRect.left - xOffset,
-                    top: clientRect.top - yOffset,
-                    width: clientRect.width,
-                };
-                highlightAreaSVGLine.setAttribute("x1", `${highlightAreaSVGLine.rect.left * scale}`);
-                // tslint:disable-next-line:max-line-length
-                highlightAreaSVGLine.setAttribute("x2", `${(highlightAreaSVGLine.rect.left + highlightAreaSVGLine.rect.width) * scale}`);
-
-                const lineOffset = highlightAreaSVGLine.rect.height / 2;
-                const y = (highlightAreaSVGLine.rect.top + lineOffset) * scale;
-                highlightAreaSVGLine.setAttribute("y1", `${y}`);
-                highlightAreaSVGLine.setAttribute("y2", `${y}`);
-
-                highlightAreaSVGLine.setAttribute("height", `${highlightAreaSVGLine.rect.height * scale}`);
-                highlightAreaSVGLine.setAttribute("width", `${highlightAreaSVGLine.rect.width * scale}`);
-
-                // if (useBlendMode) {
-                //     highlightAreaSVGLine.style.setProperty("mix-blend-mode", "multiply");
-                //     highlightAreaSVGLine.style.opacity = `${opacity}`;
-                // }
-
-                highlightAreaSVGDocFrag.appendChild(highlightAreaSVGLine);
-            }
-        } else {
-            const highlightArea = documant.createElement("div") as IHTMLDivElementWithRect;
-            highlightArea.setAttribute("class", CLASS_HIGHLIGHT_AREA);
-
-            let extra = "";
-            if (win.READIUM2.DEBUG_VISUALS) {
-                const rgb = Math.round(0xffffff * Math.random());
-                // tslint:disable-next-line:no-bitwise
-                const r = rgb >> 16;
-                // tslint:disable-next-line:no-bitwise
-                const g = rgb >> 8 & 255;
-                // tslint:disable-next-line:no-bitwise
-                const b = rgb & 255;
-                // tslint:disable-next-line:max-line-length
-                extra = `outline-color: rgb(${r}, ${g}, ${b}); outline-style: solid; outline-width: 1px; outline-offset: -1px;`;
-                // box-shadow: inset 0 0 0 1px #600;
-            } else {
-                if (drawUnderline) {
-                    // tslint:disable-next-line:max-line-length
-                    extra += `border-bottom: ${underlineThickness * scale}px solid ` +
-                        (useBlendMode ?
-                        `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important` :
-                        `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important`);
-                }
-            }
-            // tslint:disable-next-line:max-line-length
-            highlightArea.setAttribute("style", `border-radius: ${roundedCorner}px !important; background-color: ` +
-                (useBlendMode ?
-                    `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;` :
-                    `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important;`)
-                + ` ${extra}`);
-            // tslint:disable-next-line:max-line-length
-            // highlightArea.setAttribute("style", `outline-color: magenta; outline-style: solid; outline-width: 1px; outline-offset: -1px;`);
-            highlightArea.style.setProperty("pointer-events", "none");
-            highlightArea.style.transform = "translate3d(0px, 0px, 0px)";
-            highlightArea.style.position = paginated ? "fixed" : "absolute";
-            highlightArea.scale = scale;
-            // highlightArea.xOffset = xOffset;
-            // highlightArea.yOffset = yOffset;
-            highlightArea.rect = {
-                height: clientRect.height,
-                left: clientRect.left - xOffset,
-                top: clientRect.top - yOffset,
-                width: clientRect.width,
-            };
-            highlightArea.style.width = `${highlightArea.rect.width * scale}px`;
-            highlightArea.style.height = `${highlightArea.rect.height * scale}px`;
-            highlightArea.style.minWidth = highlightArea.style.width;
-            highlightArea.style.minHeight = highlightArea.style.height;
-            highlightArea.style.left = `${highlightArea.rect.left * scale}px`;
-            highlightArea.style.top = `${highlightArea.rect.top * scale}px`;
-
-            // if (highlight.pointerInteraction) {
-            //     highlightArea.style.setProperty("pointer-events", "auto");
-            // }
-
-            // if (useBlendMode) {
-            //     highlightArea.style.setProperty("mix-blend-mode", "multiply");
-            //     highlightArea.style.opacity = `${opacity}`;
-            // }
-
-            highlightParent.append(highlightArea);
-
-            if (!win.READIUM2.DEBUG_VISUALS && drawStrikeThrough) {
-
-                const highlightAreaLine = documant.createElement("div") as IHTMLDivElementWithRect;
-                highlightAreaLine.setAttribute("class", CLASS_HIGHLIGHT_AREA);
-
-                // tslint:disable-next-line:max-line-length
-                highlightAreaLine.setAttribute("style",
-                    useBlendMode ?
-                        `background-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;` :
-                        `background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important;`);
-                // tslint:disable-next-line:max-line-length
-                // highlightArea.setAttribute("style", `outline-color: magenta; outline-style: solid; outline-width: 1px; outline-offset: -1px;`);
-                highlightAreaLine.style.setProperty("pointer-events", "none");
-                highlightAreaLine.style.transform = "translate3d(0px, 0px, 0px)";
-                highlightAreaLine.style.position = paginated ? "fixed" : "absolute";
-                highlightAreaLine.scale = scale;
-                // highlightAreaLine.xOffset = xOffset;
-                // highlightAreaLine.yOffset = yOffset;
-                highlightAreaLine.rect = {
-                    height: clientRect.height,
-                    left: clientRect.left - xOffset,
-                    top: clientRect.top - yOffset,
-                    width: clientRect.width,
-                };
-                highlightAreaLine.style.width = `${highlightAreaLine.rect.width * scale}px`;
-                highlightAreaLine.style.height = `${strikeThroughLineThickness * scale}px`;
-                highlightAreaLine.style.minWidth = highlightAreaLine.style.width;
-                highlightAreaLine.style.minHeight = highlightAreaLine.style.height;
-                highlightAreaLine.style.left = `${highlightAreaLine.rect.left * scale}px`;
-                // tslint:disable-next-line:max-line-length
-                highlightAreaLine.style.top = `${(highlightAreaLine.rect.top + (highlightAreaLine.rect.height / 2) - (strikeThroughLineThickness / 2)) * scale}px`;
-
-                // if (useBlendMode) {
-                //     highlightAreaLine.style.setProperty("mix-blend-mode", "multiply");
-                //     highlightAreaLine.style.opacity = `${opacity}`;
-                // }
-
-                highlightParent.append(highlightAreaLine);
-            }
-        }
-    }
-
-    if (useSVG && highlightAreaSVGDocFrag) {
-        // const highlightAreaSVGG = documant.createElementNS(SVG_XML_NAMESPACE, "g");
-        // highlightAreaSVGG.appendChild(highlightAreaSVGDocFrag);
-        const highlightAreaSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg");
-        highlightAreaSVG.setAttribute("style", "background-color: transparent !important");
-        highlightAreaSVG.setAttribute("pointer-events", "none");
-        highlightAreaSVG.style.position = paginated ? "fixed" : "absolute";
-        highlightAreaSVG.style.overflow = "visible";
-        highlightAreaSVG.style.left = "0";
-        highlightAreaSVG.style.top = "0";
-        highlightAreaSVG.append(highlightAreaSVGDocFrag);
-        highlightParent.append(highlightAreaSVG);
-    }
 
     const rangeBoundingClientRect = range.getBoundingClientRect();
     const highlightBounding = documant.createElement("div") as IHTMLDivElementWithRect;
@@ -933,6 +798,254 @@ function createHighlightDom(
     highlightBounding.style.left = `${highlightBounding.rect.left * scale}px`;
     highlightBounding.style.top = `${highlightBounding.rect.top * scale}px`;
     highlightParent.append(highlightBounding);
+
+    for (const clientRect of clientRects) {
+
+        if (useSVG) {
+            const borderThickness = 0;
+
+            if (!highlightAreaSVGDocFrag) {
+                highlightAreaSVGDocFrag = documant.createDocumentFragment();
+            }
+
+            if (drawUnderline) {
+                // tslint:disable-next-line:max-line-length
+                const highlightAreaSVGLine = documant.createElementNS(SVG_XML_NAMESPACE, "line") as ISVGLineElementWithRect;
+                highlightAreaSVGLine.setAttribute("class", CLASS_HIGHLIGHT_AREA);
+
+                // tslint:disable-next-line:max-line-length
+                highlightAreaSVGLine.setAttribute("style",
+                    `stroke-linecap: round; stroke-width: ${underlineThickness * scale}; stroke: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;` +
+                    (USE_BLEND_MODE ? "" : ` stroke-opacity: ${opacity} !important`));
+                highlightAreaSVGLine.scale = scale;
+                // highlightAreaSVGLine.xOffset = xOffset;
+                // highlightAreaSVGLine.yOffset = yOffset;
+                highlightAreaSVGLine.rect = {
+                    height: clientRect.height,
+                    left: clientRect.left - xOffset,
+                    top: clientRect.top - yOffset,
+                    width: clientRect.width,
+                };
+                const lineOffset = (highlightAreaSVGLine.rect.width > roundedCorner) ? roundedCorner : 0;
+                highlightAreaSVGLine.setAttribute("x1", `${(highlightAreaSVGLine.rect.left + lineOffset) * scale}`);
+                // tslint:disable-next-line:max-line-length
+                highlightAreaSVGLine.setAttribute("x2", `${(highlightAreaSVGLine.rect.left + highlightAreaSVGLine.rect.width - lineOffset) * scale}`);
+                // tslint:disable-next-line:max-line-length
+                const y = (highlightAreaSVGLine.rect.top + highlightAreaSVGLine.rect.height - (underlineThickness / 2)) * scale;
+                highlightAreaSVGLine.setAttribute("y1", `${y}`);
+                highlightAreaSVGLine.setAttribute("y2", `${y}`);
+
+                highlightAreaSVGLine.setAttribute("height", `${highlightAreaSVGLine.rect.height * scale}`);
+                highlightAreaSVGLine.setAttribute("width", `${highlightAreaSVGLine.rect.width * scale}`);
+
+                // if (USE_BLEND_MODE) {
+                //     highlightAreaSVGLine.style.setProperty("mix-blend-mode", "multiply");
+                //     highlightAreaSVGLine.style.opacity = `${opacity}`;
+                // }
+
+                highlightAreaSVGDocFrag.appendChild(highlightAreaSVGLine);
+            } else if (drawStrikeThrough) {
+                // tslint:disable-next-line:max-line-length
+                const highlightAreaSVGLine = documant.createElementNS(SVG_XML_NAMESPACE, "line") as ISVGLineElementWithRect;
+                highlightAreaSVGLine.setAttribute("class", CLASS_HIGHLIGHT_AREA);
+
+                // tslint:disable-next-line:max-line-length
+                highlightAreaSVGLine.setAttribute("style",
+                    `stroke-linecap: butt; stroke-width: ${strikeThroughLineThickness * scale}; stroke: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;` +
+                    (USE_BLEND_MODE ? "" : ` stroke-opacity: ${opacity} !important`));
+                    // stroke-dasharray: ${lineThickness * 2},${lineThickness * 2};
+
+                highlightAreaSVGLine.scale = scale;
+                // highlightAreaSVGLine.xOffset = xOffset;
+                // highlightAreaSVGLine.yOffset = yOffset;
+                highlightAreaSVGLine.rect = {
+                    height: clientRect.height,
+                    left: clientRect.left - xOffset,
+                    top: clientRect.top - yOffset,
+                    width: clientRect.width,
+                };
+                highlightAreaSVGLine.setAttribute("x1", `${highlightAreaSVGLine.rect.left * scale}`);
+                // tslint:disable-next-line:max-line-length
+                highlightAreaSVGLine.setAttribute("x2", `${(highlightAreaSVGLine.rect.left + highlightAreaSVGLine.rect.width) * scale}`);
+
+                const lineOffset = highlightAreaSVGLine.rect.height / 2;
+                const y = (highlightAreaSVGLine.rect.top + lineOffset) * scale;
+                highlightAreaSVGLine.setAttribute("y1", `${y}`);
+                highlightAreaSVGLine.setAttribute("y2", `${y}`);
+
+                highlightAreaSVGLine.setAttribute("height", `${highlightAreaSVGLine.rect.height * scale}`);
+                highlightAreaSVGLine.setAttribute("width", `${highlightAreaSVGLine.rect.width * scale}`);
+
+                // if (USE_BLEND_MODE) {
+                //     highlightAreaSVGLine.style.setProperty("mix-blend-mode", "multiply");
+                //     highlightAreaSVGLine.style.opacity = `${opacity}`;
+                // }
+
+                highlightAreaSVGDocFrag.appendChild(highlightAreaSVGLine);
+            } else {
+
+                const highlightAreaSVGRect =
+                    documant.createElementNS(SVG_XML_NAMESPACE, "rect") as ISVGRectElementWithRect;
+                highlightAreaSVGRect.setAttribute("class", CLASS_HIGHLIGHT_AREA);
+
+                // tslint:disable-next-line:max-line-length
+                highlightAreaSVGRect.setAttribute("style",
+                    `fill: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important; stroke-width: 0;` +
+                    (USE_BLEND_MODE ? "" : ` fill-opacity: ${opacity} !important;`));
+
+                // tslint:disable-next-line:max-line-length
+                // stroke-width: ${borderThickness}; stroke: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important; stroke-opacity: ${opacity} !important
+
+                highlightAreaSVGRect.scale = scale;
+                // highlightAreaSVGRect.xOffset = xOffset;
+                // highlightAreaSVGRect.yOffset = yOffset;
+                highlightAreaSVGRect.rect = {
+                    height: clientRect.height,
+                    left: clientRect.left - xOffset,
+                    top: clientRect.top - yOffset,
+                    width: clientRect.width,
+                };
+                highlightAreaSVGRect.setAttribute("rx", `${roundedCorner * scale}`);
+                highlightAreaSVGRect.setAttribute("ry", `${roundedCorner * scale}`);
+                highlightAreaSVGRect.setAttribute("x", `${(highlightAreaSVGRect.rect.left - borderThickness) * scale}`);
+                highlightAreaSVGRect.setAttribute("y", `${(highlightAreaSVGRect.rect.top - borderThickness) * scale}`);
+                // tslint:disable-next-line:max-line-length
+                highlightAreaSVGRect.setAttribute("height", `${(highlightAreaSVGRect.rect.height + (borderThickness * 2)) * scale}`);
+                // tslint:disable-next-line:max-line-length
+                highlightAreaSVGRect.setAttribute("width", `${(highlightAreaSVGRect.rect.width + (borderThickness * 2)) * scale}`);
+
+                // if (USE_BLEND_MODE) {
+                //     highlightAreaSVGRect.style.setProperty("mix-blend-mode", "multiply");
+                //     highlightAreaSVGRect.style.opacity = `${opacity}`;
+                // }
+
+                highlightAreaSVGDocFrag.appendChild(highlightAreaSVGRect);
+            }
+        } else {
+            if (drawStrikeThrough) {
+
+                const highlightAreaLine = documant.createElement("div") as IHTMLDivElementWithRect;
+                highlightAreaLine.setAttribute("class", CLASS_HIGHLIGHT_AREA);
+
+                // tslint:disable-next-line:max-line-length
+                highlightAreaLine.setAttribute("style",
+                    USE_BLEND_MODE ?
+                        `background-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;` :
+                        `background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important;`);
+                // tslint:disable-next-line:max-line-length
+                // highlightArea.setAttribute("style", `outline-color: magenta; outline-style: solid; outline-width: 1px; outline-offset: -1px;`);
+                highlightAreaLine.style.setProperty("pointer-events", "none");
+                highlightAreaLine.style.transform = "translate3d(0px, 0px, 0px)";
+                highlightAreaLine.style.position = paginated ? "fixed" : "absolute";
+                highlightAreaLine.scale = scale;
+                // highlightAreaLine.xOffset = xOffset;
+                // highlightAreaLine.yOffset = yOffset;
+                highlightAreaLine.rect = {
+                    height: clientRect.height,
+                    left: clientRect.left - xOffset,
+                    top: clientRect.top - yOffset,
+                    width: clientRect.width,
+                };
+                highlightAreaLine.style.width = `${highlightAreaLine.rect.width * scale}px`;
+                highlightAreaLine.style.height = `${strikeThroughLineThickness * scale}px`;
+                highlightAreaLine.style.minWidth = highlightAreaLine.style.width;
+                highlightAreaLine.style.minHeight = highlightAreaLine.style.height;
+                highlightAreaLine.style.left = `${highlightAreaLine.rect.left * scale}px`;
+                // tslint:disable-next-line:max-line-length
+                highlightAreaLine.style.top = `${(highlightAreaLine.rect.top + (highlightAreaLine.rect.height / 2) - (strikeThroughLineThickness / 2)) * scale}px`;
+
+                // if (USE_BLEND_MODE) {
+                //     highlightAreaLine.style.setProperty("mix-blend-mode", "multiply");
+                //     highlightAreaLine.style.opacity = `${opacity}`;
+                // }
+
+                highlightParent.append(highlightAreaLine);
+            } else {
+
+                const highlightArea = documant.createElement("div") as IHTMLDivElementWithRect;
+                highlightArea.setAttribute("class", CLASS_HIGHLIGHT_AREA);
+
+                let extra = "";
+                if (win.READIUM2.DEBUG_VISUALS) {
+                    const rgb = Math.round(0xffffff * Math.random());
+                    // tslint:disable-next-line:no-bitwise
+                    const r = rgb >> 16;
+                    // tslint:disable-next-line:no-bitwise
+                    const g = rgb >> 8 & 255;
+                    // tslint:disable-next-line:no-bitwise
+                    const b = rgb & 255;
+                    // tslint:disable-next-line:max-line-length
+                    extra = `outline-color: rgb(${r}, ${g}, ${b}); outline-style: solid; outline-width: 1px; outline-offset: -1px;`;
+                    // box-shadow: inset 0 0 0 1px #600;
+                } else if (drawUnderline) {
+                    // tslint:disable-next-line:max-line-length
+                    extra = `border-bottom: ${underlineThickness * scale}px solid ` +
+                        (USE_BLEND_MODE ?
+                        // tslint:disable-next-line: max-line-length
+                        `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important` :
+                        `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important`);
+                }
+                // tslint:disable-next-line:max-line-length
+                highlightArea.setAttribute("style",
+                    "box-sizing: border-box; " +
+                    (drawUnderline ?
+                    "" : // background-color: transparent !important
+                    (`border-radius: ${roundedCorner}px !important; background-color: ` +
+                        (USE_BLEND_MODE ?
+                            // tslint:disable-next-line: max-line-length
+                            `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;` :
+                            `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important;`
+                        )
+                    )
+                    ) + ` ${extra}`);
+                // tslint:disable-next-line:max-line-length
+                // highlightArea.setAttribute("style", `outline-color: magenta; outline-style: solid; outline-width: 1px; outline-offset: -1px;`);
+                highlightArea.style.setProperty("pointer-events", "none");
+                highlightArea.style.transform = "translate3d(0px, 0px, 0px)";
+                highlightArea.style.position = paginated ? "fixed" : "absolute";
+                highlightArea.scale = scale;
+                // highlightArea.xOffset = xOffset;
+                // highlightArea.yOffset = yOffset;
+                highlightArea.rect = {
+                    height: clientRect.height,
+                    left: clientRect.left - xOffset,
+                    top: clientRect.top - yOffset,
+                    width: clientRect.width,
+                };
+                highlightArea.style.width = `${highlightArea.rect.width * scale}px`;
+                highlightArea.style.height = `${highlightArea.rect.height * scale}px`;
+                highlightArea.style.minWidth = highlightArea.style.width;
+                highlightArea.style.minHeight = highlightArea.style.height;
+                highlightArea.style.left = `${highlightArea.rect.left * scale}px`;
+                highlightArea.style.top = `${highlightArea.rect.top * scale}px`;
+
+                // if (highlight.pointerInteraction) {
+                //     highlightArea.style.setProperty("pointer-events", "auto");
+                // }
+
+                // if (USE_BLEND_MODE) {
+                //     highlightArea.style.setProperty("mix-blend-mode", "multiply");
+                //     highlightArea.style.opacity = `${opacity}`;
+                // }
+
+                highlightParent.append(highlightArea);
+            }
+        }
+    }
+
+    if (useSVG && highlightAreaSVGDocFrag) {
+        // const highlightAreaSVGG = documant.createElementNS(SVG_XML_NAMESPACE, "g");
+        // highlightAreaSVGG.appendChild(highlightAreaSVGDocFrag);
+        const highlightAreaSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg");
+        highlightAreaSVG.setAttribute("style", "background-color: transparent !important");
+        highlightAreaSVG.setAttribute("pointer-events", "none");
+        highlightAreaSVG.style.position = paginated ? "fixed" : "absolute";
+        highlightAreaSVG.style.overflow = "visible";
+        highlightAreaSVG.style.left = "0";
+        highlightAreaSVG.style.top = "0";
+        highlightAreaSVG.append(highlightAreaSVGDocFrag);
+        highlightParent.append(highlightAreaSVG);
+    }
 
     // highlightsContainer.append(highlightParent);
     return highlightParent;

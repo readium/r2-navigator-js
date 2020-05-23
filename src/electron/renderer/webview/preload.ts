@@ -3068,7 +3068,7 @@ if (!win.READIUM2.isAudio) {
             }
         }
         const highlightDefinitions = !payloadPing.highlightDefinitions ?
-            [ { color: undefined, selectionInfo: undefined } as IHighlightDefinition ] :
+            [ { color: undefined, drawType: undefined, selectionInfo: undefined } as IHighlightDefinition ] :
             payloadPing.highlightDefinitions;
 
         for (const highlightDefinition of highlightDefinitions) {
