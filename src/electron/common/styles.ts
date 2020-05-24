@@ -250,6 +250,19 @@ export const ttsCssStyles = `
 :root div#${TTS_ID_CONTAINER} > div {
     font-size: 1.2rem !important;
 }
+:root[style] div#${TTS_ID_CONTAINER} > img,
+:root div#${TTS_ID_CONTAINER} > img {
+    display: block;
+    border: 3px solid #333333;
+    max-width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+}
+:root[style] div#${TTS_ID_CONTAINER} > img + div,
+:root div#${TTS_ID_CONTAINER} > img + div {
+    text-align: center;
+    text-decoration: underline;
+}
 
 :root[style*="--USER__lineHeight"] div#${TTS_ID_CONTAINER} {
     line-height: calc(var(--USER__lineHeight) * 1) !important;

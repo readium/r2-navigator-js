@@ -540,13 +540,20 @@ function updateTTSInfo(
             } else {
                 ttsQItemMarkup = getTtsQueueItemRefText(ttsQItem);
             }
+            let imageMarkup = "";
+            if (ttsQItem.item.parentElement && ttsQItem.item.parentElement.tagName &&
+                ttsQItem.item.parentElement.tagName.toLowerCase() === "img" &&
+                (ttsQItem.item.parentElement as HTMLImageElement).src) {
+
+                imageMarkup = `<img src="${(ttsQItem.item.parentElement as HTMLImageElement).src}" />`;
+            }
             if (ttsQItem.item.dir) {
                 ttsQItemMarkupAttributes += ` dir="${ttsQItem.item.dir}" `;
             }
             if (ttsQItem.item.lang) {
                 ttsQItemMarkupAttributes += ` lang="${ttsQItem.item.lang}" xml:lang="${ttsQItem.item.lang}" `;
             }
-            fullMarkup += `<div ${ttsQItemMarkupAttributes}>${ttsQItemMarkup}</div>`;
+            fullMarkup += `${imageMarkup}<div ${ttsQItemMarkupAttributes}>${ttsQItemMarkup}</div>`;
         }
 
         try {

@@ -211,12 +211,31 @@ export function generateTtsQueue(rootElement: Element): ITtsQueueItem[] {
         for (const childNode of element.childNodes) {
             switch (childNode.nodeType) {
                 case Node.ELEMENT_NODE:
-
+                    const childElement = childNode as Element;
                     // tslint:disable-next-line:max-line-length
-                    const isExcluded = (childNode as Element).matches("img, sup, sub, audio, video, source, button, canvas, del, dialog, embed, form, head, iframe, meter, noscript, object, s, script, select, style, textarea");
+                    const isExcluded = childElement.matches("img, sup, sub, audio, video, source, button, canvas, del, dialog, embed, form, head, iframe, meter, noscript, object, s, script, select, style, textarea");
                     // code, nav, dl, figure, table, ul, ol
                     if (!isExcluded) {
-                        processElement(childNode as Element);
+                        processElement(childElement);
+                    } else if (childElement.tagName
+                        && childElement.tagName.toLowerCase() === "img" &&
+                        (childElement as HTMLImageElement).src) {
+                        const altAttr = childElement.getAttribute("alt");
+                        if (altAttr) {
+                            const txt = altAttr.trim();
+                            if (txt) {
+                                const lang = getLanguage(childElement);
+                                const dir = undefined;
+                                ttsQueue.push({
+                                    combinedText: txt,
+                                    combinedTextSentences: undefined,
+                                    dir,
+                                    lang,
+                                    parentElement: childElement,
+                                    textNodes: [],
+                                });
+                            }
+                        }
                     }
                     break;
                 case Node.TEXT_NODE:
@@ -254,8 +273,17 @@ export function generateTtsQueue(rootElement: Element): ITtsQueueItem[] {
     }
 
     function finalizeTextNodes(ttsQueueItem: ITtsQueueItem) {
+        if (!ttsQueueItem.textNodes || !ttsQueueItem.textNodes.length) {
+            // img@alt can set combinedText (no text nodes)
+            if (!ttsQueueItem.combinedText || !ttsQueueItem.combinedText.length) {
+                ttsQueueItem.combinedText = "";
+            }
+            ttsQueueItem.combinedTextSentences = undefined;
+            return;
+        }
         ttsQueueItem.combinedText = combineTextNodes(ttsQueueItem.textNodes).trim();
         try {
+            ttsQueueItem.combinedTextSentences = undefined;
             const sentences = split(ttsQueueItem.combinedText);
             ttsQueueItem.combinedTextSentences = [];
             for (const sentence of sentences) {
