@@ -170,6 +170,11 @@ export const TTS_ID_SLIDER = "r2-tts-slider";
 export const TTS_ID_ACTIVE_WORD = "r2-tts-active-word";
 export const TTS_ID_ACTIVE_UTTERANCE = "r2-tts-active-utterance";
 export const TTS_CLASS_UTTERANCE = "r2-tts-utterance";
+export const TTS_CLASS_UTTERANCE_HEADING1 = "r2-tts-utterance-h1";
+export const TTS_CLASS_UTTERANCE_HEADING2 = "r2-tts-utterance-h2";
+export const TTS_CLASS_UTTERANCE_HEADING3 = "r2-tts-utterance-h3";
+export const TTS_CLASS_UTTERANCE_HEADING4 = "r2-tts-utterance-h4";
+export const TTS_CLASS_UTTERANCE_HEADING5 = "r2-tts-utterance-h5";
 export const TTS_ID_CONTAINER = "r2-tts-txt";
 export const TTS_NAV_BUTTON_CLASS = "r2-tts-button";
 export const TTS_ID_SPEAKING_DOC_ELEMENT = "r2-tts-speaking-el";
@@ -241,8 +246,8 @@ export const ttsCssStyles = `
     border-top: 0;
 }
 
-:root[style] div#${TTS_ID_CONTAINER} *,
-:root div#${TTS_ID_CONTAINER} * {
+:root[style] div#${TTS_ID_CONTAINER} > div,
+:root div#${TTS_ID_CONTAINER} > div {
     font-size: 1.2rem !important;
 }
 
@@ -424,6 +429,32 @@ export const ttsCssStyles = `
     border: 1px solid transparent !important;
 
     line-height: 1.5 !important;
+}
+
+:root[style] div#${TTS_ID_CONTAINER} .${TTS_CLASS_UTTERANCE_HEADING1},
+:root div#${TTS_ID_CONTAINER} .${TTS_CLASS_UTTERANCE_HEADING1} {
+    font-weight: bolder !important;
+    font-size: 1.5rem !important;
+}
+:root[style] div#${TTS_ID_CONTAINER} .${TTS_CLASS_UTTERANCE_HEADING2},
+:root div#${TTS_ID_CONTAINER} .${TTS_CLASS_UTTERANCE_HEADING2} {
+    font-weight: bolder !important;
+    font-size: 1.4rem !important;
+}
+:root[style] div#${TTS_ID_CONTAINER} .${TTS_CLASS_UTTERANCE_HEADING3},
+:root div#${TTS_ID_CONTAINER} .${TTS_CLASS_UTTERANCE_HEADING3} {
+    font-weight: bold !important;
+    font-size: 1.3rem !important;
+}
+:root[style] div#${TTS_ID_CONTAINER} .${TTS_CLASS_UTTERANCE_HEADING4},
+:root div#${TTS_ID_CONTAINER} .${TTS_CLASS_UTTERANCE_HEADING4} {
+    font-weight: bold !important;
+    font-size: 1.2rem !important;
+}
+:root[style] div#${TTS_ID_CONTAINER} .${TTS_CLASS_UTTERANCE_HEADING5},
+:root div#${TTS_ID_CONTAINER} .${TTS_CLASS_UTTERANCE_HEADING5} {
+    font-weight: bold !important;
+    font-size: 1.1rem !important;
 }
 
 :root[style] div#${TTS_ID_ACTIVE_UTTERANCE},

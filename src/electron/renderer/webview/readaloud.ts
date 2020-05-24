@@ -14,9 +14,10 @@ import {
 import {
     CSS_CLASS_NO_FOCUS_OUTLINE, ROOT_CLASS_REDUCE_MOTION, TTS_CLASS_INJECTED_SPAN,
     TTS_CLASS_INJECTED_SUBSPAN, TTS_CLASS_IS_ACTIVE, TTS_CLASS_THEME1, TTS_CLASS_UTTERANCE,
-    TTS_ID_ACTIVE_UTTERANCE, TTS_ID_ACTIVE_WORD, TTS_ID_CONTAINER, TTS_ID_INJECTED_PARENT,
-    TTS_ID_NEXT, TTS_ID_PREVIOUS, TTS_ID_SLIDER, TTS_ID_SPEAKING_DOC_ELEMENT, TTS_NAV_BUTTON_CLASS,
-    TTS_POPUP_DIALOG_CLASS,
+    TTS_CLASS_UTTERANCE_HEADING1, TTS_CLASS_UTTERANCE_HEADING2, TTS_CLASS_UTTERANCE_HEADING3,
+    TTS_CLASS_UTTERANCE_HEADING4, TTS_CLASS_UTTERANCE_HEADING5, TTS_ID_ACTIVE_UTTERANCE,
+    TTS_ID_ACTIVE_WORD, TTS_ID_CONTAINER, TTS_ID_INJECTED_PARENT, TTS_ID_NEXT, TTS_ID_PREVIOUS,
+    TTS_ID_SLIDER, TTS_ID_SPEAKING_DOC_ELEMENT, TTS_NAV_BUTTON_CLASS, TTS_POPUP_DIALOG_CLASS,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import {
@@ -498,8 +499,42 @@ function updateTTSInfo(
                 continue;
             }
             let ttsQItemMarkup = ttsQueueItemMarkup;
+
+            let isHeadingLevel1 = false;
+            let isHeadingLevel2 = false;
+            let isHeadingLevel3 = false;
+            let isHeadingLevel4 = false;
+            let isHeadingLevel5 = false;
+            let p: Element | null = ttsQItem.item.parentElement;
+            while (p && p.tagName) {
+                const tagName = p.tagName.toLowerCase();
+                if (tagName === "h1") {
+                    isHeadingLevel1 = true;
+                    break;
+                } else if (tagName === "h2") {
+                    isHeadingLevel2 = true;
+                    break;
+                } else if (tagName === "h3") {
+                    isHeadingLevel3 = true;
+                    break;
+                } else if (tagName === "h4") {
+                    isHeadingLevel4 = true;
+                    break;
+                } else if (tagName === "h5") {
+                    isHeadingLevel5 = true;
+                    break;
+                }
+                p = p.parentNode as (Element | null);
+            }
+            const classes = TTS_CLASS_UTTERANCE +
+                (isHeadingLevel1 ? ` ${TTS_CLASS_UTTERANCE_HEADING1}` :
+                (isHeadingLevel2 ? ` ${TTS_CLASS_UTTERANCE_HEADING2}` :
+                (isHeadingLevel3 ? ` ${TTS_CLASS_UTTERANCE_HEADING3}` :
+                (isHeadingLevel4 ? ` ${TTS_CLASS_UTTERANCE_HEADING4}` :
+                (isHeadingLevel5 ? ` ${TTS_CLASS_UTTERANCE_HEADING5}` : "")))));
+
             // tslint:disable-next-line:max-line-length
-            let ttsQItemMarkupAttributes = `${R2_DATA_ATTR_UTTERANCE_INDEX}="${ttsQItem.iGlobal}" class="${TTS_CLASS_UTTERANCE}"`;
+            let ttsQItemMarkupAttributes = `${R2_DATA_ATTR_UTTERANCE_INDEX}="${ttsQItem.iGlobal}" class="${classes}"`;
             if (ttsQItem.iGlobal === ttsQueueItem.iGlobal) {
                 ttsQItemMarkupAttributes += ` id="${TTS_ID_ACTIVE_UTTERANCE}" `;
             } else {
