@@ -13,9 +13,9 @@ import {
 } from "../../common/events";
 import {
     CSS_CLASS_NO_FOCUS_OUTLINE, ROOT_CLASS_REDUCE_MOTION, TTS_CLASS_INJECTED_SPAN,
-    TTS_CLASS_INJECTED_SUBSPAN, TTS_CLASS_IS_ACTIVE, TTS_CLASS_UTTERANCE, TTS_ID_ACTIVE_UTTERANCE,
-    TTS_ID_ACTIVE_WORD, TTS_ID_CONTAINER, TTS_ID_INFO, TTS_ID_INJECTED_PARENT, TTS_ID_NEXT,
-    TTS_ID_PREVIOUS, TTS_ID_SLIDER, TTS_ID_SPEAKING_DOC_ELEMENT, TTS_NAV_BUTTON_CLASS,
+    TTS_CLASS_INJECTED_SUBSPAN, TTS_CLASS_IS_ACTIVE, TTS_CLASS_THEME1, TTS_CLASS_UTTERANCE,
+    TTS_ID_ACTIVE_UTTERANCE, TTS_ID_ACTIVE_WORD, TTS_ID_CONTAINER, TTS_ID_INJECTED_PARENT,
+    TTS_ID_NEXT, TTS_ID_PREVIOUS, TTS_ID_SLIDER, TTS_ID_SPEAKING_DOC_ELEMENT, TTS_NAV_BUTTON_CLASS,
     TTS_POPUP_DIALOG_CLASS,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
@@ -36,7 +36,6 @@ interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
     domNext: HTMLButtonElement | undefined;
     domPrevious: HTMLButtonElement | undefined;
     domText: HTMLDivElement | undefined;
-    domInfo: HTMLDivElement | undefined;
 
     ttsUtterance: SpeechSynthesisUtterance | undefined;
     ttsQueue: ITtsQueueItem[] | undefined;
@@ -72,7 +71,6 @@ function resetState() {
         _dialogState.domNext = undefined;
         _dialogState.domPrevious = undefined;
         _dialogState.domText = undefined;
-        _dialogState.domInfo = undefined;
 
         _dialogState.remove();
     }
@@ -531,11 +529,11 @@ function updateTTSInfo(
         }
     }
 
-    if (!isWordBoundary) {
-        if (_dialogState.domInfo) {
-            _dialogState.domInfo.innerText = (ttsQueueItem.iGlobal + 1) + "/" + _dialogState.ttsQueueLength;
-        }
-    }
+    // if (!isWordBoundary) {
+    //     if (_dialogState.domInfo) {
+    //         _dialogState.domInfo.innerText = (ttsQueueItem.iGlobal + 1) + "/" + _dialogState.ttsQueueLength;
+    //     }
+    // }
 
     scrollIntoViewSpokenTextDebounced(isWordBoundary ? TTS_ID_ACTIVE_WORD : TTS_ID_ACTIVE_UTTERANCE);
 
@@ -723,12 +721,11 @@ function startTTSSession(
     // &#x21E2;
     const outerHTML =
     `<div id="${TTS_ID_CONTAINER}"
-        class="${CSS_CLASS_NO_FOCUS_OUTLINE}"
+        class="${CSS_CLASS_NO_FOCUS_OUTLINE} ${TTS_CLASS_THEME1}"
         dir="ltr"
         lang="en"
         xml:lang="en"
         tabindex="0" autofocus="autofocus"></div>
-    <div id="${TTS_ID_INFO}"> </div>
     <button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}" title="previous"><span>&#9668;</span></button>
     <button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}" title="next"><span>&#9658;</span></button>
     <input id="${TTS_ID_SLIDER}" type="range" min="0" max="${ttsQueueLength - 1}" value="0"
@@ -754,7 +751,6 @@ function startTTSSession(
     _dialogState.domPrevious = win.document.getElementById(TTS_ID_PREVIOUS) as HTMLButtonElement;
     _dialogState.domNext = win.document.getElementById(TTS_ID_NEXT) as HTMLButtonElement;
     _dialogState.domText = win.document.getElementById(TTS_ID_CONTAINER) as HTMLDivElement;
-    _dialogState.domInfo = win.document.getElementById(TTS_ID_INFO) as HTMLDivElement;
 
     _dialogState.ttsQueue = ttsQueue;
     _dialogState.ttsQueueLength = ttsQueueLength;

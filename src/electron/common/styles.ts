@@ -162,6 +162,7 @@ export const mediaOverlaysCssStyles = `
 }
 `;
 
+export const TTS_CLASS_THEME1 = "r2-tts-theme1";
 export const TTS_CLASS_IS_ACTIVE = "r2-tts-isPlaying";
 export const TTS_ID_PREVIOUS = "r2-tts-previous";
 export const TTS_ID_NEXT = "r2-tts-next";
@@ -170,7 +171,6 @@ export const TTS_ID_ACTIVE_WORD = "r2-tts-active-word";
 export const TTS_ID_ACTIVE_UTTERANCE = "r2-tts-active-utterance";
 export const TTS_CLASS_UTTERANCE = "r2-tts-utterance";
 export const TTS_ID_CONTAINER = "r2-tts-txt";
-export const TTS_ID_INFO = "r2-tts-info";
 export const TTS_NAV_BUTTON_CLASS = "r2-tts-button";
 export const TTS_ID_SPEAKING_DOC_ELEMENT = "r2-tts-speaking-el";
 export const TTS_CLASS_INJECTED_SPAN = "r2-tts-speaking-txt";
@@ -218,9 +218,11 @@ export const ttsCssStyles = `
     grid-row-end: 2;
 
     padding: 0;
-    padding-left: 4em;
-    padding-right: 4em;
     margin: 0;
+
+    max-width: 800px;
+    margin-right: auto;
+    margin-left: auto;
 
     hyphens: none !important;
     word-break: keep-all !important;
@@ -250,7 +252,7 @@ export const ttsCssStyles = `
 :root[style*="readium-night-on"] div#${TTS_ID_CONTAINER} {
     color: #bbbbbb !important;
 }
-:root[style*="readium-sepia-on"] div#${TTS_ID_CONTAINER}{
+:root[style*="readium-sepia-on"] div#${TTS_ID_CONTAINER} {
     background: var(--RS__backgroundColor) !important;
     color: var(--RS__textColor) !important;
 }
@@ -259,21 +261,6 @@ export const ttsCssStyles = `
 }
 :root[style*="--USER__textColor"] div#${TTS_ID_CONTAINER} {
     color: var(--USER__textColor) !important;
-}
-:root[style] #${TTS_ID_INFO},
-:root #${TTS_ID_INFO} {
-    display: none;
-
-    padding: 0;
-    margin: 0;
-
-    grid-column-start: 2;
-    grid-column-end: 3;
-    grid-row-start: 2;
-    grid-row-end: 3;
-
-    font-family: Arial !important;
-    font-size: 90% !important;
 }
 
 :root[style] #${TTS_ID_SLIDER},
@@ -435,6 +422,8 @@ export const ttsCssStyles = `
 
     box-sizing: border-box;
     border: 1px solid transparent !important;
+
+    line-height: 1.5 !important;
 }
 
 :root[style] div#${TTS_ID_ACTIVE_UTTERANCE},
@@ -484,6 +473,73 @@ export const ttsCssStyles = `
 :root[style*="--USER__textColor"] span#${TTS_ID_ACTIVE_WORD} {
     color: var(--USER__textColor) !important;
     outline-color: var(--USER__textColor);
+}
+
+:root div#${TTS_ID_CONTAINER}.${TTS_CLASS_THEME1},
+:root[style] div#${TTS_ID_CONTAINER}.${TTS_CLASS_THEME1} {
+
+    background-color: #f7f9f9 !important;
+    color: #333333 !important;
+}
+:root[style*="readium-night-on"] div#${TTS_ID_CONTAINER}.${TTS_CLASS_THEME1} {
+    background: #111111 !important;
+    color: #888888 !important;
+}
+:root[style*="readium-sepia-on"] div#${TTS_ID_CONTAINER}.${TTS_CLASS_THEME1} {
+    background: #fdf2e9 !important;
+    color: #333333 !important;
+}
+
+:root[style] div#${TTS_ID_CONTAINER}.${TTS_CLASS_THEME1} .${TTS_CLASS_UTTERANCE},
+:root div#${TTS_ID_CONTAINER}.${TTS_CLASS_THEME1} .${TTS_CLASS_UTTERANCE} {
+    background-color: transparent !important;
+}
+
+:root[style] div#${TTS_ID_CONTAINER}.${TTS_CLASS_THEME1} div#${TTS_ID_ACTIVE_UTTERANCE},
+:root div#${TTS_ID_CONTAINER}.${TTS_CLASS_THEME1} div#${TTS_ID_ACTIVE_UTTERANCE} {
+
+    border: 0 !important;
+    border-radius: 0px !important;
+
+    background-color: #ecf0f1 !important;
+    color: black !important;
+
+    /* box-shadow: 0px 0px 10px 0px #f2f3f4; */
+}
+:root[style*="readium-night-on"] div#${TTS_ID_CONTAINER}.${TTS_CLASS_THEME1} div#${TTS_ID_ACTIVE_UTTERANCE} {
+    background-color: #222222 !important;
+    color: white !important;
+    /* box-shadow: 0px 0px 10px 0px #111100; */
+}
+:root[style*="readium-sepia-on"] div#${TTS_ID_CONTAINER}.${TTS_CLASS_THEME1} div#${TTS_ID_ACTIVE_UTTERANCE} {
+    background-color: #fef9e7 !important;
+    color: black !important;
+    /* box-shadow: 0px 0px 10px 0px #fdebd0; */
+}
+
+:root[style] div#${TTS_ID_CONTAINER}.${TTS_CLASS_THEME1} div#${TTS_ID_ACTIVE_UTTERANCE} span#${TTS_ID_ACTIVE_WORD},
+:root div#${TTS_ID_CONTAINER}.${TTS_CLASS_THEME1} div#${TTS_ID_ACTIVE_UTTERANCE} span#${TTS_ID_ACTIVE_WORD} {
+    background-color: #f7dc6f !important;
+    color: black !important;
+
+    outline-color: #f7dc6f;
+    outline-style: solid;
+    outline-offset: unset;
+    outline-width: 4px;
+
+    text-decoration: none;
+}
+:root[style*="readium-night-on"] div#${TTS_ID_CONTAINER}.${TTS_CLASS_THEME1} div#${TTS_ID_ACTIVE_UTTERANCE} span#${TTS_ID_ACTIVE_WORD} {
+    background-color: #d4ac0d !important;
+    color: black !important;
+
+    outline-color: #d4ac0d;
+}
+:root[style*="readium-sepia-on"] div#${TTS_ID_CONTAINER}.${TTS_CLASS_THEME1} div#${TTS_ID_ACTIVE_UTTERANCE} span#${TTS_ID_ACTIVE_WORD} {
+    background-color: #f9e79f !important;
+    color: black !important;
+
+    outline-color: #f9e79f;
 }
 `;
 
