@@ -13,23 +13,23 @@ import * as tabbable from "tabbable";
 import { LocatorLocations } from "@r2-shared-js/models/locator";
 
 import {
-    IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK, IEventPayload_R2_EVENT_CLIPBOARD_COPY,
-    IEventPayload_R2_EVENT_DEBUG_VISUALS, IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
-    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, IEventPayload_R2_EVENT_LINK,
-    IEventPayload_R2_EVENT_LOCATOR_VISIBLE, IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK,
-    IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP,
-    IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READING_LOCATION,
-    IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_SCROLLTO,
-    IEventPayload_R2_EVENT_SHIFT_VIEW_X, IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
-    IEventPayload_R2_EVENT_TTS_DO_PLAY, IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE,
-    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CLIPBOARD_COPY,
-    R2_EVENT_DEBUG_VISUALS, R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE,
-    R2_EVENT_HIGHLIGHT_REMOVE_ALL, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE,
-    R2_EVENT_MEDIA_OVERLAY_CLICK, R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
-    R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
-    R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
-    R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY,
-    R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
+    IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK, IEventPayload_R2_EVENT_CAPTIONS,
+    IEventPayload_R2_EVENT_CLIPBOARD_COPY, IEventPayload_R2_EVENT_DEBUG_VISUALS,
+    IEventPayload_R2_EVENT_HIGHLIGHT_CREATE, IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE,
+    IEventPayload_R2_EVENT_LINK, IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
+    IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK, IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
+    IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP, IEventPayload_R2_EVENT_PAGE_TURN,
+    IEventPayload_R2_EVENT_READING_LOCATION, IEventPayload_R2_EVENT_READIUMCSS,
+    IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X,
+    IEventPayload_R2_EVENT_TTS_CLICK_ENABLE, IEventPayload_R2_EVENT_TTS_DO_PLAY,
+    IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
+    R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CAPTIONS, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS,
+    R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
+    R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_MEDIA_OVERLAY_CLICK,
+    R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_PAGE_TURN,
+    R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO,
+    R2_EVENT_SHIFT_VIEW_X, R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE,
+    R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
     R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
 } from "../../common/events";
 import { IHighlightDefinition } from "../../common/highlight";
@@ -49,6 +49,7 @@ import {
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector2";
+import { normalizeText } from "../common/dom-text-utils";
 import { easings } from "../common/easings";
 import { closePopupDialogs, isPopupDialogOpen } from "../common/popup-dialog";
 import { getURLQueryParams } from "../common/querystring";
@@ -3028,6 +3029,7 @@ if (!win.READIUM2.isAudio) {
             elem.classList.remove(R2_MO_CLASS_ACTIVE);
         });
 
+        let removeCaptionContainer = true;
         if (!payload.id) {
             win.document.documentElement.classList.remove(R2_MO_CLASS_ACTIVE_PLAYBACK);
             win.document.documentElement.classList.remove(activeClassPlayback);
@@ -3037,6 +3039,69 @@ if (!win.READIUM2.isAudio) {
             const targetEl = win.document.getElementById(payload.id);
             if (targetEl) {
                 targetEl.classList.add(activeClass);
+
+                if (payload.captionsMode) {
+                    let text = targetEl.textContent;
+                    if (text) {
+                        // text = text.trim().replace(/\n/g, " ").replace(/\s+/g, " ");
+                        text = normalizeText(text).trim();
+                        if (text) {
+                            removeCaptionContainer = false;
+                            const isUserBackground = styleAttr ?
+                                styleAttr.indexOf("--USER__backgroundColor") >= 0 : false;
+                            const isUserColor = styleAttr ?
+                                styleAttr.indexOf("--USER__textColor") >= 0 : false;
+                            const docStyle = win.getComputedStyle(win.document.documentElement);
+                            let containerStyle = "background-color: white; color: black;";
+                            if (isNight || isSepia) {
+                                const rsBackground = docStyle.getPropertyValue("--RS__backgroundColor");
+                                const rsColor = docStyle.getPropertyValue("--RS__textColor");
+                                containerStyle = `background-color: ${rsBackground}; color: ${rsColor};`;
+                            } else {
+                                if (isUserBackground || isUserColor) {
+                                    containerStyle = "";
+                                }
+                                if (isUserBackground) {
+                                    const usrBackground = docStyle.getPropertyValue("--USER__backgroundColor");
+                                    containerStyle += `background-color: ${usrBackground};`;
+                                }
+                                if (isUserColor) {
+                                    const usrColor = docStyle.getPropertyValue("--USER__textColor");
+                                    containerStyle += `color: ${usrColor};`;
+                                }
+                            }
+                            const isUserFontSize = styleAttr ?
+                                styleAttr.indexOf("--USER__fontSize") >= 0 : false;
+                            if (isUserFontSize) {
+                                const usrFontSize = docStyle.getPropertyValue("--USER__fontSize");
+                                containerStyle += `font-size: ${usrFontSize};`;
+                            } else {
+                                containerStyle += `font-size: 120%;`;
+                            }
+                            const isUserLineHeight = styleAttr ?
+                                styleAttr.indexOf("--USER__lineHeight") >= 0 : false;
+                            if (isUserLineHeight) {
+                                const usrLineHeight = docStyle.getPropertyValue("--USER__lineHeight");
+                                containerStyle += `line-height: ${usrLineHeight};`;
+                            } else {
+                                containerStyle += `line-height: 1.2;`;
+                            }
+                            const isUserFont = styleAttr ?
+                                styleAttr.indexOf("--USER__fontFamily") >= 0 : false;
+                            if (isUserFont) {
+                                const usrFont = docStyle.getPropertyValue("--USER__fontFamily");
+                                containerStyle += `font-family: ${usrFont};`;
+                            }
+
+                            const payloadCaptions: IEventPayload_R2_EVENT_CAPTIONS = {
+                                containerStyle,
+                                text,
+                                textStyle: "font-size: 120%;",
+                            };
+                            ipcRenderer.sendToHost(R2_EVENT_CAPTIONS, payloadCaptions);
+                        }
+                    }
+                }
 
                 win.READIUM2.locationHashOverride = targetEl;
                 scrollElementIntoView_(targetEl, false, true);
@@ -3052,6 +3117,15 @@ if (!win.READIUM2.isAudio) {
                     el.setAttribute(readPosCssStylesAttr2, "R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT");
                 }
             }
+        }
+
+        if (removeCaptionContainer) {
+            const payloadCaptions: IEventPayload_R2_EVENT_CAPTIONS = {
+                containerStyle: undefined,
+                text: undefined,
+                textStyle: undefined,
+            };
+            ipcRenderer.sendToHost(R2_EVENT_CAPTIONS, payloadCaptions);
         }
     });
 

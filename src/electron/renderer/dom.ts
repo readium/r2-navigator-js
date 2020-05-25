@@ -14,12 +14,16 @@ import { Locator } from "@r2-shared-js/models/locator";
 import { Publication } from "@r2-shared-js/models/publication";
 
 import {
-    IEventPayload_R2_EVENT_CLIPBOARD_COPY, IEventPayload_R2_EVENT_DEBUG_VISUALS,
-    IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
-    IEventPayload_R2_EVENT_WEBVIEW_KEYUP, IKeyboardEvent, R2_EVENT_CLIPBOARD_COPY,
-    R2_EVENT_DEBUG_VISUALS, R2_EVENT_READIUMCSS, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
+    IEventPayload_R2_EVENT_CAPTIONS, IEventPayload_R2_EVENT_CLIPBOARD_COPY,
+    IEventPayload_R2_EVENT_DEBUG_VISUALS, IEventPayload_R2_EVENT_READIUMCSS,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, IEventPayload_R2_EVENT_WEBVIEW_KEYUP, IKeyboardEvent,
+    R2_EVENT_CAPTIONS, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_READIUMCSS,
+    R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
 } from "../common/events";
-import { R2_SESSION_WEBVIEW } from "../common/sessions";
+import { READIUM_CSS_URL_PATH } from "../common/readium-css-settings";
+import {
+    R2_SESSION_WEBVIEW, READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl,
+} from "../common/sessions";
 import { WebViewSlotEnum } from "../common/styles";
 import { URL_PARAM_DEBUG_VISUALS } from "./common/url-params";
 import { highlightsHandleIpcMessage } from "./highlight";
@@ -35,14 +39,54 @@ import {
 import { soundtrackHandleIpcMessage } from "./soundtrack";
 import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
-// import { registerProtocol } from "@r2-navigator-js/electron/renderer/common/protocol";
-// registerProtocol();
-
-// const CLASS_POS_RIGHT = "r2_posRight";
-// const CLASS_SHIFT_LEFT = "r2_shiftedLeft";
-// const CLASS_ANIMATED = "r2_animated";
-
 const ELEMENT_ID_SLIDING_VIEWPORT = "r2_navigator_sliding_viewport";
+const ELEMENT_ID_CAPTIONS = "r2_navigator_captions_overlay";
+const ELEMENT_ID_READIUM_CSS_STYLE = "r2_navigator_readium_css";
+/* align-items: center; DOES NOT WORK with overflow-y: scroll; because top clipping */
+const captionsOverlayCssStyles = `
+    overflow: hidden;
+    overflow-y: auto;
+    display: flex;
+    justify-content: center;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    box-sizing: border-box;
+    border: 0;
+    margin: 0;
+    padding: 2em;
+    line-height: initial;
+    user-select: none;
+`.replace(/\n/g, " ").replace(/\s\s+/g, " ").trim();
+const captionsOverlayParaCssStyles = `
+    margin: 0;
+    margin-top: auto;
+    margin-bottom: auto;
+    padding: 0;
+    max-width: 900px;
+    font-weight: bolder;
+    text-align: center;
+`.replace(/\n/g, " ").replace(/\s\s+/g, " ").trim();
+// replace "{RCSS_BASE_URL}"
+const readiumCssStyle = `
+@font-face {
+font-family: AccessibleDfA;
+font-style: normal;
+font-weight: normal;
+src: local("AccessibleDfA"),
+url("{RCSS_BASE_URL}fonts/AccessibleDfA.otf") format("opentype");
+}
+
+@font-face {
+font-family: "IA Writer Duospace";
+font-style: normal;
+font-weight: normal;
+src: local("iAWriterDuospace-Regular"),
+url("{RCSS_BASE_URL}fonts/iAWriterDuospace-Regular.ttf") format("truetype");
+}
+`;
 
 const debug = debug_("r2:navigator#electron/renderer/index");
 
@@ -222,6 +266,52 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             const payload = event.args[0] as IEventPayload_R2_EVENT_WEBVIEW_KEYUP;
             if (_keyUpEventHandler) {
                 _keyUpEventHandler(payload, payload.elementName, payload.elementAttributes);
+            }
+        }  else if (event.channel === R2_EVENT_CAPTIONS) {
+            const payload = event.args[0] as IEventPayload_R2_EVENT_CAPTIONS;
+
+            let captionElement = win.document.getElementById(ELEMENT_ID_CAPTIONS);
+            let rssStyleElement = win.document.getElementById(ELEMENT_ID_READIUM_CSS_STYLE);
+            const rootElement = win.document.getElementById(ELEMENT_ID_SLIDING_VIEWPORT);
+            if (payload.text && rootElement) {
+                if (!rssStyleElement) {
+                    const urlStr = win.READIUM2.publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL) ?
+                        convertCustomSchemeToHttpUrl(win.READIUM2.publicationURL) :
+                        win.READIUM2.publicationURL;
+                    const rcssUrl = new URL(urlStr);
+                    rcssUrl.pathname = `${READIUM_CSS_URL_PATH}/`;
+                    rssStyleElement = win.document.createElement("style");
+                    rssStyleElement.setAttribute("id", ELEMENT_ID_READIUM_CSS_STYLE);
+                    const styleTxtNode = win.document.createTextNode(
+                        readiumCssStyle.replace(/{RCSS_BASE_URL}/g, rcssUrl.toString()));
+                    rssStyleElement.appendChild(styleTxtNode);
+                    win.document.head.appendChild(rssStyleElement);
+                }
+                if (!captionElement) {
+                    captionElement = win.document.createElement("div");
+                    captionElement.setAttribute("id", ELEMENT_ID_CAPTIONS);
+                    // captionElement.setAttribute("style", captionsOverlayCssStyles);
+                    const para = win.document.createElement("p");
+                    // para.setAttribute("style", captionsOverlayParaCssStyles);
+                    captionElement.appendChild(para);
+
+                    rootElement.appendChild(captionElement);
+                    // win.document.body.appendChild(captionElement);
+                }
+                captionElement.setAttribute("style",
+                    captionsOverlayCssStyles +
+                    (payload.containerStyle ? ` ${payload.containerStyle}` : " "));
+                const p = captionElement.firstElementChild;
+                if (p) {
+                    p.setAttribute("style",
+                        captionsOverlayParaCssStyles +
+                        (payload.textStyle ? ` ${payload.textStyle}` : " "));
+                    p.textContent = payload.text;
+                }
+            } else {
+                if (captionElement && captionElement.parentNode) {
+                    captionElement.parentNode.removeChild(captionElement);
+                }
             }
         } else if (event.channel === R2_EVENT_CLIPBOARD_COPY) {
             const clipboardInterceptor = win.READIUM2.clipboardInterceptor;

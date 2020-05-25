@@ -54,6 +54,8 @@ export function publicationHasMediaOverlays(publication: Publication) {
     return false;
 }
 
+let _captionsMode = false;
+
 let _mediaOverlaysClickEnabled = false;
 let _mediaOverlaysPlaybackRate = 1;
 
@@ -1080,10 +1082,12 @@ function moHighlight(href: string | undefined, id: string | undefined) {
     if (IS_DEV) {
         debug("moHighlight: " + href + " ## " + id);
     }
+
     const classActive = win.READIUM2.publication.Metadata?.MediaOverlay?.ActiveClass;
     const classActivePlayback =
         win.READIUM2.publication.Metadata?.MediaOverlay?.PlaybackActiveClass;
     const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT = {
+        captionsMode: _captionsMode,
         classActive: classActive ? classActive : undefined,
         classActivePlayback: classActivePlayback ? classActivePlayback : undefined,
         id,
@@ -1393,6 +1397,18 @@ export function mediaOverlaysEscape() {
         return;
     }
     mediaOverlaysNext(true);
+}
+
+export function mediaOverlaysEnableCaptionsMode(captionsMode: boolean) {
+    _captionsMode = captionsMode;
+
+    if (IS_DEV) {
+        debug("mediaOverlaysEnableCaptionsMode() - mediaOverlaysPause() + mediaOverlaysPlay()");
+    }
+    mediaOverlaysPause();
+    setTimeout(() => {
+        mediaOverlaysPlay(_mediaOverlaysPlaybackRate);
+    }, 300);
 }
 
 export function mediaOverlaysClickEnable(doEnable: boolean) {

@@ -140,6 +140,7 @@ export interface IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT {
     id: string | undefined;
     classActive: string | undefined;
     classActivePlayback: string | undefined;
+    captionsMode: boolean | undefined;
 }
 
 // in WEBVIEW: ipcRenderer.sendToHost()
@@ -230,6 +231,16 @@ export const R2_EVENT_TTS_DO_NEXT = "R2_EVENT_TTS_DO_NEXT";
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_TTS_DO_PREVIOUS = "R2_EVENT_TTS_DO_PREVIOUS";
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_CAPTIONS = "R2_EVENT_CAPTIONS";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_CAPTIONS {
+    text: string | undefined;
+    containerStyle: string | undefined;
+    textStyle: string | undefined;
+}
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
