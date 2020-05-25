@@ -1402,13 +1402,13 @@ export function mediaOverlaysEscape() {
 export function mediaOverlaysEnableCaptionsMode(captionsMode: boolean) {
     _captionsMode = captionsMode;
 
-    if (IS_DEV) {
-        debug("mediaOverlaysEnableCaptionsMode() - mediaOverlaysPause() + mediaOverlaysPlay()");
-    }
-    mediaOverlaysPause();
-    setTimeout(() => {
-        mediaOverlaysPlay(_mediaOverlaysPlaybackRate);
-    }, 300);
+    // if (IS_DEV) {
+    //     debug("mediaOverlaysEnableCaptionsMode() - mediaOverlaysPause() + mediaOverlaysPlay()");
+    // }
+    // mediaOverlaysPause();
+    // setTimeout(() => {
+    //     mediaOverlaysPlay(_mediaOverlaysPlaybackRate);
+    // }, 300);
 }
 
 export function mediaOverlaysClickEnable(doEnable: boolean) {

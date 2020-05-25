@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.4.1...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.4.2...develop
 
 Changes:
 * TODO
+
+# 1.4.2
+
+> Build environment: NodeJS `12.16.3`, NPM `6.14.5`
+
+Changes:
+* EPUB3 Media Overlays / sync-media: "caption style" view switch does not automatically trigger pause/resume.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.4.2/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.4.2/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.4.2
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.4.1...v1.4.2
 
 # 1.4.1
 
