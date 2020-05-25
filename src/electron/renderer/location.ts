@@ -569,7 +569,8 @@ function loadLink(
         try {
             const hrefToLoadHttpObjUri = new URI(hrefToLoadHttp);
             hrefToLoadHttpObjUri.hash("").normalizeHash();
-            hrefToLoadHttpObjUri.search((data: any) => {
+            // TODO: urijs types broke this! (lib remains unchanged)
+            (hrefToLoadHttpObjUri as any).search((data: any) => {
                 // overrides existing (leaves others intact)
                 data[URL_PARAM_PREVIOUS] = undefined;
                 data[URL_PARAM_GOTO] = undefined;
@@ -811,7 +812,8 @@ function loadLink(
             }
         }
 
-        hrefToLoadHttpUri.search((data: any) => {
+        // TODO: urijs types broke this! (lib remains unchanged)
+        (hrefToLoadHttpUri as any).search((data: any) => {
             // overrides existing (leaves others intact)
             data[URL_PARAM_PREVIOUS] = undefined;
             data[URL_PARAM_GOTO] = undefined;
@@ -824,7 +826,8 @@ function loadLink(
             data[URL_PARAM_SECOND_WEBVIEW] = undefined;
         });
     } else {
-        hrefToLoadHttpUri.search((data: any) => {
+        // TODO: urijs types broke this! (lib remains unchanged)
+        (hrefToLoadHttpUri as any).search((data: any) => {
             // overrides existing (leaves others intact)
 
             if (typeof previous === "undefined") {
@@ -851,7 +854,8 @@ function loadLink(
         const rersJsonstr = JSON.stringify(rersJson, null, "");
         const rersJsonstrBase64 = Buffer.from(rersJsonstr).toString("base64");
 
-        hrefToLoadHttpUri.search((data: any) => {
+        // TODO: urijs types broke this! (lib remains unchanged)
+        (hrefToLoadHttpUri as any).search((data: any) => {
             // overrides existing (leaves others intact)
 
             // tslint:disable-next-line:no-string-literal
@@ -939,7 +943,8 @@ function loadLink(
     if (activeWebView) {
 
         if (webviewNeedsForcedRefresh) {
-            hrefToLoadHttpUri.search((data: any) => {
+            // TODO: urijs types broke this! (lib remains unchanged)
+            (hrefToLoadHttpUri as any).search((data: any) => {
                 // overrides existing (leaves others intact)
 
                 data[URL_PARAM_REFRESH] = `${++_reloadCounter}`;
@@ -947,7 +952,8 @@ function loadLink(
         }
 
         if (win.READIUM2.sessionInfo) {
-            hrefToLoadHttpUri.search((data: any) => {
+            // TODO: urijs types broke this! (lib remains unchanged)
+            (hrefToLoadHttpUri as any).search((data: any) => {
                 // overrides existing (leaves others intact)
 
                 if (win.READIUM2.sessionInfo) {

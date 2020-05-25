@@ -1,10 +1,33 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.4.0...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.4.1...develop
 
 Changes:
 * TODO
+
+# 1.4.1
+
+> Build environment: NodeJS `12.16.2`, NPM `6.14.4`
+
+Changes:
+* NPM package updates.
+* EPUB3 Media Overlays / sync-media: new "caption style" view.
+* TTS readaloud: improved presentation styles for sepia, night and normal modes.
+* TTS readaloud: new features, emphasis on heading levels, and inline display of images with "alt" attribute.
+* Annotations / highlights: vastly improved rendering performance (DocumentFragment to build DOM, then batch-append highlights "layer" into actual document, also better mouse interaction / hover detection).
+* Annotation / highlights: display improvement, using "mix blend mode" with opacity, yield better text legibility.
+* Annotation / highlights: SVG and HTML renderers now default to "background" drawing style, with "underline" / "strikethrough" optional choices (was hard-coded before, now in API).
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.4.1/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.4.1/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.4.1
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.4.0...v1.4.1
 
 # 1.4.0
 
