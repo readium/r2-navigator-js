@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.4.2...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.4.3...develop
 
 Changes:
 * TODO
+
+# 1.4.3
+
+> Build environment: NodeJS `12.16.3`, NPM `6.14.5`
+
+Changes:
+* Fixed bug which prevented resources from loading, when URL path starts with any first characters of "/manifest.json" (incorrect URL resolution routine, bad character offset calculation, erroneous common root string)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.4.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.4.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.4.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.4.2...v1.4.3
 
 # 1.4.2
 
