@@ -513,36 +513,36 @@ function loadLink(
     const publicationURLHttp = pubIsServedViaSpecialUrlProtocol ?
         convertCustomSchemeToHttpUrl(publicationURL) : publicationURL;
 
-    let linkPath: string | undefined;
-
     const hrefToLoadHttpObj = new URL(hrefToLoadHttp);
     hrefToLoadHttpObj.hash = "";
     hrefToLoadHttpObj.search = "";
     const publicationURLHttpObj = new URL(publicationURLHttp);
     publicationURLHttpObj.hash = "";
     publicationURLHttpObj.search = "";
-    let iBreak = -1;
-    for (let i = 0; i < publicationURLHttpObj.pathname.length; i++) {
-        const c1 = publicationURLHttpObj.pathname[i];
-        if (i < hrefToLoadHttpObj.pathname.length) {
-            const c2 = hrefToLoadHttpObj.pathname[i];
-            if (c1 !== c2) {
-                iBreak = i;
-                break;
-            }
-        } else {
-            break;
-        }
-    }
-    if (iBreak > 0) {
-        linkPath = hrefToLoadHttpObj.pathname.substr(iBreak);
-    }
+    const rootPath = publicationURLHttpObj.pathname.replace(/manifest\.json$/, "");
+    let linkPath = hrefToLoadHttpObj.pathname.replace(rootPath, "");
 
-    if (!linkPath) {
-        debug(`R2LOADLINK?? ${hrefToLoad} ... ${publicationURL} !!! ${hrefToLoadHttp} ... ${publicationURLHttp}`);
-
-        return false;
-    }
+    // let linkPath: string | undefined;
+    // let iBreak = -1;
+    // for (let i = 0; i < publicationURLHttpObj.pathname.length; i++) {
+    //     const c1 = publicationURLHttpObj.pathname[i];
+    //     if (i < hrefToLoadHttpObj.pathname.length) {
+    //         const c2 = hrefToLoadHttpObj.pathname[i];
+    //         if (c1 !== c2) {
+    //             iBreak = i;
+    //             break;
+    //         }
+    //     } else {
+    //         break;
+    //     }
+    // }
+    // if (iBreak > 0) {
+    //     linkPath = hrefToLoadHttpObj.pathname.substr(iBreak);
+    // }
+    // if (!linkPath) {
+    //     debug(`R2LOADLINK?? ${hrefToLoad} ... ${publicationURL} !!! ${hrefToLoadHttp} ... ${publicationURLHttp}`);
+    //     return false;
+    // }
 
     // because URL.toString() percent-encodes Unicode characters in the path!
     linkPath = decodeURIComponent(linkPath);
