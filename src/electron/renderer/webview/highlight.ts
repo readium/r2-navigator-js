@@ -12,10 +12,13 @@ import { ipcRenderer } from "electron";
 import {
     IEventPayload_R2_EVENT_HIGHLIGHT_CLICK, R2_EVENT_HIGHLIGHT_CLICK,
 } from "../../common/events";
-import { IColor, IHighlight, IHighlightDefinition } from "../../common/highlight";
+import {
+    HighlightDrawTypeStrikethrough, HighlightDrawTypeUnderline, IColor, IHighlight,
+    IHighlightDefinition,
+} from "../../common/highlight";
 import { isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";
-import { IRectSimple, getClientRectsNoOverlap } from "../common/rect-utils";
+import { IRectSimple, getClientRectsNoOverlap_ } from "../common/rect-utils";
 import { getScrollingElement } from "./readium-css";
 import { convertRangeInfo } from "./selection";
 import { IReadiumElectronWebviewWindow } from "./state";
@@ -180,7 +183,7 @@ function resetHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightAr
             } else {
                 // tslint:disable-next-line:max-line-length
                 highlightArea.style.setProperty("background-color",
-                    highlight.drawType === 1 ? "transparent" : // underline is border bottom
+                    highlight.drawType === HighlightDrawTypeUnderline ? "transparent" : // underline is border bottom
                     (USE_BLEND_MODE ?
                         `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` :
                         `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`),
@@ -235,7 +238,7 @@ function setHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightArea
         } else {
             // tslint:disable-next-line:max-line-length
             highlightArea.style.setProperty("background-color",
-                highlight.drawType === 1 ? "transparent" : // underline is border bottom
+                highlight.drawType === HighlightDrawTypeUnderline ? "transparent" : // underline is border bottom
                 (USE_BLEND_MODE ?
                     `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` :
                     `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`),
@@ -646,6 +649,7 @@ export function createHighlights(
             highDef.color,
             pointerInteraction,
             highDef.drawType,
+            highDef.expand,
             bodyRect);
         highlights.push(high);
 
@@ -665,6 +669,7 @@ export function createHighlight(
     color: IColor | undefined,
     pointerInteraction: boolean,
     drawType: number | undefined,
+    expand: number | undefined,
     bodyRect: DOMRect): [IHighlight, HTMLDivElement | null] {
 
     // tslint:disable-next-line:no-string-literal
@@ -685,6 +690,7 @@ export function createHighlight(
     const highlight: IHighlight = {
         color: color ? color : DEFAULT_BACKGROUND_COLOR,
         drawType,
+        expand,
         id,
         pointerInteraction,
         selectionInfo,
@@ -757,13 +763,19 @@ function createHighlightDom(
     // console.log("scrollElement.scrollTop: " + scrollElement.scrollTop);
 
     const useSVG = !win.READIUM2.DEBUG_VISUALS && USE_SVG;
-    const drawUnderline = highlight.drawType === 1 && !win.READIUM2.DEBUG_VISUALS;
-    const drawStrikeThrough = highlight.drawType === 2 && !win.READIUM2.DEBUG_VISUALS;
+    const drawUnderline = highlight.drawType === HighlightDrawTypeUnderline && !win.READIUM2.DEBUG_VISUALS;
+    const drawStrikeThrough = highlight.drawType === HighlightDrawTypeStrikethrough && !win.READIUM2.DEBUG_VISUALS;
 
     const doNotMergeHorizontallyAlignedRects = drawUnderline || drawStrikeThrough;
-    // const clientRects = range.getClientRects(); // ClientRectList | DOMRectList
+
+    const ex = highlight.expand ? highlight.expand : 0;
+
+    const rangeClientRects = range.getClientRects();
     // tslint:disable-next-line:max-line-length
-    const clientRects = win.READIUM2.DEBUG_VISUALS ? range.getClientRects() : getClientRectsNoOverlap(range, doNotMergeHorizontallyAlignedRects);
+    const clientRects =
+        // win.READIUM2.DEBUG_VISUALS ?
+        // rangeClientRects :
+        getClientRectsNoOverlap_(rangeClientRects, doNotMergeHorizontallyAlignedRects, ex);
 
     let highlightAreaSVGDocFrag: DocumentFragment | undefined;
 

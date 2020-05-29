@@ -487,11 +487,11 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
     if (delayScrollIntoView) {
         setTimeout(() => {
             debug("++++ scrollToHashRaw FROM DELAYED SCROLL_TO");
-            scrollToHashRaw();
+            scrollToHashRaw(false);
         }, 100);
     } else {
         debug("++++ scrollToHashRaw FROM SCROLL_TO");
-        scrollToHashRaw();
+        scrollToHashRaw(false);
     }
 });
 
@@ -874,10 +874,7 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
 let _lastAnimState2: IPropertyAnimationState | undefined;
 const animationTime2 = 400;
 
-function scrollElementIntoView(element: Element, doFocus: boolean) {
-    scrollElementIntoView_(element, doFocus, false);
-}
-function scrollElementIntoView_(element: Element, doFocus: boolean, animate: boolean) {
+function scrollElementIntoView(element: Element, doFocus: boolean, animate: boolean) {
 
     if (win.READIUM2.DEBUG_VISUALS) {
         const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr3}]`);
@@ -1068,7 +1065,7 @@ function scrollIntoView(element: HTMLElement) {
     scrollElement.scrollLeft = scrollOffset;
 }
 
-const scrollToHashRaw = () => {
+const scrollToHashRaw = (animate: boolean) => {
     if (!win.document || !win.document.body || !win.document.documentElement) {
         return;
     }
@@ -1090,7 +1087,7 @@ const scrollToHashRaw = () => {
         //     return;
         // }
         // _ignoreScrollEvent = true;
-        scrollElementIntoView(win.READIUM2.locationHashOverride, true);
+        scrollElementIntoView(win.READIUM2.locationHashOverride, true, animate);
 
         notifyReadingLocationDebounced();
         return;
@@ -1098,7 +1095,7 @@ const scrollToHashRaw = () => {
         win.READIUM2.locationHashOverride = win.READIUM2.hashElement;
 
         // _ignoreScrollEvent = true;
-        scrollElementIntoView(win.READIUM2.hashElement, true);
+        scrollElementIntoView(win.READIUM2.hashElement, true, animate);
 
         notifyReadingLocationDebounced();
         return;
@@ -1194,7 +1191,7 @@ const scrollToHashRaw = () => {
                     }
 
                     // _ignoreScrollEvent = true;
-                    scrollElementIntoView(selected, true);
+                    scrollElementIntoView(selected, true, animate);
 
                     notifyReadingLocationDebounced();
                     return;
@@ -1289,9 +1286,9 @@ const scrollToHashRaw = () => {
     notifyReadingLocationDebounced();
 };
 
-const scrollToHashDebounced = debounce(() => {
+const scrollToHashDebounced = debounce((animate: boolean) => {
     debug("++++ scrollToHashRaw FROM DEBOUNCED");
-    scrollToHashRaw();
+    scrollToHashRaw(animate);
 }, 100);
 
 let _ignoreScrollEvent = false;
@@ -1329,8 +1326,8 @@ function showHideContentMask(doHide: boolean, isFixedLayout: boolean | null) {
     }
 }
 
-function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean) {
-    scrollElementIntoView(el as HTMLElement, doFocus);
+function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean, animate: boolean) {
+    scrollElementIntoView(el as HTMLElement, doFocus, animate);
 
     const blacklisted = checkBlacklisted(el as HTMLElement);
     if (blacklisted) {
@@ -1339,8 +1336,8 @@ function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean) {
     win.READIUM2.locationHashOverride = el as HTMLElement;
     notifyReadingLocationDebounced();
 }
-const focusScrollDebounced = debounce((el: HTMLOrSVGElement, doFocus: boolean) => {
-    focusScrollRaw(el, doFocus);
+const focusScrollDebounced = debounce((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean) => {
+    focusScrollRaw(el, doFocus, animate);
 }, 100);
 
 // let _ignoreFocusInEvent = false;
@@ -1360,7 +1357,7 @@ function handleFocusInRaw(target: HTMLElement, _tabKeyDownEvent: KeyboardEvent |
         return;
     }
     // _ignoreFocusInEvent = true;
-    focusScrollRaw(target, false);
+    focusScrollRaw(target, false, false);
 }
 // function handleTabRaw(target: HTMLElement, tabKeyDownEvent: KeyboardEvent | undefined) {
 //     if (!target || !win.document.body) {
@@ -1728,7 +1725,7 @@ function loaded(forced: boolean) {
             showHideContentMask(false, win.READIUM2.isFixedLayout);
 
             debug("++++ scrollToHashDebounced FROM LOAD");
-            scrollToHashDebounced();
+            scrollToHashDebounced(false);
 
             if (win.document.body) {
                 const linkTxt = "__";
@@ -1751,7 +1748,7 @@ function loaded(forced: boolean) {
                         }
                         const el = win.READIUM2.hashElement || win.READIUM2.locationHashOverride;
                         if (el) {
-                            focusScrollDebounced(el as HTMLElement, true);
+                            focusScrollDebounced(el as HTMLElement, true, false);
                         }
                     });
                 }, 200);
@@ -1924,7 +1921,7 @@ function loaded(forced: boolean) {
                 (win.document.body as any).tabbables = undefined;
 
                 // debug("++++ scrollToHashDebounced from ResizeObserver");
-                scrollToHashDebounced();
+                scrollToHashDebounced(false);
             });
             resizeObserver.observe(win.document.body);
 
@@ -2036,7 +2033,7 @@ function loaded(forced: boolean) {
         }
 
         debug("++++ scrollToHashDebounced FROM RESIZE");
-        scrollToHashDebounced();
+        scrollToHashDebounced(false);
     };
     const onResizeDebounced = debounce(() => {
         onResizeRaw();
@@ -3103,7 +3100,7 @@ if (!win.READIUM2.isAudio) {
                 }
 
                 win.READIUM2.locationHashOverride = targetEl;
-                scrollElementIntoView_(targetEl, false, true);
+                scrollElementIntoView(targetEl, false, true);
                 scrollToHashDebounced.clear();
                 notifyReadingLocationRaw(false, true);
 
@@ -3141,7 +3138,14 @@ if (!win.READIUM2.isAudio) {
             }
         }
         const highlightDefinitions = !payloadPing.highlightDefinitions ?
-            [ { color: undefined, drawType: undefined, selectionInfo: undefined } as IHighlightDefinition ] :
+            [
+                {
+                    color: undefined,
+                    drawType: undefined,
+                    expand: undefined,
+                    selectionInfo: undefined,
+                } as IHighlightDefinition,
+            ] :
             payloadPing.highlightDefinitions;
 
         for (const highlightDefinition of highlightDefinitions) {

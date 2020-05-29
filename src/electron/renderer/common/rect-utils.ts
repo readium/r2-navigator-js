@@ -34,16 +34,20 @@ export interface IRect extends IRectSimple {
     right: number;
 }
 
-export function getClientRectsNoOverlap(range: Range, doNotMergeHorizontallyAlignedRects: boolean): IRect[] {
+export function getClientRectsNoOverlap(
+    range: Range,
+    doNotMergeHorizontallyAlignedRects: boolean,
+    expand?: number): IRect[] {
 
     const rangeClientRects = range.getClientRects(); // Array.from(range.getClientRects());
-    return getClientRectsNoOverlap_(rangeClientRects, doNotMergeHorizontallyAlignedRects);
+    return getClientRectsNoOverlap_(rangeClientRects, doNotMergeHorizontallyAlignedRects, expand);
 }
 
 // tslint:disable-next-line:max-line-length
-export function getClientRectsNoOverlap_(clientRects: ClientRectList | DOMRectList, doNotMergeHorizontallyAlignedRects: boolean): IRect[] {
-
-    const tolerance = 1;
+export function getClientRectsNoOverlap_(
+    clientRects: ClientRectList | DOMRectList,
+    doNotMergeHorizontallyAlignedRects: boolean,
+    expand?: number): IRect[] {
 
     const originalRects: IRect[] = [];
     for (const rangeClientRect of clientRects) {
@@ -56,6 +60,28 @@ export function getClientRectsNoOverlap_(clientRects: ClientRectList | DOMRectLi
             width: rangeClientRect.width,
         });
     }
+    return getClientRectsNoOverlap__(originalRects, doNotMergeHorizontallyAlignedRects, expand);
+}
+
+// tslint:disable-next-line:max-line-length
+export function getClientRectsNoOverlap__(
+    originalRects: IRect[],
+    doNotMergeHorizontallyAlignedRects: boolean,
+    expand?: number): IRect[] {
+
+    const ex = expand ? expand : 0;
+    if (ex) {
+        for (const rect of originalRects) {
+            rect.left -= ex;
+            rect.top -= ex;
+            rect.right += ex;
+            rect.bottom += ex;
+            rect.width += (2 * ex);
+            rect.height += (2 * ex);
+        }
+    }
+
+    const tolerance = 1;
 
     const mergedRects = mergeTouchingRects(originalRects, tolerance, doNotMergeHorizontallyAlignedRects);
     const noContainedRects = removeContainedRects(mergedRects, tolerance);
@@ -64,7 +90,10 @@ export function getClientRectsNoOverlap_(clientRects: ClientRectList | DOMRectLi
     const minArea = 2 * 2;
     for (let j = newRects.length - 1; j >= 0; j--) {
         const rect = newRects[j];
-        const bigEnough = (rect.width * rect.height) > minArea;
+        let bigEnough = (rect.width * rect.height) > minArea;
+        if (bigEnough && ex && (rect.width <= ex || rect.height <= ex)) {
+            bigEnough = false;
+        }
         if (!bigEnough) {
             if (newRects.length > 1) {
                 if (IS_DEV) {

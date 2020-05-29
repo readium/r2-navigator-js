@@ -11,7 +11,9 @@ import { ipcRenderer } from "electron";
 import {
     R2_EVENT_TTS_DOC_END, R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED,
 } from "../../common/events";
-import { IHighlight } from "../../common/highlight";
+import {
+    HighlightDrawTypeBackground, HighlightDrawTypeUnderline, IHighlight,
+} from "../../common/highlight";
 import {
     CSS_CLASS_NO_FOCUS_OUTLINE, POPUP_DIALOG_CLASS_COLLAPSE, ROOT_CLASS_REDUCE_MOTION,
     TTS_CLASS_IS_ACTIVE, TTS_CLASS_THEME1, TTS_CLASS_UTTERANCE, TTS_CLASS_UTTERANCE_HEADING1,
@@ -53,7 +55,7 @@ interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
 
     ttsRootElement: Element | undefined;
 
-    focusScrollRaw: ((el: HTMLOrSVGElement, doFocus: boolean) => void) | undefined;
+    focusScrollRaw: ((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean) => void) | undefined;
 
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: (() => number) | undefined;
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: ((val: number) => void) | undefined;
@@ -91,7 +93,7 @@ function resetState() {
 
 export function ttsPlay(
     speed: number,
-    focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean) => void,
+    focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean, animate: boolean) => void,
     rootElem: Element | undefined,
     startElem: Element | undefined,
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
@@ -194,7 +196,7 @@ interface IResumableState {
     ttsRootElement: Element;
     ttsQueue: ITtsQueueItem[];
     ttsQueueIndex: number;
-    focusScrollRaw: ((el: HTMLOrSVGElement, doFocus: boolean) => void);
+    focusScrollRaw: ((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean) => void);
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: (() => number);
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: ((val: number) => void);
 }
@@ -419,10 +421,10 @@ function wrapHighlightWord(
                 color: {
                     blue: 0,
                     green: 0,
-                    red: 255,
+                    red: 200,
                 },
-                // 0 is full background (default), 1 is underline, 2 is strikethrough
-                drawType: 1,
+                drawType: HighlightDrawTypeUnderline,
+                expand: 2,
                 selectionInfo: {
                     cleanText: "",
                     rangeInfo,
@@ -493,12 +495,12 @@ function wrapHighlight(
             {
                 // https://htmlcolorcodes.com/
                 color: {
-                    blue: 204,
-                    green: 218,
-                    red: 255,
+                    blue: 116, // 204,
+                    green: 248, // 218,
+                    red: 248, // 255,
                 },
-                // 0 is full background (default), 1 is underline, 2 is strikethrough
-                drawType: 0,
+                drawType: HighlightDrawTypeBackground,
+                expand: 4,
                 selectionInfo: {
                     cleanText: "",
                     rangeInfo,
@@ -641,7 +643,7 @@ function updateTTSInfo(
     const isWordBoundary = charIndex >= 0 && utteranceText;
 
     if (!isWordBoundary && _dialogState.focusScrollRaw && ttsQueueItem.item.parentElement) {
-        _dialogState.focusScrollRaw(ttsQueueItem.item.parentElement as HTMLElement, false);
+        _dialogState.focusScrollRaw(ttsQueueItem.item.parentElement as HTMLElement, false, true);
     }
 
     const ttsQueueItemText = utteranceText ? utteranceText : getTtsQueueItemRefText(ttsQueueItem);
@@ -940,7 +942,7 @@ function startTTSSession(
     ttsRootElement: Element,
     ttsQueue: ITtsQueueItem[],
     ttsQueueIndexStart: number,
-    focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean) => void,
+    focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean, animate: boolean) => void,
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: (val: number) => void,
     ) {
@@ -972,8 +974,8 @@ function startTTSSession(
             if (_dialogState.ttsQueueItem && _dialogState.ttsQueueItem.item.parentElement) {
                 toScrollTo = _dialogState.ttsQueueItem.item.parentElement as HTMLElement;
             }
-            if (toScrollTo) {
-                _dialogState.focusScrollRaw(toScrollTo, false);
+            if (toScrollTo && ENABLE_TTS_OVERLAY_VIEW) {
+                _dialogState.focusScrollRaw(toScrollTo, false, true);
             } else {
                 ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable(val);
             }

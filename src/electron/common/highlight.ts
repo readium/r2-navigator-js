@@ -13,6 +13,10 @@ export interface IColor {
     blue: number;
 }
 
+export const HighlightDrawTypeBackground = 0;
+export const HighlightDrawTypeUnderline = 1;
+export const HighlightDrawTypeStrikethrough = 2;
+
 export interface IHighlight {
     id: string;
     selectionInfo: ISelectionInfo;
@@ -21,6 +25,8 @@ export interface IHighlight {
 
     // 0 is full background (default), 1 is underline, 2 is strikethrough
     drawType?: number;
+
+    expand?: number;
 }
 
 export interface IHighlightDefinition {
@@ -29,6 +35,8 @@ export interface IHighlightDefinition {
 
     // 0 is full background (default), 1 is underline, 2 is strikethrough
     drawType?: number;
+
+    expand?: number;
 }
 
 export function convertColorHexadecimalToRGBA(cssHex: string, alpha?: number): string | undefined {
