@@ -109,6 +109,7 @@ export const footnotesCssStyles = `
 :root[style] dialog#${POPUP_DIALOG_CLASS}.${POPUP_DIALOG_CLASS_COLLAPSE},
 :root dialog#${POPUP_DIALOG_CLASS}.${POPUP_DIALOG_CLASS_COLLAPSE} {
     top: auto;
+    height: 1px;
 }
 
 :root[style] .${FOOTNOTES_CONTAINER_CLASS},

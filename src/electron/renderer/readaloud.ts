@@ -23,7 +23,83 @@ import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webvie
 const win = window as IReadiumElectronBrowserWindow;
 
 let _lastTTSWebView: IReadiumElectronWebview | undefined;
+let _lastTTSWebViewHref: string | undefined;
+let _ttsAutoPlayTimeout: number | undefined;
+export function checkTtsState(wv: IReadiumElectronWebview) {
 
+    let wasStopped = false;
+    if (_lastTTSWebView && _lastTTSWebViewHref) {
+
+        if (win.READIUM2.ttsClickEnabled ||
+            !win.READIUM2.getActiveWebViews().includes(_lastTTSWebView) ||
+            !win.READIUM2.getActiveWebViews().find((webview) => webview.READIUM2.link?.Href === _lastTTSWebViewHref)) {
+
+            wasStopped = true;
+
+            setTimeout(() => {
+                win.speechSynthesis.cancel();
+            }, 0);
+
+            _lastTTSWebView = undefined;
+            _lastTTSWebViewHref = undefined;
+            if (_ttsListener) {
+                _ttsListener(TTSStateEnum.STOPPED);
+            }
+        }
+    }
+
+    if (wasStopped || win.READIUM2.ttsClickEnabled) {
+        if (wv.READIUM2.link?.Href) {
+            if (_ttsAutoPlayTimeout) {
+                win.clearTimeout(_ttsAutoPlayTimeout);
+                _ttsAutoPlayTimeout = undefined;
+            }
+            _ttsAutoPlayTimeout = win.setTimeout(() => {
+                _ttsAutoPlayTimeout = undefined;
+
+                if (!_lastTTSWebView && wv.READIUM2.link?.Href) {
+
+                    _lastTTSWebView = wv;
+                    _lastTTSWebViewHref = wv.READIUM2.link.Href;
+                    playTtsOnReadingLocation(wv.READIUM2.link.Href);
+                }
+            }, 100);
+        }
+    }
+}
+export function playTtsOnReadingLocation(href: string) {
+    const activeWebView = win.READIUM2.getActiveWebViews().find((webview) => {
+        return webview.READIUM2.link?.Href === href;
+    });
+    if (activeWebView) {
+        let done = false;
+        const cb = (event: Electron.IpcMessageEvent) => {
+            if (event.channel === R2_EVENT_READING_LOCATION) {
+                const webview = event.currentTarget as IReadiumElectronWebview;
+                if (webview !== activeWebView) {
+                    console.log("Wrong navigator webview?!");
+                    return;
+                }
+                done = true;
+                activeWebView.removeEventListener("ipc-message", cb);
+                if (activeWebView.READIUM2.link?.Href === href) {
+                    ttsPlay(win.READIUM2.ttsPlaybackRate);
+                }
+            }
+        };
+        setTimeout(() => {
+            if (done) {
+                return;
+            }
+            try {
+                activeWebView.removeEventListener("ipc-message", cb);
+            } catch (err) {
+                console.log(err);
+            }
+        }, 1000);
+        activeWebView.addEventListener("ipc-message", cb);
+    }
+}
 export function ttsHandleIpcMessage(
     eventChannel: string,
     _eventArgs: any[],
@@ -31,56 +107,35 @@ export function ttsHandleIpcMessage(
 
     if (eventChannel === R2_EVENT_TTS_IS_PAUSED) {
         _lastTTSWebView = eventCurrentTarget;
+        _lastTTSWebViewHref = eventCurrentTarget.READIUM2.link?.Href;
         if (_ttsListener) {
             _ttsListener(TTSStateEnum.PAUSED);
         }
     } else if (eventChannel === R2_EVENT_TTS_IS_STOPPED) {
         _lastTTSWebView = undefined;
+        _lastTTSWebViewHref = undefined;
         if (_ttsListener) {
             _ttsListener(TTSStateEnum.STOPPED);
         }
     } else if (eventChannel === R2_EVENT_TTS_IS_PLAYING) {
         _lastTTSWebView = eventCurrentTarget;
+        _lastTTSWebViewHref = eventCurrentTarget.READIUM2.link?.Href;
         if (_ttsListener) {
             _ttsListener(TTSStateEnum.PLAYING);
         }
     } else if (eventChannel === R2_EVENT_TTS_DOC_END) {
-        const nextSpine = navLeftOrRight(isRTL(), true, true);
-        if (nextSpine) {
-            setTimeout(() => {
-                const activeWebView = win.READIUM2.getActiveWebViews().find((webview) => {
-                    return webview.READIUM2.link?.Href === nextSpine.Href;
-                });
-                if (activeWebView) {
-                    let done = false;
-                    const cb = (event: Electron.IpcMessageEvent) => {
-                        if (event.channel === R2_EVENT_READING_LOCATION) {
-                            const webview = event.currentTarget as IReadiumElectronWebview;
-                            if (webview !== activeWebView) {
-                                console.log("Wrong navigator webview?!");
-                                return;
-                            }
-                            done = true;
-                            activeWebView.removeEventListener("ipc-message", cb);
-                            if (activeWebView.READIUM2.link?.Href === nextSpine.Href) {
-                                ttsPlay(win.READIUM2.ttsPlaybackRate);
-                            }
-                        }
-                    };
-                    setTimeout(() => {
-                        if (done) {
-                            return;
-                        }
-                        try {
-                            activeWebView.removeEventListener("ipc-message", cb);
-                        } catch (err) {
-                            console.log(err);
-                        }
-                    }, 1000);
-                    activeWebView.addEventListener("ipc-message", cb);
-                }
-            }, 200);
-        }
+        // _lastTTSWebView = undefined;
+        // _lastTTSWebViewHref = undefined;
+        // if (_ttsListener) {
+        //     _ttsListener(TTSStateEnum.STOPPED);
+        // }
+        // const nextSpine =
+        navLeftOrRight(isRTL(), true, true);
+        // if (nextSpine) {
+        //     setTimeout(() => {
+        //         playTtsOnReadingLocation(nextSpine.Href);
+        //     }, 200);
+        // }
     } else {
         return false;
     }
@@ -120,9 +175,11 @@ export function ttsPlay(speed: number) {
         activeWebView = win.READIUM2.getFirstWebView();
     }
     _lastTTSWebView = activeWebView;
+    _lastTTSWebViewHref = undefined;
     if (!activeWebView) {
         return;
     }
+    _lastTTSWebViewHref = activeWebView.READIUM2.link?.Href;
 
     const payload: IEventPayload_R2_EVENT_TTS_DO_PLAY = {
         rootElement: "html > body", // window.document.body
@@ -155,6 +212,7 @@ export function ttsStop() {
             continue;
         }
         _lastTTSWebView = undefined;
+        _lastTTSWebViewHref = undefined;
         setTimeout(async () => {
             await activeWebView.send(R2_EVENT_TTS_DO_STOP);
         }, 0);

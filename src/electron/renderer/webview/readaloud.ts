@@ -110,7 +110,7 @@ export function ttsPlay(
         rootEl = win.document.body;
     }
 
-    const ttsQueue = generateTtsQueue(rootEl, true); // ENABLE_TTS_OVERLAY_VIEW
+    const ttsQueue = generateTtsQueue(rootEl, true);
     if (!ttsQueue.length) {
         return;
     }
@@ -179,19 +179,24 @@ export function ttsPause() {
         }, 0);
     }
 
-    win.document.documentElement.classList.add(TTS_CLASS_IS_ACTIVE);
+    if (ENABLE_TTS_OVERLAY_VIEW) {
+        win.document.documentElement.classList.add(TTS_CLASS_IS_ACTIVE);
+    }
     ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PAUSED);
 }
 
 export function ttsPlaybackRate(speed: number) {
     win.READIUM2.ttsPlaybackRate = speed;
-    ttsPause();
-    if (_dialogState && _dialogState.ttsUtterance) {
-        _dialogState.ttsUtterance.rate = speed;
+
+    if (_dialogState) {
+        ttsPause();
+        if (_dialogState.ttsUtterance) {
+            _dialogState.ttsUtterance.rate = speed;
+        }
+        setTimeout(() => {
+            ttsResume();
+        }, 60);
     }
-    setTimeout(() => {
-        ttsResume();
-    }, 60);
 }
 
 interface IResumableState {
@@ -219,7 +224,9 @@ export function ttsResume() {
             }
         }, 0);
 
-        win.document.documentElement.classList.add(TTS_CLASS_IS_ACTIVE);
+        if (ENABLE_TTS_OVERLAY_VIEW) {
+            win.document.documentElement.classList.add(TTS_CLASS_IS_ACTIVE);
+        }
         ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PLAYING);
     } else if (_resumableState) {
         setTimeout(() => {
@@ -995,7 +1002,9 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
         win.speechSynthesis.speak(utterance);
     }, 0);
 
-    win.document.documentElement.classList.add(TTS_CLASS_IS_ACTIVE);
+    if (ENABLE_TTS_OVERLAY_VIEW) {
+        win.document.documentElement.classList.add(TTS_CLASS_IS_ACTIVE);
+    }
     ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PLAYING);
 }
 
@@ -1051,16 +1060,21 @@ function startTTSSession(
     // &#x21E0;
     // &#x21E2;
     const outerHTML =
-    `<div id="${TTS_ID_CONTAINER}"
-        class="${CSS_CLASS_NO_FOCUS_OUTLINE} ${TTS_CLASS_THEME1}"
-        dir="ltr"
-        lang="en"
-        xml:lang="en"
-        tabindex="0" autofocus="autofocus"></div>
-    <button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}" title="previous"><span>&#9668;</span></button>
-    <button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}" title="next"><span>&#9658;</span></button>
-    <input id="${TTS_ID_SLIDER}" type="range" min="0" max="${ttsQueueLength - 1}" value="0"
-        ${isRTL() ? `dir="rtl"` : `dir="ltr"`}  title="progress"/>`;
+`<div id="${TTS_ID_CONTAINER}"
+    class="${CSS_CLASS_NO_FOCUS_OUTLINE} ${TTS_CLASS_THEME1}"
+    dir="ltr"
+    lang="en"
+    xml:lang="en"
+    tabindex="0" autofocus="autofocus"></div>
+${ENABLE_TTS_OVERLAY_VIEW ?
+`
+<button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}" title="previous"><span>&#9668;</span></button>
+<button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}" title="next"><span>&#9658;</span></button>
+<input id="${TTS_ID_SLIDER}" type="range" min="0" max="${ttsQueueLength - 1}" value="0"
+    ${isRTL() ? `dir="rtl"` : `dir="ltr"`}  title="progress"/>
+`
+: ""}
+`;
 
     const pop = new PopupDialog(
         win.document,

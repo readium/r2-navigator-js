@@ -183,9 +183,9 @@ export function findTtsQueueItemIndex(
                         offset += txtNode.nodeValue.length;
                     }
                     let j = i - 1;
-                    let iSent = -1;
+                    // let iSent = -1;
                     for (const end of ttsQueueItem.combinedTextSentencesRangeEnd) {
-                        iSent++;
+                        // iSent++;
                         j++;
                         if (end < offset) {
                             continue;

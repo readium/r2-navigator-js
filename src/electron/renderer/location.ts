@@ -881,8 +881,8 @@ function loadLink(
         });
     }
 
-    const webviewNeedsForcedRefresh = !isAudio &&
-        activeWebView && activeWebView.READIUM2.forceRefresh;
+    const webviewNeedsForcedRefresh = !isAudio && (win.READIUM2.ttsClickEnabled ||
+        activeWebView && activeWebView.READIUM2.forceRefresh);
     if (activeWebView) {
         activeWebView.READIUM2.forceRefresh = undefined;
     }

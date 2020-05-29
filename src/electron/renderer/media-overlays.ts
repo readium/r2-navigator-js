@@ -882,7 +882,7 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
         if (IS_DEV) {
             debug("playMediaOverlaysForLink() - navLeftOrRight()");
         }
-        _timeoutAutoNext = window.setTimeout(() => {
+        _timeoutAutoNext = win.setTimeout(() => {
             _timeoutAutoNext = undefined;
 
             mediaOverlaysStop(true);
