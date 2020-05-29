@@ -108,7 +108,7 @@ export function ttsPlay(
         rootEl = win.document.body;
     }
 
-    const ttsQueue = generateTtsQueue(rootEl, ENABLE_TTS_OVERLAY_VIEW);
+    const ttsQueue = generateTtsQueue(rootEl, true); // ENABLE_TTS_OVERLAY_VIEW
     if (!ttsQueue.length) {
         return;
     }
@@ -351,10 +351,23 @@ function wrapHighlightWord(
         });
         _ttsQueueItemHighlightsWord = undefined;
     }
+
+    const ttsQueueItem = ttsQueueItemRef.item;
+    let txtToCheck = ttsQueueItemRef.item.combinedText;
+    let charIndexAdjusted = charIndex;
+    if (ttsQueueItem.combinedTextSentences &&
+        ttsQueueItem.combinedTextSentencesRangeBegin &&
+        ttsQueueItem.combinedTextSentencesRangeEnd &&
+        ttsQueueItemRef.iSentence >= 0) {
+        const sentOffset = ttsQueueItem.combinedTextSentencesRangeBegin[ttsQueueItemRef.iSentence];
+        charIndexAdjusted += sentOffset;
+        txtToCheck = ttsQueueItem.combinedTextSentences[ttsQueueItemRef.iSentence];
+    }
+
     if (IS_DEV) {
-        if (utteranceText !== ttsQueueItemRef.item.combinedText) {
+        if (utteranceText !== txtToCheck) {
             console.log("TTS utteranceText DIFF?? ",
-                `[[${utteranceText}]]`, `[[${ttsQueueItemRef.item.combinedText}]]`);
+                `[[${utteranceText}]]`, `[[${txtToCheck}]]`);
         }
         const ttsWord = utteranceText.substr(charIndex, charLength);
         if (ttsWord !== word) {
@@ -364,7 +377,7 @@ function wrapHighlightWord(
         }
         // console.log("HIGHLIGHT WORD DATA:");
         // console.log(utteranceText);
-        // console.log(ttsQueueItemRef.item.combinedText);
+        // console.log(txtToCheck);
         // console.log(ttsWord);
         // console.log(word);
         // console.log(charIndex);
@@ -378,17 +391,17 @@ function wrapHighlightWord(
     let rangeStartOffset = -1;
     let rangeEndNode: Node | undefined;
     let rangeEndOffset = -1;
-    const charIndexEnd = charIndex + charLength;
-    for (const txtNode of ttsQueueItemRef.item.textNodes) {
+    const charIndexEnd = charIndexAdjusted + charLength;
+    for (const txtNode of ttsQueueItem.textNodes) {
         if (!txtNode.nodeValue && txtNode.nodeValue !== "") {
             continue;
         }
         const l = txtNode.nodeValue.length;
         acc += l;
         if (!rangeStartNode) {
-            if (charIndex < acc) {
+            if (charIndexAdjusted < acc) {
                 rangeStartNode = txtNode;
-                rangeStartOffset = l - (acc - charIndex);
+                rangeStartOffset = l - (acc - charIndexAdjusted);
             }
         }
         if (rangeStartNode && charIndexEnd <= acc) {
@@ -469,50 +482,97 @@ function wrapHighlight(
         ttsQueueItem.parentElement &&
         ttsQueueItem.textNodes && ttsQueueItem.textNodes.length) {
 
-        const range = new Range(); // document.createRange()
+        let range: Range | undefined;
+        if (ttsQueueItem.combinedTextSentences &&
+            ttsQueueItem.combinedTextSentencesRangeBegin &&
+            ttsQueueItem.combinedTextSentencesRangeEnd &&
+            ttsQueueItemRef.iSentence >= 0) {
 
-        const firstTextNode = ttsQueueItem.textNodes[0];
-        if (!firstTextNode.nodeValue && firstTextNode.nodeValue !== "") {
-            return;
+            const sentBegin = ttsQueueItem.combinedTextSentencesRangeBegin[ttsQueueItemRef.iSentence];
+            const sentEnd = ttsQueueItem.combinedTextSentencesRangeEnd[ttsQueueItemRef.iSentence];
+
+            let acc = 0;
+            let rangeStartNode: Node | undefined;
+            let rangeStartOffset = -1;
+            let rangeEndNode: Node | undefined;
+            let rangeEndOffset = -1;
+            for (const txtNode of ttsQueueItemRef.item.textNodes) {
+                if (!txtNode.nodeValue && txtNode.nodeValue !== "") {
+                    continue;
+                }
+                const l = txtNode.nodeValue.length;
+                acc += l;
+                if (!rangeStartNode) {
+                    if (sentBegin < acc) {
+                        rangeStartNode = txtNode;
+                        rangeStartOffset = l - (acc - sentBegin);
+                    }
+                }
+                if (rangeStartNode && sentEnd <= acc) {
+                    rangeEndNode = txtNode;
+                    rangeEndOffset = l - (acc - sentEnd);
+                    break;
+                }
+            }
+
+            if (rangeStartNode && rangeEndNode) {
+                // console.log("HIGHLIGHT WORD");
+                // console.log(rangeStartOffset);
+                // console.log(rangeEndOffset);
+
+                range = new Range(); // document.createRange()
+                range.setStart(rangeStartNode, rangeStartOffset);
+                range.setEnd(rangeEndNode, rangeEndOffset);
+            }
+        } else { // ttsQueueItem.combinedText
+
+            range = new Range(); // document.createRange()
+
+            const firstTextNode = ttsQueueItem.textNodes[0];
+            if (!firstTextNode.nodeValue && firstTextNode.nodeValue !== "") {
+                return;
+            }
+            range.setStart(firstTextNode, 0);
+
+            const lastTextNode = ttsQueueItem.textNodes[ttsQueueItem.textNodes.length - 1];
+            if (!lastTextNode.nodeValue && lastTextNode.nodeValue !== "") {
+                return;
+            }
+            range.setEnd(lastTextNode, lastTextNode.nodeValue.length);
         }
-        range.setStart(firstTextNode, 0);
 
-        const lastTextNode = ttsQueueItem.textNodes[ttsQueueItem.textNodes.length - 1];
-        if (!lastTextNode.nodeValue && lastTextNode.nodeValue !== "") {
-            return;
-        }
-        range.setEnd(lastTextNode, lastTextNode.nodeValue.length);
+        if (range) {
+            const rangeInfo = convertRange(
+                range,
+                getCssSelector,
+                (_node: Node) => ""); // computeElementCFI
+            if (!rangeInfo) {
+                return;
+            }
 
-        const rangeInfo = convertRange(
-            range,
-            getCssSelector,
-            (_node: Node) => ""); // computeElementCFI
-        if (!rangeInfo) {
-            return;
-        }
-
-        const highlightDefinitions = [
-            {
-                // https://htmlcolorcodes.com/
-                color: {
-                    blue: 116, // 204,
-                    green: 248, // 218,
-                    red: 248, // 255,
+            const highlightDefinitions = [
+                {
+                    // https://htmlcolorcodes.com/
+                    color: {
+                        blue: 116, // 204,
+                        green: 248, // 218,
+                        red: 248, // 255,
+                    },
+                    drawType: HighlightDrawTypeBackground,
+                    expand: 4,
+                    selectionInfo: {
+                        cleanText: "",
+                        rangeInfo,
+                        rawText: "",
+                    },
                 },
-                drawType: HighlightDrawTypeBackground,
-                expand: 4,
-                selectionInfo: {
-                    cleanText: "",
-                    rangeInfo,
-                    rawText: "",
-                },
-            },
-        ];
-        _ttsQueueItemHighlightsSentence = createHighlights(
-            win,
-            highlightDefinitions,
-            false, // mouse / pointer interaction
-        );
+            ];
+            _ttsQueueItemHighlightsSentence = createHighlights(
+                win,
+                highlightDefinitions,
+                false, // mouse / pointer interaction
+            );
+        }
     }
 }
 

@@ -32,7 +32,7 @@ import {
     setWebViewStyle, shiftWebview,
 } from "./location";
 import { mediaOverlaysHandleIpcMessage } from "./media-overlays";
-import { ttsClickEnable, ttsHandleIpcMessage } from "./readaloud";
+import { ttsClickEnable, ttsHandleIpcMessage, ttsPlaybackRate } from "./readaloud";
 import {
     adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, obtainReadiumCss,
 } from "./readium-css";
@@ -245,6 +245,7 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
         }
 
         if (win.READIUM2) {
+            ttsPlaybackRate(win.READIUM2.ttsPlaybackRate);
             ttsClickEnable(win.READIUM2.ttsClickEnabled);
         }
 

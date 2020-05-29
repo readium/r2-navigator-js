@@ -78,6 +78,8 @@ export interface ITtsQueueItem {
     textNodes: Node[];
     combinedText: string; // combineText(this.textNodes)
     combinedTextSentences: string[] | undefined;
+    combinedTextSentencesRangeBegin: number[] | undefined;
+    combinedTextSentencesRangeEnd: number[] | undefined;
 }
 
 export interface ITtsQueueItemReference {
@@ -202,6 +204,8 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
             current = {
                 combinedText: "", // filled in later (see trySplitTexts())
                 combinedTextSentences: undefined, // filled in later, if text is further chunkable
+                combinedTextSentencesRangeBegin: undefined,
+                combinedTextSentencesRangeEnd: undefined,
                 dir,
                 lang,
                 parentElement,
@@ -246,6 +250,8 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                 ttsQueue.push({
                                     combinedText: txt,
                                     combinedTextSentences: undefined,
+                                    combinedTextSentencesRangeBegin: undefined,
+                                    combinedTextSentencesRangeEnd: undefined,
                                     dir,
                                     lang,
                                     parentElement: childElement,
@@ -281,16 +287,43 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
             ttsQueueItem.combinedTextSentences = undefined;
             return;
         }
-        if (splitSentences) {
-            ttsQueueItem.combinedText = combineTextNodes(ttsQueueItem.textNodes).trim();
+
+        ttsQueueItem.combinedText = combineTextNodes(ttsQueueItem.textNodes, true).replace(/[\r\n]/g, " ");
+        // ttsQueueItem.combinedText = ttsQueueItem.combinedTextSentences ?
+        //     combineTextNodes(ttsQueueItem.textNodes, false).trim() :
+        //     combineTextNodes(ttsQueueItem.textNodes, true);
+        let skipSplitSentences = false;
+        let parent: Element | null = ttsQueueItem.parentElement;
+        while (parent) {
+            if (parent.tagName) {
+                const tag = parent.tagName.toLowerCase();
+                if (tag === "pre" || tag === "code" ||
+                    tag === "video" || tag === "audio") {
+                    skipSplitSentences = true;
+                    break;
+                }
+            }
+            parent = parent.parentElement;
+        }
+        if (splitSentences && !skipSplitSentences) {
             try {
+                const txt = ttsQueueItem.combinedText; // no further transforms?
                 ttsQueueItem.combinedTextSentences = undefined;
-                const sentences = split(ttsQueueItem.combinedText);
+                const sentences = split(txt);
                 ttsQueueItem.combinedTextSentences = [];
+                ttsQueueItem.combinedTextSentencesRangeBegin = [];
+                ttsQueueItem.combinedTextSentencesRangeEnd = [];
                 for (const sentence of sentences) {
                     if (sentence.type === "Sentence") {
+                        // console.log(sentence.raw, JSON.stringify(sentence.range, null, 2));
+
                         ttsQueueItem.combinedTextSentences.push(sentence.raw);
+                        ttsQueueItem.combinedTextSentencesRangeBegin.push(sentence.range[0]);
+                        ttsQueueItem.combinedTextSentencesRangeEnd.push(sentence.range[1]);
                     }
+                    // else {
+                    //     console.log(sentence.type);
+                    // }
                 }
                 if (ttsQueueItem.combinedTextSentences.length === 0 ||
                     ttsQueueItem.combinedTextSentences.length === 1) {
@@ -314,7 +347,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                 ttsQueueItem.combinedTextSentences = undefined;
             }
         } else {
-            ttsQueueItem.combinedText = combineTextNodes(ttsQueueItem.textNodes, true);
+            ttsQueueItem.combinedTextSentences = undefined;
         }
     }
 
