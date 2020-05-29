@@ -96,6 +96,8 @@ export function ttsPlay(
     focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean, animate: boolean) => void,
     rootElem: Element | undefined,
     startElem: Element | undefined,
+    startTextNode: Node | undefined,
+    startTextNodeOffset: number,
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: (val: number) => void,
     ) {
@@ -115,7 +117,7 @@ export function ttsPlay(
 
     let ttsQueueIndex = -1;
     if (startElem) {
-        const idx = findTtsQueueItemIndex(ttsQueue, startElem, rootEl);
+        const idx = findTtsQueueItemIndex(ttsQueue, startElem, startTextNode, startTextNodeOffset, rootEl);
         if (idx >= 0) {
             ttsQueueIndex = idx;
         }

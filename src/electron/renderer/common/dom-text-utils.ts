@@ -158,10 +158,46 @@ export function getTtsQueueItemRef(items: ITtsQueueItem[], index: number): ITtsQ
     return undefined;
 }
 
-export function findTtsQueueItemIndex(ttsQueue: ITtsQueueItem[], element: Element, rootElem: Element): number {
+export function findTtsQueueItemIndex(
+    ttsQueue: ITtsQueueItem[],
+    element: Element,
+    startTextNode: Node | undefined,
+    startTextNodeOffset: number,
+    rootElem: Element): number {
     let i = 0;
     for (const ttsQueueItem of ttsQueue) {
-        if (element === ttsQueueItem.parentElement ||
+        if (startTextNode && ttsQueueItem.textNodes) {
+            if (ttsQueueItem.textNodes.includes(startTextNode)) {
+                if (ttsQueueItem.combinedTextSentences &&
+                    ttsQueueItem.combinedTextSentencesRangeBegin &&
+                    ttsQueueItem.combinedTextSentencesRangeEnd) {
+                    let offset = 0;
+                    for (const txtNode of ttsQueueItem.textNodes) {
+                        if (!txtNode.nodeValue && txtNode.nodeValue !== "") {
+                            continue;
+                        }
+                        if (txtNode === startTextNode) {
+                            offset += startTextNodeOffset;
+                            break;
+                        }
+                        offset += txtNode.nodeValue.length;
+                    }
+                    let j = i - 1;
+                    let iSent = -1;
+                    for (const end of ttsQueueItem.combinedTextSentencesRangeEnd) {
+                        iSent++;
+                        j++;
+                        if (end < offset) {
+                            continue;
+                        }
+                        return j;
+                    }
+                    return i;
+                } else { // ttsQueueItem.combinedText
+                    return i;
+                }
+            }
+        } else if (element === ttsQueueItem.parentElement ||
             (ttsQueueItem.parentElement !== (element.ownerDocument as Document).body &&
                 ttsQueueItem.parentElement !== rootElem &&
                 ttsQueueItem.parentElement.contains(element)) ||
@@ -170,7 +206,7 @@ export function findTtsQueueItemIndex(ttsQueue: ITtsQueueItem[], element: Elemen
         }
         if (ttsQueueItem.combinedTextSentences) {
             i += ttsQueueItem.combinedTextSentences.length;
-        } else {
+        } else { // ttsQueueItem.combinedText
             i++;
         }
     }

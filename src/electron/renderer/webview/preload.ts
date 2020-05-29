@@ -2105,20 +2105,20 @@ function loaded(forced: boolean) {
         // } else if (win.document.caretRangeFromPoint) {
         // }
 
-        // let textNode: Node | undefined;
-        // let textNodeOffset = 0;
+        let textNode: Node | undefined;
+        let textNodeOffset = -1;
 
         const range = win.document.caretRangeFromPoint(x, y);
         if (range) {
             const node = range.startContainer;
-            // const offset = range.startOffset;
+            const offset = range.startOffset;
 
             if (node) {
                 if (node.nodeType === Node.ELEMENT_NODE) {
                     element = node as Element;
                 } else if (node.nodeType === Node.TEXT_NODE) {
-                    // textNode = node;
-                    // textNodeOffset = offset;
+                    textNode = node;
+                    textNodeOffset = offset;
                     if (node.parentNode && node.parentNode.nodeType === Node.ELEMENT_NODE) {
                         element = node.parentNode as Element;
                     }
@@ -2134,6 +2134,8 @@ function loaded(forced: boolean) {
                         focusScrollRaw,
                         element,
                         undefined,
+                        undefined,
+                        -1,
                         ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
                         ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
                     return;
@@ -2144,6 +2146,8 @@ function loaded(forced: boolean) {
                     focusScrollRaw,
                     (element.ownerDocument as Document).body,
                     element,
+                    textNode,
+                    textNodeOffset,
                     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
                     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
             }
@@ -2967,6 +2971,8 @@ if (!win.READIUM2.isAudio) {
             focusScrollRaw,
             rootElement ? rootElement : undefined,
             startElement ? startElement : undefined,
+            undefined,
+            -1,
             ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
             ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
     });
