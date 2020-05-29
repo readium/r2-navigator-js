@@ -11,23 +11,31 @@ import { ipcRenderer } from "electron";
 import {
     R2_EVENT_TTS_DOC_END, R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED,
 } from "../../common/events";
+import { IHighlight } from "../../common/highlight";
 import {
-    CSS_CLASS_NO_FOCUS_OUTLINE, ROOT_CLASS_REDUCE_MOTION, TTS_CLASS_INJECTED_SPAN,
-    TTS_CLASS_INJECTED_SUBSPAN, TTS_CLASS_IS_ACTIVE, TTS_CLASS_THEME1, TTS_CLASS_UTTERANCE,
-    TTS_CLASS_UTTERANCE_HEADING1, TTS_CLASS_UTTERANCE_HEADING2, TTS_CLASS_UTTERANCE_HEADING3,
-    TTS_CLASS_UTTERANCE_HEADING4, TTS_CLASS_UTTERANCE_HEADING5, TTS_ID_ACTIVE_UTTERANCE,
-    TTS_ID_ACTIVE_WORD, TTS_ID_CONTAINER, TTS_ID_INJECTED_PARENT, TTS_ID_NEXT, TTS_ID_PREVIOUS,
-    TTS_ID_SLIDER, TTS_ID_SPEAKING_DOC_ELEMENT, TTS_NAV_BUTTON_CLASS, TTS_POPUP_DIALOG_CLASS,
+    CSS_CLASS_NO_FOCUS_OUTLINE, POPUP_DIALOG_CLASS_COLLAPSE, ROOT_CLASS_REDUCE_MOTION,
+    TTS_CLASS_IS_ACTIVE, TTS_CLASS_THEME1, TTS_CLASS_UTTERANCE, TTS_CLASS_UTTERANCE_HEADING1,
+    TTS_CLASS_UTTERANCE_HEADING2, TTS_CLASS_UTTERANCE_HEADING3, TTS_CLASS_UTTERANCE_HEADING4,
+    TTS_CLASS_UTTERANCE_HEADING5, TTS_ID_ACTIVE_UTTERANCE, TTS_ID_ACTIVE_WORD, TTS_ID_CONTAINER,
+    TTS_ID_NEXT, TTS_ID_PREVIOUS, TTS_ID_SLIDER, TTS_ID_SPEAKING_DOC_ELEMENT, TTS_NAV_BUTTON_CLASS,
+    TTS_POPUP_DIALOG_CLASS,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
+import { uniqueCssSelector } from "../common/cssselector2";
 import {
     ITtsQueueItem, ITtsQueueItemReference, findTtsQueueItemIndex, generateTtsQueue,
-    getTtsQueueItemRef, getTtsQueueItemRefText, getTtsQueueLength, wrapHighlight,
+    getTtsQueueItemRef, getTtsQueueItemRefText, getTtsQueueLength,
 } from "../common/dom-text-utils";
 import { easings } from "../common/easings";
 import { IHTMLDialogElementWithPopup, PopupDialog } from "../common/popup-dialog";
+import { createHighlights, destroyHighlight } from "./highlight";
 import { isRTL } from "./readium-css";
+import { convertRange } from "./selection";
 import { IReadiumElectronWebviewWindow } from "./state";
+
+const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+
+const ENABLE_TTS_OVERLAY_VIEW = false;
 
 const win = (global as any).window as IReadiumElectronWebviewWindow;
 
@@ -98,7 +106,7 @@ export function ttsPlay(
         rootEl = win.document.body;
     }
 
-    const ttsQueue = generateTtsQueue(rootEl);
+    const ttsQueue = generateTtsQueue(rootEl, ENABLE_TTS_OVERLAY_VIEW);
     if (!ttsQueue.length) {
         return;
     }
@@ -296,28 +304,238 @@ export function ttsPreviewAndEventuallyPlayQueueIndex(n: number) {
     ttsPlayQueueIndexDebounced(n);
 }
 
-function highlights(doHighlight: boolean) {
+const _getCssSelectorOptions = {
+    className: (_str: string) => {
+        return true;
+    },
+    idName: (_str: string) => {
+        return true;
+    },
+    tagName: (_str: string) => {
+        return true;
+    },
+};
+function getCssSelector(element: Element): string {
+    try {
+        return uniqueCssSelector(element, win.document, _getCssSelectorOptions);
+    } catch (err) {
+        console.log("uniqueCssSelector:");
+        console.log(err);
+        return "";
+    }
+}
 
-    if (!_dialogState) {
+let _ttsQueueItemHighlightsSentence: Array<IHighlight | null> | undefined;
+let _ttsQueueItemHighlightsWord: Array<IHighlight | null> | undefined;
+
+function wrapHighlightWord(
+    ttsQueueItemRef: ITtsQueueItemReference,
+    utteranceText: string,
+    charIndex: number,
+    charLength: number,
+    word: string,
+    start: number,
+    end: number) {
+
+    if (ENABLE_TTS_OVERLAY_VIEW) {
         return;
     }
-    if (typeof (_dialogState as any).FALSY_TO_DISABLE_HIGHLIGHTS === "undefined") {
+
+    if (_ttsQueueItemHighlightsWord) {
+        _ttsQueueItemHighlightsWord.forEach((highlight) => {
+            if (highlight) {
+                destroyHighlight(win.document, highlight.id);
+            }
+        });
+        _ttsQueueItemHighlightsWord = undefined;
+    }
+    if (IS_DEV) {
+        if (utteranceText !== ttsQueueItemRef.item.combinedText) {
+            console.log("TTS utteranceText DIFF?? ",
+                `[[${utteranceText}]]`, `[[${ttsQueueItemRef.item.combinedText}]]`);
+        }
+        const ttsWord = utteranceText.substr(charIndex, charLength);
+        if (ttsWord !== word) {
+            console.log("TTS word DIFF?? ",
+                `[[${ttsWord}]]`, `[[${word}]]`,
+                `${charIndex}--${charLength}`, `${start}--${end - start}`);
+        }
+        // console.log("HIGHLIGHT WORD DATA:");
+        // console.log(utteranceText);
+        // console.log(ttsQueueItemRef.item.combinedText);
+        // console.log(ttsWord);
+        // console.log(word);
+        // console.log(charIndex);
+        // console.log(charLength);
+        // console.log(start);
+        // console.log(end - start);
+    }
+
+    let acc = 0;
+    let rangeStartNode: Node | undefined;
+    let rangeStartOffset = -1;
+    let rangeEndNode: Node | undefined;
+    let rangeEndOffset = -1;
+    const charIndexEnd = charIndex + charLength;
+    for (const txtNode of ttsQueueItemRef.item.textNodes) {
+        if (!txtNode.nodeValue && txtNode.nodeValue !== "") {
+            continue;
+        }
+        const l = txtNode.nodeValue.length;
+        acc += l;
+        if (!rangeStartNode) {
+            if (charIndex < acc) {
+                rangeStartNode = txtNode;
+                rangeStartOffset = l - (acc - charIndex);
+            }
+        }
+        if (rangeStartNode && charIndexEnd <= acc) {
+            rangeEndNode = txtNode;
+            rangeEndOffset = l - (acc - charIndexEnd);
+            break;
+        }
+    }
+
+    if (rangeStartNode && rangeEndNode) {
+        // console.log("HIGHLIGHT WORD");
+        // console.log(rangeStartOffset);
+        // console.log(rangeEndOffset);
+
+        const range = new Range(); // document.createRange()
+        range.setStart(rangeStartNode, rangeStartOffset);
+        range.setEnd(rangeEndNode, rangeEndOffset);
+
+        const rangeInfo = convertRange(
+            range,
+            getCssSelector,
+            (_node: Node) => ""); // computeElementCFI
+        if (!rangeInfo) {
+            return;
+        }
+
+        const highlightDefinitions = [
+            {
+                // https://htmlcolorcodes.com/
+                color: {
+                    blue: 0,
+                    green: 0,
+                    red: 255,
+                },
+                // 0 is full background (default), 1 is underline, 2 is strikethrough
+                drawType: 1,
+                selectionInfo: {
+                    cleanText: "",
+                    rangeInfo,
+                    rawText: "",
+                },
+            },
+        ];
+        _ttsQueueItemHighlightsWord = createHighlights(
+            win,
+            highlightDefinitions,
+            false, // mouse / pointer interaction
+        );
+    }
+}
+function wrapHighlight(
+    doHighlight: boolean,
+    ttsQueueItemRef: ITtsQueueItemReference) {
+
+    if (ENABLE_TTS_OVERLAY_VIEW) {
+        return;
+    }
+
+    if (_ttsQueueItemHighlightsWord) {
+        _ttsQueueItemHighlightsWord.forEach((highlight) => {
+            if (highlight) {
+                destroyHighlight(win.document, highlight.id);
+            }
+        });
+        _ttsQueueItemHighlightsWord = undefined;
+    }
+    if (_ttsQueueItemHighlightsSentence) {
+        _ttsQueueItemHighlightsSentence.forEach((highlight) => {
+            if (highlight) {
+                destroyHighlight(win.document, highlight.id);
+            }
+        });
+        _ttsQueueItemHighlightsSentence = undefined;
+    }
+
+    const ttsQueueItem = ttsQueueItemRef.item;
+    if (doHighlight &&
+        ttsQueueItem.parentElement &&
+        ttsQueueItem.textNodes && ttsQueueItem.textNodes.length) {
+
+        const range = new Range(); // document.createRange()
+
+        const firstTextNode = ttsQueueItem.textNodes[0];
+        if (!firstTextNode.nodeValue && firstTextNode.nodeValue !== "") {
+            return;
+        }
+        range.setStart(firstTextNode, 0);
+
+        const lastTextNode = ttsQueueItem.textNodes[ttsQueueItem.textNodes.length - 1];
+        if (!lastTextNode.nodeValue && lastTextNode.nodeValue !== "") {
+            return;
+        }
+        range.setEnd(lastTextNode, lastTextNode.nodeValue.length);
+
+        const rangeInfo = convertRange(
+            range,
+            getCssSelector,
+            (_node: Node) => ""); // computeElementCFI
+        if (!rangeInfo) {
+            return;
+        }
+
+        const highlightDefinitions = [
+            {
+                // https://htmlcolorcodes.com/
+                color: {
+                    blue: 204,
+                    green: 218,
+                    red: 255,
+                },
+                // 0 is full background (default), 1 is underline, 2 is strikethrough
+                drawType: 0,
+                selectionInfo: {
+                    cleanText: "",
+                    rangeInfo,
+                    rawText: "",
+                },
+            },
+        ];
+        _ttsQueueItemHighlightsSentence = createHighlights(
+            win,
+            highlightDefinitions,
+            false, // mouse / pointer interaction
+        );
+    }
+}
+
+function highlights(doHighlight: boolean) {
+
+    if (ENABLE_TTS_OVERLAY_VIEW) {
+        return;
+    }
+    if (!_dialogState) {
         return;
     }
     if (doHighlight) {
         if (_dialogState.ttsQueueItem) {
-            // tslint:disable-next-line:max-line-length
-            wrapHighlight(true, _dialogState.ttsQueueItem, TTS_ID_INJECTED_PARENT, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, undefined, -1, -1);
+            wrapHighlight(true, _dialogState.ttsQueueItem);
         }
-        if (_dialogState.ttsRootElement) {
+        if (win.READIUM2.DEBUG_VISUALS &&
+            _dialogState.ttsRootElement) {
             _dialogState.ttsRootElement.classList.add(TTS_ID_SPEAKING_DOC_ELEMENT);
         }
     } else {
         if (_dialogState.ttsQueueItem) {
-            // tslint:disable-next-line:max-line-length
-            wrapHighlight(false, _dialogState.ttsQueueItem, TTS_ID_INJECTED_PARENT, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, undefined, -1, -1);
+            wrapHighlight(false, _dialogState.ttsQueueItem);
         }
-        if (_dialogState.ttsRootElement) {
+        if (// win.READIUM2.DEBUG_VISUALS &&
+            _dialogState.ttsRootElement) {
             _dialogState.ttsRootElement.classList.remove(TTS_ID_SPEAKING_DOC_ELEMENT);
         }
     }
@@ -405,8 +623,9 @@ function scrollIntoViewSpokenText(id: string) {
 const R2_DATA_ATTR_UTTERANCE_INDEX = "data-r2-tts-utterance-index";
 
 function updateTTSInfo(
-    ttsQueueItemPreview: ITtsQueueItemReference | undefined,
+    // ttsQueueItemPreview: ITtsQueueItemReference | undefined,
     charIndex: number,
+    charLength: number,
     utteranceText: string | undefined): string | undefined {
 
     if (!_dialogState || !_dialogState.hasAttribute("open") || !_dialogState.domText ||
@@ -414,7 +633,7 @@ function updateTTSInfo(
         return undefined;
     }
 
-    const ttsQueueItem = ttsQueueItemPreview ? ttsQueueItemPreview : _dialogState.ttsQueueItem;
+    const ttsQueueItem = _dialogState.ttsQueueItem;
     if (!ttsQueueItem) {
         return undefined;
     }
@@ -436,17 +655,23 @@ function updateTTSInfo(
         const end = start + word.length;
         // debug(word);
 
-        const prefix = `<span id="${TTS_ID_ACTIVE_WORD}">`;
-        const suffix = "</span>";
+        if (ENABLE_TTS_OVERLAY_VIEW) {
+            const prefix = `<span id="${TTS_ID_ACTIVE_WORD}">`;
+            const suffix = "</span>";
 
-        const before = utteranceText.substr(0, start);
-        const after = utteranceText.substr(end);
-        const l = before.length + word.length + after.length;
-        ttsQueueItemMarkup = (l === utteranceText.length) ?
-            `${before}${prefix}${word}${suffix}${after}` : utteranceText;
+            const before = utteranceText.substr(0, start);
+            const after = utteranceText.substr(end);
+            const l = before.length + word.length + after.length;
+            ttsQueueItemMarkup = (l === utteranceText.length) ?
+                `${before}${prefix}${word}${suffix}${after}` : utteranceText;
+        } else {
+            // tslint:disable-next-line:max-line-length
+            wrapHighlightWord(ttsQueueItem, utteranceText, charIndex, charLength, word, start, end);
+        }
+    }
 
-        // tslint:disable-next-line:max-line-length
-        wrapHighlight(true, ttsQueueItem, TTS_ID_INJECTED_PARENT, TTS_CLASS_INJECTED_SPAN, TTS_CLASS_INJECTED_SUBSPAN, word, start, end);
+    if (!ENABLE_TTS_OVERLAY_VIEW) {
+        return ttsQueueItemText;
     }
 
     let activeUtteranceElem = _dialogState.domText.ownerDocument ?
@@ -634,7 +859,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
 
     highlights(true);
 
-    const txtStr = updateTTSInfo(undefined, -1, undefined);
+    const txtStr = updateTTSInfo(-1, -1, undefined);
     if (!txtStr) {
         ttsStop();
         return;
@@ -671,7 +896,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
             return;
         }
 
-        updateTTSInfo(undefined, ev.charIndex, utterance.text);
+        updateTTSInfo(ev.charIndex, ev.charLength, utterance.text);
     };
 
     utterance.onend = (_ev: SpeechSynthesisEvent) => {
@@ -773,7 +998,12 @@ function startTTSSession(
     <input id="${TTS_ID_SLIDER}" type="range" min="0" max="${ttsQueueLength - 1}" value="0"
         ${isRTL() ? `dir="rtl"` : `dir="ltr"`}  title="progress"/>`;
 
-    const pop = new PopupDialog(win.document, outerHTML, onDialogClosed, TTS_POPUP_DIALOG_CLASS, true);
+    const pop = new PopupDialog(
+        win.document,
+        outerHTML,
+        onDialogClosed,
+        `${TTS_POPUP_DIALOG_CLASS}${ENABLE_TTS_OVERLAY_VIEW ? "" : ` ${POPUP_DIALOG_CLASS_COLLAPSE}`}`,
+        true);
     pop.show(ttsQueueItemStart.item.parentElement);
 
     _dialogState = pop.dialog as IHTMLDialogElementWithTTSState;

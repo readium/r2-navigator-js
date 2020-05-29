@@ -402,7 +402,7 @@ export function convertRangeInfo(documant: Document, rangeInfo: IRangeInfo):
 
     const startElement = documant.querySelector(rangeInfo.startContainerElementCssSelector);
     if (!startElement) {
-        console.log("^^^ convertRangeInfo NO START ELEMENT CSS SELECTOR?!");
+        console.log("^^^ convertRangeInfo NO START ELEMENT CSS SELECTOR?!", rangeInfo.startContainerElementCssSelector);
         return undefined;
     }
     let startContainer: Node = startElement;
@@ -420,7 +420,7 @@ export function convertRangeInfo(documant: Document, rangeInfo: IRangeInfo):
     }
     const endElement = documant.querySelector(rangeInfo.endContainerElementCssSelector);
     if (!endElement) {
-        console.log("^^^ convertRangeInfo NO END ELEMENT CSS SELECTOR?!");
+        console.log("^^^ convertRangeInfo NO END ELEMENT CSS SELECTOR?!", rangeInfo.endContainerElementCssSelector);
         return undefined;
     }
     let endContainer: Node = endElement;

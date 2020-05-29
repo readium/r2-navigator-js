@@ -18,12 +18,15 @@ export const SKIP_LINK_ID = "r2-skip-link";
 export const LINK_TARGET_CLASS = "r2-link-target";
 
 export const ROOT_CLASS_REDUCE_MOTION = "r2-reduce-motion";
-export const ROOT_CLASS_NO_FOOTNOTES = "r2-no-popup-foonotes";
 export const ROOT_CLASS_MATHJAX = "r2-mathjax";
-export const POPUP_DIALOG_CLASS = "r2-popup-dialog";
+
+export const ROOT_CLASS_NO_FOOTNOTES = "r2-no-popup-foonotes";
 export const FOOTNOTES_CONTAINER_CLASS = "r2-footnote-container";
 export const FOOTNOTES_CLOSE_BUTTON_CLASS = "r2-footnote-close";
 export const FOOTNOTE_FORCE_SHOW = "r2-footnote-force-show";
+
+export const POPUP_DIALOG_CLASS = "r2-popup-dialog";
+export const POPUP_DIALOG_CLASS_COLLAPSE = "r2-popup-dialog-collapse";
 
 // 'a' element: noteref biblioref glossref annoref
 //
@@ -50,12 +53,16 @@ export const footnotesCssStyles = `
 }
 */
 
-:root[style] dialog#${POPUP_DIALOG_CLASS}::backdrop,
-:root dialog#${POPUP_DIALOG_CLASS}::backdrop {
+:root[style] dialog#${POPUP_DIALOG_CLASS}:not(.${POPUP_DIALOG_CLASS_COLLAPSE})::backdrop,
+:root dialog#${POPUP_DIALOG_CLASS}:not(.${POPUP_DIALOG_CLASS_COLLAPSE})::backdrop {
     background: rgba(0, 0, 0, 0.3) !important;
 }
-:root[style*="readium-night-on"] dialog#${POPUP_DIALOG_CLASS}::backdrop {
+:root[style*="readium-night-on"] dialog#${POPUP_DIALOG_CLASS}:not(.${POPUP_DIALOG_CLASS_COLLAPSE})::backdrop {
     background: rgba(0, 0, 0, 0.65) !important;
+}
+:root[style] dialog#${POPUP_DIALOG_CLASS}.${POPUP_DIALOG_CLASS_COLLAPSE}::backdrop,
+:root dialog#${POPUP_DIALOG_CLASS}.${POPUP_DIALOG_CLASS_COLLAPSE}::backdrop {
+    background: transparent !important;
 }
 
 :root[style] dialog#${POPUP_DIALOG_CLASS},
@@ -98,6 +105,12 @@ export const footnotesCssStyles = `
 :root[style*="--USER__backgroundColor"] dialog#${POPUP_DIALOG_CLASS} {
     background: var(--USER__backgroundColor) !important;
 }
+
+:root[style] dialog#${POPUP_DIALOG_CLASS}.${POPUP_DIALOG_CLASS_COLLAPSE},
+:root dialog#${POPUP_DIALOG_CLASS}.${POPUP_DIALOG_CLASS_COLLAPSE} {
+    top: auto;
+}
+
 :root[style] .${FOOTNOTES_CONTAINER_CLASS},
 :root .${FOOTNOTES_CONTAINER_CLASS} {
     overflow: auto;
@@ -178,10 +191,48 @@ export const TTS_CLASS_UTTERANCE_HEADING5 = "r2-tts-utterance-h5";
 export const TTS_ID_CONTAINER = "r2-tts-txt";
 export const TTS_NAV_BUTTON_CLASS = "r2-tts-button";
 export const TTS_ID_SPEAKING_DOC_ELEMENT = "r2-tts-speaking-el";
-export const TTS_CLASS_INJECTED_SPAN = "r2-tts-speaking-txt";
-export const TTS_CLASS_INJECTED_SUBSPAN = "r2-tts-speaking-word";
-export const TTS_ID_INJECTED_PARENT = "r2-tts-speaking-txt-parent";
 export const TTS_POPUP_DIALOG_CLASS = "r2-tts-popup-dialog";
+
+// export const TTS_CLASS_INJECTED_SPAN = "r2-tts-speaking-txt";
+// export const TTS_CLASS_INJECTED_SUBSPAN = "r2-tts-speaking-word";
+// export const TTS_ID_INJECTED_PARENT = "r2-tts-speaking-txt-parent";
+
+// :root[style] .${TTS_CLASS_INJECTED_SPAN},
+// :root .${TTS_CLASS_INJECTED_SPAN} {
+//     color: black !important;
+//     background: #FFFFCC !important;
+
+//     /* text-decoration: underline; */
+
+//     padding: 0;
+//     margin: 0;
+// }
+// /*
+// :root[style*="readium-night-on"] .${TTS_CLASS_INJECTED_SPAN} {
+//     color: white !important;
+//     background: #333300 !important;
+// }
+// :root[style] .${TTS_CLASS_INJECTED_SUBSPAN},
+// :root .${TTS_CLASS_INJECTED_SUBSPAN} {
+//     text-decoration: underline;
+//     padding: 0;
+//     margin: 0;
+// }
+// */
+// :root[style] .${TTS_ID_INJECTED_PARENT},
+// :root .${TTS_ID_INJECTED_PARENT} {
+//     /*
+//     outline-color: black;
+//     outline-style: solid;
+//     outline-width: 2px;
+//     outline-offset: 1px;
+//     */
+// }
+// :root[style*="readium-night-on"] .${TTS_ID_INJECTED_PARENT} {
+//     /*
+//     outline-color: white !important;
+//     */
+// }
 
 export const ttsCssStyles = `
 
@@ -385,48 +436,10 @@ export const ttsCssStyles = `
 
 :root[style] .${TTS_ID_SPEAKING_DOC_ELEMENT},
 :root .${TTS_ID_SPEAKING_DOC_ELEMENT} {
-    /*
-    outline-color: silver;
+    outline-color: magenta;
     outline-style: solid;
     outline-width: 2px;
     outline-offset: 1px;
-    */
-}
-:root[style] .${TTS_CLASS_INJECTED_SPAN},
-:root .${TTS_CLASS_INJECTED_SPAN} {
-    color: black !important;
-    background: #FFFFCC !important;
-
-    /* text-decoration: underline; */
-
-    padding: 0;
-    margin: 0;
-}
-/*
-:root[style*="readium-night-on"] .${TTS_CLASS_INJECTED_SPAN} {
-    color: white !important;
-    background: #333300 !important;
-}
-:root[style] .${TTS_CLASS_INJECTED_SUBSPAN},
-:root .${TTS_CLASS_INJECTED_SUBSPAN} {
-    text-decoration: underline;
-    padding: 0;
-    margin: 0;
-}
-*/
-:root[style] .${TTS_ID_INJECTED_PARENT},
-:root .${TTS_ID_INJECTED_PARENT} {
-    /*
-    outline-color: black;
-    outline-style: solid;
-    outline-width: 2px;
-    outline-offset: 1px;
-    */
-}
-:root[style*="readium-night-on"] .${TTS_ID_INJECTED_PARENT} {
-    /*
-    outline-color: white !important;
-    */
 }
 
 :root[style] .${TTS_CLASS_UTTERANCE},

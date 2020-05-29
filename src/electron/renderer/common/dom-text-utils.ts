@@ -9,6 +9,23 @@ import { split } from "sentence-splitter";
 
 import { uniqueCssSelector } from "../common/cssselector2";
 
+export function combineTextNodes(textNodes: Node[], skipNormalize?: boolean): string {
+    if (textNodes && textNodes.length) {
+        let str = "";
+        for (const textNode of textNodes) {
+            if (textNode.nodeValue) { // excludes purely-whitespace text nodes
+                // normalizeText() preserves prefix/suffix whitespace (collapsed to single)
+                // if (str.length) {
+                //     str += " ";
+                // }
+                str += (skipNormalize ? textNode.nodeValue : normalizeText(textNode.nodeValue));
+            }
+        }
+        return str;
+    }
+    return "";
+}
+
 export function getLanguage(el: Element): string | undefined {
 
     let currentElement = el;
@@ -158,7 +175,7 @@ export function findTtsQueueItemIndex(ttsQueue: ITtsQueueItem[], element: Elemen
     return -1;
 }
 
-export function generateTtsQueue(rootElement: Element): ITtsQueueItem[] {
+export function generateTtsQueue(rootElement: Element, splitSentences: boolean): ITtsQueueItem[] {
 
     const ttsQueue: ITtsQueueItem[] = [];
     const elementStack: Element[] = [];
@@ -255,23 +272,6 @@ export function generateTtsQueue(rootElement: Element): ITtsQueueItem[] {
 
     processElement(rootElement);
 
-    function combineTextNodes(textNodes: Node[]): string {
-        if (textNodes && textNodes.length) {
-            let str = "";
-            for (const textNode of textNodes) {
-                if (textNode.nodeValue) { // excludes purely-whitespace text nodes
-                    // normalizeText() preserves prefix/suffix whitespace (collapsed to single)
-                    // if (str.length) {
-                    //     str += " ";
-                    // }
-                    str += normalizeText(textNode.nodeValue);
-                }
-            }
-            return str;
-        }
-        return "";
-    }
-
     function finalizeTextNodes(ttsQueueItem: ITtsQueueItem) {
         if (!ttsQueueItem.textNodes || !ttsQueueItem.textNodes.length) {
             // img@alt can set combinedText (no text nodes)
@@ -281,35 +281,40 @@ export function generateTtsQueue(rootElement: Element): ITtsQueueItem[] {
             ttsQueueItem.combinedTextSentences = undefined;
             return;
         }
-        ttsQueueItem.combinedText = combineTextNodes(ttsQueueItem.textNodes).trim();
-        try {
-            ttsQueueItem.combinedTextSentences = undefined;
-            const sentences = split(ttsQueueItem.combinedText);
-            ttsQueueItem.combinedTextSentences = [];
-            for (const sentence of sentences) {
-                if (sentence.type === "Sentence") {
-                    ttsQueueItem.combinedTextSentences.push(sentence.raw);
-                }
-            }
-            if (ttsQueueItem.combinedTextSentences.length === 0 || ttsQueueItem.combinedTextSentences.length === 1) {
+        if (splitSentences) {
+            ttsQueueItem.combinedText = combineTextNodes(ttsQueueItem.textNodes).trim();
+            try {
                 ttsQueueItem.combinedTextSentences = undefined;
-            } else {
-                // let total = 0;
-                // ttsQueueItem.combinedTextSentences.forEach((sent) => {
-                //     total += sent.length;
-                // });
-                // const expectedWhiteSpacesSeparators = ttsQueueItem.combinedTextSentences.length - 1;
-                // if (total !== ttsQueueItem.combinedText.length &&
-                //     ((ttsQueueItem.combinedText.length - total) !== expectedWhiteSpacesSeparators)) {
-                //     console.log("sentences total !== item.combinedText.length");
-                //     console.log(total + " !== " + ttsQueueItem.combinedText.length);
-                //     consoleLogTtsQueueItem(ttsQueueItem);
-                //     console.log(JSON.stringify(sentences, null, 4));
-                // }
+                const sentences = split(ttsQueueItem.combinedText);
+                ttsQueueItem.combinedTextSentences = [];
+                for (const sentence of sentences) {
+                    if (sentence.type === "Sentence") {
+                        ttsQueueItem.combinedTextSentences.push(sentence.raw);
+                    }
+                }
+                if (ttsQueueItem.combinedTextSentences.length === 0 ||
+                    ttsQueueItem.combinedTextSentences.length === 1) {
+                    ttsQueueItem.combinedTextSentences = undefined;
+                } else {
+                    // let total = 0;
+                    // ttsQueueItem.combinedTextSentences.forEach((sent) => {
+                    //     total += sent.length;
+                    // });
+                    // const expectedWhiteSpacesSeparators = ttsQueueItem.combinedTextSentences.length - 1;
+                    // if (total !== ttsQueueItem.combinedText.length &&
+                    //     ((ttsQueueItem.combinedText.length - total) !== expectedWhiteSpacesSeparators)) {
+                    //     console.log("sentences total !== item.combinedText.length");
+                    //     console.log(total + " !== " + ttsQueueItem.combinedText.length);
+                    //     consoleLogTtsQueueItem(ttsQueueItem);
+                    //     console.log(JSON.stringify(sentences, null, 4));
+                    // }
+                }
+            } catch (err) {
+                console.log(err);
+                ttsQueueItem.combinedTextSentences = undefined;
             }
-        } catch (err) {
-            console.log(err);
-            ttsQueueItem.combinedTextSentences = undefined;
+        } else {
+            ttsQueueItem.combinedText = combineTextNodes(ttsQueueItem.textNodes, true);
         }
     }
 
@@ -318,68 +323,4 @@ export function generateTtsQueue(rootElement: Element): ITtsQueueItem[] {
     }
 
     return ttsQueue;
-}
-
-// tslint:disable-next-line:max-line-length
-export function wrapHighlight(doHighlight: boolean, ttsQueueItemRef: ITtsQueueItemReference, cssClassParent: string, cssClassSpan: string, _cssClassSubSpan: string, word: string | undefined, _start: number, _end: number) {
-
-    // TODO
-    if (typeof word !== "undefined") {
-        // console.log(word);
-        // console.log(start);
-        // console.log(end);
-        // console.log(cssClassSubSpan);
-
-        // ttsQueueItem.textNodes.forEach((txtNode) ...
-        // check that txtNode already has cssClassSpan parent (otherwise, abort)
-        // txt = normalizeText(txtNode.nodeValue)
-        // (remember: combineText() inserted " " space between each txtNode)
-        // match txt inside ttsQueueItemRef.item.combinedTextSentences (if ttsQueueItemRef.iSentence)
-        // or inside ttsQueueItemRef.item.combinedText
-        // if match then locate word/start/end
-        // if located then split txtNode (if needed) in order to insert span for word (cssClassSubSpan)
-        // attach new nodes to txtNode, so they can be restored (un-highlight)
-        // TXT_SPAN_TXT or TXT_SPAN or SPAN_TXT or SPAN (no split, whole word)
-        return;
-    }
-
-    const ttsQueueItem = ttsQueueItemRef.item;
-
-    if (ttsQueueItem.parentElement) {
-        if (doHighlight) {
-            if (!ttsQueueItem.parentElement.classList.contains(cssClassParent)) {
-                ttsQueueItem.parentElement.classList.add(cssClassParent);
-            }
-        } else {
-            if (ttsQueueItem.parentElement.classList.contains(cssClassParent)) {
-                ttsQueueItem.parentElement.classList.remove(cssClassParent);
-            }
-        }
-    }
-
-    ttsQueueItem.textNodes.forEach((txtNode) => {
-        if (!txtNode.parentElement) {
-            return; // continue
-        }
-        if (doHighlight) {
-            if (txtNode.parentElement.tagName.toLowerCase() !== "span" ||
-                !txtNode.parentElement.classList.contains(cssClassSpan)) {
-
-                const span = (txtNode.ownerDocument as Document).createElement("span");
-                span.setAttribute("class", cssClassSpan);
-                txtNode.parentElement.replaceChild(span, txtNode);
-                span.appendChild(txtNode);
-            }
-        } else {
-            if (txtNode.parentElement.tagName.toLowerCase() === "span" &&
-                txtNode.parentElement.classList.contains(cssClassSpan)) {
-
-                const span = txtNode.parentElement;
-                span.removeChild(txtNode);
-                if (span.parentElement) {
-                    span.parentElement.replaceChild(txtNode, span);
-                }
-            }
-        }
-    });
 }
