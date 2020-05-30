@@ -66,9 +66,13 @@ export function getDirection(el: Element): string | undefined {
     return undefined;
 }
 
+export function normalizeHtmlText(str: string): string {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 export function normalizeText(str: string): string {
     // tslint:disable-next-line:max-line-length
-    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, " ").replace(/\s\s+/g, " "); // no trim(), we collapse multiple whitespaces into single, preserving prefix and suffix (if any)
+    return normalizeHtmlText(str).replace(/\n/g, " ").replace(/\s\s+/g, " "); // no trim(), we collapse multiple whitespaces into single, preserving prefix and suffix (if any)
 }
 
 export interface ITtsQueueItem {

@@ -32,7 +32,9 @@ import {
     setWebViewStyle, shiftWebview,
 } from "./location";
 import { mediaOverlaysHandleIpcMessage } from "./media-overlays";
-import { checkTtsState, ttsClickEnable, ttsHandleIpcMessage, ttsPlaybackRate } from "./readaloud";
+import {
+    checkTtsState, ttsClickEnable, ttsHandleIpcMessage, ttsOverlayEnable, ttsPlaybackRate,
+} from "./readaloud";
 import {
     adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, obtainReadiumCss,
 } from "./readium-css";
@@ -247,6 +249,7 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
         if (win.READIUM2) {
             ttsPlaybackRate(win.READIUM2.ttsPlaybackRate);
             ttsClickEnable(win.READIUM2.ttsClickEnabled);
+            ttsOverlayEnable(win.READIUM2.ttsOverlayEnabled);
         }
 
         checkTtsState(wv as IReadiumElectronWebview);
@@ -493,6 +496,7 @@ export function installNavigatorDOM(
         publicationURL,
         sessionInfo,
         ttsClickEnabled: false,
+        ttsOverlayEnabled: false,
         ttsPlaybackRate: 1,
     };
 

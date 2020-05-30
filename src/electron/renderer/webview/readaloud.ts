@@ -26,7 +26,7 @@ import { IPropertyAnimationState, animateProperty } from "../common/animatePrope
 import { uniqueCssSelector } from "../common/cssselector2";
 import {
     ITtsQueueItem, ITtsQueueItemReference, findTtsQueueItemIndex, generateTtsQueue,
-    getTtsQueueItemRef, getTtsQueueItemRefText, getTtsQueueLength,
+    getTtsQueueItemRef, getTtsQueueItemRefText, getTtsQueueLength, normalizeHtmlText,
 } from "../common/dom-text-utils";
 import { easings } from "../common/easings";
 import { IHTMLDialogElementWithPopup, PopupDialog } from "../common/popup-dialog";
@@ -36,8 +36,6 @@ import { convertRange } from "./selection";
 import { IReadiumElectronWebviewWindow } from "./state";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
-
-const ENABLE_TTS_OVERLAY_VIEW = false;
 
 const win = (global as any).window as IReadiumElectronWebviewWindow;
 
@@ -54,6 +52,8 @@ interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
     ttsQueueItem: ITtsQueueItemReference | undefined;
 
     ttsRootElement: Element | undefined;
+
+    ttsOverlayEnabled: boolean;
 
     focusScrollRaw: ((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean) => void) | undefined;
 
@@ -82,6 +82,8 @@ function resetState() {
         _dialogState.domNext = undefined;
         _dialogState.domPrevious = undefined;
         _dialogState.domText = undefined;
+
+        _dialogState.ttsOverlayEnabled = win.READIUM2.ttsOverlayEnabled;
 
         _dialogState.remove();
     }
@@ -179,7 +181,7 @@ export function ttsPause() {
         }, 0);
     }
 
-    if (ENABLE_TTS_OVERLAY_VIEW) {
+    if (_dialogState && _dialogState.ttsOverlayEnabled) {
         win.document.documentElement.classList.add(TTS_CLASS_IS_ACTIVE);
     }
     ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PAUSED);
@@ -224,7 +226,7 @@ export function ttsResume() {
             }
         }, 0);
 
-        if (ENABLE_TTS_OVERLAY_VIEW) {
+        if (_dialogState && _dialogState.ttsOverlayEnabled) {
             win.document.documentElement.classList.add(TTS_CLASS_IS_ACTIVE);
         }
         ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PLAYING);
@@ -348,7 +350,7 @@ function wrapHighlightWord(
     start: number,
     end: number) {
 
-    if (ENABLE_TTS_OVERLAY_VIEW) {
+    if (_dialogState && _dialogState.ttsOverlayEnabled) {
         return;
     }
 
@@ -465,7 +467,7 @@ function wrapHighlight(
     doHighlight: boolean,
     ttsQueueItemRef: ITtsQueueItemReference) {
 
-    if (ENABLE_TTS_OVERLAY_VIEW) {
+    if (_dialogState && _dialogState.ttsOverlayEnabled) {
         return;
     }
 
@@ -587,7 +589,7 @@ function wrapHighlight(
 
 function highlights(doHighlight: boolean) {
 
-    if (ENABLE_TTS_OVERLAY_VIEW) {
+    if (_dialogState && _dialogState.ttsOverlayEnabled) {
         return;
     }
     if (!_dialogState) {
@@ -726,7 +728,7 @@ function updateTTSInfo(
         const end = start + word.length;
         // debug(word);
 
-        if (ENABLE_TTS_OVERLAY_VIEW) {
+        if (_dialogState && _dialogState.ttsOverlayEnabled) {
             const prefix = `<span id="${TTS_ID_ACTIVE_WORD}">`;
             const suffix = "</span>";
 
@@ -734,14 +736,15 @@ function updateTTSInfo(
             const after = utteranceText.substr(end);
             const l = before.length + word.length + after.length;
             ttsQueueItemMarkup = (l === utteranceText.length) ?
-                `${before}${prefix}${word}${suffix}${after}` : utteranceText;
+                `${normalizeHtmlText(before)}${prefix}${normalizeHtmlText(word)}${suffix}${normalizeHtmlText(after)}` :
+                normalizeHtmlText(utteranceText);
         } else {
             // tslint:disable-next-line:max-line-length
             wrapHighlightWord(ttsQueueItem, utteranceText, charIndex, charLength, word, start, end);
         }
     }
 
-    if (!ENABLE_TTS_OVERLAY_VIEW) {
+    if (!(_dialogState && _dialogState.ttsOverlayEnabled)) {
         return ttsQueueItemText;
     }
 
@@ -762,7 +765,7 @@ function updateTTSInfo(
                     if (ttsQItem) {
                         const txt = getTtsQueueItemRefText(ttsQItem);
                         try {
-                            activeUtteranceElem.innerHTML = txt;
+                            activeUtteranceElem.innerHTML = normalizeHtmlText(txt);
                         } catch (err) {
                             console.log(err);
                             console.log(txt);
@@ -834,7 +837,7 @@ function updateTTSInfo(
             if (ttsQItem.iGlobal === ttsQueueItem.iGlobal) {
                 ttsQItemMarkupAttributes += ` id="${TTS_ID_ACTIVE_UTTERANCE}" `;
             } else {
-                ttsQItemMarkup = getTtsQueueItemRefText(ttsQItem);
+                ttsQItemMarkup = normalizeHtmlText(getTtsQueueItemRefText(ttsQItem));
             }
             let imageMarkup = "";
             if (ttsQItem.item.parentElement && ttsQItem.item.parentElement.tagName &&
@@ -1002,7 +1005,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
         win.speechSynthesis.speak(utterance);
     }, 0);
 
-    if (ENABLE_TTS_OVERLAY_VIEW) {
+    if (_dialogState && _dialogState.ttsOverlayEnabled) {
         win.document.documentElement.classList.add(TTS_CLASS_IS_ACTIVE);
     }
     ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PLAYING);
@@ -1045,7 +1048,7 @@ function startTTSSession(
             if (_dialogState.ttsQueueItem && _dialogState.ttsQueueItem.item.parentElement) {
                 toScrollTo = _dialogState.ttsQueueItem.item.parentElement as HTMLElement;
             }
-            if (toScrollTo && ENABLE_TTS_OVERLAY_VIEW) {
+            if (toScrollTo && _dialogState.ttsOverlayEnabled) {
                 _dialogState.focusScrollRaw(toScrollTo, false, true);
             } else {
                 ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable(val);
@@ -1066,7 +1069,7 @@ function startTTSSession(
     lang="en"
     xml:lang="en"
     tabindex="0" autofocus="autofocus"></div>
-${ENABLE_TTS_OVERLAY_VIEW ?
+${win.READIUM2.ttsOverlayEnabled ?
 `
 <button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}" title="previous"><span>&#9668;</span></button>
 <button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}" title="next"><span>&#9658;</span></button>
@@ -1080,7 +1083,7 @@ ${ENABLE_TTS_OVERLAY_VIEW ?
         win.document,
         outerHTML,
         onDialogClosed,
-        `${TTS_POPUP_DIALOG_CLASS}${ENABLE_TTS_OVERLAY_VIEW ? "" : ` ${POPUP_DIALOG_CLASS_COLLAPSE}`}`,
+        `${TTS_POPUP_DIALOG_CLASS}${win.READIUM2.ttsOverlayEnabled ? "" : ` ${POPUP_DIALOG_CLASS_COLLAPSE}`}`,
         true);
     pop.show(ttsQueueItemStart.item.parentElement);
 
@@ -1088,6 +1091,7 @@ ${ENABLE_TTS_OVERLAY_VIEW ?
     if (!_dialogState) {
         return;
     }
+    _dialogState.ttsOverlayEnabled = win.READIUM2.ttsOverlayEnabled;
 
     _dialogState.focusScrollRaw = focusScrollRaw;
     _dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable =
