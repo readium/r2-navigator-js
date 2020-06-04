@@ -30,6 +30,8 @@ export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
 export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
 export const CLASS_HIGHLIGHT_BOUNDING_AREA = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA";
 
+const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+
 const USE_SVG = false;
 const USE_BLEND_MODE = true;
 
@@ -683,9 +685,19 @@ export function createHighlight(
     const checkSum = crypto.createHash("sha1"); // sha256 slow
     checkSum.update(uniqueStr);
     const shaHex = checkSum.digest("hex");
-    const id = "R2_HIGHLIGHT_" + shaHex;
+    const idBase = "R2_HIGHLIGHT_" + shaHex;
+    let id = idBase;
+    let idIdx = 0;
+    while (
+        _highlights.find((h) => h.id === id) ||
+        win.document.getElementById(id)) {
 
-    destroyHighlight(win.document, id);
+        if (IS_DEV) {
+            console.log("HIGHLIGHT ID already exists, increment: " + id);
+        }
+        id = `${idBase}_${idIdx++}`;
+    }
+    // destroyHighlight(win.document, id);
 
     const highlight: IHighlight = {
         color: color ? color : DEFAULT_BACKGROUND_COLOR,

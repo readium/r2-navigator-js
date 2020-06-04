@@ -444,8 +444,8 @@ function wrapHighlightWord(
                 // https://htmlcolorcodes.com/
                 color: {
                     blue: 0,
-                    green: 0,
-                    red: 200,
+                    green: 147,
+                    red: 255,
                 },
                 drawType: HighlightDrawTypeUnderline,
                 expand: 2,
