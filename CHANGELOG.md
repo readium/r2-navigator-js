@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.4.4...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.4.5...develop
 
 Changes:
 * TODO
+
+# 1.4.5
+
+> Build environment: NodeJS `12.18.0`, NPM `6.14.5`
+
+Changes:
+* Workaround for Electron regression bug, HTTP headers passthrough ( https://github.com/electron/electron/issues/23988 )
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.4.5/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.4.5/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.4.5
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.4.4...v1.4.5
 
 # 1.4.4
 

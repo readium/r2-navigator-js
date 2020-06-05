@@ -7,8 +7,9 @@
 
 import * as debug_ from "debug";
 import {
-    CertificateVerifyProcProcRequest, RedirectRequest, Request, StreamProtocolResponse, app,
-    protocol, session,
+    BeforeSendResponse, CertificateVerifyProcProcRequest, HeadersReceivedResponse,
+    OnBeforeSendHeadersListenerDetails, OnHeadersReceivedListenerDetails, RedirectRequest, Request,
+    StreamProtocolResponse, app, protocol, session,
 } from "electron";
 import * as request from "request";
 import * as requestPromise from "request-promise-native";
@@ -73,8 +74,10 @@ export function secureSessions(server: Server) {
 
     const filter = { urls: ["*://*/*"] };
 
-    // https://github.com/electron/electron/blob/master/docs/tutorial/security.md#csp-http-header
-    const onHeadersReceivedCB = (details: any, callback: any) => {
+    const onHeadersReceivedCB = (
+        details: OnHeadersReceivedListenerDetails,
+        callback: (headersReceivedResponse: HeadersReceivedResponse) => void) => {
+
         // debug("onHeadersReceived");
         // debug(details);
 
@@ -89,19 +92,33 @@ export function secureSessions(server: Server) {
             details.url.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
 
             callback({
+                cancel: false,
                 responseHeaders: {
                     ...details.responseHeaders,
+                    // https://github.com/electron/electron/blob/master/docs/tutorial/security.md#csp-http-header
                     "Content-Security-Policy":
                         // tslint:disable-next-line:max-line-length
                         [`default-src 'self' 'unsafe-inline' 'unsafe-eval' data: http: https: ${READIUM2_ELECTRON_HTTP_PROTOCOL}: ${serverUrl}`],
                 },
+                // statusLine
             });
         } else {
-            callback({});
+            // HTTP headers passthrough
+            // https://github.com/electron/electron/issues/23988
+            callback({
+                cancel: false,
+                responseHeaders: {
+                    ...details.responseHeaders,
+                },
+                // statusLine
+            });
         }
     };
 
-    const onBeforeSendHeadersCB = (details: any, callback: any) => {
+    const onBeforeSendHeadersCB = (
+        details: OnBeforeSendHeadersListenerDetails,
+        callback: (beforeSendResponse: BeforeSendResponse) => void) => {
+
         // debug("onBeforeSendHeaders");
         // debug(details);
 
@@ -122,9 +139,21 @@ export function secureSessions(server: Server) {
             if (header) {
                 details.requestHeaders[header.name] = header.value;
             }
-            callback({ cancel: false, requestHeaders: details.requestHeaders });
+            callback({
+                cancel: false,
+                requestHeaders: {
+                    ...details.requestHeaders,
+                },
+            });
         } else {
-            callback({ cancel: false });
+            // HTTP headers passthrough
+            // https://github.com/electron/electron/issues/23988
+            callback({
+                cancel: false,
+                requestHeaders: {
+                    ...details.requestHeaders,
+                },
+            });
         }
     };
 
