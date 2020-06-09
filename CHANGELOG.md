@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.4.5...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.4.6...develop
 
 Changes:
 * TODO
+
+# 1.4.6
+
+> Build environment: NodeJS `12.18.0`, NPM `6.14.5`
+
+Changes:
+* Audiobooks with no cover image were crashing
+* Minor NPM package updates
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.4.6/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.4.6/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.4.6
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.4.5...v1.4.6
 
 # 1.4.5
 
