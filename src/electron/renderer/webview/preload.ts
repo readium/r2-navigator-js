@@ -683,9 +683,14 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
 
         const maxScrollShift = calculateMaxScrollShift().maxScrollShift;
 
+        // CSS pixel tolerance margin to detect "end of document reached" (during "next" page turn / scroll)
+        // This CSS bug is hard to reproduce consistently, only in Windows it seems, maybe due to display DPI?
+        // (I observed different outcomes with Virtual Machines in various resolutions, versus hardware laptop/tablet)
+        const maxScrollShiftTolerated = maxScrollShift - 2;
+
         if (isPaged) {
-            if (isVerticalWritingMode() && (Math.abs(scrollElement.scrollTop) < maxScrollShift) ||
-                !isVerticalWritingMode() && (Math.abs(scrollElement.scrollLeft) < maxScrollShift)) { // not at end
+            if (isVerticalWritingMode() && (Math.abs(scrollElement.scrollTop) < maxScrollShiftTolerated) ||
+                !isVerticalWritingMode() && (Math.abs(scrollElement.scrollLeft) < maxScrollShiftTolerated)) {
 
                 const unit = isVerticalWritingMode() ?
                     win.document.documentElement.offsetHeight :
@@ -750,8 +755,8 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                 return;
             }
         } else {
-            if (isVerticalWritingMode() && (Math.abs(scrollElement.scrollLeft) < maxScrollShift) ||
-                !isVerticalWritingMode() && (Math.abs(scrollElement.scrollTop) < maxScrollShift)) {
+            if (isVerticalWritingMode() && (Math.abs(scrollElement.scrollLeft) < maxScrollShiftTolerated) ||
+                !isVerticalWritingMode() && (Math.abs(scrollElement.scrollTop) < maxScrollShiftTolerated)) {
                 const newVal = isVerticalWritingMode() ?
                     (scrollElement.scrollLeft + (isRTL() ? -1 : 1) * win.document.documentElement.clientWidth) :
                     (scrollElement.scrollTop + win.document.documentElement.clientHeight);
@@ -785,7 +790,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
     } else if (goPREVIOUS) { //  && !isRTL() || !goPREVIOUS && isRTL()) { // left
         if (isPaged) {
             if (isVerticalWritingMode() && (Math.abs(scrollElement.scrollTop) > 0) ||
-                !isVerticalWritingMode() && (Math.abs(scrollElement.scrollLeft) > 0)) { // not at begin
+                !isVerticalWritingMode() && (Math.abs(scrollElement.scrollLeft) > 0)) {
 
                 const unit = isVerticalWritingMode() ?
                     win.document.documentElement.offsetHeight :
