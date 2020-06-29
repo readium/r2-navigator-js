@@ -679,25 +679,41 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
         win.cancelAnimationFrame(_lastAnimState.id);
         _lastAnimState.object[_lastAnimState.property] = _lastAnimState.destVal;
     }
+
+    // CSS pixel tolerance margin to detect "end of document reached" (during "next" page turn / scroll)
+    // This CSS bug is hard to reproduce consistently, only in Windows it seems, maybe due to display DPI?
+    // (I observed different outcomes with Virtual Machines in various resolutions, versus hardware laptop/tablet)
+    const CSS_PIXEL_TOLERANCE = 5;
+
     if (!goPREVIOUS) { // goPREVIOUS && isRTL() || !goPREVIOUS && !isRTL()) { // right
 
         const maxScrollShift = calculateMaxScrollShift().maxScrollShift;
-
-        // CSS pixel tolerance margin to detect "end of document reached" (during "next" page turn / scroll)
-        // This CSS bug is hard to reproduce consistently, only in Windows it seems, maybe due to display DPI?
-        // (I observed different outcomes with Virtual Machines in various resolutions, versus hardware laptop/tablet)
-        const maxScrollShiftTolerated = maxScrollShift - 2;
+        const maxScrollShiftTolerated = maxScrollShift - CSS_PIXEL_TOLERANCE;
 
         if (isPaged) {
-            if (isVerticalWritingMode() && (Math.abs(scrollElement.scrollTop) < maxScrollShiftTolerated) ||
-                !isVerticalWritingMode() && (Math.abs(scrollElement.scrollLeft) < maxScrollShiftTolerated)) {
+            const unit = isVerticalWritingMode() ?
+                win.document.documentElement.offsetHeight :
+                win.document.documentElement.offsetWidth;
+            let scrollElementOffset = Math.round(isVerticalWritingMode() ?
+                scrollElement.scrollTop :
+                scrollElement.scrollLeft);
+            const isNegative = scrollElementOffset < 0;
+            const scrollElementOffsetAbs = Math.abs(scrollElementOffset);
+            const fractional = scrollElementOffsetAbs / unit;
+            const integral = Math.floor(fractional);
+            const decimal = fractional - integral;
+            const partial = decimal * unit;
+            if (partial <= CSS_PIXEL_TOLERANCE) {
+                scrollElementOffset = (isNegative ? -1 : 1) * integral * unit;
+            } else if (partial >= (unit - CSS_PIXEL_TOLERANCE)) {
+                scrollElementOffset = (isNegative ? -1 : 1) * (integral + 1) * unit;
+            }
+            if (isVerticalWritingMode() && (scrollElementOffsetAbs < maxScrollShiftTolerated) ||
+                !isVerticalWritingMode() && (scrollElementOffsetAbs < maxScrollShiftTolerated)) {
 
-                const unit = isVerticalWritingMode() ?
-                    win.document.documentElement.offsetHeight :
-                    win.document.documentElement.offsetWidth;
                 const scrollOffsetPotentiallyExcessive_ = isVerticalWritingMode() ?
-                    (scrollElement.scrollTop + unit) :
-                    (scrollElement.scrollLeft + (isRTL() ? -1 : 1) * unit);
+                    (scrollElementOffset + unit) :
+                    (scrollElementOffset + (isRTL() ? -1 : 1) * unit);
                 // now snap (just in case):
                 const nWholes = Math.floor(scrollOffsetPotentiallyExcessive_ / unit); // retains +/- sign
                 const scrollOffsetPotentiallyExcessive = nWholes * unit;
@@ -789,15 +805,29 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
         }
     } else if (goPREVIOUS) { //  && !isRTL() || !goPREVIOUS && isRTL()) { // left
         if (isPaged) {
-            if (isVerticalWritingMode() && (Math.abs(scrollElement.scrollTop) > 0) ||
-                !isVerticalWritingMode() && (Math.abs(scrollElement.scrollLeft) > 0)) {
+            const unit = isVerticalWritingMode() ?
+                win.document.documentElement.offsetHeight :
+                win.document.documentElement.offsetWidth;
+            let scrollElementOffset = Math.round(isVerticalWritingMode() ?
+                scrollElement.scrollTop :
+                scrollElement.scrollLeft);
+            const isNegative = scrollElementOffset < 0;
+            const scrollElementOffsetAbs = Math.abs(scrollElementOffset);
+            const fractional = scrollElementOffsetAbs / unit;
+            const integral = Math.floor(fractional);
+            const decimal = fractional - integral;
+            const partial = decimal * unit;
+            if (partial <= CSS_PIXEL_TOLERANCE) {
+                scrollElementOffset = (isNegative ? -1 : 1) * integral * unit;
+            } else if (partial >= (unit - CSS_PIXEL_TOLERANCE)) {
+                scrollElementOffset = (isNegative ? -1 : 1) * (integral + 1) * unit;
+            }
+            if (isVerticalWritingMode() && (scrollElementOffsetAbs > 0) ||
+                !isVerticalWritingMode() && (scrollElementOffsetAbs > 0)) {
 
-                const unit = isVerticalWritingMode() ?
-                    win.document.documentElement.offsetHeight :
-                    win.document.documentElement.offsetWidth;
                 const scrollOffset_ = isVerticalWritingMode() ?
-                    (scrollElement.scrollTop - unit) :
-                    (scrollElement.scrollLeft - (isRTL() ? -1 : 1) * unit);
+                    (scrollElementOffset - unit) :
+                    (scrollElementOffset - (isRTL() ? -1 : 1) * unit);
                 // now snap (just in case):
                 // retains +/- sign
                 const nWholes = isRTL() ? Math.floor(scrollOffset_ / unit) : Math.ceil(scrollOffset_ / unit);
