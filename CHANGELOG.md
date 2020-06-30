@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.4.8...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.4.9...develop
 
 Changes:
 * TODO
+
+# 1.4.9
+
+> Build environment: NodeJS `12.18.1`, NPM `6.14.5`
+
+Changes:
+* Fixed Media Overlays and TTS readaloud bugs (page turning, playback resume, play/pause state)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.4.9/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.4.9/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.4.9
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.4.8...v1.4.9
 
 # 1.4.8
 
