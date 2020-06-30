@@ -768,6 +768,9 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                         easings.easeInOutQuad,
                     );
                 }
+                payload.go = "";
+                payload.direction = "";
+                ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
                 return;
             }
         } else {
@@ -800,6 +803,9 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                         easings.easeInOutQuad,
                     );
                 }
+                payload.go = "";
+                payload.direction = "";
+                ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
                 return;
             }
         }
@@ -863,6 +869,9 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                         easings.easeInOutQuad,
                     );
                 }
+                payload.go = "";
+                payload.direction = "";
+                ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
                 return;
             }
         } else {
@@ -895,6 +904,9 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                         easings.easeInOutQuad,
                     );
                 }
+                payload.go = "";
+                payload.direction = "";
+                ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
                 return;
             }
         }

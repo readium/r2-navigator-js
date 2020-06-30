@@ -5,6 +5,8 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import { debounce } from "debounce";
+
 import {
     IEventPayload_R2_EVENT_TTS_CLICK_ENABLE, IEventPayload_R2_EVENT_TTS_DO_PLAY,
     IEventPayload_R2_EVENT_TTS_OVERLAY_ENABLE, IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE,
@@ -27,7 +29,6 @@ let _lastTTSWebView: IReadiumElectronWebview | undefined;
 let _lastTTSWebViewHref: string | undefined;
 let _ttsAutoPlayTimeout: number | undefined;
 export function checkTtsState(wv: IReadiumElectronWebview) {
-
     let wasStopped = false;
     if (_lastTTSWebView && _lastTTSWebViewHref) {
 
@@ -48,6 +49,11 @@ export function checkTtsState(wv: IReadiumElectronWebview) {
             }
         }
     }
+
+    checkTtsStateDebounced(wasStopped, wv);
+}
+const checkTtsStateDebounced = debounce(checkTtsStateRaw, 400);
+function checkTtsStateRaw(wasStopped: boolean, wv: IReadiumElectronWebview) {
 
     if (wasStopped || win.READIUM2.ttsClickEnabled) {
         if (wv.READIUM2.link?.Href) {
@@ -96,6 +102,12 @@ export function playTtsOnReadingLocation(href: string) {
                 activeWebView.removeEventListener("ipc-message", cb);
             } catch (err) {
                 console.log(err);
+            }
+            const activeWebView_ = win.READIUM2.getActiveWebViews().find((webview) => {
+                return webview.READIUM2.link?.Href === href;
+            });
+            if (activeWebView_) {
+                ttsPlay(win.READIUM2.ttsPlaybackRate);
             }
         }, 1000);
         activeWebView.addEventListener("ipc-message", cb);

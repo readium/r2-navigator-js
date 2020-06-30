@@ -1098,6 +1098,16 @@ function moHighlight(href: string | undefined, id: string | undefined) {
             continue;
         }
 
+        if (href) {
+            if (id) {
+                _lastClickedNotification = {
+                    link: activeWebView.READIUM2.link,
+                    textFragmentIDChain: [id],
+                };
+            } else {
+                _lastClickedNotification = undefined;
+            }
+        }
         setTimeout(async () => {
             await activeWebView.send(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, payload);
         }, 0);
@@ -1198,6 +1208,7 @@ export function mediaOverlaysStop(stayActive?: boolean) {
     _mediaOverlayRoot = undefined;
     _mediaOverlayTextAudioPair = undefined;
     _mediaOverlayTextId = undefined;
+    // _lastClickedNotification = undefined;
 
     if (!_mediaOverlayActive) {
         if (_mediaOverlaysListener) {
@@ -1298,6 +1309,9 @@ export function mediaOverlaysPrevious() {
                 setTimeout(async () => {
                     await playMediaOverlaysAudio(previousTextAudioPair, undefined, undefined);
                 }, 0);
+                if (_mediaOverlaysListener) {
+                    _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
+                }
             }
         }
     } else {
@@ -1375,6 +1389,9 @@ export function mediaOverlaysNext(escape?: boolean) {
                 setTimeout(async () => {
                     await playMediaOverlaysAudio(nextTextAudioPair, undefined, undefined);
                 }, 0);
+                if (_mediaOverlaysListener) {
+                    _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
+                }
             }
         }
     } else {

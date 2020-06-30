@@ -94,6 +94,11 @@ export function locationHandleIpcMessage(
 
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_PAGE_TURN;
 
+        const doNothing = payload.go === "" && payload.direction === "";
+        if (doNothing) {
+            return true;
+        }
+
         const goPREVIOUS = payload.go === "PREVIOUS"; // any other value is NEXT
 
         if (!activeWebView.READIUM2.link) {

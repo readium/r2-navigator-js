@@ -15,9 +15,10 @@ import { Publication } from "@r2-shared-js/models/publication";
 
 import {
     IEventPayload_R2_EVENT_CAPTIONS, IEventPayload_R2_EVENT_CLIPBOARD_COPY,
-    IEventPayload_R2_EVENT_DEBUG_VISUALS, IEventPayload_R2_EVENT_READIUMCSS,
-    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, IEventPayload_R2_EVENT_WEBVIEW_KEYUP, IKeyboardEvent,
-    R2_EVENT_CAPTIONS, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_READIUMCSS,
+    IEventPayload_R2_EVENT_DEBUG_VISUALS, IEventPayload_R2_EVENT_PAGE_TURN,
+    IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYUP, IKeyboardEvent, R2_EVENT_CAPTIONS,
+    R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_PAGE_TURN_RES, R2_EVENT_READIUMCSS,
     R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
 } from "../common/events";
 import { READIUM_CSS_URL_PATH } from "../common/readium-css-settings";
@@ -324,6 +325,10 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
                 const payload = event.args[0] as IEventPayload_R2_EVENT_CLIPBOARD_COPY;
                 clipboardInterceptor(payload);
             }
+        } else if (event.channel === R2_EVENT_PAGE_TURN_RES &&
+            (event.args[0] as IEventPayload_R2_EVENT_PAGE_TURN).go === "" &&
+            (event.args[0] as IEventPayload_R2_EVENT_PAGE_TURN).direction === "") {
+            checkTtsState(wv as IReadiumElectronWebview);
         } else if (!highlightsHandleIpcMessage(event.channel, event.args, webview) &&
             !ttsHandleIpcMessage(event.channel, event.args, webview) &&
             !locationHandleIpcMessage(event.channel, event.args, webview) &&
