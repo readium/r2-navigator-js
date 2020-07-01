@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.4.9...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.4.10...develop
 
 Changes:
 * TODO
+
+# 1.4.10
+
+> Build environment: NodeJS `12.18.1`, NPM `6.14.5`
+
+Changes:
+* Fixed TTS readaloud issues: paginated doc with odd number of columns, last page of spread is left-aligned, but TTS playback and highlight was unshifting the page spread. Also fixed: when large sections of text are single HTML element => scroll-into-view did not show current sentence / work highlight.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.4.10/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.4.10/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.4.10
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.4.9...v1.4.10
 
 # 1.4.9
 
