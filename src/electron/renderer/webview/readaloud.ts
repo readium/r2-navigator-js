@@ -1038,7 +1038,7 @@ function startTTSSession(
     //                         http://www.w3.org/TR/speech-synthesis/synthesis.xsd"
     //     xml:lang="${language}">${txt}</speak>`;
 
-    const val = ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable();
+    const val = win.READIUM2.ttsOverlayEnabled ? ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable() : undefined;
 
     function onDialogClosed(el: HTMLOrSVGElement | null) {
         ttsPause();
@@ -1050,7 +1050,7 @@ function startTTSSession(
             }
             if (toScrollTo && _dialogState.ttsOverlayEnabled) {
                 _dialogState.focusScrollRaw(toScrollTo, false, true);
-            } else {
+            } else if (typeof val !== "undefined") {
                 ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable(val);
             }
         }

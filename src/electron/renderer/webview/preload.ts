@@ -42,11 +42,11 @@ import {
 import { sameSelections } from "../../common/selection";
 import {
     CLASS_PAGINATED, CSS_CLASS_NO_FOCUS_OUTLINE, LINK_TARGET_CLASS, POPUP_DIALOG_CLASS,
-    R2_MO_CLASS_ACTIVE, R2_MO_CLASS_ACTIVE_PLAYBACK, ROOT_CLASS_INVISIBLE_MASK,
-    ROOT_CLASS_INVISIBLE_MASK_REMOVED, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX,
-    ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_ID_SPEAKING_DOC_ELEMENT,
-    WebViewSlotEnum, ZERO_TRANSFORM_CLASS, readPosCssStylesAttr1, readPosCssStylesAttr2,
-    readPosCssStylesAttr3, readPosCssStylesAttr4,
+    POPUP_DIALOG_CLASS_COLLAPSE, R2_MO_CLASS_ACTIVE, R2_MO_CLASS_ACTIVE_PLAYBACK,
+    ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_INVISIBLE_MASK_REMOVED, ROOT_CLASS_KEYBOARD_INTERACT,
+    ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID,
+    TTS_ID_SPEAKING_DOC_ELEMENT, WebViewSlotEnum, ZERO_TRANSFORM_CLASS, readPosCssStylesAttr1,
+    readPosCssStylesAttr2, readPosCssStylesAttr3, readPosCssStylesAttr4,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector2";
@@ -577,7 +577,18 @@ function ensureTwoPageSpreadWithOddColumnsIsOffset(scrollOffset: number, maxScro
 
     const scrollElement = getScrollingElement(win.document);
 
-    const noChange = isPopupDialogOpen(win.document) ||
+    let dialogPopup = isPopupDialogOpen(win.document);
+    if (dialogPopup) {
+        const diagEl = win.document.getElementById(POPUP_DIALOG_CLASS);
+        if (diagEl) {
+            const isCollapsed = diagEl.classList.contains(POPUP_DIALOG_CLASS_COLLAPSE);
+            if (isCollapsed) {
+                dialogPopup = false; // override
+            }
+        }
+    }
+
+    const noChange = dialogPopup ||
         !isPaginated(win.document) ||
         !isTwoPageSpread() ||
         isVerticalWritingMode() || // TODO: VWM?
