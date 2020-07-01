@@ -276,7 +276,7 @@ if (IS_DEV) {
     });
 }
 
-function computeVisibility_(element: Element): boolean {
+function computeVisibility_(element: Element, domRect: DOMRect | undefined): boolean {
     if (win.READIUM2.isFixedLayout) {
         return true;
     } else if (!win.document || !win.document.documentElement || !win.document.body) {
@@ -325,7 +325,7 @@ function computeVisibility_(element: Element): boolean {
 
     if (!isPaginated(win.document)) { // scroll
 
-        const rect = element.getBoundingClientRect();
+        const rect = domRect || element.getBoundingClientRect();
         // debug(rect.top);
         // debug(rect.left);
         // debug(rect.width);
@@ -356,7 +356,7 @@ function computeVisibility_(element: Element): boolean {
         return false;
     }
 
-    const scrollLeftPotentiallyExcessive = getScrollOffsetIntoView(element as HTMLElement);
+    const scrollLeftPotentiallyExcessive = getScrollOffsetIntoView(element as HTMLElement, domRect);
 
     // const { maxScrollShift, maxScrollShiftAdjusted } = calculateMaxScrollShift();
     const extraShift = (scrollElement as any).scrollLeftExtra;
@@ -396,7 +396,7 @@ function computeVisibility(location: LocatorLocations): boolean {
             debug(err);
         }
         if (selected) {
-            visible = computeVisibility_(selected);
+            visible = computeVisibility_(selected, undefined); // TODO: domRect of DOM Range in LocatorExtended?
         }
     }
     return visible;
@@ -935,7 +935,7 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
 let _lastAnimState2: IPropertyAnimationState | undefined;
 const animationTime2 = 400;
 
-function scrollElementIntoView(element: Element, doFocus: boolean, animate: boolean) {
+function scrollElementIntoView(element: Element, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) {
 
     if (win.READIUM2.DEBUG_VISUALS) {
         const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr3}]`);
@@ -1001,10 +1001,10 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
     setTimeout(() => {
         const isPaged = isPaginated(win.document);
         if (isPaged) {
-            scrollIntoView(element as HTMLElement);
+            scrollIntoView(element as HTMLElement, domRect);
         } else {
             const scrollElement = getScrollingElement(win.document);
-            const rect = element.getBoundingClientRect();
+            const rect = domRect || element.getBoundingClientRect();
             // calculateMaxScrollShift()
             // TODO: vertical writing mode
             const scrollTopMax = scrollElement.scrollHeight - win.document.documentElement.clientHeight;
@@ -1013,6 +1013,11 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
                 offset = scrollTopMax;
             } else if (offset < 0) {
                 offset = 0;
+            }
+
+            const diff = Math.abs(scrollElement.scrollTop - offset);
+            if (diff < 10) {
+                return; // prevents jittering
             }
 
             if (animate) {
@@ -1079,7 +1084,7 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
 }
 
 // TODO: vertical writing mode
-function getScrollOffsetIntoView(element: HTMLElement): number {
+function getScrollOffsetIntoView(element: HTMLElement, domRect: DOMRect | undefined): number {
     if (!win.document || !win.document.documentElement || !win.document.body ||
         !isPaginated(win.document) || isVerticalWritingMode()) {
         return 0;
@@ -1087,7 +1092,7 @@ function getScrollOffsetIntoView(element: HTMLElement): number {
 
     const scrollElement = getScrollingElement(win.document);
 
-    const rect = element.getBoundingClientRect();
+    const rect = domRect || element.getBoundingClientRect();
 
     const columnDimension = calculateColumnDimension();
 
@@ -1107,12 +1112,12 @@ function getScrollOffsetIntoView(element: HTMLElement): number {
 }
 
 // TODO: vertical writing mode
-function scrollIntoView(element: HTMLElement) {
+function scrollIntoView(element: HTMLElement, domRect: DOMRect | undefined) {
     if (!win.document || !win.document.documentElement || !win.document.body || !isPaginated(win.document)) {
         return;
     }
     const maxScrollShift = calculateMaxScrollShift().maxScrollShift;
-    const scrollLeftPotentiallyExcessive = getScrollOffsetIntoView(element);
+    const scrollLeftPotentiallyExcessive = getScrollOffsetIntoView(element, domRect);
     // if (Math.abs(scrollLeftPotentiallyExcessive) > maxScrollShift) {
     //     console.log("getScrollOffsetIntoView scrollLeft EXCESS");
     // }
@@ -1148,7 +1153,7 @@ const scrollToHashRaw = (animate: boolean) => {
         //     return;
         // }
         // _ignoreScrollEvent = true;
-        scrollElementIntoView(win.READIUM2.locationHashOverride, true, animate);
+        scrollElementIntoView(win.READIUM2.locationHashOverride, true, animate, undefined);
 
         notifyReadingLocationDebounced();
         return;
@@ -1156,7 +1161,7 @@ const scrollToHashRaw = (animate: boolean) => {
         win.READIUM2.locationHashOverride = win.READIUM2.hashElement;
 
         // _ignoreScrollEvent = true;
-        scrollElementIntoView(win.READIUM2.hashElement, true, animate);
+        scrollElementIntoView(win.READIUM2.hashElement, true, animate, undefined);
 
         notifyReadingLocationDebounced();
         return;
@@ -1252,7 +1257,7 @@ const scrollToHashRaw = (animate: boolean) => {
                     }
 
                     // _ignoreScrollEvent = true;
-                    scrollElementIntoView(selected, true, animate);
+                    scrollElementIntoView(selected, true, animate, undefined);
 
                     notifyReadingLocationDebounced();
                     return;
@@ -1387,18 +1392,25 @@ function showHideContentMask(doHide: boolean, isFixedLayout: boolean | null) {
     }
 }
 
-function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean, animate: boolean) {
-    scrollElementIntoView(el as HTMLElement, doFocus, animate);
+function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) {
+    scrollElementIntoView(el as HTMLElement, doFocus, animate, domRect);
+
+    if (win.READIUM2.locationHashOverride === (el as HTMLElement)) {
+        return;
+    }
 
     const blacklisted = checkBlacklisted(el as HTMLElement);
     if (blacklisted) {
         return;
     }
+
     win.READIUM2.locationHashOverride = el as HTMLElement;
     notifyReadingLocationDebounced();
 }
-const focusScrollDebounced = debounce((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean) => {
-    focusScrollRaw(el, doFocus, animate);
+const focusScrollDebounced =
+    debounce((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => {
+
+    focusScrollRaw(el, doFocus, animate, domRect);
 }, 100);
 
 // let _ignoreFocusInEvent = false;
@@ -1418,7 +1430,7 @@ function handleFocusInRaw(target: HTMLElement, _tabKeyDownEvent: KeyboardEvent |
         return;
     }
     // _ignoreFocusInEvent = true;
-    focusScrollRaw(target, false, false);
+    focusScrollRaw(target, false, false, undefined);
 }
 // function handleTabRaw(target: HTMLElement, tabKeyDownEvent: KeyboardEvent | undefined) {
 //     if (!target || !win.document.body) {
@@ -1756,7 +1768,7 @@ const onScrollRaw = () => {
     }
 
     const el = win.READIUM2.locationHashOverride; // || win.READIUM2.hashElement
-    if (el && computeVisibility_(el)) {
+    if (el && computeVisibility_(el, undefined)) {
         debug("onScrollRaw VISIBLE SKIP");
         return;
     }
@@ -1810,7 +1822,7 @@ function loaded(forced: boolean) {
                         }
                         const el = win.READIUM2.hashElement || win.READIUM2.locationHashOverride;
                         if (el) {
-                            focusScrollDebounced(el as HTMLElement, true, false);
+                            focusScrollDebounced(el as HTMLElement, true, false, undefined);
                         }
                     });
                 }, 200);
@@ -2359,7 +2371,7 @@ function findFirstVisibleElement(rootElement: Element): Element | undefined {
     if (rootElement !== win.document.body &&
         rootElement !== win.document.documentElement) {
 
-        const visible = computeVisibility_(rootElement);
+        const visible = computeVisibility_(rootElement, undefined);
         if (visible) {
             return rootElement;
         }
@@ -2414,7 +2426,7 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
             debug("|||||||||||||| cannot find visible element inside BODY / HTML????");
             element = win.document.body;
         }
-    } else if (!userInteract && !computeVisibility_(element)) { // isPaginated(win.document)
+    } else if (!userInteract && !computeVisibility_(element, undefined)) { // isPaginated(win.document)
         let next: Element | undefined = element;
         let found: Element | undefined;
         while (next) {
@@ -2467,7 +2479,7 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
         } else {
             const visible = win.READIUM2.isFixedLayout ||
                 win.READIUM2.locationHashOverride === win.document.body ||
-                computeVisibility_(win.READIUM2.locationHashOverride);
+                computeVisibility_(win.READIUM2.locationHashOverride, undefined);
             if (!visible) {
                 win.READIUM2.locationHashOverride = element;
             }
@@ -2574,7 +2586,7 @@ export const computeProgressionData = (): IProgressionData => {
 
         if (isPaged) {
 
-            const visible = computeVisibility_(element);
+            const visible = computeVisibility_(element, undefined);
             if (visible) {
                 // because clientRect is based on visual rendering,
                 // which does not account for extra shift (CSS transform X-translate of the webview)
@@ -3171,7 +3183,7 @@ if (!win.READIUM2.isAudio) {
                 }
 
                 win.READIUM2.locationHashOverride = targetEl;
-                scrollElementIntoView(targetEl, false, true);
+                scrollElementIntoView(targetEl, false, true, undefined);
                 scrollToHashDebounced.clear();
                 notifyReadingLocationRaw(false, true);
 

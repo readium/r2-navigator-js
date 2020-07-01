@@ -12,7 +12,8 @@ import { PopupDialog } from "../common/popup-dialog";
 
 export function popupFootNote(
     element: HTMLElement,
-    focusScrollRaw: (el: HTMLOrSVGElement, doFocus: boolean, animate: boolean) => void,
+    focusScrollRaw:
+        (el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => void,
     href: string,
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: (val: number) => void,
@@ -96,7 +97,7 @@ export function popupFootNote(
     function onDialogClosed(el: HTMLOrSVGElement | null) {
 
         if (el) {
-            focusScrollRaw(el, true, true);
+            focusScrollRaw(el, true, true, undefined);
         } else {
             ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable(val);
         }
