@@ -679,6 +679,7 @@ const transformerHttpBaseIframes: TTransformFunction = (
     const url_ = new URL(urlHttp);
 
     // const r2_GOTO = url_.searchParams.get(URL_PARAM_GOTO);
+    // const r2_GOTO_DOM_RANGE = url_.searchParams.get(URL_PARAM_GOTO_DOM_RANGE);
     // const r2_REFRESH = url_.searchParams.get(URL_PARAM_REFRESH);
     const r2CSS = url_.searchParams.get(URL_PARAM_CSS);
     const r2ERS = url_.searchParams.get(URL_PARAM_EPUBREADINGSYSTEM);

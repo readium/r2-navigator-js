@@ -55,6 +55,7 @@ export const R2_EVENT_SCROLLTO = "R2_EVENT_SCROLLTO";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_SCROLLTO {
     goto: string | undefined;
+    gotoDomRange: string | undefined;
     hash: string | undefined;
     previous: boolean;
     isSecondWebView: boolean;

@@ -27,7 +27,7 @@ import {
 } from "../common/events";
 import { IPaginationInfo } from "../common/pagination";
 import { READIUM2_BASEURL_ID, readiumCssTransformHtml } from "../common/readium-css-inject";
-import { ISelectionInfo } from "../common/selection";
+import { IRangeInfo, ISelectionInfo } from "../common/selection";
 import {
     READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl, convertHttpUrlToCustomScheme,
 } from "../common/sessions";
@@ -40,8 +40,8 @@ import {
 import { getCurrentAudioPlaybackRate, setCurrentAudioPlaybackRate } from "./audiobook";
 import {
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
-    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS, URL_PARAM_REFRESH,
-    URL_PARAM_SECOND_WEBVIEW, URL_PARAM_SESSION_INFO, URL_PARAM_WEBVIEW_SLOT,
+    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_GOTO_DOM_RANGE, URL_PARAM_PREVIOUS,
+    URL_PARAM_REFRESH, URL_PARAM_SECOND_WEBVIEW, URL_PARAM_SESSION_INFO, URL_PARAM_WEBVIEW_SLOT,
 } from "./common/url-params";
 import { getEpubReadingSystemInfo } from "./epubReadingSystem";
 import { mediaOverlaysInterrupt } from "./media-overlays";
@@ -406,6 +406,7 @@ export function handleLinkUrl(
 export function handleLinkLocator(
     location: Locator | undefined,
     rcss?: IEventPayload_R2_EVENT_READIUMCSS,
+    rangeInfo?: IRangeInfo,
 ) {
     const publication = win.READIUM2.publication;
     const publicationURL = win.READIUM2.publicationURL;
@@ -455,8 +456,11 @@ export function handleLinkLocator(
         uri.search = "";
         const urlNoQueryParams = uri.toString(); // publicationURL + "/../" + linkToLoad.Href;
         const hrefToLoad = urlNoQueryParams +
-            ((useGoto) ? ("?" + URL_PARAM_GOTO + "=" +
+            (useGoto ? ("?" + URL_PARAM_GOTO + "=" +
                 encodeURIComponent_RFC3986(Buffer.from(JSON.stringify(linkToLoadGoto, null, "")).toString("base64"))) :
+                "") +
+            ((useGoto && rangeInfo) ? ("&" + URL_PARAM_GOTO_DOM_RANGE + "=" +
+                encodeURIComponent_RFC3986(Buffer.from(JSON.stringify(rangeInfo, null, "")).toString("base64"))) :
                 "");
 
         debug(`handleLinkLocator: ${hrefToLoad}`);
@@ -579,6 +583,7 @@ function loadLink(
                 // overrides existing (leaves others intact)
                 data[URL_PARAM_PREVIOUS] = undefined;
                 data[URL_PARAM_GOTO] = undefined;
+                data[URL_PARAM_GOTO_DOM_RANGE] = undefined;
                 data[URL_PARAM_CSS] = undefined;
                 data[URL_PARAM_EPUBREADINGSYSTEM] = undefined;
                 data[URL_PARAM_DEBUG_VISUALS] = undefined;
@@ -822,6 +827,7 @@ function loadLink(
             // overrides existing (leaves others intact)
             data[URL_PARAM_PREVIOUS] = undefined;
             data[URL_PARAM_GOTO] = undefined;
+            data[URL_PARAM_GOTO_DOM_RANGE] = undefined;
             data[URL_PARAM_CSS] = undefined;
             data[URL_PARAM_EPUBREADINGSYSTEM] = undefined;
             data[URL_PARAM_DEBUG_VISUALS] = undefined;
@@ -847,6 +853,9 @@ function loadLink(
                 // erase unwanted forward of query param during linking
                 data[URL_PARAM_GOTO] = undefined;
                 // delete data[URL_PARAM_GOTO];
+
+                data[URL_PARAM_GOTO_DOM_RANGE] = undefined;
+                // delete data[URL_PARAM_GOTO_DOM_RANGE];
             }
         });
         if (useGoto) {
@@ -901,12 +910,14 @@ function loadLink(
         activeWebView && activeWebView.READIUM2.link === pubLink) {
 
         const goto = useGoto ? hrefToLoadHttpUri.search(true)[URL_PARAM_GOTO] as string : undefined;
+        const gotoDomRange = useGoto ? hrefToLoadHttpUri.search(true)[URL_PARAM_GOTO_DOM_RANGE] as string : undefined;
         const hash = useGoto ? undefined : hrefToLoadHttpUri.fragment(); // without #
 
         debug("WEBVIEW ALREADY LOADED: " + pubLink.Href);
 
         const payload: IEventPayload_R2_EVENT_SCROLLTO = {
             goto,
+            gotoDomRange,
             hash,
             isSecondWebView: secondWebView ? true : false,
             previous: previous ? true : false,

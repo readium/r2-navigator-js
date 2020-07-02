@@ -7,6 +7,7 @@
 
 export const URL_PARAM_PREVIOUS = "r2_PREV";
 export const URL_PARAM_GOTO = "r2_GOTO";
+export const URL_PARAM_GOTO_DOM_RANGE = "r2_GOTO_DOMRANGE";
 
 export const URL_PARAM_CSS = "r2_CSS";
 export const URL_PARAM_EPUBREADINGSYSTEM = "r2_ERS";

@@ -57,8 +57,8 @@ import { getURLQueryParams } from "../common/querystring";
 import { IRect, getClientRectsNoOverlap_ } from "../common/rect-utils";
 import {
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
-    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_PREVIOUS, URL_PARAM_SECOND_WEBVIEW,
-    URL_PARAM_WEBVIEW_SLOT,
+    URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_GOTO_DOM_RANGE, URL_PARAM_PREVIOUS,
+    URL_PARAM_SECOND_WEBVIEW, URL_PARAM_WEBVIEW_SLOT,
 } from "../common/url-params";
 import { setupAudioBook } from "./audiobook";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
@@ -76,7 +76,7 @@ import {
     computeVerticalRTL, getScrollingElement, isRTL, isTwoPageSpread, isVerticalWritingMode,
     readiumCSS,
 } from "./readium-css";
-import { clearCurrentSelection, getCurrentSelectionInfo } from "./selection";
+import { clearCurrentSelection, convertRangeInfo, getCurrentSelectionInfo } from "./selection";
 import { IReadiumElectronWebviewWindow } from "./state";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
@@ -447,6 +447,16 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
         if (typeof win.READIUM2.urlQueryParams[URL_PARAM_GOTO] !== "undefined") {
             // tslint:disable-next-line:no-string-literal
             delete win.READIUM2.urlQueryParams[URL_PARAM_GOTO];
+        }
+    }
+    if (payload.gotoDomRange) {
+        // tslint:disable-next-line:no-string-literal
+        win.READIUM2.urlQueryParams[URL_PARAM_GOTO_DOM_RANGE] = payload.gotoDomRange; // decodeURIComponent
+    } else {
+        // tslint:disable-next-line:no-string-literal
+        if (typeof win.READIUM2.urlQueryParams[URL_PARAM_GOTO_DOM_RANGE] !== "undefined") {
+            // tslint:disable-next-line:no-string-literal
+            delete win.READIUM2.urlQueryParams[URL_PARAM_GOTO_DOM_RANGE];
         }
     }
 
@@ -951,7 +961,7 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
 
     if (doFocus) {
         // const tabbables = lazyTabbables();
-        if (!tabbable.isFocusable(element as HTMLElement)) {
+        if (!domRect && !tabbable.isFocusable(element as HTMLElement)) {
             const attr = (element as HTMLElement).getAttribute("tabindex");
             if (!attr) {
                 (element as HTMLElement).setAttribute("tabindex", "-1");
@@ -962,6 +972,7 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
                 }
             }
         }
+
         const targets = win.document.querySelectorAll(`.${LINK_TARGET_CLASS}`);
         targets.forEach((t) => {
             // (t as HTMLElement).style.animationPlayState = "paused";
@@ -995,7 +1006,9 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
             element.classList.remove(LINK_TARGET_CLASS);
         }, 4500);
 
-        (element as HTMLElement).focus();
+        if (!domRect) {
+            (element as HTMLElement).focus();
+        }
     }
 
     setTimeout(() => {
@@ -1233,11 +1246,10 @@ const scrollToHashRaw = (animate: boolean) => {
             let gotoProgression: number | undefined;
             if (gto) {
                 // decodeURIComponent
-                const s = Buffer.from(gto, "base64").toString("utf8");
-                const js = JSON.parse(s);
-                gotoCssSelector = (js as LocatorLocations).cssSelector;
-                gotoProgression = (js as LocatorLocations).progression;
-                // TODO: CFI, etc.?
+                const locStr = Buffer.from(gto, "base64").toString("utf8");
+                const locObj = JSON.parse(locStr) as LocatorLocations;
+                gotoCssSelector = locObj.cssSelector;
+                gotoProgression = locObj.progression;
             }
             if (gotoCssSelector) {
                 gotoCssSelector = gotoCssSelector.replace(/\+/g, " ");
@@ -1256,10 +1268,29 @@ const scrollToHashRaw = (animate: boolean) => {
                         win.READIUM2.locationHashOverrideInfo.locations.cssSelector = gotoCssSelector;
                     }
 
+                    let domRect: DOMRect | undefined;
+                    // tslint:disable-next-line:no-string-literal
+                    const gtoDomRange = win.READIUM2.urlQueryParams[URL_PARAM_GOTO_DOM_RANGE];
+                    if (gtoDomRange) {
+                        try {
+                            // decodeURIComponent
+                            const rangeInfoStr = Buffer.from(gtoDomRange, "base64").toString("utf8");
+                            const rangeInfo = JSON.parse(rangeInfoStr);
+                            debug("rangeInfo", rangeInfo);
+                            const domRange = convertRangeInfo(win.document, rangeInfo);
+                            if (domRange) {
+                                domRect = domRange.getBoundingClientRect();
+                            }
+                        } catch (err) {
+                            debug("gtoDomRange", err);
+                        }
+                    }
+
                     // _ignoreScrollEvent = true;
-                    scrollElementIntoView(selected, true, animate, undefined);
+                    scrollElementIntoView(selected, true, animate, domRect);
 
                     notifyReadingLocationDebounced();
+
                     return;
                 }
             } else if (gotoProgression) {
