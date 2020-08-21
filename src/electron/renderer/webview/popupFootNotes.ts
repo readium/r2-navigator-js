@@ -6,6 +6,9 @@
 // ==LICENSE-END==
 
 import {
+    READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl,
+} from "../../common/sessions";
+import {
     CSS_CLASS_NO_FOCUS_OUTLINE, FOOTNOTES_CONTAINER_CLASS, ROOT_CLASS_NO_FOOTNOTES,
 } from "../../common/styles";
 import { PopupDialog } from "../common/popup-dialog";
@@ -17,9 +20,27 @@ export function popupFootNote(
     href: string,
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: (val: number) => void,
-    ): boolean {
+): boolean {
+
+    const url = new URL(href);
+    if (!url.hash) { // includes #
+        return false;
+    }
 
     const documant = element.ownerDocument as Document;
+
+    let hrefSelf = documant.location.href;
+    if (hrefSelf.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+        hrefSelf = convertCustomSchemeToHttpUrl(hrefSelf);
+    }
+    const urlSelf = new URL(hrefSelf);
+    if (urlSelf.protocol !== url.protocol ||
+        urlSelf.origin !== url.origin ||
+        urlSelf.pathname !== url.pathname) {
+
+        return false;
+    }
+
     if (!documant.documentElement ||
         documant.documentElement.classList.contains(ROOT_CLASS_NO_FOOTNOTES)) {
         return false;
@@ -41,10 +62,6 @@ export function popupFootNote(
         return false;
     }
 
-    const url = new URL(href);
-    if (!url.hash) { // includes #
-        return false;
-    }
     // const targetElement = win.document.getElementById(url.hash.substr(1));
     const targetElement = documant.querySelector(url.hash);
     if (!targetElement) {
