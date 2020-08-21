@@ -811,7 +811,7 @@ function loadLink(
                 const gotoBase64 = hrefToLoadHttpUri.search(true)[URL_PARAM_GOTO];
 
                 if (gotoBase64) {
-                    const str = Buffer.from(gotoBase64, "base64").toString("utf8");
+                    const str = Buffer.from(gotoBase64 as string, "base64").toString("utf8");
                     const json = JSON.parse(str);
                     const gotoProgression = (json as LocatorLocations).progression;
                     if (typeof gotoProgression !== "undefined") {
