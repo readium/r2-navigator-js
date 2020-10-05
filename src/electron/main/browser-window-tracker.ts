@@ -86,8 +86,18 @@ app.on("web-contents-created", (_evt, wc) => {
                 debug(url);
                 event.preventDefault();
 
+                // Note that event.stopPropagation() and event.url
+                // only exists on WebView `will-navigate` event,
+                // but not WebContents! However the WebView event.preventDefault() does NOT prevent link loading!
+                // https://www.electronjs.org/docs/api/webview-tag#event-will-navigate
+                // vs.:
+                // https://www.electronjs.org/docs/api/web-contents#event-will-navigate
+                // TODO: see if we can intercept `will-navigate` in the renderer process
+                // directly where WebView elements are created. Perhaps the infinite loop problem
+                // (see below) does not occur in this alternative context.
+
                 // unfortunately 'will-navigate' enters an infinite loop with HTML <base href="HTTP_URL" /> ! :(
-                if (event) { // THIS IS ALWAYS TRUE!
+                if (event) { // THIS IS ALWAYS TRUE (intentionally)
                     debug("'will-navigate' SKIPPED.");
                     return;
                 }
