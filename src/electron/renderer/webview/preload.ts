@@ -1004,7 +1004,7 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
             debug("ANIMATION TIMEOUT REMOVE");
             // (element as HTMLElement).style.animationPlayState = "paused";
             element.classList.remove(LINK_TARGET_CLASS);
-        }, 4500);
+        }, 2000);
 
         if (!domRect) {
             (element as HTMLElement).focus();

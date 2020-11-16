@@ -655,14 +655,6 @@ export const focusCssStyles = `
     height: auto;
 }
 */
-
-@keyframes readium2ElectronAnimation_FOCUS {
-    0% {
-    }
-    100% {
-        outline: inherit;
-    }
-}
 :root[style] *:focus,
 :root *:focus {
     outline: none;
@@ -679,6 +671,13 @@ export const focusCssStyles = `
     outline-offset: 2px !important;
 }
 /*
+@keyframes readium2ElectronAnimation_FOCUS {
+    0% {
+    }
+    100% {
+        outline: inherit !important;
+    }
+}
 :root[style]:not(.${ROOT_CLASS_KEYBOARD_INTERACT}) *:focus,
 :root:not(.${ROOT_CLASS_KEYBOARD_INTERACT}) *:focus {
     animation-name: readium2ElectronAnimation_FOCUS;
@@ -691,15 +690,17 @@ export const focusCssStyles = `
 `;
 
 export const targetCssStyles = `
+/*
 @keyframes readium2ElectronAnimation_TARGET {
     0% {
     }
     100% {
-        outline: inherit;
+        outline: inherit !important;
     }
 }
 :root[style] *:target,
 :root *:target,
+*/
 :root[style] *.${LINK_TARGET_CLASS},
 :root *.${LINK_TARGET_CLASS}
 {
@@ -708,14 +709,18 @@ export const targetCssStyles = `
     outline-width: 2px !important;
     outline-offset: 2px !important;
 
+    /*
     animation-name: readium2ElectronAnimation_TARGET;
     animation-duration: 3s;
     animation-delay: 1s;
     animation-fill-mode: forwards;
     animation-timing-function: linear;
+    */
 }
+/*
 :root[style] *.r2-no-target-outline:target,
 :root *.r2-no-target-outline:target,
+*/
 :root[style] *.r2-no-target-outline.${LINK_TARGET_CLASS},
 :root *.r2-no-target-outline.${LINK_TARGET_CLASS} {
     outline: inherit !important;
