@@ -8,7 +8,7 @@
 import { debounce } from "debounce";
 import * as debug_ from "debug";
 import { ipcRenderer } from "electron";
-import * as tabbable from "tabbable";
+import { isFocusable } from "tabbable";
 
 import { LocatorLocations } from "@r2-shared-js/models/locator";
 
@@ -166,7 +166,7 @@ win.prompt = (...args: any[]): string => {
 function keyDownUpEventHandler(ev: KeyboardEvent, keyDown: boolean) {
     const elementName = (ev.target && (ev.target as Element).nodeName) ?
         (ev.target as Element).nodeName : "";
-    const elementAttributes: {[name: string]: string} = {};
+    const elementAttributes: { [name: string]: string } = {};
     if (ev.target && (ev.target as Element).attributes) {
         // tslint:disable-next-line: prefer-for-of
         for (let i = 0; i < (ev.target as Element).attributes.length; i++) {
@@ -227,8 +227,8 @@ if (win.READIUM2.urlQueryParams) {
 
     win.READIUM2.webViewSlot =
         win.READIUM2.urlQueryParams[URL_PARAM_WEBVIEW_SLOT] === "left" ? WebViewSlotEnum.left :
-        (win.READIUM2.urlQueryParams[URL_PARAM_WEBVIEW_SLOT] === "right" ? WebViewSlotEnum.right :
-        WebViewSlotEnum.center);
+            (win.READIUM2.urlQueryParams[URL_PARAM_WEBVIEW_SLOT] === "right" ? WebViewSlotEnum.right :
+                WebViewSlotEnum.center);
 }
 
 if (IS_DEV) {
@@ -961,7 +961,7 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
 
     if (doFocus) {
         // const tabbables = lazyTabbables();
-        if (!domRect && !tabbable.isFocusable(element as HTMLElement)) {
+        if (!domRect && !isFocusable(element as HTMLElement)) {
             const attr = (element as HTMLElement).getAttribute("tabindex");
             if (!attr) {
                 (element as HTMLElement).setAttribute("tabindex", "-1");
@@ -1441,8 +1441,8 @@ function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean, animate: boolean
 const focusScrollDebounced =
     debounce((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => {
 
-    focusScrollRaw(el, doFocus, animate, domRect);
-}, 100);
+        focusScrollRaw(el, doFocus, animate, domRect);
+    }, 100);
 
 // let _ignoreFocusInEvent = false;
 
@@ -3116,128 +3116,128 @@ if (!win.READIUM2.isAudio) {
     ipcRenderer.on(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
         (_event: any, payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT) => {
 
-        const styleAttr = win.document.documentElement.getAttribute("style");
-        const isNight = styleAttr ? styleAttr.indexOf("readium-night-on") > 0 : false;
-        const isSepia = styleAttr ? styleAttr.indexOf("readium-sepia-on") > 0 : false;
-        // "--USER__backgroundColor" "--USER__backgroundColor"
+            const styleAttr = win.document.documentElement.getAttribute("style");
+            const isNight = styleAttr ? styleAttr.indexOf("readium-night-on") > 0 : false;
+            const isSepia = styleAttr ? styleAttr.indexOf("readium-sepia-on") > 0 : false;
+            // "--USER__backgroundColor" "--USER__backgroundColor"
 
-        const activeClass = (isNight || isSepia) ? R2_MO_CLASS_ACTIVE :
-            (payload.classActive ? payload.classActive : R2_MO_CLASS_ACTIVE);
-        const activeClassPlayback =
-            payload.classActivePlayback ? payload.classActivePlayback : R2_MO_CLASS_ACTIVE_PLAYBACK;
+            const activeClass = (isNight || isSepia) ? R2_MO_CLASS_ACTIVE :
+                (payload.classActive ? payload.classActive : R2_MO_CLASS_ACTIVE);
+            const activeClassPlayback =
+                payload.classActivePlayback ? payload.classActivePlayback : R2_MO_CLASS_ACTIVE_PLAYBACK;
 
-        if (payload.classActive) {
-            const activeMoElements = win.document.body.querySelectorAll(`.${payload.classActive}`);
-            activeMoElements.forEach((elem) => {
-                if (payload.classActive) {
-                    elem.classList.remove(payload.classActive);
-                }
+            if (payload.classActive) {
+                const activeMoElements = win.document.body.querySelectorAll(`.${payload.classActive}`);
+                activeMoElements.forEach((elem) => {
+                    if (payload.classActive) {
+                        elem.classList.remove(payload.classActive);
+                    }
+                });
+            }
+            const activeMoElements_ = win.document.body.querySelectorAll(`.${R2_MO_CLASS_ACTIVE}`);
+            activeMoElements_.forEach((elem) => {
+                elem.classList.remove(R2_MO_CLASS_ACTIVE);
             });
-        }
-        const activeMoElements_ = win.document.body.querySelectorAll(`.${R2_MO_CLASS_ACTIVE}`);
-        activeMoElements_.forEach((elem) => {
-            elem.classList.remove(R2_MO_CLASS_ACTIVE);
-        });
 
-        let removeCaptionContainer = true;
-        if (!payload.id) {
-            win.document.documentElement.classList.remove(R2_MO_CLASS_ACTIVE_PLAYBACK);
-            win.document.documentElement.classList.remove(activeClassPlayback);
-        } else {
-            win.document.documentElement.classList.add(activeClassPlayback);
+            let removeCaptionContainer = true;
+            if (!payload.id) {
+                win.document.documentElement.classList.remove(R2_MO_CLASS_ACTIVE_PLAYBACK);
+                win.document.documentElement.classList.remove(activeClassPlayback);
+            } else {
+                win.document.documentElement.classList.add(activeClassPlayback);
 
-            const targetEl = win.document.getElementById(payload.id);
-            if (targetEl) {
-                targetEl.classList.add(activeClass);
+                const targetEl = win.document.getElementById(payload.id);
+                if (targetEl) {
+                    targetEl.classList.add(activeClass);
 
-                if (payload.captionsMode) {
-                    let text = targetEl.textContent;
-                    if (text) {
-                        // text = text.trim().replace(/\n/g, " ").replace(/\s+/g, " ");
-                        text = normalizeText(text).trim();
+                    if (payload.captionsMode) {
+                        let text = targetEl.textContent;
                         if (text) {
-                            removeCaptionContainer = false;
-                            const isUserBackground = styleAttr ?
-                                styleAttr.indexOf("--USER__backgroundColor") >= 0 : false;
-                            const isUserColor = styleAttr ?
-                                styleAttr.indexOf("--USER__textColor") >= 0 : false;
-                            const docStyle = win.getComputedStyle(win.document.documentElement);
-                            let containerStyle = "background-color: white; color: black;";
-                            if (isNight || isSepia) {
-                                const rsBackground = docStyle.getPropertyValue("--RS__backgroundColor");
-                                const rsColor = docStyle.getPropertyValue("--RS__textColor");
-                                containerStyle = `background-color: ${rsBackground}; color: ${rsColor};`;
-                            } else {
-                                if (isUserBackground || isUserColor) {
-                                    containerStyle = "";
+                            // text = text.trim().replace(/\n/g, " ").replace(/\s+/g, " ");
+                            text = normalizeText(text).trim();
+                            if (text) {
+                                removeCaptionContainer = false;
+                                const isUserBackground = styleAttr ?
+                                    styleAttr.indexOf("--USER__backgroundColor") >= 0 : false;
+                                const isUserColor = styleAttr ?
+                                    styleAttr.indexOf("--USER__textColor") >= 0 : false;
+                                const docStyle = win.getComputedStyle(win.document.documentElement);
+                                let containerStyle = "background-color: white; color: black;";
+                                if (isNight || isSepia) {
+                                    const rsBackground = docStyle.getPropertyValue("--RS__backgroundColor");
+                                    const rsColor = docStyle.getPropertyValue("--RS__textColor");
+                                    containerStyle = `background-color: ${rsBackground}; color: ${rsColor};`;
+                                } else {
+                                    if (isUserBackground || isUserColor) {
+                                        containerStyle = "";
+                                    }
+                                    if (isUserBackground) {
+                                        const usrBackground = docStyle.getPropertyValue("--USER__backgroundColor");
+                                        containerStyle += `background-color: ${usrBackground};`;
+                                    }
+                                    if (isUserColor) {
+                                        const usrColor = docStyle.getPropertyValue("--USER__textColor");
+                                        containerStyle += `color: ${usrColor};`;
+                                    }
                                 }
-                                if (isUserBackground) {
-                                    const usrBackground = docStyle.getPropertyValue("--USER__backgroundColor");
-                                    containerStyle += `background-color: ${usrBackground};`;
+                                const isUserFontSize = styleAttr ?
+                                    styleAttr.indexOf("--USER__fontSize") >= 0 : false;
+                                if (isUserFontSize) {
+                                    const usrFontSize = docStyle.getPropertyValue("--USER__fontSize");
+                                    containerStyle += `font-size: ${usrFontSize};`;
+                                } else {
+                                    containerStyle += `font-size: 120%;`;
                                 }
-                                if (isUserColor) {
-                                    const usrColor = docStyle.getPropertyValue("--USER__textColor");
-                                    containerStyle += `color: ${usrColor};`;
+                                const isUserLineHeight = styleAttr ?
+                                    styleAttr.indexOf("--USER__lineHeight") >= 0 : false;
+                                if (isUserLineHeight) {
+                                    const usrLineHeight = docStyle.getPropertyValue("--USER__lineHeight");
+                                    containerStyle += `line-height: ${usrLineHeight};`;
+                                } else {
+                                    containerStyle += `line-height: 1.2;`;
                                 }
-                            }
-                            const isUserFontSize = styleAttr ?
-                                styleAttr.indexOf("--USER__fontSize") >= 0 : false;
-                            if (isUserFontSize) {
-                                const usrFontSize = docStyle.getPropertyValue("--USER__fontSize");
-                                containerStyle += `font-size: ${usrFontSize};`;
-                            } else {
-                                containerStyle += `font-size: 120%;`;
-                            }
-                            const isUserLineHeight = styleAttr ?
-                                styleAttr.indexOf("--USER__lineHeight") >= 0 : false;
-                            if (isUserLineHeight) {
-                                const usrLineHeight = docStyle.getPropertyValue("--USER__lineHeight");
-                                containerStyle += `line-height: ${usrLineHeight};`;
-                            } else {
-                                containerStyle += `line-height: 1.2;`;
-                            }
-                            const isUserFont = styleAttr ?
-                                styleAttr.indexOf("--USER__fontFamily") >= 0 : false;
-                            if (isUserFont) {
-                                const usrFont = docStyle.getPropertyValue("--USER__fontFamily");
-                                containerStyle += `font-family: ${usrFont};`;
-                            }
+                                const isUserFont = styleAttr ?
+                                    styleAttr.indexOf("--USER__fontFamily") >= 0 : false;
+                                if (isUserFont) {
+                                    const usrFont = docStyle.getPropertyValue("--USER__fontFamily");
+                                    containerStyle += `font-family: ${usrFont};`;
+                                }
 
-                            const payloadCaptions: IEventPayload_R2_EVENT_CAPTIONS = {
-                                containerStyle,
-                                text,
-                                textStyle: "font-size: 120%;",
-                            };
-                            ipcRenderer.sendToHost(R2_EVENT_CAPTIONS, payloadCaptions);
+                                const payloadCaptions: IEventPayload_R2_EVENT_CAPTIONS = {
+                                    containerStyle,
+                                    text,
+                                    textStyle: "font-size: 120%;",
+                                };
+                                ipcRenderer.sendToHost(R2_EVENT_CAPTIONS, payloadCaptions);
+                            }
                         }
                     }
-                }
 
-                win.READIUM2.locationHashOverride = targetEl;
-                scrollElementIntoView(targetEl, false, true, undefined);
-                scrollToHashDebounced.clear();
-                notifyReadingLocationRaw(false, true);
+                    win.READIUM2.locationHashOverride = targetEl;
+                    scrollElementIntoView(targetEl, false, true, undefined);
+                    scrollToHashDebounced.clear();
+                    notifyReadingLocationRaw(false, true);
 
-                if (win.READIUM2.DEBUG_VISUALS) {
-                    const el = win.READIUM2.locationHashOverride;
-                    const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr2}]`);
-                    existings.forEach((existing) => {
-                        existing.removeAttribute(`${readPosCssStylesAttr2}`);
-                    });
-                    el.setAttribute(readPosCssStylesAttr2, "R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT");
+                    if (win.READIUM2.DEBUG_VISUALS) {
+                        const el = win.READIUM2.locationHashOverride;
+                        const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr2}]`);
+                        existings.forEach((existing) => {
+                            existing.removeAttribute(`${readPosCssStylesAttr2}`);
+                        });
+                        el.setAttribute(readPosCssStylesAttr2, "R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT");
+                    }
                 }
             }
-        }
 
-        if (removeCaptionContainer) {
-            const payloadCaptions: IEventPayload_R2_EVENT_CAPTIONS = {
-                containerStyle: undefined,
-                text: undefined,
-                textStyle: undefined,
-            };
-            ipcRenderer.sendToHost(R2_EVENT_CAPTIONS, payloadCaptions);
-        }
-    });
+            if (removeCaptionContainer) {
+                const payloadCaptions: IEventPayload_R2_EVENT_CAPTIONS = {
+                    containerStyle: undefined,
+                    text: undefined,
+                    textStyle: undefined,
+                };
+                ipcRenderer.sendToHost(R2_EVENT_CAPTIONS, payloadCaptions);
+            }
+        });
 
     ipcRenderer.on(R2_EVENT_HIGHLIGHT_CREATE, (_event: any, payloadPing: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE) => {
 
