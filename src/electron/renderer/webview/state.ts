@@ -101,7 +101,8 @@ let _isScreenReaderMounted: boolean | undefined;
 export function isScreenReaderMounted() {
     if (typeof _isScreenReaderMounted === "undefined") {
         // DEPRECATED: isAccessibilitySupportEnabled();
-        _isScreenReaderMounted = remote.app.accessibilitySupportEnabled;
+
+        _isScreenReaderMounted = remote ? remote.app.accessibilitySupportEnabled : false; // TODO!
 
         // Instead of dynamically updating this state via the app event,
         // the detection of mounted screen reader is done at every launch of a reader window.

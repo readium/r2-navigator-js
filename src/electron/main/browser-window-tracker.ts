@@ -55,7 +55,7 @@ app.on("web-contents-created", (_evt, wc) => {
         webPreferences.allowRunningInsecureContent = false;
 
         // works in Electron v3 because webPreferences is any instead of WebPreferences
-        webPreferences.enableRemoteModule = false;
+        webPreferences.enableRemoteModule = true;
 
         // TODO: prevent loading remote publications?
         // const fail = !params.src.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL) &&
