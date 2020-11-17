@@ -245,7 +245,7 @@ let _customUrlProtocolSchemeHandlerWasCalled = false;
 
 const streamProtocolHandler = async (
     req: ProtocolRequest,
-    callback: (response: (NodeJS.ReadableStream) | (ProtocolResponse)) => void) => {
+    callback: (resp: (NodeJS.ReadableStream) | (ProtocolResponse)) => void) => {
 
     _customUrlProtocolSchemeHandlerWasCalled = true;
 
