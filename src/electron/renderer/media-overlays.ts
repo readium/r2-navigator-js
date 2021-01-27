@@ -793,6 +793,7 @@ function findDepthFirstTextAudioPair(
         }
         return undefined;
     }
+    const textFragmentIDChainOriginal = textFragmentIDChain;
     let frags = textFragmentIDChain;
     for (const child of mo.Children) {
         if (DEBUG_AUDIO) {
@@ -831,8 +832,14 @@ function findDepthFirstTextAudioPair(
                     debug(JSON.stringify(match));
                 }
                 return match;
+            } else {
+                return match; // null for skipped, or undefined otherwise
             }
         }
+    }
+    if (textFragmentIDChainOriginal && !frags) {
+        // was found, but skippable
+        return null;
     }
     return undefined;
 }

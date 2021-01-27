@@ -8,11 +8,12 @@
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
 import * as debug_ from "debug";
-import { remote } from "electron";
+import { ipcRenderer } from "electron";
 
 import { Locator } from "@r2-shared-js/models/locator";
 import { Publication } from "@r2-shared-js/models/publication";
 
+import { CONTEXT_MENU_SETUP } from "../common/context-menu";
 import {
     IEventPayload_R2_EVENT_CAPTIONS, IEventPayload_R2_EVENT_CLIPBOARD_COPY,
     IEventPayload_R2_EVENT_DEBUG_VISUALS, IEventPayload_R2_EVENT_PAGE_TURN,
@@ -94,6 +95,11 @@ url("{RCSS_BASE_URL}fonts/iAWriterDuospace-Regular.ttf") format("truetype");
 const debug = debug_("r2:navigator#electron/renderer/index");
 
 const win = window as IReadiumElectronBrowserWindow;
+
+ipcRenderer.on("accessibility-support-changed", (_e, accessibilitySupportEnabled) => {
+    debug("accessibility-support-changed event received in WebView ", accessibilitySupportEnabled);
+    win.READIUM2.isScreenReaderMounted = accessibilitySupportEnabled;
+});
 
 // const queryParams = getURLQueryParams();
 
@@ -200,51 +206,8 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
 
         wv.clearHistory();
 
-        if (IS_DEV && remote) {
-            const wc = remote.webContents.fromId(wv.getWebContentsId());
-            // const wc = wv.getWebContents();
-
-            wc.on("context-menu", (_ev, params) => {
-                const { x, y } = params;
-                const openDevToolsAndInspect = () => {
-                    const devToolsOpened = () => {
-                        wc.off("devtools-opened", devToolsOpened);
-                        wc.inspectElement(x, y);
-
-                        setTimeout(() => {
-                            if (wc.devToolsWebContents && wc.isDevToolsOpened()) {
-                                wc.devToolsWebContents.focus();
-                            }
-                        }, 500);
-                    };
-                    wc.on("devtools-opened", devToolsOpened);
-                    wc.openDevTools({ activate: true, mode: "detach" });
-                };
-                remote.Menu.buildFromTemplate([{
-                    click: () => {
-                        const wasOpened = wc.isDevToolsOpened();
-                        if (!wasOpened) {
-                            openDevToolsAndInspect();
-                        } else {
-                            if (!wc.isDevToolsFocused()) {
-                                // wc.toggleDevTools();
-                                wc.closeDevTools();
-
-                                setImmediate(() => {
-                                    openDevToolsAndInspect();
-                                });
-                            } else {
-                                // right-click context menu normally occurs when focus
-                                // is in BrowserWindow / WebView's WebContents,
-                                // but some platforms (e.g. MacOS) allow mouse interaction
-                                // when the window is in the background.
-                                wc.inspectElement(x, y);
-                            }
-                        }
-                    },
-                    label: "Inspect element",
-                }]).popup({window: remote.getCurrentWindow()});
-            });
+        if (IS_DEV) {
+            ipcRenderer.send(CONTEXT_MENU_SETUP, wv.getWebContentsId());
         }
 
         if (win.READIUM2) {
@@ -473,7 +436,7 @@ export function installNavigatorDOM(
         domRootElement,
         domSlidingViewport,
         enableScreenReaderAccessibilityWebViewHardRefresh:
-        enableScreenReaderAccessibilityWebViewHardRefresh ? true : false,
+            enableScreenReaderAccessibilityWebViewHardRefresh ? true : false,
         getActiveWebViews: (): IReadiumElectronWebview[] => {
             const arr = [];
             if (_webview1) {
@@ -496,6 +459,8 @@ export function installNavigatorDOM(
             }
             return _webview2;
         },
+        // See "accessibility-support-changed" event cycles in MAIN and RENDERER (this BrowserWindow) processes
+        isScreenReaderMounted: false,
         preloadScriptPath,
         publication,
         publicationURL,
@@ -504,6 +469,7 @@ export function installNavigatorDOM(
         ttsOverlayEnabled: false,
         ttsPlaybackRate: 1,
     };
+    ipcRenderer.send("accessibility-support-changed");
 
     if (IS_DEV) {
         debug("||||||++||||| installNavigatorDOM: ", JSON.stringify(location));
@@ -531,7 +497,7 @@ export function installNavigatorDOM(
                 }, 0);
                 if (loc && loc.locator.href === activeWebView.READIUM2.link?.Href) {
 
-                    await new Promise((res, _rej) => {
+                    await new Promise<void>((res, _rej) => {
                         setTimeout(() => {
                             debug(`READIUM2.debug -> handleLinkLocator`);
                             handleLinkLocator(

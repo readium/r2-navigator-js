@@ -1,10 +1,46 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.5.1...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.5.3...develop
 
 Changes:
 * TODO
+
+# 1.5.3
+
+> Build environment: NodeJS `14.15.4`, NPM `6.14.11`
+
+Changes:
+* NPM package updates
+* Removed dependency on remote Electron module (context menu and accessibility / screen reader detection)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.5.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.5.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.5.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.5.2...v1.5.3
+
+# 1.5.2
+
+> Build environment: NodeJS `14.15.0`, NPM `6.14.8`
+
+Changes:
+* NPM package updates
+* Fixed skippable page numbers edge case in Media Overlays SMIL playback
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.5.2/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.5.2/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.5.2
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.5.1...v1.5.2
 
 # 1.5.1
 

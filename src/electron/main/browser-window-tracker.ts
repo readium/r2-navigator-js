@@ -6,8 +6,9 @@
 // ==LICENSE-END==
 
 import * as debug_ from "debug";
-import { app } from "electron";
+import { BrowserWindow, Menu, app, ipcMain, webContents } from "electron";
 
+import { CONTEXT_MENU_SETUP } from "../common/context-menu";
 import { IEventPayload_R2_EVENT_LINK, R2_EVENT_LINK } from "../common/events";
 
 // import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../common/sessions";
@@ -35,6 +36,104 @@ export function trackBrowserWindow(win: Electron.BrowserWindow, _serverURL?: str
         _electronBrowserWindows.splice(i, 1);
     });
 }
+
+app.on("accessibility-support-changed", (_ev, accessibilitySupportEnabled: boolean) => {
+
+    debug("accessibility-support-changed ... ", accessibilitySupportEnabled);
+    if (app.accessibilitySupportEnabled !== accessibilitySupportEnabled) {
+        debug("!!?? app.accessibilitySupportEnabled !== accessibilitySupportEnabled");
+    }
+
+    if (!_electronBrowserWindows || !_electronBrowserWindows.length) {
+        return;
+    }
+    _electronBrowserWindows.forEach((win) => {
+        if (win.webContents) {
+            debug("accessibility-support-changed event to WebViewContents ", accessibilitySupportEnabled);
+            win.webContents.send("accessibility-support-changed", accessibilitySupportEnabled);
+        }
+
+        // const allWebContents = webContents.getAllWebContents();
+        // if (allWebContents && allWebContents.length) {
+        //     for (const wc of allWebContents) {
+        //         if (!wc.hostWebContents) {
+        //             continue;
+        //         }
+        //         if (wc.hostWebContents.id === win.webContents.id) {
+        //             // NOPE
+        //         }
+        //     }
+        // }
+    });
+});
+ipcMain.on("accessibility-support-changed", (ev) => {
+    const accessibilitySupportEnabled = app.accessibilitySupportEnabled;
+    debug("accessibility-support-changed REQUEST, sending to WebViewContents ", accessibilitySupportEnabled);
+    ev.sender.send("accessibility-support-changed", accessibilitySupportEnabled);
+});
+
+export const contextMenuSetup = (webContent: Electron.WebContents, webContentID: number) => {
+
+    debug(`MAIN CONTEXT_MENU_SETUP ${webContentID}`);
+
+    // const wc = remote.webContents.fromId(wv.getWebContentsId());
+    // const wc = wv.getWebContents();
+    const wc = webContents.fromId(webContentID);
+
+    // This is always the case: webContentID is the inner WebView
+    // inside the main reader BrowserWindow (webContent === event.sender)
+    // if (wc !== webContent) {
+    //     debug(`!!!!?? CONTEXT_MENU_SETUP __ wc ${wc.id} !== webContent ${webContentID}`);
+    // }
+    wc.on("context-menu", (_ev, params) => {
+        const { x, y } = params;
+        debug(`MAIN context-menu EVENT on WebView`);
+
+        const win = BrowserWindow.fromWebContents(webContent) || undefined;
+
+        const openDevToolsAndInspect = () => {
+            const devToolsOpened = () => {
+                wc.off("devtools-opened", devToolsOpened);
+                wc.inspectElement(x, y);
+
+                setTimeout(() => {
+                    if (wc.devToolsWebContents && wc.isDevToolsOpened()) {
+                        wc.devToolsWebContents.focus();
+                    }
+                }, 500);
+            };
+            wc.on("devtools-opened", devToolsOpened);
+            wc.openDevTools({ activate: true, mode: "detach" });
+        };
+        Menu.buildFromTemplate([{
+            click: () => {
+                const wasOpened = wc.isDevToolsOpened();
+                if (!wasOpened) {
+                    openDevToolsAndInspect();
+                } else {
+                    if (!wc.isDevToolsFocused()) {
+                        // wc.toggleDevTools();
+                        wc.closeDevTools();
+
+                        setImmediate(() => {
+                            openDevToolsAndInspect();
+                        });
+                    } else {
+                        // right-click context menu normally occurs when focus
+                        // is in BrowserWindow / WebView's WebContents,
+                        // but some platforms (e.g. MacOS) allow mouse interaction
+                        // when the window is in the background.
+                        wc.inspectElement(x, y);
+                    }
+                }
+            },
+            label: "Inspect element",
+        }]).popup({window: win});
+    });
+};
+ipcMain.on(CONTEXT_MENU_SETUP, (event, webContentID: number) => {
+    contextMenuSetup(event.sender, webContentID);
+});
 
 // https://github.com/electron/electron/blob/master/docs/tutorial/security.md#how-9
 app.on("web-contents-created", (_evt, wc) => {
