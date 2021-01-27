@@ -48,9 +48,7 @@ import { mediaOverlaysInterrupt } from "./media-overlays";
 import {
     adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, isRTL, obtainReadiumCss,
 } from "./readium-css";
-import {
-    IReadiumElectronBrowserWindow, IReadiumElectronWebview, isScreenReaderMounted,
-} from "./webview/state";
+import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 import URI = require("urijs");
 const debug = debug_("r2:navigator#electron/renderer/location");
@@ -902,7 +900,7 @@ function loadLink(
     }
     const webviewNeedsHardRefresh = !isAudio &&
         (win.READIUM2.enableScreenReaderAccessibilityWebViewHardRefresh
-        && isScreenReaderMounted());
+        && win.READIUM2.isScreenReaderMounted);
 
     if (// !secondWebView && !loadingSecondWebView &&
         // !win.READIUM2.getSecondWebView(false) &&
