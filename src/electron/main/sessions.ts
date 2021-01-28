@@ -7,9 +7,9 @@
 
 import * as debug_ from "debug";
 import {
-    BeforeSendResponse, CertificateVerifyProcProcRequest, HeadersReceivedResponse,
-    OnBeforeSendHeadersListenerDetails, OnHeadersReceivedListenerDetails, RedirectRequest, Request,
-    StreamProtocolResponse, app, protocol, session,
+    BeforeSendResponse, HeadersReceivedResponse, OnBeforeSendHeadersListenerDetails,
+    OnHeadersReceivedListenerDetails, ProtocolRequest, ProtocolResponse, Request, app, protocol,
+    session,
 } from "electron";
 import * as request from "request";
 import * as requestPromise from "request-promise-native";
@@ -159,7 +159,7 @@ export function secureSessions(server: Server) {
 
     // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#session
     const setCertificateVerifyProcCB = (
-        req: CertificateVerifyProcProcRequest,
+        req: Request,
         callback: (verificationResult: number) => void) => {
         // debug("setCertificateVerifyProc");
         // debug(req);
@@ -244,8 +244,8 @@ export function secureSessions(server: Server) {
 let _customUrlProtocolSchemeHandlerWasCalled = false;
 
 const streamProtocolHandler = async (
-    req: Request,
-    callback: (stream?: (NodeJS.ReadableStream) | (StreamProtocolResponse)) => void) => {
+    req: ProtocolRequest,
+    callback: (resp: (NodeJS.ReadableStream) | (ProtocolResponse)) => void) => {
 
     _customUrlProtocolSchemeHandlerWasCalled = true;
 
@@ -268,7 +268,7 @@ const streamProtocolHandler = async (
 
     const failure = (err: any) => {
         debug(err);
-        callback();
+        callback({});
     };
 
     const success = (response: request.RequestResponse) => {
@@ -311,76 +311,76 @@ const streamProtocolHandler = async (
         //     // emitClose // default true
         // });
         response
-        // .on("finish", function h(this: request.Response) {
-        //     debug("RESPONSE FINISH " + url);
-        // })
-        // .on("end", function h(this: request.Response) {
-        //     debug("RESPONSE END " + url);
-        // })
-        // .on("close", function h(this: request.Response) {
-        //     debug("RESPONSE CLOSE " + url);
-        // })
-        .on("error", function h(this: request.Response) {
-            debug("RESPONSE ERROR " + url);
-        })
-        // .on("pipe", function h(this: request.Response) {
-        //     debug("RESPONSE PIPE " + url);
-        // })
-        // .on("unpipe", function h(this: request.Response) {
-        //     debug("RESPONSE UNPIPE " + url);
-        // })
-        // .on("drain", function h(this: request.Response) {
-        //     debug("RESPONSE DRAIN " + url);
-        // })
-        // .on("pause", function h(this: request.Response) {
-        //     debug("RESPONSE PAUSE " + url);
-        // })
-        // .on("resume", function h(this: request.Response) {
-        //     debug("RESPONSE RESUME " + url);
-        // })
-        // .pipe(counterStream) // readable (response) --> writable (counterStream is duplex)
-        // .on("progress", function f(this: CounterPassThroughStream) {
-        //     debug("CounterPassThroughStream PROGRESS: " +
-        //         this.id + " -- " + this.bytesReceived + " = " + url);
-        // })
-        // .on("finish", function f(this: CounterPassThroughStream) {
-        //     debug("CounterPassThroughStream FINISH: " +
-        //         this.id +
-        //         " -- " + this.bytesReceived + " = " + url);
-        // })
-        // .on("end", function f(this: CounterPassThroughStream) {
-        //     debug("CounterPassThroughStream END: " +
-        //         this.id + " = " + url);
-        // })
-        // .on("close", function f(this: CounterPassThroughStream) {
-        //     debug("CounterPassThroughStream CLOSE: " +
-        //         this.id + " = " + url);
-        // })
-        // .on("error", function f(this: CounterPassThroughStream) {
-        //     debug("CounterPassThroughStream ERROR: " +
-        //         this.id + " = " + url);
-        // })
-        // .on("pipe", function f(this: CounterPassThroughStream) {
-        //     debug("CounterPassThroughStream PIPE: " +
-        //         this.id + " = " + url);
-        // })
-        // .on("unpipe", function f(this: CounterPassThroughStream) {
-        //     debug("CounterPassThroughStream UNPIPE: " +
-        //         this.id + " = " + url);
-        // })
-        // .on("drain", function f(this: CounterPassThroughStream) {
-        //     debug("CounterPassThroughStream DRAIN: " +
-        //         this.id + " = " + url);
-        // })
-        // .on("pause", function f(this: CounterPassThroughStream) {
-        //     debug("CounterPassThroughStream PAUSE: " +
-        //         this.id + " = " + url);
-        // })
-        // .on("resume", function f(this: CounterPassThroughStream) {
-        //     debug("CounterPassThroughStream RESUME: " +
-        //         this.id + " = " + url);
-        // })
-        ;
+            // .on("finish", function h(this: request.Response) {
+            //     debug("RESPONSE FINISH " + url);
+            // })
+            // .on("end", function h(this: request.Response) {
+            //     debug("RESPONSE END " + url);
+            // })
+            // .on("close", function h(this: request.Response) {
+            //     debug("RESPONSE CLOSE " + url);
+            // })
+            .on("error", function h(this: request.Response) {
+                debug("RESPONSE ERROR " + url);
+            })
+            // .on("pipe", function h(this: request.Response) {
+            //     debug("RESPONSE PIPE " + url);
+            // })
+            // .on("unpipe", function h(this: request.Response) {
+            //     debug("RESPONSE UNPIPE " + url);
+            // })
+            // .on("drain", function h(this: request.Response) {
+            //     debug("RESPONSE DRAIN " + url);
+            // })
+            // .on("pause", function h(this: request.Response) {
+            //     debug("RESPONSE PAUSE " + url);
+            // })
+            // .on("resume", function h(this: request.Response) {
+            //     debug("RESPONSE RESUME " + url);
+            // })
+            // .pipe(counterStream) // readable (response) --> writable (counterStream is duplex)
+            // .on("progress", function f(this: CounterPassThroughStream) {
+            //     debug("CounterPassThroughStream PROGRESS: " +
+            //         this.id + " -- " + this.bytesReceived + " = " + url);
+            // })
+            // .on("finish", function f(this: CounterPassThroughStream) {
+            //     debug("CounterPassThroughStream FINISH: " +
+            //         this.id +
+            //         " -- " + this.bytesReceived + " = " + url);
+            // })
+            // .on("end", function f(this: CounterPassThroughStream) {
+            //     debug("CounterPassThroughStream END: " +
+            //         this.id + " = " + url);
+            // })
+            // .on("close", function f(this: CounterPassThroughStream) {
+            //     debug("CounterPassThroughStream CLOSE: " +
+            //         this.id + " = " + url);
+            // })
+            // .on("error", function f(this: CounterPassThroughStream) {
+            //     debug("CounterPassThroughStream ERROR: " +
+            //         this.id + " = " + url);
+            // })
+            // .on("pipe", function f(this: CounterPassThroughStream) {
+            //     debug("CounterPassThroughStream PIPE: " +
+            //         this.id + " = " + url);
+            // })
+            // .on("unpipe", function f(this: CounterPassThroughStream) {
+            //     debug("CounterPassThroughStream UNPIPE: " +
+            //         this.id + " = " + url);
+            // })
+            // .on("drain", function f(this: CounterPassThroughStream) {
+            //     debug("CounterPassThroughStream DRAIN: " +
+            //         this.id + " = " + url);
+            // })
+            // .on("pause", function f(this: CounterPassThroughStream) {
+            //     debug("CounterPassThroughStream PAUSE: " +
+            //         this.id + " = " + url);
+            // })
+            // .on("resume", function f(this: CounterPassThroughStream) {
+            //     debug("CounterPassThroughStream RESUME: " +
+            //         this.id + " = " + url);
+            // })
+            ;
         // .pipe(stream)
         // .on("finish", function h(this: PassThrough) {
         //     debug("RESPONSE>STREAM FINISH " + url);
@@ -441,7 +441,7 @@ const streamProtocolHandler = async (
 
         if (_server.isSecured() &&
             ((serverUrl && url.startsWith(serverUrl)) ||
-            url.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://"))) {
+                url.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://"))) {
 
             const header = _server.getSecureHTTPHeader(url);
             if (header) {
@@ -461,12 +461,12 @@ const streamProtocolHandler = async (
             rejectUnauthorized: false, // self-signed certificate
             uri: url,
         })
-        .on("response", (response: request.RequestResponse) => {
-            success(response);
-        })
-        .on("error", (err: any) => {
-            failure(err);
-        });
+            .on("response", (response: request.RequestResponse) => {
+                success(response);
+            })
+            .on("error", (err: any) => {
+                failure(err);
+            });
     } else {
         let response: requestPromise.FullResponse;
         try {
@@ -485,8 +485,8 @@ const streamProtocolHandler = async (
     }
 };
 const httpProtocolHandler = (
-    req: Request,
-    callback: (redirectRequest: RedirectRequest) => void) => {
+    req: ProtocolRequest,
+    callback: (res: ProtocolResponse) => void) => {
 
     _customUrlProtocolSchemeHandlerWasCalled = true;
 
@@ -850,6 +850,7 @@ export function initSessions() {
                 corsEnabled: true,
                 secure: true,
                 standard: true,
+                stream: true,
                 supportFetchAPI: true,
             },
             scheme: READIUM2_ELECTRON_HTTP_PROTOCOL,
@@ -881,27 +882,11 @@ export function initSessions() {
 
                 session.defaultSession.protocol.registerStreamProtocol(
                     READIUM2_ELECTRON_HTTP_PROTOCOL,
-                    streamProtocolHandler,
-                    (error: Error) => {
-                        if (error) {
-                            debug("registerStreamProtocol ERROR (default session)");
-                            debug(error);
-                        } else {
-                            debug("registerStreamProtocol OKAY (default session)");
-                        }
-                    });
+                    streamProtocolHandler);
             } else {
                 session.defaultSession.protocol.registerHttpProtocol(
                     READIUM2_ELECTRON_HTTP_PROTOCOL,
-                    httpProtocolHandler,
-                    (error: Error) => {
-                        if (error) {
-                            debug("registerHttpProtocol ERROR (default session)");
-                            debug(error);
-                        } else {
-                            debug("registerHttpProtocol OKAY (default session)");
-                        }
-                    });
+                    httpProtocolHandler);
             }
         }
         const webViewSession = getWebViewSession();
@@ -910,27 +895,11 @@ export function initSessions() {
 
                 webViewSession.protocol.registerStreamProtocol(
                     READIUM2_ELECTRON_HTTP_PROTOCOL,
-                    streamProtocolHandler,
-                    (error: Error) => {
-                        if (error) {
-                            debug("registerStreamProtocol ERROR (webview session)");
-                            debug(error);
-                        } else {
-                            debug("registerStreamProtocol OKAY (webview session)");
-                        }
-                    });
+                    streamProtocolHandler);
             } else {
                 webViewSession.protocol.registerHttpProtocol(
                     READIUM2_ELECTRON_HTTP_PROTOCOL,
-                    httpProtocolHandler,
-                    (error: Error) => {
-                        if (error) {
-                            debug("registerHttpProtocol ERROR (webview session)");
-                            debug(error);
-                        } else {
-                            debug("registerHttpProtocol OKAY (webview session)");
-                        }
-                    });
+                    httpProtocolHandler);
             }
 
             webViewSession.setPermissionRequestHandler((wc, permission, callback) => {
