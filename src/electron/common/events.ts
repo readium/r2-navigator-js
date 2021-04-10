@@ -197,12 +197,21 @@ export interface IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE {
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_TTS_VOICE = "R2_EVENT_TTS_VOICE";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_TTS_VOICE {
+    voice: SpeechSynthesisVoice | null;
+}
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_TTS_DO_PLAY = "R2_EVENT_TTS_DO_PLAY";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_TTS_DO_PLAY {
     rootElement: string; // CSS selector
     startElement: string | undefined; // CSS selector
     speed: number;
+    voice: SpeechSynthesisVoice | null;
 }
 
 // in RENDERER: webview.send()

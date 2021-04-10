@@ -23,16 +23,16 @@ import {
     IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X,
     IEventPayload_R2_EVENT_TTS_CLICK_ENABLE, IEventPayload_R2_EVENT_TTS_DO_PLAY,
     IEventPayload_R2_EVENT_TTS_OVERLAY_ENABLE, IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE,
-    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CAPTIONS,
-    R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_HIGHLIGHT_CREATE,
-    R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL, R2_EVENT_LINK,
-    R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_MEDIA_OVERLAY_CLICK, R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
-    R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
-    R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
-    R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY,
-    R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
-    R2_EVENT_TTS_OVERLAY_ENABLE, R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_WEBVIEW_KEYDOWN,
-    R2_EVENT_WEBVIEW_KEYUP,
+    IEventPayload_R2_EVENT_TTS_VOICE, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
+    R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CAPTIONS, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS,
+    R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
+    R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_MEDIA_OVERLAY_CLICK,
+    R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_PAGE_TURN,
+    R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO,
+    R2_EVENT_SHIFT_VIEW_X, R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE,
+    R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
+    R2_EVENT_TTS_OVERLAY_ENABLE, R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_TTS_VOICE,
+    R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
 } from "../../common/events";
 import { IHighlightDefinition } from "../../common/highlight";
 import { IPaginationInfo } from "../../common/pagination";
@@ -69,7 +69,7 @@ import {
 } from "./highlight";
 import { popupFootNote } from "./popupFootNotes";
 import {
-    ttsNext, ttsPause, ttsPlay, ttsPlaybackRate, ttsPrevious, ttsResume, ttsStop,
+    ttsNext, ttsPause, ttsPlay, ttsPlaybackRate, ttsPrevious, ttsResume, ttsStop, ttsVoice,
 } from "./readaloud";
 import {
     calculateColumnDimension, calculateMaxScrollShift, calculateTotalColumns, checkHiddenFootNotes,
@@ -129,6 +129,7 @@ win.READIUM2 = {
     ttsClickEnabled: false,
     ttsOverlayEnabled: false,
     ttsPlaybackRate: 1,
+    ttsVoice: null,
     urlQueryParams: win.location.search ? getURLQueryParams(win.location.search) : undefined,
     webViewSlot: WebViewSlotEnum.center,
 };
@@ -2236,6 +2237,7 @@ function loaded(forced: boolean) {
                 if (ev.altKey) {
                     ttsPlay(
                         win.READIUM2.ttsPlaybackRate,
+                        win.READIUM2.ttsVoice,
                         focusScrollRaw,
                         element,
                         undefined,
@@ -2248,6 +2250,7 @@ function loaded(forced: boolean) {
 
                 ttsPlay(
                     win.READIUM2.ttsPlaybackRate,
+                    win.READIUM2.ttsVoice,
                     focusScrollRaw,
                     (element.ownerDocument as Document).body,
                     element,
@@ -3073,6 +3076,7 @@ if (!win.READIUM2.isAudio) {
         const startElement = payload.startElement ? win.document.querySelector(payload.startElement) : null;
         ttsPlay(
             payload.speed,
+            payload.voice,
             focusScrollRaw,
             rootElement ? rootElement : undefined,
             startElement ? startElement : undefined,
@@ -3104,6 +3108,10 @@ if (!win.READIUM2.isAudio) {
 
     ipcRenderer.on(R2_EVENT_TTS_PLAYBACK_RATE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE) => {
         ttsPlaybackRate(payload.speed);
+    });
+
+    ipcRenderer.on(R2_EVENT_TTS_VOICE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_VOICE) => {
+        ttsVoice(payload.voice);
     });
 
     ipcRenderer.on(R2_EVENT_TTS_CLICK_ENABLE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_CLICK_ENABLE) => {

@@ -10,10 +10,11 @@ import { debounce } from "debounce";
 import {
     IEventPayload_R2_EVENT_TTS_CLICK_ENABLE, IEventPayload_R2_EVENT_TTS_DO_PLAY,
     IEventPayload_R2_EVENT_TTS_OVERLAY_ENABLE, IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE,
-    R2_EVENT_READING_LOCATION, R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DOC_END,
-    R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS,
-    R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP, R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING,
-    R2_EVENT_TTS_IS_STOPPED, R2_EVENT_TTS_OVERLAY_ENABLE, R2_EVENT_TTS_PLAYBACK_RATE,
+    IEventPayload_R2_EVENT_TTS_VOICE, R2_EVENT_READING_LOCATION, R2_EVENT_TTS_CLICK_ENABLE,
+    R2_EVENT_TTS_DOC_END, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY,
+    R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP, R2_EVENT_TTS_IS_PAUSED,
+    R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED, R2_EVENT_TTS_OVERLAY_ENABLE,
+    R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_TTS_VOICE,
 } from "../common/events";
 import { getCurrentReadingLocation, navLeftOrRight } from "./location";
 import { isRTL } from "./readium-css";
@@ -90,7 +91,7 @@ export function playTtsOnReadingLocation(href: string) {
                 done = true;
                 activeWebView.removeEventListener("ipc-message", cb);
                 if (activeWebView.READIUM2.link?.Href === href) {
-                    ttsPlay(win.READIUM2.ttsPlaybackRate);
+                    ttsPlay(win.READIUM2.ttsPlaybackRate, win.READIUM2.ttsVoice);
                 }
             }
         };
@@ -107,7 +108,7 @@ export function playTtsOnReadingLocation(href: string) {
                 return webview.READIUM2.link?.Href === href;
             });
             if (activeWebView_) {
-                ttsPlay(win.READIUM2.ttsPlaybackRate);
+                ttsPlay(win.READIUM2.ttsPlaybackRate, win.READIUM2.ttsVoice);
             }
         }, 1000);
         activeWebView.addEventListener("ipc-message", cb);
@@ -170,9 +171,10 @@ export function ttsListen(ttsListener: (ttsState: TTSStateEnum) => void) {
     _ttsListener = ttsListener;
 }
 
-export function ttsPlay(speed: number) {
+export function ttsPlay(speed: number, voice: SpeechSynthesisVoice | null) {
     if (win.READIUM2) {
         win.READIUM2.ttsPlaybackRate = speed;
+        win.READIUM2.ttsVoice = voice;
     }
 
     let startElementCSSSelector: string | undefined;
@@ -198,6 +200,7 @@ export function ttsPlay(speed: number) {
         rootElement: "html > body", // window.document.body
         speed,
         startElement: startElementCSSSelector,
+        voice,
     };
 
     setTimeout(async () => {
@@ -299,6 +302,22 @@ export function ttsClickEnable(doEnable: boolean) {
             setTimeout(async () => {
                 await activeWebView.send(R2_EVENT_TTS_CLICK_ENABLE, payload);
             }, 0);
+        }, 0);
+    }
+}
+
+export function ttsVoice(voice: SpeechSynthesisVoice | null) {
+    if (win.READIUM2) {
+        win.READIUM2.ttsVoice = voice;
+    }
+
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        const payload: IEventPayload_R2_EVENT_TTS_VOICE = {
+            voice,
+        };
+        setTimeout(async () => {
+            await activeWebView.send(R2_EVENT_TTS_VOICE, payload);
         }, 0);
     }
 }

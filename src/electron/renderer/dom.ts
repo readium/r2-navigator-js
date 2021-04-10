@@ -35,7 +35,7 @@ import {
 } from "./location";
 import { mediaOverlaysHandleIpcMessage } from "./media-overlays";
 import {
-    checkTtsState, ttsClickEnable, ttsHandleIpcMessage, ttsOverlayEnable, ttsPlaybackRate,
+    checkTtsState, ttsClickEnable, ttsHandleIpcMessage, ttsOverlayEnable, ttsPlaybackRate, ttsVoice,
 } from "./readaloud";
 import {
     adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, obtainReadiumCss,
@@ -211,6 +211,7 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
         }
 
         if (win.READIUM2) {
+            ttsVoice(win.READIUM2.ttsVoice);
             ttsPlaybackRate(win.READIUM2.ttsPlaybackRate);
             ttsClickEnable(win.READIUM2.ttsClickEnabled);
             ttsOverlayEnable(win.READIUM2.ttsOverlayEnabled);
@@ -468,6 +469,7 @@ export function installNavigatorDOM(
         ttsClickEnabled: false,
         ttsOverlayEnabled: false,
         ttsPlaybackRate: 1,
+        ttsVoice: null,
     };
     ipcRenderer.send("accessibility-support-changed");
 

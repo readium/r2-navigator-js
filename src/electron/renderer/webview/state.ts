@@ -37,6 +37,7 @@ export interface IReadiumElectronWebviewWindowState {
     ttsClickEnabled: boolean;
     ttsOverlayEnabled: boolean;
     ttsPlaybackRate: number;
+    ttsVoice: SpeechSynthesisVoice | null;
 
     isClipboardIntercept: boolean;
 }
@@ -69,6 +70,7 @@ export interface IReadiumElectronBrowserWindowState {
     ttsClickEnabled: boolean;
     ttsOverlayEnabled: boolean;
     ttsPlaybackRate: number;
+    ttsVoice: SpeechSynthesisVoice | null;
 
     clipboardInterceptor: ((data: IEventPayload_R2_EVENT_CLIPBOARD_COPY) => void) | undefined;
 

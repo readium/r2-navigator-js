@@ -56,7 +56,7 @@ interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
     ttsOverlayEnabled: boolean;
 
     focusScrollRaw:
-        ((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => void) | undefined;
+    ((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => void) | undefined;
 
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: (() => number) | undefined;
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: ((val: number) => void) | undefined;
@@ -96,6 +96,7 @@ function resetState() {
 
 export function ttsPlay(
     speed: number,
+    voice: SpeechSynthesisVoice | null,
     focusScrollRaw:
         (el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => void,
     rootElem: Element | undefined,
@@ -104,7 +105,7 @@ export function ttsPlay(
     startTextNodeOffset: number,
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: (val: number) => void,
-    ) {
+) {
 
     ttsStop();
 
@@ -132,6 +133,7 @@ export function ttsPlay(
     setTimeout(() => {
         startTTSSession(
             speed,
+            voice,
             rootEl as Element,
             ttsQueue,
             ttsQueueIndex,
@@ -189,6 +191,41 @@ export function ttsPause() {
     ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PAUSED);
 }
 
+// interface SpeechSynthesisVoice {
+//     readonly default: boolean;
+//     readonly lang: string;
+//     readonly localService: boolean;
+//     readonly name: string;
+//     readonly voiceURI: string;
+// }
+export function ttsVoice(voice: SpeechSynthesisVoice | null) {
+    win.READIUM2.ttsVoice = voice;
+
+    if (_dialogState) {
+        const resumableState = _resumableState;
+        ttsStop();
+        // if (_dialogState.ttsUtterance) {
+        //     _dialogState.ttsUtterance.voice = voice;
+        // }
+        // _dialogState.ttsUtterance = undefined;
+        // _resumableState = {
+        //     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable:
+        //         _dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable,
+        //     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable:
+        //         _dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+        //     focusScrollRaw: _dialogState.focusScrollRaw,
+        //     ttsQueue: _dialogState.ttsQueue,
+        //     ttsQueueIndex: _dialogState.ttsQueueItem.iGlobal, // ttsQueueIndex
+        //     ttsRootElement: _dialogState.ttsRootElement,
+        // };
+
+        setTimeout(() => {
+            _resumableState = resumableState;
+            ttsResume();
+        }, 60);
+    }
+}
+
 export function ttsPlaybackRate(speed: number) {
     win.READIUM2.ttsPlaybackRate = speed;
 
@@ -208,7 +245,7 @@ interface IResumableState {
     ttsQueue: ITtsQueueItem[];
     ttsQueueIndex: number;
     focusScrollRaw:
-        ((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => void);
+    ((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => void);
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: (() => number);
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: ((val: number) => void);
 }
@@ -238,6 +275,7 @@ export function ttsResume() {
             if (_resumableState) {
                 startTTSSession(
                     win.READIUM2.ttsPlaybackRate,
+                    win.READIUM2.ttsVoice,
                     _resumableState.ttsRootElement,
                     _resumableState.ttsQueue,
                     _resumableState.ttsQueueIndex,
@@ -857,10 +895,10 @@ function updateTTSInfo(
             }
             const classes = TTS_CLASS_UTTERANCE +
                 (isHeadingLevel1 ? ` ${TTS_CLASS_UTTERANCE_HEADING1}` :
-                (isHeadingLevel2 ? ` ${TTS_CLASS_UTTERANCE_HEADING2}` :
-                (isHeadingLevel3 ? ` ${TTS_CLASS_UTTERANCE_HEADING3}` :
-                (isHeadingLevel4 ? ` ${TTS_CLASS_UTTERANCE_HEADING4}` :
-                (isHeadingLevel5 ? ` ${TTS_CLASS_UTTERANCE_HEADING5}` : "")))));
+                    (isHeadingLevel2 ? ` ${TTS_CLASS_UTTERANCE_HEADING2}` :
+                        (isHeadingLevel3 ? ` ${TTS_CLASS_UTTERANCE_HEADING3}` :
+                            (isHeadingLevel4 ? ` ${TTS_CLASS_UTTERANCE_HEADING4}` :
+                                (isHeadingLevel5 ? ` ${TTS_CLASS_UTTERANCE_HEADING5}` : "")))));
 
             // tslint:disable-next-line:max-line-length
             let ttsQItemMarkupAttributes = `${R2_DATA_ATTR_UTTERANCE_INDEX}="${ttsQItem.iGlobal}" class="${classes}"`;
@@ -985,6 +1023,12 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
         utterance.rate = win.READIUM2.ttsPlaybackRate;
     }
 
+    utterance.voice = speechSynthesis.getVoices().find((voice) => {
+        // exact match
+        // tslint:disable-next-line:max-line-length
+        return win.READIUM2.ttsVoice && (voice.name === win.READIUM2.ttsVoice.name && voice.lang === win.READIUM2.ttsVoice.lang && voice.voiceURI === win.READIUM2.ttsVoice.voiceURI && voice.default === win.READIUM2.ttsVoice.default && voice.localService === win.READIUM2.ttsVoice.localService);
+    }) || null;
+
     utterance.onboundary = (ev: SpeechSynthesisEvent) => {
         if ((utterance as any).r2_cancel) {
             return;
@@ -1043,6 +1087,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
 
 function startTTSSession(
     speed: number,
+    voice: SpeechSynthesisVoice | null,
     ttsRootElement: Element,
     ttsQueue: ITtsQueueItem[],
     ttsQueueIndexStart: number,
@@ -1050,8 +1095,9 @@ function startTTSSession(
         (el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => void,
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: (val: number) => void,
-    ) {
+) {
     win.READIUM2.ttsPlaybackRate = speed;
+    win.READIUM2.ttsVoice = voice;
 
     const ttsQueueItemStart = getTtsQueueItemRef(ttsQueue, ttsQueueIndexStart);
     if (!ttsQueueItemStart) {
@@ -1094,20 +1140,20 @@ function startTTSSession(
     // &#x21E0;
     // &#x21E2;
     const outerHTML =
-`<div id="${TTS_ID_CONTAINER}"
+        `<div id="${TTS_ID_CONTAINER}"
     class="${CSS_CLASS_NO_FOCUS_OUTLINE} ${TTS_CLASS_THEME1}"
     dir="ltr"
     lang="en"
     xml:lang="en"
     tabindex="0" autofocus="autofocus"></div>
 ${win.READIUM2.ttsOverlayEnabled ?
-`
+            `
 <button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}" title="previous"><span>&#9668;</span></button>
 <button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}" title="next"><span>&#9658;</span></button>
 <input id="${TTS_ID_SLIDER}" type="range" min="0" max="${ttsQueueLength - 1}" value="0"
     ${isRTL() ? `dir="rtl"` : `dir="ltr"`}  title="progress"/>
 `
-: ""}
+            : ""}
 `;
 
     const pop = new PopupDialog(
