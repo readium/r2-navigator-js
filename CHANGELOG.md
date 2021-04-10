@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.6.0...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.7.0...develop
 
 Changes:
 * TODO
+
+# 1.7.0
+
+> Build environment: NodeJS `14.16.0`, NPM `6.14.12`
+
+Changes:
+* TTS voice selection (override from default for language auto-detection)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.7.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.7.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.7.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.6.0...v1.7.0
 
 # 1.6.0
 
