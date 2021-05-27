@@ -57,7 +57,7 @@
     "r2-utils-js": "^1.0.25",
     "request": "^2.88.2",
     "request-promise-native": "^1.0.9",
-    "sentence-splitter": "^3.2.1",
+    "sentence-splitter": "^3.2.2",
     "ta-json-x": "^2.5.3",
     "tabbable": "^5.2.0",
     "tslib": "^2.2.0",
@@ -67,8 +67,8 @@
   "devDependencies": {
     "@types/debounce": "^3.0.0",
     "@types/debug": "^4.1.5",
-    "@types/express": "^4.17.11",
-    "@types/node": "^12.20.12",
+    "@types/express": "^4.17.12",
+    "@types/node": "^12.20.13",
     "@types/request": "^2.48.5",
     "@types/request-promise-native": "^1.0.17",
     "@types/urijs": "^1.19.15",
@@ -77,7 +77,7 @@
     "cross-env": "^7.0.3",
     "cson": "^7.20.0",
     "eclint": "^2.8.1",
-    "electron": "^11.4.6",
+    "electron": "^11.4.7",
     "filehound": "^1.17.4",
     "git-rev-sync": "^3.0.1",
     "json": "^11.0.0",
@@ -85,7 +85,7 @@
     "rimraf": "^3.0.2",
     "tslint": "^5.20.1",
     "tslint-language-service": "^0.9.9",
-    "typescript": "^4.2.4"
+    "typescript": "^4.3.2"
   },
   "files": [
     "LICENSE",
