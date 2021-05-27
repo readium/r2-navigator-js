@@ -809,6 +809,7 @@ const transformerHttpBase: TTransformFunction = (
 `;
     let newStr = htmlStr.substr(0, iHead) + baseStr + htmlStr.substr(iHead);
     // debug(newStr);
+    newStr = newStr.replace(/<(audio|video)/g, "<$1 data-r2-crossorigin=\"true\" crossorigin=\"anonymous\" ");
 
     // ensure iframes are fed the original URL base
     newStr = transformerHttpBaseIframes(
