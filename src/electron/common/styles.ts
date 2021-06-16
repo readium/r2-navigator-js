@@ -13,6 +13,8 @@ export enum WebViewSlotEnum {
 
 export const CLASS_PAGINATED = "r2-css-paginated";
 
+export const HIDE_CURSOR_CLASS = "r2-hideCursor";
+
 export const ZERO_TRANSFORM_CLASS = "r2-zeroTransform";
 export const SKIP_LINK_ID = "r2-skip-link";
 export const LINK_TARGET_CLASS = "r2-link-target";
@@ -732,6 +734,13 @@ export const targetCssStyles = `
 `;
 
 export const selectionCssStyles = `
+
+:root[style].${HIDE_CURSOR_CLASS},
+:root.${HIDE_CURSOR_CLASS},
+:root[style].${HIDE_CURSOR_CLASS} *,
+:root.${HIDE_CURSOR_CLASS} * {
+    cursor: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=), none !important;
+}
 
 .${ZERO_TRANSFORM_CLASS} {
     will-change: scroll-position;
