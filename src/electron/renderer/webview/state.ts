@@ -34,6 +34,7 @@ export interface IReadiumElectronWebviewWindowState {
 
     DEBUG_VISUALS: boolean;
 
+    ttsSentenceDetectionEnabled: boolean;
     ttsClickEnabled: boolean;
     ttsOverlayEnabled: boolean;
     ttsPlaybackRate: number;
@@ -67,6 +68,7 @@ export interface IReadiumElectronBrowserWindowState {
 
     DEBUG_VISUALS: boolean;
 
+    ttsSentenceDetectionEnabled: boolean;
     ttsClickEnabled: boolean;
     ttsOverlayEnabled: boolean;
     ttsPlaybackRate: number;

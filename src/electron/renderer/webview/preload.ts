@@ -21,8 +21,9 @@ import {
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP, IEventPayload_R2_EVENT_PAGE_TURN,
     IEventPayload_R2_EVENT_READING_LOCATION, IEventPayload_R2_EVENT_READIUMCSS,
     IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X,
-    IEventPayload_R2_EVENT_TTS_CLICK_ENABLE, IEventPayload_R2_EVENT_TTS_DO_PLAY,
-    IEventPayload_R2_EVENT_TTS_OVERLAY_ENABLE, IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE,
+    IEventPayload_R2_EVENT_TTS_CLICK_ENABLE, IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS,
+    IEventPayload_R2_EVENT_TTS_DO_PLAY, IEventPayload_R2_EVENT_TTS_OVERLAY_ENABLE,
+    IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE, IEventPayload_R2_EVENT_TTS_SENTENCE_DETECT_ENABLE,
     IEventPayload_R2_EVENT_TTS_VOICE, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
     R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CAPTIONS, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS,
     R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
@@ -31,8 +32,8 @@ import {
     R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO,
     R2_EVENT_SHIFT_VIEW_X, R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE,
     R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
-    R2_EVENT_TTS_OVERLAY_ENABLE, R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_TTS_VOICE,
-    R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
+    R2_EVENT_TTS_OVERLAY_ENABLE, R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_TTS_SENTENCE_DETECT_ENABLE,
+    R2_EVENT_TTS_VOICE, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
 } from "../../common/events";
 import { IHighlightDefinition } from "../../common/highlight";
 import { IPaginationInfo } from "../../common/pagination";
@@ -129,6 +130,7 @@ win.READIUM2 = {
     ttsClickEnabled: false,
     ttsOverlayEnabled: false,
     ttsPlaybackRate: 1,
+    ttsSentenceDetectionEnabled: true,
     ttsVoice: null,
     urlQueryParams: win.location.search ? getURLQueryParams(win.location.search) : undefined,
     webViewSlot: WebViewSlotEnum.center,
@@ -1595,6 +1597,7 @@ win.addEventListener("DOMContentLoaded", () => {
 
     win.READIUM2.locationHashOverride = undefined;
     win.READIUM2.ttsClickEnabled = false;
+    win.READIUM2.ttsSentenceDetectionEnabled = true;
     win.READIUM2.ttsOverlayEnabled = false;
 
     let readiumcssJson: IEventPayload_R2_EVENT_READIUMCSS | undefined;
@@ -3098,12 +3101,14 @@ if (!win.READIUM2.isAudio) {
         ttsResume();
     });
 
-    ipcRenderer.on(R2_EVENT_TTS_DO_NEXT, (_event: any) => {
-        ttsNext();
+    ipcRenderer.on(R2_EVENT_TTS_DO_NEXT,
+        (_event: any, payload?: IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS) => {
+        ttsNext(payload?.skipSentences);
     });
 
-    ipcRenderer.on(R2_EVENT_TTS_DO_PREVIOUS, (_event: any) => {
-        ttsPrevious();
+    ipcRenderer.on(R2_EVENT_TTS_DO_PREVIOUS,
+        (_event: any, payload?: IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS) => {
+        ttsPrevious(payload?.skipSentences);
     });
 
     ipcRenderer.on(R2_EVENT_TTS_PLAYBACK_RATE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE) => {
@@ -3114,6 +3119,10 @@ if (!win.READIUM2.isAudio) {
         ttsVoice(payload.voice);
     });
 
+    ipcRenderer.on(R2_EVENT_TTS_SENTENCE_DETECT_ENABLE,
+        (_event: any, payload: IEventPayload_R2_EVENT_TTS_SENTENCE_DETECT_ENABLE) => {
+        win.READIUM2.ttsSentenceDetectionEnabled = payload.doEnable;
+    });
     ipcRenderer.on(R2_EVENT_TTS_CLICK_ENABLE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_CLICK_ENABLE) => {
         win.READIUM2.ttsClickEnabled = payload.doEnable;
     });

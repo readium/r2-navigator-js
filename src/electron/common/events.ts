@@ -205,6 +205,14 @@ export interface IEventPayload_R2_EVENT_TTS_VOICE {
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_TTS_SENTENCE_DETECT_ENABLE = "R2_EVENT_TTS_SENTENCE_DETECT_ENABLE";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_TTS_SENTENCE_DETECT_ENABLE {
+    doEnable: boolean;
+}
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_TTS_DO_PLAY = "R2_EVENT_TTS_DO_PLAY";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_TTS_DO_PLAY {
@@ -245,10 +253,13 @@ export const R2_EVENT_TTS_DOC_END = "R2_EVENT_TTS_DOC_END";
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_TTS_DO_NEXT = "R2_EVENT_TTS_DO_NEXT";
-
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_TTS_DO_PREVIOUS = "R2_EVENT_TTS_DO_PREVIOUS";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS {
+    skipSentences: boolean | undefined;
+}
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()

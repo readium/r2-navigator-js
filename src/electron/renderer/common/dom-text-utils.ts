@@ -274,7 +274,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                 case Node.ELEMENT_NODE:
                     const childElement = childNode as Element;
                     // tslint:disable-next-line:max-line-length
-                    const isExcluded = childElement.matches("img, sup, sub, audio, video, source, button, canvas, del, dialog, embed, form, head, iframe, meter, noscript, object, s, script, select, style, textarea");
+                    const isExcluded = childElement.matches("svg, img, sup, sub, audio, video, source, button, canvas, del, dialog, embed, form, head, iframe, meter, noscript, object, s, script, select, style, textarea");
                     // code, nav, dl, figure, table, ul, ol
                     if (!isExcluded) {
                         processElement(childElement);
@@ -297,6 +297,48 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                     parentElement: childElement,
                                     textNodes: [],
                                 });
+                            }
+                        }
+                    } else if (childElement.tagName
+                        && childElement.tagName.toLowerCase() === "svg") {
+                        const altAttr = childElement.getAttribute("aria-label");
+                        if (altAttr) {
+                            const txt = altAttr.trim();
+                            if (txt) {
+                                const lang = getLanguage(childElement);
+                                const dir = undefined;
+                                ttsQueue.push({
+                                    combinedText: txt,
+                                    combinedTextSentences: undefined,
+                                    combinedTextSentencesRangeBegin: undefined,
+                                    combinedTextSentencesRangeEnd: undefined,
+                                    dir,
+                                    lang,
+                                    parentElement: childElement,
+                                    textNodes: [],
+                                });
+                            }
+                        } else {
+                            const svgChildren = Array.from(childElement.children);
+                            for (const svgChild of svgChildren) {
+                                if (svgChild.tagName?.toLowerCase() === "title") {
+                                    const txt = svgChild.textContent?.trim();
+                                    if (txt) {
+                                        const lang = getLanguage(svgChild);
+                                        const dir = getDirection(svgChild);
+                                        ttsQueue.push({
+                                            combinedText: txt,
+                                            combinedTextSentences: undefined,
+                                            combinedTextSentencesRangeBegin: undefined,
+                                            combinedTextSentencesRangeEnd: undefined,
+                                            dir,
+                                            lang,
+                                            parentElement: childElement,
+                                            textNodes: [],
+                                        });
+                                    }
+                                    break;
+                                }
                             }
                         }
                     }

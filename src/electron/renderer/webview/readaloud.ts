@@ -115,7 +115,8 @@ export function ttsPlay(
         rootEl = win.document.body;
     }
 
-    const ttsQueue = generateTtsQueue(rootEl, true);
+    const splitSentences = win.READIUM2.ttsSentenceDetectionEnabled;
+    const ttsQueue = generateTtsQueue(rootEl, splitSentences);
     if (!ttsQueue.length) {
         return;
     }
@@ -326,9 +327,16 @@ export function ttsQueueCurrentText(): string | undefined {
     return undefined;
 }
 
-export function ttsNext() {
+export function ttsNext(skipSentences = false) {
     if (_dialogState && _dialogState.ttsQueueItem) {
-        const j = _dialogState.ttsQueueItem.iGlobal + 1;
+        let j = _dialogState.ttsQueueItem.iGlobal + 1;
+        if (skipSentences &&
+            _dialogState.ttsQueueItem.iSentence !== -1 &&
+            _dialogState.ttsQueueItem.item.combinedTextSentences) {
+            j = _dialogState.ttsQueueItem.iGlobal +
+                (_dialogState.ttsQueueItem.item.combinedTextSentences.length -
+                    _dialogState.ttsQueueItem.iSentence);
+        }
         if (j >= _dialogState.ttsQueueLength || j < 0) {
             return;
         }
@@ -336,9 +344,14 @@ export function ttsNext() {
         ttsPlayQueueIndexDebounced(j);
     }
 }
-export function ttsPrevious() {
+export function ttsPrevious(skipSentences = false) {
     if (_dialogState && _dialogState.ttsQueueItem) {
-        const j = _dialogState.ttsQueueItem.iGlobal - 1;
+        let j = _dialogState.ttsQueueItem.iGlobal - 1;
+        if (skipSentences &&
+            _dialogState.ttsQueueItem.iSentence !== -1 &&
+            _dialogState.ttsQueueItem.item.combinedTextSentences) {
+            j = _dialogState.ttsQueueItem.iGlobal - _dialogState.ttsQueueItem.iSentence - 1;
+        }
         if (j >= _dialogState.ttsQueueLength || j < 0) {
             return;
         }
@@ -914,6 +927,11 @@ function updateTTSInfo(
 
                 imageMarkup = `<img src="${(ttsQItem.item.parentElement as HTMLImageElement).src}" />`;
             }
+            if (ttsQItem.item.parentElement && ttsQItem.item.parentElement.tagName &&
+                ttsQItem.item.parentElement.tagName.toLowerCase() === "svg") {
+
+                imageMarkup = ttsQItem.item.parentElement.outerHTML;
+            }
             if (ttsQItem.item.dir) {
                 ttsQItemMarkupAttributes += ` dir="${ttsQItem.item.dir}" `;
             }
@@ -1198,22 +1216,24 @@ ${win.READIUM2.ttsOverlayEnabled ?
     }
 
     if (_dialogState.domPrevious) {
-        _dialogState.domPrevious.addEventListener("click", (_ev: MouseEvent) => {
+        _dialogState.domPrevious.addEventListener("click", (ev: MouseEvent) => {
 
+            const skipSentences = ev.shiftKey && ev.altKey;
             if (isRTL()) {
-                ttsNext();
+                ttsNext(skipSentences);
             } else {
-                ttsPrevious();
+                ttsPrevious(skipSentences);
             }
         });
     }
     if (_dialogState.domNext) {
-        _dialogState.domNext.addEventListener("click", (_ev: MouseEvent) => {
+        _dialogState.domNext.addEventListener("click", (ev: MouseEvent) => {
 
+            const skipSentences = ev.shiftKey && ev.altKey;
             if (!isRTL()) {
-                ttsNext();
+                ttsNext(skipSentences);
             } else {
-                ttsPrevious();
+                ttsPrevious(skipSentences);
             }
         });
     }
