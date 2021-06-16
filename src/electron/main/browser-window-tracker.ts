@@ -11,8 +11,6 @@ import { BrowserWindow, Menu, app, ipcMain, webContents } from "electron";
 import { CONTEXT_MENU_SETUP } from "../common/context-menu";
 import { IEventPayload_R2_EVENT_LINK, R2_EVENT_LINK } from "../common/events";
 
-// import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../common/sessions";
-
 const debug = debug_("r2:navigator#electron/main/browser-window-tracker");
 
 let _electronBrowserWindows: Electron.BrowserWindow[];
@@ -181,8 +179,13 @@ app.on("web-contents-created", (_evt, wc) => {
             debug("WEBVIEW web-contents-created");
 
             wc.on("will-navigate", (event, url) => {
-                debug("webview.getWebContents().on('will-navigate'");
-                debug(url);
+                // let urlHttp = url;
+                // if (/^https?:\/\//.test(urlHttp) && !urlHttp.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+                //     // urlHttp = convertCustomSchemeToHttpUrl(urlHttp);
+                //     urlHttp = convertHttpUrlToCustomScheme(urlHttp);
+                // }
+
+                debug(`will-navigate? ${wc.getURL()} => ${url}`); //  (${urlHttp})
                 event.preventDefault();
 
                 // Note that event.stopPropagation() and event.url
@@ -195,13 +198,20 @@ app.on("web-contents-created", (_evt, wc) => {
                 // directly where WebView elements are created. Perhaps the infinite loop problem
                 // (see below) does not occur in this alternative context.
 
+                const willNavigateUrl = (wc as any).__willNavigateUrl;
+                const willNavigateUrlT = (wc as any).__willNavigateUrlT;
+                (wc as any).__willNavigateUrl = url;
+                (wc as any).__willNavigateUrlT = Date.now();
+
                 // unfortunately 'will-navigate' enters an infinite loop with HTML <base href="HTTP_URL" /> ! :(
-                if (event) { // THIS IS ALWAYS TRUE (intentionally)
-                    debug("'will-navigate' SKIPPED.");
+                if (willNavigateUrl === url &&
+                    (Date.now() - willNavigateUrlT <= 500)) {
                     return;
                 }
 
+                debug("will-navigate ===> ", url);
                 const payload: IEventPayload_R2_EVENT_LINK = {
+                    // url: urlHttp,
                     url,
                 };
                 // ipcMain.emit

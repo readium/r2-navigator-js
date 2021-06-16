@@ -936,6 +936,10 @@ function loadLink(
 
                 setTimeout(async () => {
                     shiftWebview(activeWebView, 0, undefined); // reset
+                    ipcRenderer.send(CONTEXT_MENU_SETUP, {
+                        webViewID: activeWebView.getWebContentsId(),
+                        
+                    });
                     await activeWebView.send(R2_EVENT_SCROLLTO, payload);
                 }, 10);
             } else {
