@@ -22,6 +22,7 @@ export const LINK_TARGET_CLASS = "r2-link-target";
 export const ROOT_CLASS_REDUCE_MOTION = "r2-reduce-motion";
 export const ROOT_CLASS_MATHJAX = "r2-mathjax";
 
+export const ROOT_CLASS_FIXED_LAYOUT = "r2-fixed-layout";
 export const ROOT_CLASS_NO_FOOTNOTES = "r2-no-popup-foonotes";
 export const FOOTNOTES_CONTAINER_CLASS = "r2-footnote-container";
 export const FOOTNOTES_CLOSE_BUTTON_CLASS = "r2-footnote-close";
@@ -611,6 +612,13 @@ export const ROOT_CLASS_INVISIBLE_MASK = "r2-visibility-mask-class";
 export const ROOT_CLASS_INVISIBLE_MASK_REMOVED = "r2-visibility-mask-removed-class";
 export const visibilityMaskCssStyles = `
 
+:root[style].${ROOT_CLASS_FIXED_LAYOUT},
+:root.${ROOT_CLASS_FIXED_LAYOUT} {
+    overflow: hidden !important;
+    background: unset !important;
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=) !important;
+}
+
 :root.${ROOT_CLASS_INVISIBLE_MASK}[style] > body,
 :root.${ROOT_CLASS_INVISIBLE_MASK} > body {
     /* visibility: hidden !important; */
@@ -618,11 +626,14 @@ export const visibilityMaskCssStyles = `
 }
 :root.${ROOT_CLASS_INVISIBLE_MASK_REMOVED}[style] > body,
 :root.${ROOT_CLASS_INVISIBLE_MASK_REMOVED} > body {
+    opacity: 1;
+    /*
     animation-name: readium2ElectronAnimation_INVISIBLE_MASK;
     animation-duration: 0.5s;
     animation-delay: 0s;
-    /* animation-fill-mode: forwards; */
     animation-timing-function: linear;
+    */
+    /* animation-fill-mode: forwards; */
 }
 @keyframes readium2ElectronAnimation_INVISIBLE_MASK {
     0% {

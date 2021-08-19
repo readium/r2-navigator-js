@@ -12,10 +12,11 @@ import { IEventPayload_R2_EVENT_READIUMCSS } from "./events";
 import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
 import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "./sessions";
 import {
-    CLASS_PAGINATED, ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_INVISIBLE_MASK_REMOVED,
-    ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, WebViewSlotEnum,
-    audioCssStyles, focusCssStyles, footnotesCssStyles, mediaOverlaysCssStyles, readPosCssStyles,
-    scrollBarCssStyles, selectionCssStyles, targetCssStyles, ttsCssStyles, visibilityMaskCssStyles,
+    CLASS_PAGINATED, ROOT_CLASS_FIXED_LAYOUT, ROOT_CLASS_INVISIBLE_MASK,
+    ROOT_CLASS_INVISIBLE_MASK_REMOVED, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
+    ROOT_CLASS_REDUCE_MOTION, WebViewSlotEnum, audioCssStyles, focusCssStyles, footnotesCssStyles,
+    mediaOverlaysCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles,
+    targetCssStyles, ttsCssStyles, visibilityMaskCssStyles,
 } from "./styles";
 
 export const READIUM2_BASEURL_ID = "r2_BASEURL_ID";
@@ -178,7 +179,8 @@ export function readiumCSSSet(
     const docElement = documant.documentElement;
 
     if (messageJson.isFixedLayout) {
-        docElement.style.overflow = "hidden";
+        // docElement.style.overflow = "hidden";
+        docElement.classList.add(ROOT_CLASS_FIXED_LAYOUT);
         return; // exit early
     }
 
@@ -607,7 +609,16 @@ export function configureFixedLayout(
     }
     if (innerWidth && innerHeight && width && height && isFixedLayout
         && documant && documant.documentElement && documant.body) {
-        documant.documentElement.style.overflow = "hidden";
+
+        // documant.documentElement.style.overflow = "hidden";
+        documant.documentElement.classList.add(ROOT_CLASS_FIXED_LAYOUT);
+
+        // This workaround fixes the issue of "bleeding" body background color due to scale+translate CSS 2D transform
+        // https://github.com/edrlab/thorium-reader/issues/1529#issuecomment-900166745
+        // documant.documentElement.style.background = "unset";
+        // 1px transparent image
+        // tslint:disable-next-line:max-line-length
+        // documant.documentElement.style.backgroundImage = "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=)";
 
         // Many FXL EPUBs lack the body dimensions (only viewport meta)
         documant.body.style.width = width + "px";
