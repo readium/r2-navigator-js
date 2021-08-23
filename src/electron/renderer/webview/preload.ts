@@ -152,6 +152,11 @@ win.prompt = (...args: any[]): string => {
     return "";
 };
 
+// CSS pixel tolerance margin to detect "end of document reached" (during "next" page turn / scroll)
+// This CSS bug is hard to reproduce consistently, only in Windows it seems, maybe due to display DPI?
+// (I observed different outcomes with Virtual Machines in various resolutions, versus hardware laptop/tablet)
+const CSS_PIXEL_TOLERANCE = 5;
+
 // setTimeout(() => {
 //     if (window.alert) {
 //         window.alert("window.alert!");
@@ -704,11 +709,6 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
         win.cancelAnimationFrame(_lastAnimState.id);
         _lastAnimState.object[_lastAnimState.property] = _lastAnimState.destVal;
     }
-
-    // CSS pixel tolerance margin to detect "end of document reached" (during "next" page turn / scroll)
-    // This CSS bug is hard to reproduce consistently, only in Windows it seems, maybe due to display DPI?
-    // (I observed different outcomes with Virtual Machines in various resolutions, versus hardware laptop/tablet)
-    const CSS_PIXEL_TOLERANCE = 5;
 
     if (!goPREVIOUS) { // goPREVIOUS && isRTL() || !goPREVIOUS && !isRTL()) { // right
 
@@ -2174,6 +2174,155 @@ function loaded(forced: boolean) {
         //     onResizeDebounced();
         // }
         onResizeDebounced();
+    });
+
+    let _wheelTimeStamp = -1;
+    let _wheelSpin = 0;
+    const wheelDebounced = // debounce(
+        (ev: WheelEvent) => {
+        // console.log("wheel", ev);
+
+        const now = (new Date()).getTime();
+        if (_wheelTimeStamp === -1) {
+            _wheelTimeStamp = now;
+        } else {
+            const msDiff = now - _wheelTimeStamp;
+            if (msDiff < 500) {
+                // console.log("wheel skip time", msDiff);
+                return;
+            }
+        }
+
+        if (win.READIUM2.isAudio || win.READIUM2.isFixedLayout || !win.document.body) {
+            return;
+        }
+
+        if (!win.document || !win.document.documentElement) {
+            return;
+        }
+
+        const documant = win.document;
+
+        const isPaged = isPaginated(documant);
+        if (isPaged) {
+            return;
+        }
+
+        const delta = Math.abs(ev.deltaY);
+        // MacOS touchpad kinetic scroll generates 1px delta post- flick gesture
+        // if (delta < 2) {
+        //     console.log("wheel skip (small delta)", ev.deltaY, _wheelSpin);
+        //     return;
+        // }
+        _wheelSpin += delta;
+        if (_wheelSpin < 300) {
+            // console.log("wheel skip (spin more...)", ev.deltaY, _wheelSpin);
+            return;
+        }
+
+        // console.log("wheel turn page", ev.deltaY, _wheelSpin);
+        _wheelSpin = 0;
+        _wheelTimeStamp = -1;
+
+        const scrollElement = getScrollingElement(documant);
+
+        const goPREVIOUS = ev.deltaY < 0;
+        if (!goPREVIOUS) { // goPREVIOUS && isRTL() || !goPREVIOUS && !isRTL()) { // right
+
+            const maxScrollShift = calculateMaxScrollShift().maxScrollShift;
+            const maxScrollShiftTolerated = maxScrollShift - CSS_PIXEL_TOLERANCE;
+
+            if (isPaged) {
+                const unit = isVerticalWritingMode() ?
+                    win.document.documentElement.offsetHeight :
+                    win.document.documentElement.offsetWidth;
+                let scrollElementOffset = Math.round(isVerticalWritingMode() ?
+                    scrollElement.scrollTop :
+                    scrollElement.scrollLeft);
+                const isNegative = scrollElementOffset < 0;
+                const scrollElementOffsetAbs = Math.abs(scrollElementOffset);
+                const fractional = scrollElementOffsetAbs / unit;
+                const integral = Math.floor(fractional);
+                const decimal = fractional - integral;
+                const partial = decimal * unit;
+                if (partial <= CSS_PIXEL_TOLERANCE) {
+                    scrollElementOffset = (isNegative ? -1 : 1) * integral * unit;
+                } else if (partial >= (unit - CSS_PIXEL_TOLERANCE)) {
+                    scrollElementOffset = (isNegative ? -1 : 1) * (integral + 1) * unit;
+                }
+                if (isVerticalWritingMode() && (scrollElementOffsetAbs >= maxScrollShiftTolerated) ||
+                    !isVerticalWritingMode() && (scrollElementOffsetAbs >= maxScrollShiftTolerated)) {
+
+                    const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+                        direction: "LTR",
+                        go: "NEXT",
+                    };
+                    ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+                    return;
+                }
+            } else {
+                if (isVerticalWritingMode() && (Math.abs(scrollElement.scrollLeft) >= maxScrollShiftTolerated) ||
+                    !isVerticalWritingMode() && (Math.abs(scrollElement.scrollTop) >= maxScrollShiftTolerated)) {
+
+                    const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+                        direction: "LTR",
+                        go: "NEXT",
+                    };
+                    ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+                    return;
+                }
+            }
+        } else if (goPREVIOUS) { //  && !isRTL() || !goPREVIOUS && isRTL()) { // left
+            if (isPaged) {
+                const unit = isVerticalWritingMode() ?
+                    win.document.documentElement.offsetHeight :
+                    win.document.documentElement.offsetWidth;
+                let scrollElementOffset = Math.round(isVerticalWritingMode() ?
+                    scrollElement.scrollTop :
+                    scrollElement.scrollLeft);
+                const isNegative = scrollElementOffset < 0;
+                const scrollElementOffsetAbs = Math.abs(scrollElementOffset);
+                const fractional = scrollElementOffsetAbs / unit;
+                const integral = Math.floor(fractional);
+                const decimal = fractional - integral;
+                const partial = decimal * unit;
+                if (partial <= CSS_PIXEL_TOLERANCE) {
+                    scrollElementOffset = (isNegative ? -1 : 1) * integral * unit;
+                } else if (partial >= (unit - CSS_PIXEL_TOLERANCE)) {
+                    scrollElementOffset = (isNegative ? -1 : 1) * (integral + 1) * unit;
+                }
+                if (isVerticalWritingMode() && (scrollElementOffsetAbs <= 0) ||
+                    !isVerticalWritingMode() && (scrollElementOffsetAbs <= 0)) {
+
+                    const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+                        direction: "LTR",
+                        go: "PREVIOUS",
+                    };
+                    ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+                    return;
+                }
+            } else {
+                if (isVerticalWritingMode() && (Math.abs(scrollElement.scrollLeft) <= 0) ||
+                    !isVerticalWritingMode() && (Math.abs(scrollElement.scrollTop) <= 0)) {
+
+                    const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+                        direction: "LTR",
+                        go: "PREVIOUS",
+                    };
+                    ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+                    return;
+                }
+            }
+        }
+
+    }
+    // , 100)
+    ;
+    win.document.addEventListener("wheel", wheelDebounced);
+    win.document.addEventListener("scroll", (_ev: Event) => {
+        // console.log("scroll reset _wheelSpin");
+        _wheelSpin = 0;
+        _wheelTimeStamp = -1;
     });
 
     setTimeout(() => {
