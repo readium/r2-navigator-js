@@ -1,10 +1,30 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.7.4...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.8.0...develop
 
 Changes:
 * TODO
+
+# 1.8.0
+
+> Build environment: NodeJS `14.17.5`, NPM `6.14.14`
+
+Changes:
+* Electron v13
+* Programmatic hyperlinks (InDesign style): "will-navigate" event intercept now works where no-HTTP streamer is used (in which case there is no HTML base transform)
+* Fixed-layout workaround: CSS 2D transform (scale + translate) bleeds body background color, this is prevented using a transparent image on HTML root element
+* Check that webview is still mounted after the async timeout (show/hide content mask IPC event)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.8.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.8.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.8.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.7.4...v1.8.0
 
 # 1.7.4
 
