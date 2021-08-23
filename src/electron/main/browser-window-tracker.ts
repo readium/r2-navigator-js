@@ -17,6 +17,8 @@ const debug = debug_("r2:navigator#electron/main/browser-window-tracker");
 
 let _electronBrowserWindows: Electron.BrowserWindow[];
 
+export const THORIUM_READIUM2_ELECTRON_HTTP_PROTOCOL = "thoriumhttps";
+
 // let _serverURL: string | undefined;
 
 export function trackBrowserWindow(win: Electron.BrowserWindow, _serverURL?: string) {
@@ -196,7 +198,9 @@ app.on("web-contents-created", (_evt, wc) => {
                 // (see below) does not occur in this alternative context.
 
                 // unfortunately 'will-navigate' enters an infinite loop with HTML <base href="HTTP_URL" /> ! :(
-                if (event) { // THIS IS ALWAYS TRUE (intentionally)
+                // so we check for the no-HTTP streamer scheme/custom protocol
+                // (which doesn't transform the HTML base URL)
+                if (!url || !url.startsWith(THORIUM_READIUM2_ELECTRON_HTTP_PROTOCOL)) {
                     debug("'will-navigate' SKIPPED.");
                     return;
                 }
