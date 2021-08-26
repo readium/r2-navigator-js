@@ -12,6 +12,7 @@ Changes:
 
 Changes:
 * NPM package updates
+* Scroll previous/next spine item with mouse wheel and touch pad (including kinetic two-finger flick gesture)
 
 Git revision info:
 * https://unpkg.com/r2-navigator-js@1.8.1/dist/gitrev.json
