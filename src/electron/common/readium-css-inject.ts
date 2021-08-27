@@ -392,25 +392,25 @@ export function readiumCSSSet(
         }
     }
 
-    if (setCSS.fontSize) {
+    if (setCSS.fontSize && setCSS.fontSize.trim() !== "0" && setCSS.fontSize.trim() !== "100%") {
         docElement.style.setProperty("--USER__fontSize", setCSS.fontSize);
     } else {
         docElement.style.removeProperty("--USER__fontSize");
     }
 
-    if (setCSS.lineHeight) {
+    if (setCSS.lineHeight && setCSS.lineHeight.trim() !== "0") {
         docElement.style.setProperty("--USER__lineHeight", setCSS.lineHeight);
     } else {
         docElement.style.removeProperty("--USER__lineHeight");
     }
 
-    if (setCSS.typeScale) {
+    if (setCSS.typeScale && setCSS.typeScale.trim() !== "0") {
         docElement.style.setProperty("--USER__typeScale", setCSS.typeScale);
     } else {
         docElement.style.removeProperty("--USER__typeScale");
     }
 
-    if (setCSS.paraSpacing) {
+    if (setCSS.paraSpacing && setCSS.paraSpacing.trim() !== "0") {
         docElement.style.setProperty("--USER__paraSpacing", setCSS.paraSpacing);
     } else {
         docElement.style.removeProperty("--USER__paraSpacing");
@@ -447,13 +447,13 @@ export function readiumCSSSet(
             docElement.style.removeProperty("--USER__bodyHyphens");
         }
 
-        if (setCSS.wordSpacing) {
+        if (setCSS.wordSpacing && setCSS.wordSpacing.trim() !== "0") {
             docElement.style.setProperty("--USER__wordSpacing", setCSS.wordSpacing);
         } else {
             docElement.style.removeProperty("--USER__wordSpacing");
         }
 
-        if (setCSS.letterSpacing) {
+        if (setCSS.letterSpacing && setCSS.letterSpacing.trim() !== "0") {
             docElement.style.setProperty("--USER__letterSpacing", setCSS.letterSpacing);
         } else {
             docElement.style.removeProperty("--USER__letterSpacing");
@@ -467,7 +467,7 @@ export function readiumCSSSet(
             docElement.style.removeProperty("--USER__colCount");
         }
 
-        if (setCSS.paraIndent) {
+        if (setCSS.paraIndent && setCSS.paraIndent.trim() !== "0") {
             docElement.style.setProperty("--USER__paraIndent", setCSS.paraIndent);
         } else {
             docElement.style.removeProperty("--USER__paraIndent");
@@ -482,7 +482,7 @@ export function readiumCSSSet(
         docElement.style.removeProperty("--USER__ligatures");
     }
 
-    if (setCSS.pageMargins) {
+    if (setCSS.pageMargins && setCSS.pageMargins.trim() !== "0") {
         docElement.style.setProperty("--USER__pageMargins", setCSS.pageMargins);
     } else {
         docElement.style.removeProperty("--USER__pageMargins");
