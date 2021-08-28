@@ -2159,10 +2159,10 @@ function loaded(forced: boolean) {
     ipcRenderer.on("R2_EVENT_WINDOW_RESIZE", (_event: any, zoomPercent: number) => {
         debug("R2_EVENT_WINDOW_RESIZE zoomPercent " + zoomPercent);
 
-        if (zoomPercent !== win.READIUM2.fxlZoomPercent) {
-            // tslint:disable-next-line:max-line-length
-            debug("R2_EVENT_WINDOW_RESIZE zoomPercent !== win.READIUM2.fxlZoomPercent ??! " + zoomPercent + " -- " + win.READIUM2.fxlZoomPercent);
-        }
+        // if (zoomPercent !== win.READIUM2.fxlZoomPercent) {
+        // tslint:disable-next-line:max-line-length
+        //     debug("R2_EVENT_WINDOW_RESIZE zoomPercent !== win.READIUM2.fxlZoomPercent ??! " + zoomPercent + " -- " + win.READIUM2.fxlZoomPercent);
+        // }
         win.READIUM2.fxlZoomPercent = zoomPercent;
 
         if (!win.READIUM2.isFixedLayout) {
