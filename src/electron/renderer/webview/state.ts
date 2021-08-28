@@ -30,6 +30,8 @@ export interface IReadiumElectronWebviewWindowState {
     fxlViewportWidth: number;
     fxlViewportHeight: number;
     fxlViewportScale: number;
+    fxlZoomPercent: number; // fixedLayoutZoomPercent
+
     webViewSlot: WebViewSlotEnum;
 
     DEBUG_VISUALS: boolean;
@@ -73,6 +75,9 @@ export interface IReadiumElectronBrowserWindowState {
     ttsOverlayEnabled: boolean;
     ttsPlaybackRate: number;
     ttsVoice: SpeechSynthesisVoice | null;
+
+    // see fxlZoomPercent
+    fixedLayoutZoomPercent: number;
 
     clipboardInterceptor: ((data: IEventPayload_R2_EVENT_CLIPBOARD_COPY) => void) | undefined;
 

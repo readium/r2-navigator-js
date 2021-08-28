@@ -100,7 +100,10 @@ let _resizeWebviewsNeedReset = true;
 let _resizeTimeout: number | undefined;
 // let _resizeFirst = true;
 win.addEventListener("resize", () => {
-    // if (_resizeFirst) {
+    if (win.READIUM2.publication?.Metadata?.Rendition?.Layout !== "fixed") {
+        return;
+    }
+
     //     debug("Window resize (TOP), SKIP FIRST");
     //     _resizeFirst = false;
     //     return;
@@ -118,6 +121,7 @@ win.addEventListener("resize", () => {
         for (const activeWebView of activeWebViews) {
             const wvSlot = activeWebView.getAttribute("data-wv-slot") as WebViewSlotEnum;
             if (wvSlot) {
+                debug("Window resize (TOP), IMMEDIATE ... setWebViewStyle");
                 setWebViewStyle(activeWebView, wvSlot);
             }
         }
@@ -137,7 +141,7 @@ win.addEventListener("resize", () => {
             if (wvSlot) {
                 try {
                     // will trigger R2_EVENT_FXL_CONFIGURE
-                    await activeWebView.send("R2_EVENT_WINDOW_RESIZE");
+                    await activeWebView.send("R2_EVENT_WINDOW_RESIZE", win.READIUM2.fixedLayoutZoomPercent);
                 } catch (e) {
                     debug(e);
                 }
@@ -210,6 +214,44 @@ function readiumCssApplyToWebview(
         }, 60);
     }
 }
+
+const _fixedLayoutZoomPercentTimers: {
+    [id: string]: number | undefined;
+} = {};
+export function fixedLayoutZoomPercent(zoomPercent: number) {
+
+    win.READIUM2.domSlidingViewport.style.overflow = zoomPercent === 0 ? "hidden" : "auto";
+
+    if (win.READIUM2) {
+        win.READIUM2.fixedLayoutZoomPercent = zoomPercent;
+    }
+
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        if (_fixedLayoutZoomPercentTimers[activeWebView.id]) {
+            win.clearTimeout(_fixedLayoutZoomPercentTimers[activeWebView.id]);
+            _fixedLayoutZoomPercentTimers[activeWebView.id] = undefined;
+            // delete _fixedLayoutZoomPercentTimers[activeWebView.id];
+        }
+        const wvSlot = activeWebView.getAttribute("data-wv-slot") as WebViewSlotEnum;
+        if (wvSlot) {
+            debug("fixedLayoutZoomPercent ... setWebViewStyle");
+            setWebViewStyle(activeWebView, wvSlot);
+
+            _fixedLayoutZoomPercentTimers[activeWebView.id] = win.setTimeout(async () => {
+                try {
+                    _fixedLayoutZoomPercentTimers[activeWebView.id] = undefined;
+
+                    // will trigger R2_EVENT_FXL_CONFIGURE
+                    await activeWebView.send("R2_EVENT_WINDOW_RESIZE", zoomPercent);
+                } catch (e) {
+                    debug(e);
+                }
+            }, 500);
+        }
+    }
+}
+
 // legacy function, old confusing name (see readiumCssUpdate() below)
 export function readiumCssOnOff(rcss?: IEventPayload_R2_EVENT_READIUMCSS) {
 
@@ -243,6 +285,7 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
         //     publicationURL_ : convertHttpUrlToCustomScheme(publicationURL_);
         wv.setAttribute("httpreferrer", publicationURL_);
     }
+    debug("createWebViewInternal ... setWebViewStyle");
     setWebViewStyle(wv as IReadiumElectronWebview, WebViewSlotEnum.center);
     wv.setAttribute("preload", preloadScriptPath); // "file://"
 
@@ -269,6 +312,7 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             ttsClickEnable(win.READIUM2.ttsClickEnabled);
             ttsSentenceDetectionEnable(win.READIUM2.ttsSentenceDetectionEnabled);
             ttsOverlayEnable(win.READIUM2.ttsOverlayEnabled);
+            // fixedLayoutZoomPercent(win.READIUM2.fixedLayoutZoomPercent);
         }
 
         checkTtsState(wv as IReadiumElectronWebview);
@@ -286,6 +330,7 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             webview.style.opacity = "1";
         } else if (event.channel === R2_EVENT_FXL_CONFIGURE) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_FXL_CONFIGURE;
+            debug("R2_EVENT_FXL_CONFIGURE ... setWebViewStyle");
             if (payload.fxl) {
                 setWebViewStyle(webview, WebViewSlotEnum.center, payload.fxl);
             } else {
@@ -485,8 +530,9 @@ export function installNavigatorDOM(
 
     const domSlidingViewport = document.createElement("div");
     domSlidingViewport.setAttribute("id", ELEMENT_ID_SLIDING_VIEWPORT);
-    domSlidingViewport.setAttribute("style", "display: block; position: absolute; left: 0; right: 0; " +
-        "top: 0; bottom: 0; margin: 0; padding: 0; box-sizing: border-box; background: white; overflow: hidden;");
+    domSlidingViewport.setAttribute("style",
+        "display: block; position: relative; width: 100%; height: 100%; " +
+        "margin: 0; padding: 0; box-sizing: border-box; background: white; overflow: hidden;");
 
     win.READIUM2 = {
         DEBUG_VISUALS: false,
@@ -503,6 +549,7 @@ export function installNavigatorDOM(
         domSlidingViewport,
         enableScreenReaderAccessibilityWebViewHardRefresh:
             enableScreenReaderAccessibilityWebViewHardRefresh ? true : false,
+        fixedLayoutZoomPercent: 0,
         getActiveWebViews: (): IReadiumElectronWebview[] => {
             const arr = [];
             if (_webview1) {

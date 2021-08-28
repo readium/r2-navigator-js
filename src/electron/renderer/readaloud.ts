@@ -287,9 +287,7 @@ export function ttsOverlayEnable(doEnable: boolean) {
                 doEnable,
             };
 
-            setTimeout(async () => {
-                await activeWebView.send(R2_EVENT_TTS_OVERLAY_ENABLE, payload);
-            }, 0);
+            await activeWebView.send(R2_EVENT_TTS_OVERLAY_ENABLE, payload);
         }, 0);
     }
 }
@@ -306,9 +304,7 @@ export function ttsClickEnable(doEnable: boolean) {
                 doEnable,
             };
 
-            setTimeout(async () => {
-                await activeWebView.send(R2_EVENT_TTS_CLICK_ENABLE, payload);
-            }, 0);
+            await activeWebView.send(R2_EVENT_TTS_CLICK_ENABLE, payload);
         }, 0);
     }
 }
@@ -358,9 +354,7 @@ export function ttsSentenceDetectionEnable(doEnable: boolean) {
                 doEnable,
             };
 
-            setTimeout(async () => {
-                await activeWebView.send(R2_EVENT_TTS_SENTENCE_DETECT_ENABLE, payload);
-            }, 0);
+            await activeWebView.send(R2_EVENT_TTS_SENTENCE_DETECT_ENABLE, payload);
         }, 0);
     }
 }

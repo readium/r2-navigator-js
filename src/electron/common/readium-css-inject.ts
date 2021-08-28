@@ -506,11 +506,17 @@ export function configureFixedLayout(
         isFixedLayout: boolean,
         fxlViewportWidth: number, fxlViewportHeight: number,
         innerWidth: number, innerHeight: number,
-        wvSlot: WebViewSlotEnum): IwidthHeight | undefined {
+        wvSlot: WebViewSlotEnum,
+        // 0 => use innerWidth/innerHeight to fit within viewport
+        // 100 => original document dimensions, 50 => half, etc.
+        zoomPercent: number,
+    ): IwidthHeight | undefined {
 
     if (!documant || !documant.head || !documant.body) {
         return undefined;
     }
+    debug("configureFixedLayout zoomPercent ", zoomPercent);
+
     let wh: IwidthHeight | undefined;
 
     let width: number = fxlViewportWidth;
@@ -627,7 +633,7 @@ export function configureFixedLayout(
 
         const ratioX = visibleWidth / width;
         const ratioY = visibleHeight / height;
-        const ratio = Math.min(ratioX, ratioY);
+        const ratio = zoomPercent === 0 ? Math.min(ratioX, ratioY) : (zoomPercent / 100);
 
         const tx = (visibleWidth - (width * ratio)) *
             (wvSlot === WebViewSlotEnum.center ? 0.5 : (wvSlot === WebViewSlotEnum.right ? 0 : 1));
