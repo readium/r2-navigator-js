@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.8.2...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.8.3...develop
 
 Changes:
 * TODO
+
+# 1.8.3
+
+> Build environment: NodeJS `14.17.5`, NPM `6.14.14`
+
+Changes:
+* NPM package updates
+* Fixed-layout documents now scaled and translated (CSS transform) on the webview container instead of the root HTML element within
+* Fix: handling of special custom URL protocol used to simulate HTTPs (pure Electron streamer, no HTTP / Express server)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.8.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.8.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.8.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.8.2...v1.8.3
 
 # 1.8.2
 
