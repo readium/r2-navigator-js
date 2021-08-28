@@ -19,10 +19,11 @@ import {
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_MEDIA_OVERLAY_CLICK,
     R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, R2_EVENT_MEDIA_OVERLAY_STARTSTOP,
 } from "../common/events";
-import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "../common/sessions";
 import { handleLinkUrl, navLeftOrRight } from "./location";
 import { isRTL } from "./readium-css";
 import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
+
+// import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "../common/sessions";
 
 const debug = debug_("r2:navigator#electron/renderer/media-overlays");
 
@@ -166,10 +167,10 @@ async function playMediaOverlaysAudio(
         return; // TODO TTS
     }
 
-    let publicationURL = win.READIUM2.publicationURL;
-    if (publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
-        publicationURL = convertCustomSchemeToHttpUrl(publicationURL);
-    }
+    const publicationURL = win.READIUM2.publicationURL;
+    // if (publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+    //     publicationURL = convertCustomSchemeToHttpUrl(publicationURL);
+    // }
 
     // const url = publicationURL + "/../" + moTextAudioPair.Audio;
     const urlObjFull = new URL(moTextAudioPair.Audio, publicationURL);
@@ -905,10 +906,10 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
     // typically undefined at first, because serialized JSON not init'ed, lazy-loaded
     if (!link.MediaOverlays || !link.MediaOverlays.initialized) {
 
-        let publicationURL = win.READIUM2.publicationURL;
-        if (publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
-            publicationURL = convertCustomSchemeToHttpUrl(publicationURL);
-        }
+        const publicationURL = win.READIUM2.publicationURL;
+        // if (publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+        //     publicationURL = convertCustomSchemeToHttpUrl(publicationURL);
+        // }
 
         // const moUrlFull = publicationURL + "/../" + moUrl;
         const moUrlObjFull = new URL(moUrl, publicationURL);

@@ -21,7 +21,7 @@ export const convertHttpUrlToCustomScheme = (url: string): string => {
             "id" + pubID +
             "/x" + matches[1] +
             "/ip" + matches[2] +
-            "/p" + matches[3] +
+            "/p" + (matches[3] ? matches[3] : "") +
             matches[5];
         // console.log("convertHttpUrlToCustomScheme: ", url, " ===> ", url_);
         return url_;
@@ -44,7 +44,7 @@ export const convertCustomSchemeToHttpUrl = (url: string): string => {
             return ret;
         }));
         url_ = matches[2] + "://" +
-        matches[3] + ":" + matches[4] +
+        matches[3] + (matches[4] ? (":" + matches[4]) : "") +
         "/pub/" + pubID +
         matches[5];
         // console.log("convertCustomSchemeToHttpUrl: ", url, " ===> ", url_);

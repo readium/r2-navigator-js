@@ -6,12 +6,13 @@
 // ==LICENSE-END==
 
 import {
-    READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl,
-} from "../../common/sessions";
-import {
     CSS_CLASS_NO_FOCUS_OUTLINE, FOOTNOTES_CONTAINER_CLASS, ROOT_CLASS_NO_FOOTNOTES,
 } from "../../common/styles";
 import { PopupDialog } from "../common/popup-dialog";
+
+// import {
+//     READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl,
+// } from "../../common/sessions";
 
 export function popupFootNote(
     element: HTMLElement,
@@ -29,10 +30,10 @@ export function popupFootNote(
 
     const documant = element.ownerDocument as Document;
 
-    let hrefSelf = documant.location.href;
-    if (hrefSelf.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
-        hrefSelf = convertCustomSchemeToHttpUrl(hrefSelf);
-    }
+    const hrefSelf = documant.location.href;
+    // if (hrefSelf.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+    //     hrefSelf = convertCustomSchemeToHttpUrl(hrefSelf);
+    // }
     const urlSelf = new URL(hrefSelf);
     if (urlSelf.protocol !== url.protocol ||
         urlSelf.origin !== url.origin ||
