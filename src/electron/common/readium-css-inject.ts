@@ -9,6 +9,7 @@ import * as debug_ from "debug";
 
 import { parseDOM, serializeDOM } from "./dom";
 import { IEventPayload_R2_EVENT_READIUMCSS } from "./events";
+import { IwidthHeight } from "./fxl";
 import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
 import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "./sessions";
 import {
@@ -500,13 +501,6 @@ export function readiumCSSSet(
     }
 }
 
-export interface IwidthHeight {
-    width: number;
-    height: number;
-    scale: number;
-    tx: number;
-    ty: number;
-}
 export function configureFixedLayout(
         documant: Document,
         isFixedLayout: boolean,
@@ -613,13 +607,6 @@ export function configureFixedLayout(
         // documant.documentElement.style.overflow = "hidden";
         documant.documentElement.classList.add(ROOT_CLASS_FIXED_LAYOUT);
 
-        // This workaround fixes the issue of "bleeding" body background color due to scale+translate CSS 2D transform
-        // https://github.com/edrlab/thorium-reader/issues/1529#issuecomment-900166745
-        // documant.documentElement.style.background = "unset";
-        // 1px transparent image
-        // tslint:disable-next-line:max-line-length
-        // documant.documentElement.style.backgroundImage = "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=)";
-
         // Many FXL EPUBs lack the body dimensions (only viewport meta)
         documant.body.style.width = width + "px";
         documant.body.style.height = height + "px";
@@ -656,10 +643,10 @@ export function configureFixedLayout(
             wh.tx = tx;
             wh.ty = ty;
         }
-        documant.documentElement.style.transformOrigin = "0 0";
+        // documant.documentElement.style.transformOrigin = "0 0";
         // tslint:disable-next-line:max-line-length
         // documant.documentElement.style.transform = `translateX(${tx}px) translateY(${ty}px) scale3d(${ratio}, ${ratio}, 0)`;
-        documant.documentElement.style.transform = `translate(${tx}px, ${ty}px) scale(${ratio})`;
+        // documant.documentElement.style.transform = `translate(${tx}px, ${ty}px) scale(${ratio})`;
     }
     return wh;
 }

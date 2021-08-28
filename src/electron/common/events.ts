@@ -9,6 +9,7 @@ import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
 
 import { IAudioPlaybackInfo } from "./audiobook";
 import { IDocInfo } from "./document";
+import { IwidthHeight } from "./fxl";
 import { IHighlight, IHighlightDefinition } from "./highlight";
 import { IPaginationInfo } from "./pagination";
 import { IReadiumCSS } from "./readium-css-settings";
@@ -72,6 +73,14 @@ export const R2_EVENT_PAGE_TURN_RES = "R2_EVENT_PAGE_TURN_RES";
 export interface IEventPayload_R2_EVENT_PAGE_TURN {
     direction: string; // RTL, LTR
     go: string; // PREVIOUS, NEXT
+}
+
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_FXL_CONFIGURE = "R2_EVENT_FXL_CONFIGURE";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_FXL_CONFIGURE {
+    fxl: IwidthHeight | null;
 }
 
 // in WEBVIEW: ipcRenderer.sendToHost()

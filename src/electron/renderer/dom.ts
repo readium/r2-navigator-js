@@ -16,11 +16,11 @@ import { Publication } from "@r2-shared-js/models/publication";
 import { CONTEXT_MENU_SETUP } from "../common/context-menu";
 import {
     IEventPayload_R2_EVENT_CAPTIONS, IEventPayload_R2_EVENT_CLIPBOARD_COPY,
-    IEventPayload_R2_EVENT_DEBUG_VISUALS, IEventPayload_R2_EVENT_PAGE_TURN,
-    IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
-    IEventPayload_R2_EVENT_WEBVIEW_KEYUP, IKeyboardEvent, R2_EVENT_CAPTIONS,
-    R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_PAGE_TURN_RES, R2_EVENT_READIUMCSS,
-    R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
+    IEventPayload_R2_EVENT_DEBUG_VISUALS, IEventPayload_R2_EVENT_FXL_CONFIGURE,
+    IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READIUMCSS,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, IEventPayload_R2_EVENT_WEBVIEW_KEYUP, IKeyboardEvent,
+    R2_EVENT_CAPTIONS, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_FXL_CONFIGURE,
+    R2_EVENT_PAGE_TURN_RES, R2_EVENT_READIUMCSS, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
 } from "../common/events";
 import { READIUM_CSS_URL_PATH } from "../common/readium-css-settings";
 import {
@@ -38,9 +38,7 @@ import {
     checkTtsState, ttsClickEnable, ttsHandleIpcMessage, ttsOverlayEnable, ttsPlaybackRate,
     ttsSentenceDetectionEnable, ttsVoice,
 } from "./readaloud";
-import {
-    adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, obtainReadiumCss,
-} from "./readium-css";
+import { adjustReadiumCssJsonMessageForFixedLayout, obtainReadiumCss } from "./readium-css";
 import { soundtrackHandleIpcMessage } from "./soundtrack";
 import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
@@ -97,6 +95,58 @@ const debug = debug_("r2:navigator#electron/renderer/index");
 
 const win = window as IReadiumElectronBrowserWindow;
 
+let _resizeSkip = 0;
+let _resizeWebviewsNeedReset = true;
+let _resizeTimeout: number | undefined;
+// let _resizeFirst = true;
+win.addEventListener("resize", () => {
+    // if (_resizeFirst) {
+    //     debug("Window resize (TOP), SKIP FIRST");
+    //     _resizeFirst = false;
+    //     return;
+    // }
+    if (_resizeSkip > 0) {
+        debug("Window resize (TOP), SKIP ...", _resizeSkip);
+        return;
+    }
+
+    if (_resizeWebviewsNeedReset) {
+        _resizeWebviewsNeedReset = false;
+
+        debug("Window resize (TOP), IMMEDIATE");
+        const activeWebViews = win.READIUM2.getActiveWebViews();
+        for (const activeWebView of activeWebViews) {
+            const wvSlot = activeWebView.getAttribute("data-wv-slot") as WebViewSlotEnum;
+            if (wvSlot) {
+                setWebViewStyle(activeWebView, wvSlot);
+            }
+        }
+    }
+
+    if (_resizeTimeout) {
+        clearTimeout(_resizeTimeout);
+    }
+    _resizeTimeout = win.setTimeout(async () => {
+        debug("Window resize (TOP), DEFERRED");
+        _resizeTimeout = undefined;
+        _resizeWebviewsNeedReset = true;
+        const activeWebViews = win.READIUM2.getActiveWebViews();
+        _resizeSkip = activeWebViews.length;
+        for (const activeWebView of activeWebViews) {
+            const wvSlot = activeWebView.getAttribute("data-wv-slot") as WebViewSlotEnum;
+            if (wvSlot) {
+                try {
+                    // will trigger R2_EVENT_FXL_CONFIGURE
+                    await activeWebView.send("R2_EVENT_WINDOW_RESIZE");
+                } catch (e) {
+                    debug(e);
+                }
+            }
+        }
+
+    }, 1000);
+});
+
 ipcRenderer.on("accessibility-support-changed", (_e, accessibilitySupportEnabled) => {
     debug("accessibility-support-changed event received in WebView ", accessibilitySupportEnabled);
     win.READIUM2.isScreenReaderMounted = accessibilitySupportEnabled;
@@ -133,12 +183,14 @@ function readiumCssApplyToWebview(
     const payloadRcss = adjustReadiumCssJsonMessageForFixedLayout(activeWebView, actualReadiumCss);
 
     if (activeWebView.style.transform &&
-        activeWebView.style.transform !== "none") {
+        activeWebView.style.transform !== "none" &&
+        !activeWebView.hasAttribute("data-wv-fxl")) {
 
-        setTimeout(async () => {
-            await activeWebView.send("R2_EVENT_HIDE",
-                activeWebView.READIUM2.link ? isFixedLayout(activeWebView.READIUM2.link) : null);
-        }, 0);
+        activeWebView.style.opacity = "0";
+        // setTimeout(async () => {
+        //     await activeWebView.send("R2_EVENT_HIDE",
+        //         activeWebView.READIUM2.link ? isFixedLayout(activeWebView.READIUM2.link) : null);
+        // }, 0);
 
         setTimeout(async () => {
             shiftWebview(activeWebView, 0, undefined); // reset
@@ -229,7 +281,18 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             console.log("Wrong navigator webview?!");
             return;
         }
-        if (event.channel === R2_EVENT_WEBVIEW_KEYDOWN) {
+
+        if (event.channel === "R2_EVENT_SHOW") {
+            webview.style.opacity = "1";
+        } else if (event.channel === R2_EVENT_FXL_CONFIGURE) {
+            const payload = event.args[0] as IEventPayload_R2_EVENT_FXL_CONFIGURE;
+            if (payload.fxl) {
+                setWebViewStyle(webview, WebViewSlotEnum.center, payload.fxl);
+            } else {
+                setWebViewStyle(webview, WebViewSlotEnum.center, null);
+            }
+            _resizeSkip--;
+        } else if (event.channel === R2_EVENT_WEBVIEW_KEYDOWN) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN;
             if (_keyDownEventHandler) {
                 _keyDownEventHandler(payload, payload.elementName, payload.elementAttributes);

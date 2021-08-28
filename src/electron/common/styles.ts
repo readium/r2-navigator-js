@@ -615,9 +615,13 @@ export const visibilityMaskCssStyles = `
 :root[style].${ROOT_CLASS_FIXED_LAYOUT},
 :root.${ROOT_CLASS_FIXED_LAYOUT} {
     overflow: hidden !important;
-    background: unset !important;
-    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=) !important;
 }
+/*
+// This workaround fixes the issue of "bleeding" body background color due to scale+translate CSS 2D transform
+// https://github.com/edrlab/thorium-reader/issues/1529#issuecomment-900166745
+background: unset !important;
+background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=) !important;
+*/
 
 :root.${ROOT_CLASS_INVISIBLE_MASK}[style] > body,
 :root.${ROOT_CLASS_INVISIBLE_MASK} > body {

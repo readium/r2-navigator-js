@@ -15,17 +15,18 @@ import { LocatorLocations } from "@r2-shared-js/models/locator";
 import {
     IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK, IEventPayload_R2_EVENT_CAPTIONS,
     IEventPayload_R2_EVENT_CLIPBOARD_COPY, IEventPayload_R2_EVENT_DEBUG_VISUALS,
-    IEventPayload_R2_EVENT_HIGHLIGHT_CREATE, IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE,
-    IEventPayload_R2_EVENT_LINK, IEventPayload_R2_EVENT_LOCATOR_VISIBLE,
-    IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK, IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
-    IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP, IEventPayload_R2_EVENT_PAGE_TURN,
-    IEventPayload_R2_EVENT_READING_LOCATION, IEventPayload_R2_EVENT_READIUMCSS,
-    IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X,
-    IEventPayload_R2_EVENT_TTS_CLICK_ENABLE, IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS,
-    IEventPayload_R2_EVENT_TTS_DO_PLAY, IEventPayload_R2_EVENT_TTS_OVERLAY_ENABLE,
-    IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE, IEventPayload_R2_EVENT_TTS_SENTENCE_DETECT_ENABLE,
-    IEventPayload_R2_EVENT_TTS_VOICE, IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN,
-    R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CAPTIONS, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS,
+    IEventPayload_R2_EVENT_FXL_CONFIGURE, IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
+    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, IEventPayload_R2_EVENT_LINK,
+    IEventPayload_R2_EVENT_LOCATOR_VISIBLE, IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK,
+    IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP,
+    IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READING_LOCATION,
+    IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_SCROLLTO,
+    IEventPayload_R2_EVENT_SHIFT_VIEW_X, IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
+    IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS, IEventPayload_R2_EVENT_TTS_DO_PLAY,
+    IEventPayload_R2_EVENT_TTS_OVERLAY_ENABLE, IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE,
+    IEventPayload_R2_EVENT_TTS_SENTENCE_DETECT_ENABLE, IEventPayload_R2_EVENT_TTS_VOICE,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CAPTIONS,
+    R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_FXL_CONFIGURE,
     R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
     R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_MEDIA_OVERLAY_CLICK,
     R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_PAGE_TURN,
@@ -1155,10 +1156,10 @@ const scrollToHashRaw = (animate: boolean) => {
 
     recreateAllHighlights(win);
 
-    if (win.READIUM2.isFixedLayout) {
-        debug("scrollToHashRaw skipped, FXL");
-        return;
-    }
+    // if (win.READIUM2.isFixedLayout) {
+    //     debug("scrollToHashRaw skipped, FXL");
+    //     return;
+    // }
 
     debug("++++ scrollToHashRaw");
 
@@ -1411,15 +1412,17 @@ let _ignoreScrollEvent = false;
 //     debug(newHTML.substr(0, iBody_ + 100));
 // }
 
-ipcRenderer.on("R2_EVENT_HIDE", (_event: any, payload: boolean | null) => {
-    showHideContentMask(true, payload);
-});
+// ipcRenderer.on("R2_EVENT_HIDE", (_event: any, payload: boolean | null) => {
+//     showHideContentMask(true, payload);
+// });
 
 function showHideContentMask(doHide: boolean, isFixedLayout: boolean | null) {
     if (doHide) {
         win.document.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK);
         win.document.documentElement.classList.remove(ROOT_CLASS_INVISIBLE_MASK_REMOVED);
     } else {
+        ipcRenderer.sendToHost("R2_EVENT_SHOW", null);
+
         if (isFixedLayout) {
             win.document.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK_REMOVED);
         }
@@ -1672,8 +1675,15 @@ win.addEventListener("DOMContentLoaded", () => {
         win.READIUM2.fxlViewportHeight = wh.height;
         win.READIUM2.fxlViewportScale = wh.scale;
 
-        // TODO: is that more reliable than CSS transform on HTML root element?
-        // webFrame.setZoomFactor(wh.scale);
+        const payload: IEventPayload_R2_EVENT_FXL_CONFIGURE = {
+            fxl: wh,
+        };
+        ipcRenderer.sendToHost(R2_EVENT_FXL_CONFIGURE, payload);
+    } else {
+        const payload: IEventPayload_R2_EVENT_FXL_CONFIGURE = {
+            fxl: null,
+        };
+        ipcRenderer.sendToHost(R2_EVENT_FXL_CONFIGURE, payload);
     }
 
     const alreadedInjected = win.document.documentElement.hasAttribute("data-readiumcss-injected");
@@ -2144,16 +2154,40 @@ function loaded(forced: boolean) {
         return false;
     }, true);
 
-    const onResizeRaw = () => {
+    ipcRenderer.on("R2_EVENT_WINDOW_RESIZE", (_event: any) => {
+
+        if (!win.READIUM2.isFixedLayout) {
+            debug("R2_EVENT_WINDOW_RESIZE skipped, !FXL");
+            return;
+        }
+
         const wh = configureFixedLayout(win.document, win.READIUM2.isFixedLayout,
             win.READIUM2.fxlViewportWidth, win.READIUM2.fxlViewportHeight,
             win.innerWidth, win.innerHeight, win.READIUM2.webViewSlot);
+
         if (wh) {
             win.READIUM2.fxlViewportWidth = wh.width;
             win.READIUM2.fxlViewportHeight = wh.height;
             win.READIUM2.fxlViewportScale = wh.scale;
-        }
 
+            const payload: IEventPayload_R2_EVENT_FXL_CONFIGURE = {
+                fxl: wh,
+            };
+            ipcRenderer.sendToHost(R2_EVENT_FXL_CONFIGURE, payload);
+        } else {
+            const payload: IEventPayload_R2_EVENT_FXL_CONFIGURE = {
+                fxl: null,
+            };
+            ipcRenderer.sendToHost(R2_EVENT_FXL_CONFIGURE, payload);
+        }
+    });
+
+    const onResizeRaw = () => {
+
+        if (win.READIUM2.isFixedLayout) {
+            debug("scrollToHashRaw skipped, FXL");
+            return;
+        }
         debug("++++ scrollToHashDebounced FROM RESIZE");
         scrollToHashDebounced(false);
     };
@@ -2163,7 +2197,7 @@ function loaded(forced: boolean) {
     let _firstWindowResize = true;
     win.addEventListener("resize", () => {
         if (_firstWindowResize) {
-            debug("Window resize, SKIP FIRST");
+            debug("Window resize (WEBVIEW), SKIP FIRST");
             _firstWindowResize = false;
             return;
         }

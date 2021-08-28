@@ -10,14 +10,11 @@ import { BrowserWindow, Menu, app, ipcMain, webContents } from "electron";
 
 import { CONTEXT_MENU_SETUP } from "../common/context-menu";
 import { IEventPayload_R2_EVENT_LINK, R2_EVENT_LINK } from "../common/events";
-
-// import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../common/sessions";
+import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../common/sessions";
 
 const debug = debug_("r2:navigator#electron/main/browser-window-tracker");
 
 let _electronBrowserWindows: Electron.BrowserWindow[];
-
-export const THORIUM_READIUM2_ELECTRON_HTTP_PROTOCOL = "thoriumhttps";
 
 // let _serverURL: string | undefined;
 
@@ -200,7 +197,10 @@ app.on("web-contents-created", (_evt, wc) => {
                 // unfortunately 'will-navigate' enters an infinite loop with HTML <base href="HTTP_URL" /> ! :(
                 // so we check for the no-HTTP streamer scheme/custom protocol
                 // (which doesn't transform the HTML base URL)
-                if (!url || !url.startsWith(THORIUM_READIUM2_ELECTRON_HTTP_PROTOCOL)) {
+                if (!url ||
+                    (!url.startsWith("thoriumhttps") &&
+                    !url.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL))) {
+
                     debug("'will-navigate' SKIPPED.");
                     return;
                 }

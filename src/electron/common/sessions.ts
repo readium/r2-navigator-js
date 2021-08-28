@@ -12,7 +12,7 @@ import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
 export const READIUM2_ELECTRON_HTTP_PROTOCOL = "httpsr2";
 
 export const convertHttpUrlToCustomScheme = (url: string): string => {
-    const matches = url.match(/(http[s]?):\/\/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?::([0-9]+))?\/pub\/([^\/]+)(\/.*)?/);
+    const matches = url.match(/(https?|thoriumhttps):\/\/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)(?::([0-9]+))?\/pub\/([^\/]+)(\/.*)?/);
     if (matches && matches.length > 1) {
         const idMatch = matches[4];
         const decoded = decodeURIComponent(idMatch);
@@ -31,9 +31,10 @@ export const convertHttpUrlToCustomScheme = (url: string): string => {
 
 export const convertCustomSchemeToHttpUrl = (url: string): string => {
     let url_ = url.replace(READIUM2_ELECTRON_HTTP_PROTOCOL + "://", "");
-    // const matches = url_.match(/(http[s]?)\.ip([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\.p([0-9]+)?\.id([^\/]+)(\/.*)?/);
     // tslint:disable-next-line:max-line-length
-    const matches = url_.match(/id([^\/]+)\/x(http[s]?)\/ip([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\/p([0-9]+)?(\/.*)?/);
+    // const matches = url_.match(/(https?|thoriumhttps)\.ip([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\.p([0-9]+)?\.id([^\/]+)(\/.*)?/);
+    // tslint:disable-next-line:max-line-length
+    const matches = url_.match(/id([^\/]+)\/x(https?|thoriumhttps)\/ip([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\/p([0-9]+)?(\/.*)?/);
     if (matches && matches.length > 1) {
         const pubID = encodeURIComponent_RFC3986(
             matches[1].replace(/-/g, "=").replace(/\./g, "\/").replace(/(_[a-zA-Z])/g, (match) => {
