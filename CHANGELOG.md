@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.8.7...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.9.0...develop
 
 Changes:
 * TODO
+
+# 1.9.0
+
+> Build environment: NodeJS `14.18.1`, NPM `6.14.15`
+
+Changes:
+* Electron v15 (NodeJS v16)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.9.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.9.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.9.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.8.7...v1.9.0
 
 # 1.8.7
 
