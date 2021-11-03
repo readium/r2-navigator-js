@@ -649,10 +649,11 @@ export function configureFixedLayout(
             wh.tx = tx;
             wh.ty = ty;
         }
-        // documant.documentElement.style.transformOrigin = "0 0";
+        documant.documentElement.style.transformOrigin = "0 0";
         // tslint:disable-next-line:max-line-length
         // documant.documentElement.style.transform = `translateX(${tx}px) translateY(${ty}px) scale3d(${ratio}, ${ratio}, 0)`;
         // documant.documentElement.style.transform = `translate(${tx}px, ${ty}px) scale(${ratio})`;
+        documant.documentElement.style.transform = `scale(${ratio})`;
     }
     return wh;
 }

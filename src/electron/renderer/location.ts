@@ -100,7 +100,7 @@ export function setWebViewStyle(wv: IReadiumElectronWebview, wvSlot: WebViewSlot
             fxl.ty >= 0 ? "0px" : `${fxl.ty}px`);
 
         // tslint:disable-next-line:max-line-length
-        const cxx = ` width:${fxl.width}px; height:${fxl.height}px; transform-origin: 0 0; transform: translate(${tx}px, ${ty}px) scale(${fxl.scale});`;
+        const cxx = ` width:${fxl.width * fxl.scale}px; height:${fxl.height * fxl.scale}px; transform-origin: 0 0; transform: translate(${tx}px, ${ty}px) scale(${"1"});`;
         wv.setAttribute("style",
             wvSlot_ === WebViewSlotEnum.center ? webviewStyleCenter_ + cxx :
                 (wvSlot_ === WebViewSlotEnum.left ? webviewStyleLeft_ + cxx :

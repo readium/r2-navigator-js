@@ -140,7 +140,7 @@ win.addEventListener("resize", () => {
             const wvSlot = activeWebView.getAttribute("data-wv-slot") as WebViewSlotEnum;
             if (wvSlot) {
                 try {
-                    // will trigger R2_EVENT_FXL_CONFIGURE
+                    // will trigger R2_EVENT_FXL_CONFIGURE => setWebViewStyle
                     await activeWebView.send("R2_EVENT_WINDOW_RESIZE", win.READIUM2.fixedLayoutZoomPercent);
                 } catch (e) {
                     debug(e);
@@ -242,7 +242,7 @@ export function fixedLayoutZoomPercent(zoomPercent: number) {
                 try {
                     _fixedLayoutZoomPercentTimers[activeWebView.id] = undefined;
 
-                    // will trigger R2_EVENT_FXL_CONFIGURE
+                    // will trigger R2_EVENT_FXL_CONFIGURE => setWebViewStyle
                     await activeWebView.send("R2_EVENT_WINDOW_RESIZE", zoomPercent);
                 } catch (e) {
                     debug(e);
