@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.9.0...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.9.1...develop
 
 Changes:
 * TODO
+
+# 1.9.1
+
+> Build environment: NodeJS `14.18.1`, NPM `6.14.15`
+
+Changes:
+* NPM package updates
+* Fixed Layout zoom factor now CSS transform scale on HTML root element, not enclosing WebView (to avoid raster pixelisation, now crisp text vector graphics / font magnification)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.9.1/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.9.1/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.9.1
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.9.0...v1.9.1
 
 # 1.9.0
 
