@@ -164,6 +164,11 @@ async function playMediaOverlaysAudio(
     moHighlight_(moTextAudioPair);
 
     if (!moTextAudioPair.Audio) {
+
+        if (IS_DEV) {
+            debug("playMediaOverlaysAudio - !moTextAudioPair.Audio => mediaOverlaysNext()");
+        }
+        mediaOverlaysNext();
         return; // TODO TTS
     }
 
