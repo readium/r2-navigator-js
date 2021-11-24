@@ -429,7 +429,7 @@ export function handleLink(
         debug(`handleLink non-R2 URL`);
         const okay = loadLink(href, previous, useGoto, rcss);
         if (!okay) {
-            if (/^http[s]?:\/\/127\.0\.0\.1/.test(href)) { // href.startsWith("https://127.0.0.1")
+            if (/^https?:\/\/127\.0\.0\.1/.test(href)) { // href.startsWith("https://127.0.0.1")
                 debug(`Internal link, fails to match publication document: ${href}`);
             } else {
                 debug(`External link: ${href}`);
@@ -716,20 +716,20 @@ function loadLink(
     }
 
     const fileName = path.basename(linkPath);
-    const ext = path.extname(fileName).toLowerCase();
+    const ext = path.extname(fileName);
     const isAudio =
         publication.Metadata &&
         publication.Metadata.RDFType &&
-        /http[s]?:\/\/schema\.org\/Audiobook$/.test(publication.Metadata.RDFType) &&
+        /https?:\/\/schema\.org\/Audiobook$/.test(publication.Metadata.RDFType) &&
         ((pubLink.TypeLink && pubLink.TypeLink.startsWith("audio/")) ||
         // fallbacks:
-        /\.mp[3|4]$/.test(ext) ||
-        /\.wav$/.test(ext) ||
-        /\.aac$/.test(ext) ||
-        /\.og[g|b|a]$/.test(ext) ||
-        /\.aiff$/.test(ext) ||
-        /\.wma$/.test(ext) ||
-        /\.flac$/.test(ext));
+        /\.mp[3|4]$/i.test(ext) ||
+        /\.wav$/i.test(ext) ||
+        /\.aac$/i.test(ext) ||
+        /\.og[g|b|a]$/i.test(ext) ||
+        /\.aiff$/i.test(ext) ||
+        /\.wma$/i.test(ext) ||
+        /\.flac$/i.test(ext));
 
     let webViewSlot = WebViewSlotEnum.center;
 
@@ -1486,7 +1486,7 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
         const isAudio =
             publication.Metadata &&
             publication.Metadata.RDFType &&
-            /http[s]?:\/\/schema\.org\/Audiobook$/.test(publication.Metadata.RDFType);
+            /https?:\/\/schema\.org\/Audiobook$/.test(publication.Metadata.RDFType);
         if (isAudio) {
             const metaDuration = publication.Metadata.Duration;
             let totalDuration = 0;

@@ -158,7 +158,7 @@ app.on("web-contents-created", (_evt, wc) => {
         // TODO: prevent loading remote publications?
         // const fail = !params.src.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL) &&
         //     (_serverURL ? !params.src.startsWith(_serverURL) :
-        //         !(/^http[s]?:\/\/127\.0\.0\.1/.test(params.src))
+        //         !(/^https?:\/\/127\.0\.0\.1/.test(params.src))
         //         // (!params.src.startsWith("https://127.0.0.1") && !params.src.startsWith("http://127.0.0.1"))
         //         );
 

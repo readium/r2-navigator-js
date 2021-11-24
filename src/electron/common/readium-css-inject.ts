@@ -240,7 +240,7 @@ export function readiumCSSSet(
                             (element.getAttribute("rel") === "stylesheet" ||
                                 element.getAttribute("type") === "text/css" ||
                                 (element.getAttribute("src") &&
-                                    (element.getAttribute("src") as string).endsWith(".css"))))) {
+                                    /\.css$/i.test(element.getAttribute("src") as string))))) {
                         needsDefaultCSS = false;
                         break;
                     }

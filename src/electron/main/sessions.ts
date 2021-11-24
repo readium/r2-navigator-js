@@ -567,7 +567,7 @@ const transformerAudioVideo: TTransformFunction = (
     const patchElementSrc = (el: Element) => {
         const src = el.getAttribute("src");
         if (!src || src[0] === "/" ||
-            /^http[s]?:\/\//.test(src) || /^data:\/\//.test(src)) {
+            /^https?:\/\//.test(src) || /^data:\/\//.test(src)) {
             return;
         }
         let src_ = src;
@@ -697,7 +697,7 @@ const transformerHttpBaseIframes: TTransformFunction = (
     const patchElementSrc = (el: Element) => {
         const src = el.getAttribute("src");
         if (!src || src[0] === "/" ||
-            /^http[s]?:\/\//.test(src) || /^data:\/\//.test(src)) {
+            /^https?:\/\//.test(src) || /^data:\/\//.test(src)) {
             return;
         }
         let src_ = src;
