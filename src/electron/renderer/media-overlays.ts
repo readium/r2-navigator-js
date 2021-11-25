@@ -165,8 +165,6 @@ async function playMediaOverlaysAudio(
     _mediaOverlayTextAudioPair = moTextAudioPair;
     _mediaOverlayTextId = undefined;
 
-    moHighlight_(moTextAudioPair);
-
     if (!moTextAudioPair.Audio) {
 
         if (IS_DEV) {
@@ -175,6 +173,8 @@ async function playMediaOverlaysAudio(
         mediaOverlaysNext();
         return; // TODO TTS
     }
+
+    moHighlight_(moTextAudioPair);
 
     const publicationURL = win.READIUM2.publicationURL;
     // if (publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {

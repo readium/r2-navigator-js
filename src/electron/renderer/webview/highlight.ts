@@ -44,6 +44,17 @@ const DEFAULT_BACKGROUND_COLOR: IColor = {
     red: 230,
 };
 
+const CSS_COMMON_RESET =
+    "background-color: transparent !important; " +
+    "position: absolute !important; " +
+    "top: 0 !important; " +
+    "left: 0 !important; " +
+    "overflow: visible !important; " +
+    "margin: 0 !important; " +
+    "padding: 0 !important; " +
+    "border: 0 !important; " +
+    "box-sizing: border-box !important;";
+
 const _highlights: IHighlight[] = [];
 
 interface IAreaWithActiveFlag extends Element {
@@ -109,7 +120,10 @@ function resetHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highli
 
     highlightBounding.style.outline = "none";
     // tslint:disable-next-line:max-line-length
-    highlightBounding.style.setProperty("background-color", "transparent", "important");
+    highlightBounding.style.setProperty(
+        "background-color",
+        "transparent",
+        "important");
 }
 
 // tslint:disable-next-line:max-line-length
@@ -129,7 +143,7 @@ function setHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highligh
             `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity})`,
         "important");
     // if (USE_BLEND_MODE) {
-    //     highlightBounding.style.setProperty("mix-blend-mode", "multiply");
+    //     highlightBounding.style.setProperty("mix-blend-mode", "multiply", "important");
     //     highlightBounding.style.opacity = `${opacity}`;
     // }
 
@@ -170,21 +184,34 @@ function resetHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightAr
             if (isSVG) {
                 if (!highlight.drawType) {
                     // tslint:disable-next-line:max-line-length
-                    highlightArea.style.setProperty("fill", `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`, "important");
+                    highlightArea.style.setProperty(
+                        "fill",
+                        `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+                        "important");
                 }
                 // tslint:disable-next-line:max-line-length
-                highlightArea.style.setProperty("stroke", `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`, "important");
+                highlightArea.style.setProperty(
+                    "stroke",
+                    `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+                    "important");
                 if (!USE_BLEND_MODE) {
                     if (!highlight.drawType) {
                         // tslint:disable-next-line:max-line-length
-                        highlightArea.style.setProperty("fill-opacity", `${opacity}`, "important");
+                        highlightArea.style.setProperty(
+                            "fill-opacity",
+                            `${opacity}`,
+                            "important");
                     }
                     // tslint:disable-next-line:max-line-length
-                    highlightArea.style.setProperty("stroke-opacity", `${opacity}`, "important");
+                    highlightArea.style.setProperty(
+                        "stroke-opacity",
+                        `${opacity}`,
+                        "important");
                 }
             } else {
                 // tslint:disable-next-line:max-line-length
-                highlightArea.style.setProperty("background-color",
+                highlightArea.style.setProperty(
+                    "background-color",
                     highlight.drawType === HighlightDrawTypeUnderline ? "transparent" : // underline is border bottom
                     (USE_BLEND_MODE ?
                         `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` :
@@ -224,22 +251,35 @@ function setHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightArea
         if (isSVG) {
             if (!highlight.drawType) {
                 // tslint:disable-next-line:max-line-length
-                highlightArea.style.setProperty("fill", `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`, "important");
+                highlightArea.style.setProperty(
+                    "fill",
+                    `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+                    "important");
             }
             // tslint:disable-next-line:max-line-length
-            highlightArea.style.setProperty("stroke", `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`, "important");
+            highlightArea.style.setProperty(
+                "stroke",
+                `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+                "important");
 
             if (!USE_BLEND_MODE) {
                 if (!highlight.drawType) {
                     // tslint:disable-next-line:max-line-length
-                    highlightArea.style.setProperty("fill-opacity", `${opacity}`, "important");
+                    highlightArea.style.setProperty(
+                        "fill-opacity",
+                        `${opacity}`,
+                        "important");
                 }
                 // tslint:disable-next-line:max-line-length
-                highlightArea.style.setProperty("stroke-opacity", `${opacity}`, "important");
+                highlightArea.style.setProperty(
+                    "stroke-opacity",
+                    `${opacity}`,
+                    "important");
             }
         } else {
             // tslint:disable-next-line:max-line-length
-            highlightArea.style.setProperty("background-color",
+            highlightArea.style.setProperty(
+                "background-color",
                 highlight.drawType === HighlightDrawTypeUnderline ? "transparent" : // underline is border bottom
                 (USE_BLEND_MODE ?
                     `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` :
@@ -248,7 +288,7 @@ function setHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightArea
         }
 
         // if (USE_BLEND_MODE) {
-        //     highlightArea.style.setProperty("mix-blend-mode", "multiply");
+        //     highlightArea.style.setProperty("mix-blend-mode", "multiply", "important");
         //     highlightArea.style.opacity = `${opacity}`;
         // }
         // if (!win.READIUM2.DEBUG_VISUALS) {
@@ -521,7 +561,7 @@ function ensureHighlightsContainer(win: IReadiumElectronWebviewWindow): HTMLElem
         // see https://github.com/edrlab/thorium-reader/issues/1535
         documant.body.style.overflow = "hidden";
 
-        // documant.body.style.setProperty("position", "relative !important");
+        // documant.body.style.setProperty("position", "relative", "important");
 
         if (!bodyEventListenersSet) {
             bodyEventListenersSet = true;
@@ -547,11 +587,17 @@ function ensureHighlightsContainer(win: IReadiumElectronWebviewWindow): HTMLElem
 
         _highlightsContainer = documant.createElement("div");
         _highlightsContainer.setAttribute("id", ID_HIGHLIGHTS_CONTAINER);
-        _highlightsContainer.setAttribute("style", "background-color: transparent !important; position: absolute; width: auto; height: auto; top: 0; left: 0; overflow: visible;");
-        _highlightsContainer.style.setProperty("pointer-events", "none");
+        _highlightsContainer.setAttribute("style",
+            "width: auto !important; " +
+            "height: auto !important; " +
+            CSS_COMMON_RESET);
+        _highlightsContainer.style.setProperty(
+            "pointer-events",
+            "none",
+            "important");
         // if (USE_BLEND_MODE) {
         //     const opacity = DEFAULT_BACKGROUND_COLOR_OPACITY;
-        //     _highlightsContainer.style.setProperty("mix-blend-mode", "multiply");
+        //     _highlightsContainer.style.setProperty("mix-blend-mode", "multiply", "important");
         //     _highlightsContainer.style.opacity = `${opacity}`;
         // }
         documant.body.append(_highlightsContainer);
@@ -741,13 +787,22 @@ function createHighlightDom(
     const highlightParent = documant.createElement("div") as IHTMLDivElementWithRect;
     highlightParent.setAttribute("id", highlight.id);
     highlightParent.setAttribute("class", CLASS_HIGHLIGHT_CONTAINER);
-    highlightParent.setAttribute("style", "background-color: transparent !important; position: absolute; width: 1px; height: 1px; top: 0; left: 0; overflow: visible;");
-    highlightParent.style.setProperty("pointer-events", "none");
+    highlightParent.setAttribute("style",
+        "width: 1px !important; " +
+        "height: 1px !important; " +
+        CSS_COMMON_RESET);
+    highlightParent.style.setProperty(
+        "pointer-events",
+        "none",
+        "important");
     if (highlight.pointerInteraction) {
         highlightParent.setAttribute("data-click", "1");
     }
     if (USE_BLEND_MODE) {
-        highlightParent.style.setProperty("mix-blend-mode", "multiply");
+        highlightParent.style.setProperty(
+            "mix-blend-mode",
+            "multiply",
+            "important");
         highlightParent.style.opacity = `${opacity}`;
     }
 
@@ -804,11 +859,19 @@ function createHighlightDom(
     highlightBounding.setAttribute("class", CLASS_HIGHLIGHT_BOUNDING_AREA);
     if (win.READIUM2.DEBUG_VISUALS) {
         // tslint:disable-next-line:max-line-length
-        highlightBounding.setAttribute("style", "background-color: transparent !important; outline-color: magenta; outline-style: solid; outline-width: 1px; outline-offset: -1px;");
+        highlightBounding.setAttribute("style",
+            "outline-color: magenta !important; " +
+            "outline-style: solid !important; " +
+            "outline-width: 1px !important; " +
+            "outline-offset: -1px !important;" +
+            CSS_COMMON_RESET);
     } else {
-        highlightBounding.setAttribute("style", "background-color: transparent !important");
+        highlightBounding.setAttribute("style", CSS_COMMON_RESET);
     }
-    highlightBounding.style.setProperty("pointer-events", "none");
+    highlightBounding.style.setProperty(
+        "pointer-events",
+        "none",
+        "important");
     highlightBounding.style.position = paginated ? "fixed" : "absolute";
     highlightBounding.scale = scale;
     // highlightBounding.xOffset = xOffset;
@@ -841,9 +904,11 @@ function createHighlightDom(
                 const highlightAreaSVGLine = documant.createElementNS(SVG_XML_NAMESPACE, "line") as ISVGLineElementWithRect;
                 highlightAreaSVGLine.setAttribute("class", CLASS_HIGHLIGHT_AREA);
 
-                // tslint:disable-next-line:max-line-length
                 highlightAreaSVGLine.setAttribute("style",
-                    `stroke-linecap: round; stroke-width: ${underlineThickness * scale}; stroke: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;` +
+                    "stroke-linecap: round !important; " +
+                    `stroke-width: ${underlineThickness * scale} !important; ` +
+                    // tslint:disable-next-line:max-line-length
+                    `stroke: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;` +
                     (USE_BLEND_MODE ? "" : ` stroke-opacity: ${opacity} !important`));
                 highlightAreaSVGLine.scale = scale;
                 // highlightAreaSVGLine.xOffset = xOffset;
@@ -867,7 +932,7 @@ function createHighlightDom(
                 highlightAreaSVGLine.setAttribute("width", `${highlightAreaSVGLine.rect.width * scale}`);
 
                 // if (USE_BLEND_MODE) {
-                //     highlightAreaSVGLine.style.setProperty("mix-blend-mode", "multiply");
+                //     highlightAreaSVGLine.style.setProperty("mix-blend-mode", "multiply", "important");
                 //     highlightAreaSVGLine.style.opacity = `${opacity}`;
                 // }
 
@@ -877,9 +942,11 @@ function createHighlightDom(
                 const highlightAreaSVGLine = documant.createElementNS(SVG_XML_NAMESPACE, "line") as ISVGLineElementWithRect;
                 highlightAreaSVGLine.setAttribute("class", CLASS_HIGHLIGHT_AREA);
 
-                // tslint:disable-next-line:max-line-length
                 highlightAreaSVGLine.setAttribute("style",
-                    `stroke-linecap: butt; stroke-width: ${strikeThroughLineThickness * scale}; stroke: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;` +
+                    "stroke-linecap: butt !important; " +
+                    `stroke-width: ${strikeThroughLineThickness * scale} !important; ` +
+                    // tslint:disable-next-line:max-line-length
+                    `stroke: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;` +
                     (USE_BLEND_MODE ? "" : ` stroke-opacity: ${opacity} !important`));
                     // stroke-dasharray: ${lineThickness * 2},${lineThickness * 2};
 
@@ -905,7 +972,7 @@ function createHighlightDom(
                 highlightAreaSVGLine.setAttribute("width", `${highlightAreaSVGLine.rect.width * scale}`);
 
                 // if (USE_BLEND_MODE) {
-                //     highlightAreaSVGLine.style.setProperty("mix-blend-mode", "multiply");
+                //     highlightAreaSVGLine.style.setProperty("mix-blend-mode", "multiply", "important");
                 //     highlightAreaSVGLine.style.opacity = `${opacity}`;
                 // }
 
@@ -916,9 +983,10 @@ function createHighlightDom(
                     documant.createElementNS(SVG_XML_NAMESPACE, "rect") as ISVGRectElementWithRect;
                 highlightAreaSVGRect.setAttribute("class", CLASS_HIGHLIGHT_AREA);
 
-                // tslint:disable-next-line:max-line-length
                 highlightAreaSVGRect.setAttribute("style",
-                    `fill: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important; stroke-width: 0;` +
+                    // tslint:disable-next-line:max-line-length
+                    `fill: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important; ` +
+                    "stroke-width: 0;" +
                     (USE_BLEND_MODE ? "" : ` fill-opacity: ${opacity} !important;`));
 
                 // tslint:disable-next-line:max-line-length
@@ -943,7 +1011,7 @@ function createHighlightDom(
                 highlightAreaSVGRect.setAttribute("width", `${(highlightAreaSVGRect.rect.width + (borderThickness * 2)) * scale}`);
 
                 // if (USE_BLEND_MODE) {
-                //     highlightAreaSVGRect.style.setProperty("mix-blend-mode", "multiply");
+                //     highlightAreaSVGRect.style.setProperty("mix-blend-mode", "multiply", "important");
                 //     highlightAreaSVGRect.style.opacity = `${opacity}`;
                 // }
 
@@ -962,7 +1030,10 @@ function createHighlightDom(
                         `background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important;`);
                 // tslint:disable-next-line:max-line-length
                 // highlightArea.setAttribute("style", `outline-color: magenta; outline-style: solid; outline-width: 1px; outline-offset: -1px;`);
-                highlightAreaLine.style.setProperty("pointer-events", "none");
+                highlightAreaLine.style.setProperty(
+                    "pointer-events",
+                    "none",
+                    "important");
                 highlightAreaLine.style.transform = "translate3d(0px, 0px, 0px)";
                 highlightAreaLine.style.position = paginated ? "fixed" : "absolute";
                 highlightAreaLine.scale = scale;
@@ -983,7 +1054,7 @@ function createHighlightDom(
                 highlightAreaLine.style.top = `${(highlightAreaLine.rect.top + (highlightAreaLine.rect.height / 2) - (strikeThroughLineThickness / 2)) * scale}px`;
 
                 // if (USE_BLEND_MODE) {
-                //     highlightAreaLine.style.setProperty("mix-blend-mode", "multiply");
+                //     highlightAreaLine.style.setProperty("mix-blend-mode", "multiply", "important");
                 //     highlightAreaLine.style.opacity = `${opacity}`;
                 // }
 
@@ -1015,10 +1086,11 @@ function createHighlightDom(
                 }
                 // tslint:disable-next-line:max-line-length
                 highlightArea.setAttribute("style",
-                    "box-sizing: border-box; " +
+                    "box-sizing: border-box !important; " +
                     (drawUnderline ?
                     "" : // background-color: transparent !important
-                    (`border-radius: ${roundedCorner}px !important; background-color: ` +
+                    (`border-radius: ${roundedCorner}px !important; ` +
+                    "background-color: " +
                         (USE_BLEND_MODE ?
                             // tslint:disable-next-line: max-line-length
                             `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;` :
@@ -1028,7 +1100,10 @@ function createHighlightDom(
                     ) + ` ${extra}`);
                 // tslint:disable-next-line:max-line-length
                 // highlightArea.setAttribute("style", `outline-color: magenta; outline-style: solid; outline-width: 1px; outline-offset: -1px;`);
-                highlightArea.style.setProperty("pointer-events", "none");
+                highlightArea.style.setProperty(
+                    "pointer-events",
+                    "none",
+                    "important");
                 highlightArea.style.transform = "translate3d(0px, 0px, 0px)";
                 highlightArea.style.position = paginated ? "fixed" : "absolute";
                 highlightArea.scale = scale;
@@ -1048,11 +1123,11 @@ function createHighlightDom(
                 highlightArea.style.top = `${highlightArea.rect.top * scale}px`;
 
                 // if (highlight.pointerInteraction) {
-                //     highlightArea.style.setProperty("pointer-events", "auto");
+                //     highlightArea.style.setProperty("pointer-events", "auto", "important");
                 // }
 
                 // if (USE_BLEND_MODE) {
-                //     highlightArea.style.setProperty("mix-blend-mode", "multiply");
+                //     highlightArea.style.setProperty("mix-blend-mode", "multiply", "important");
                 //     highlightArea.style.opacity = `${opacity}`;
                 // }
 
