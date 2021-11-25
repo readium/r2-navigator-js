@@ -45,7 +45,7 @@ const DEFAULT_BACKGROUND_COLOR: IColor = {
 };
 
 const CSS_COMMON_RESET =
-    "background-color: transparent !important; " +
+    " background-color: transparent !important; " +
     "position: absolute !important; " +
     "top: 0 !important; " +
     "left: 0 !important; " +
@@ -53,7 +53,7 @@ const CSS_COMMON_RESET =
     "margin: 0 !important; " +
     "padding: 0 !important; " +
     "border: 0 !important; " +
-    "box-sizing: border-box !important;";
+    "box-sizing: border-box !important; ";
 
 const _highlights: IHighlight[] = [];
 
@@ -118,8 +118,8 @@ function resetHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highli
     }
     (highlightBounding as unknown as IAreaWithActiveFlag).active = false;
 
-    highlightBounding.style.outline = "none";
-    // tslint:disable-next-line:max-line-length
+    highlightBounding.style.setProperty("outline", "none", "important");
+
     highlightBounding.style.setProperty(
         "background-color",
         "transparent",
@@ -135,7 +135,7 @@ function setHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highligh
     (highlightBounding as unknown as IAreaWithActiveFlag).active = true;
 
     const opacity = ALT_BACKGROUND_COLOR_OPACITY;
-    // tslint:disable-next-line:max-line-length
+
     highlightBounding.style.setProperty(
         "background-color",
         USE_BLEND_MODE ?
@@ -148,10 +148,10 @@ function setHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highligh
     // }
 
     // tslint:disable-next-line:max-line-length
-    highlightBounding.style.outlineColor = `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, 1)`;
-    highlightBounding.style.outlineStyle = "solid";
-    highlightBounding.style.outlineWidth = "1px";
-    highlightBounding.style.outlineOffset = "0px";
+    highlightBounding.style.setProperty("outline-color", `rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, 1)`, "important");
+    highlightBounding.style.setProperty("outline-style", "solid", "important");
+    highlightBounding.style.setProperty("outline-width", "1px", "important");
+    highlightBounding.style.setProperty("outline-offset", "0px", "important");
 }
 
 function resetHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightArea: HTMLElement | SVGElement) {
@@ -433,7 +433,7 @@ function processMouseEvent(win: IReadiumElectronWebviewWindow, ev: MouseEvent) {
             // if (highlightContainer.classList.contains(CLASS_HIGHLIGHT_CONTAINER)) {
             // }
             if (USE_BLEND_MODE) {
-                (highlightContainer as HTMLElement).style.opacity = `${opacity}`;
+                (highlightContainer as HTMLElement).style.setProperty("opacity", `${opacity}`, "important");
             }
 
             if (win.READIUM2.DEBUG_VISUALS) {
@@ -485,7 +485,7 @@ function processMouseEvent(win: IReadiumElectronWebviewWindow, ev: MouseEvent) {
 
                 if (USE_BLEND_MODE) {
                     if (highlightContainer !== foundElement) {
-                        (highlightContainer as HTMLElement).style.opacity = `${ALT_OTHER_BACKGROUND_COLOR_OPACITY}`;
+                        (highlightContainer as HTMLElement).style.setProperty("opacity", `${ALT_OTHER_BACKGROUND_COLOR_OPACITY}`, "important");
                     }
                 }
 
@@ -512,7 +512,7 @@ function processMouseEvent(win: IReadiumElectronWebviewWindow, ev: MouseEvent) {
                 highlightContainer = highlightContainer.nextElementSibling;
             }
             if (USE_BLEND_MODE) {
-                foundElement.style.opacity = `${ALT_BACKGROUND_COLOR_OPACITY}`;
+                foundElement.style.setProperty("opacity", `${ALT_BACKGROUND_COLOR_OPACITY}`, "important");
             } else {
                 // tslint:disable-next-line:max-line-length
                 setHighlightAreaStyle(win, foundElementHighlightAreas, foundHighlight); // can also be SVGElement[]
@@ -803,7 +803,7 @@ function createHighlightDom(
             "mix-blend-mode",
             "multiply",
             "important");
-        highlightParent.style.opacity = `${opacity}`;
+        highlightParent.style.setProperty("opacity", `${opacity}`, "important");
     }
 
     // const docStyle = (documant.defaultView as Window).getComputedStyle(documant.documentElement);
@@ -872,7 +872,7 @@ function createHighlightDom(
         "pointer-events",
         "none",
         "important");
-    highlightBounding.style.position = paginated ? "fixed" : "absolute";
+    highlightBounding.style.setProperty("position", paginated ? "fixed" : "absolute", "important");
     highlightBounding.scale = scale;
     // highlightBounding.xOffset = xOffset;
     // highlightBounding.yOffset = yOffset;
@@ -882,12 +882,12 @@ function createHighlightDom(
         top: rangeBoundingClientRect.top - yOffset,
         width: rangeBoundingClientRect.width,
     };
-    highlightBounding.style.width = `${highlightBounding.rect.width * scale}px`;
-    highlightBounding.style.height = `${highlightBounding.rect.height * scale}px`;
-    highlightBounding.style.minWidth = highlightBounding.style.width;
-    highlightBounding.style.minHeight = highlightBounding.style.height;
-    highlightBounding.style.left = `${highlightBounding.rect.left * scale}px`;
-    highlightBounding.style.top = `${highlightBounding.rect.top * scale}px`;
+    highlightBounding.style.setProperty("width", `${highlightBounding.rect.width * scale}px`, "important");
+    highlightBounding.style.setProperty("height", `${highlightBounding.rect.height * scale}px`, "important");
+    highlightBounding.style.setProperty("min-width", highlightBounding.style.width, "important");
+    highlightBounding.style.setProperty("min-height", highlightBounding.style.height, "important");
+    highlightBounding.style.setProperty("left", `${highlightBounding.rect.left * scale}px`, "important");
+    highlightBounding.style.setProperty("top", `${highlightBounding.rect.top * scale}px`, "important");
     highlightParent.append(highlightBounding);
 
     for (const clientRect of clientRects) {
@@ -1025,17 +1025,19 @@ function createHighlightDom(
 
                 // tslint:disable-next-line:max-line-length
                 highlightAreaLine.setAttribute("style",
-                    USE_BLEND_MODE ?
+                    CSS_COMMON_RESET +
+                    (USE_BLEND_MODE ?
                         `background-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;` :
-                        `background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important;`);
+                        `background-color: rgba(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}, ${opacity}) !important;`),
+                );
                 // tslint:disable-next-line:max-line-length
                 // highlightArea.setAttribute("style", `outline-color: magenta; outline-style: solid; outline-width: 1px; outline-offset: -1px;`);
                 highlightAreaLine.style.setProperty(
                     "pointer-events",
                     "none",
                     "important");
-                highlightAreaLine.style.transform = "translate3d(0px, 0px, 0px)";
-                highlightAreaLine.style.position = paginated ? "fixed" : "absolute";
+                highlightAreaLine.style.setProperty("transform", "translate3d(0px, 0px, 0px)", "important");
+                highlightAreaLine.style.setProperty("position", paginated ? "fixed" : "absolute", "important");
                 highlightAreaLine.scale = scale;
                 // highlightAreaLine.xOffset = xOffset;
                 // highlightAreaLine.yOffset = yOffset;
@@ -1045,13 +1047,13 @@ function createHighlightDom(
                     top: clientRect.top - yOffset,
                     width: clientRect.width,
                 };
-                highlightAreaLine.style.width = `${highlightAreaLine.rect.width * scale}px`;
-                highlightAreaLine.style.height = `${strikeThroughLineThickness * scale}px`;
-                highlightAreaLine.style.minWidth = highlightAreaLine.style.width;
-                highlightAreaLine.style.minHeight = highlightAreaLine.style.height;
-                highlightAreaLine.style.left = `${highlightAreaLine.rect.left * scale}px`;
+                highlightAreaLine.style.setProperty("width", `${highlightAreaLine.rect.width * scale}px`, "important");
+                highlightAreaLine.style.setProperty("height", `${strikeThroughLineThickness * scale}px`, "important");
+                highlightAreaLine.style.setProperty("min-width", highlightAreaLine.style.width, "important");
+                highlightAreaLine.style.setProperty("min-height", highlightAreaLine.style.height, "important");
+                highlightAreaLine.style.setProperty("left", `${highlightAreaLine.rect.left * scale}px`, "important");
                 // tslint:disable-next-line:max-line-length
-                highlightAreaLine.style.top = `${(highlightAreaLine.rect.top + (highlightAreaLine.rect.height / 2) - (strikeThroughLineThickness / 2)) * scale}px`;
+                highlightAreaLine.style.setProperty("top", `${(highlightAreaLine.rect.top + (highlightAreaLine.rect.height / 2) - (strikeThroughLineThickness / 2)) * scale}px`, "important");
 
                 // if (USE_BLEND_MODE) {
                 //     highlightAreaLine.style.setProperty("mix-blend-mode", "multiply", "important");
@@ -1086,7 +1088,7 @@ function createHighlightDom(
                 }
                 // tslint:disable-next-line:max-line-length
                 highlightArea.setAttribute("style",
-                    "box-sizing: border-box !important; " +
+                    CSS_COMMON_RESET +
                     (drawUnderline ?
                     "" : // background-color: transparent !important
                     (`border-radius: ${roundedCorner}px !important; ` +
@@ -1104,8 +1106,8 @@ function createHighlightDom(
                     "pointer-events",
                     "none",
                     "important");
-                highlightArea.style.transform = "translate3d(0px, 0px, 0px)";
-                highlightArea.style.position = paginated ? "fixed" : "absolute";
+                highlightArea.style.setProperty("transform", "translate3d(0px, 0px, 0px)", "important");
+                highlightArea.style.setProperty("position", paginated ? "fixed" : "absolute", "important");
                 highlightArea.scale = scale;
                 // highlightArea.xOffset = xOffset;
                 // highlightArea.yOffset = yOffset;
@@ -1115,12 +1117,12 @@ function createHighlightDom(
                     top: clientRect.top - yOffset,
                     width: clientRect.width,
                 };
-                highlightArea.style.width = `${highlightArea.rect.width * scale}px`;
-                highlightArea.style.height = `${highlightArea.rect.height * scale}px`;
-                highlightArea.style.minWidth = highlightArea.style.width;
-                highlightArea.style.minHeight = highlightArea.style.height;
-                highlightArea.style.left = `${highlightArea.rect.left * scale}px`;
-                highlightArea.style.top = `${highlightArea.rect.top * scale}px`;
+                highlightArea.style.setProperty("width", `${highlightArea.rect.width * scale}px`, "important");
+                highlightArea.style.setProperty("height", `${highlightArea.rect.height * scale}px`, "important");
+                highlightArea.style.setProperty("min-width", highlightArea.style.width, "important");
+                highlightArea.style.setProperty("min-height", highlightArea.style.height, "important");
+                highlightArea.style.setProperty("left", `${highlightArea.rect.left * scale}px`, "important");
+                highlightArea.style.setProperty("top", `${highlightArea.rect.top * scale}px`, "important");
 
                 // if (highlight.pointerInteraction) {
                 //     highlightArea.style.setProperty("pointer-events", "auto", "important");
@@ -1140,12 +1142,9 @@ function createHighlightDom(
         // const highlightAreaSVGG = documant.createElementNS(SVG_XML_NAMESPACE, "g");
         // highlightAreaSVGG.appendChild(highlightAreaSVGDocFrag);
         const highlightAreaSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg");
-        highlightAreaSVG.setAttribute("style", "background-color: transparent !important");
+        highlightAreaSVG.setAttribute("style", CSS_COMMON_RESET);
         highlightAreaSVG.setAttribute("pointer-events", "none");
-        highlightAreaSVG.style.position = paginated ? "fixed" : "absolute";
-        highlightAreaSVG.style.overflow = "visible";
-        highlightAreaSVG.style.left = "0";
-        highlightAreaSVG.style.top = "0";
+        highlightAreaSVG.style.setProperty("position", paginated ? "fixed" : "absolute", "important");
         highlightAreaSVG.append(highlightAreaSVGDocFrag);
         highlightParent.append(highlightAreaSVG);
     }
