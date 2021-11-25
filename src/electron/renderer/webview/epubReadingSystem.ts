@@ -22,6 +22,7 @@ interface IWindowNavigator extends Navigator {
     epubReadingSystem: IEpubReadingSystem;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function setWindowNavigatorEpubReadingSystem(win: IReadiumElectronWebviewWindow, obj: any) {
 
     const ers = {} as IEpubReadingSystem;

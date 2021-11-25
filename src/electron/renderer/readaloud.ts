@@ -117,6 +117,7 @@ export function playTtsOnReadingLocation(href: string) {
 }
 export function ttsHandleIpcMessage(
     eventChannel: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     _eventArgs: any[],
     eventCurrentTarget: IReadiumElectronWebview): boolean {
 

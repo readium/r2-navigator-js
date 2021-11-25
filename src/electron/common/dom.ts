@@ -55,6 +55,7 @@ export function parseDOM(htmlStrToParse: string, mediaType: string | undefined):
 }
 
 function definePropertyGetterSetter_ElementClassList(element: Element) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const classListObj: any = {};
     classListObj.element = element;
 
@@ -62,10 +63,13 @@ function definePropertyGetterSetter_ElementClassList(element: Element) {
     classListObj.add = classListAdd.bind(classListObj);
     classListObj.remove = classListRemove.bind(classListObj);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (element as any).classList = classListObj;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function classListContains(this: any, className: string): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const style = this;
     const elem = style.element;
     // if (isDEBUG_VISUALS(documant)) {
@@ -87,7 +91,9 @@ function classListContains(this: any, className: string): boolean {
     }
     return false;
 }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function classListAdd(this: any, className: string) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const style = this;
     const elem = style.element;
 
@@ -112,7 +118,9 @@ function classListAdd(this: any, className: string) {
         elem.setAttribute("class", `${classAttr} ${className}`);
     }
 }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function classListRemove(this: any, className: string) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const style = this;
     const elem = style.element;
 
@@ -141,7 +149,9 @@ function definePropertyGetterSetter_DocHeadBody(documant: Document, elementName:
             const doc = this as Document;
 
             const key = elementName + "_";
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if ((doc as any)[key]) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 return (doc as any)[key]; // cached
             }
             if (doc.documentElement.childNodes && doc.documentElement.childNodes.length) {
@@ -151,6 +161,7 @@ function definePropertyGetterSetter_DocHeadBody(documant: Document, elementName:
                     if (child.nodeType === 1) { // Node.ELEMENT_NODE
                         const element = child as Element;
                         if (element.localName && element.localName.toLowerCase() === elementName) {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             (doc as any)[key] = element; // cache
                             // if (isDEBUG_VISUALS(documant)) {
                             //     debug(`XMLDOM - cached documant.${elementName}`);
@@ -169,6 +180,7 @@ function definePropertyGetterSetter_DocHeadBody(documant: Document, elementName:
 }
 
 function definePropertyGetterSetter_ElementStyle(element: Element) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const styleObj: any = {};
     styleObj.element = element;
 
@@ -178,6 +190,7 @@ function definePropertyGetterSetter_ElementStyle(element: Element) {
     styleObj.item = cssStyleItem.bind(styleObj);
     Object.defineProperty(styleObj, "length", {
         get() {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const style = this as any;
             const elem = style.element;
 
@@ -211,12 +224,14 @@ function definePropertyGetterSetter_ElementStyle(element: Element) {
 
         Object.defineProperty(styleObj, cssProperty, {
             get() {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const style = this as any;
                 const elem = style.element;
 
                 return cssStyleGet(cssProperty, elem);
             },
             set(val) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const style = this as any;
                 const elem = style.element;
 
@@ -225,24 +240,31 @@ function definePropertyGetterSetter_ElementStyle(element: Element) {
         });
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (element as any).style = styleObj;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function cssSetProperty(this: any, cssProperty: string, val: string) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const style = this;
     const elem = style.element;
 
     // debug(`XMLDOM - cssSetProperty: ${cssProperty}: ${val};`);
     cssStyleSet(cssProperty, val, elem);
 }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function cssRemoveProperty(this: any, cssProperty: string) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const style = this;
     const elem = style.element;
 
     // debug(`XMLDOM - cssRemoveProperty: ${cssProperty}`);
     cssStyleSet(cssProperty, undefined, elem);
 }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function cssStyleItem(this: any, i: number): string | undefined {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const style = this;
     const elem = style.element;
     // if (isDEBUG_VISUALS(documant)) {
@@ -259,7 +281,7 @@ function cssStyleItem(this: any, i: number): string | undefined {
         if (trimmed.length) {
             count++;
             if (count === i) {
-                const regExStr = `(.+)[\s]*:[\s]*(.+)`;
+                const regExStr = "(.+)[\s]*:[\s]*(.+)";
                 const regex = new RegExp(regExStr, "g");
                 const regexMatch = regex.exec(trimmed);
                 if (regexMatch) {

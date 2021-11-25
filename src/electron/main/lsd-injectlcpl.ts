@@ -48,6 +48,7 @@ export async function lsdLcpUpdateInject(
     // const mime = "application/vnd.readium.lcp.license.v1.0+json";
     // publication.AddLink(mime, ["license"], lcpl.ZipPath, false);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return new Promise<any>(async (resolve, reject) => {
         const newPublicationPath = publicationPath + ".new";
         injectBufferInZip(publicationPath, newPublicationPath, Buffer.from(lcplStr, "utf8"), zipEntryPath,

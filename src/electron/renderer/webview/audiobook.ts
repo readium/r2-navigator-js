@@ -22,10 +22,13 @@ import {
 } from "../../common/styles";
 import { IReadiumElectronWebviewWindow } from "./state";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const win = (global as any).window as IReadiumElectronWebviewWindow;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function throttle(fn: (...argz: any[]) => any, time: number) {
     let called = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (...args: any[]) => {
         if (!called) {
             fn(...args);
@@ -74,16 +77,20 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
 
     function refreshTimeElements(p: number) {
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const prettyPercent = (percentElement as any).displayAlt ? `${p}%` : `${formatTime(audioElement.duration)}`;
         percentElement.innerText = prettyPercent;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         // const prettyTime = `${formatTime(audioElement.currentTime)} / ${formatTime(audioElement.duration)}`;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const prettyTime = (timeElement as any).displayAlt ?
             `-${formatTime(audioElement.duration - audioElement.currentTime)}` :
             `${formatTime(audioElement.currentTime)}`;
         timeElement.innerText = prettyTime;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function onTimeElementsClick(el: any) {
 
         if (el.displayAlt) {
@@ -267,7 +274,7 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
             remainingSeconds = 0;
         }
         remainingSeconds = Math.floor(remainingSeconds);
-        return `${nHours > 0 ? (nHours.toString().padStart(2, "0") + ":") : ``}${nMinutes > 0 ? (nMinutes.toString().padStart(2, "0") + ":") : `00:`}${remainingSeconds > 0 ? (remainingSeconds.toString().padStart(2, "0")) : `00`}`;
+        return `${nHours > 0 ? (nHours.toString().padStart(2, "0") + ":") : ""}${nMinutes > 0 ? (nMinutes.toString().padStart(2, "0") + ":") : "00:"}${remainingSeconds > 0 ? (remainingSeconds.toString().padStart(2, "0")) : "00"}`;
     }
 
     function notifyPlaybackLocation() {
@@ -285,6 +292,7 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
                 globalDuration: undefined,
                 globalProgression: undefined,
                 globalTime: undefined,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 isPlaying: (audioElement as any).isPlaying,
                 localDuration: audioElement.duration,
                 localProgression: percent,
@@ -332,11 +340,13 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
     }, 150);
 
     audioElement.addEventListener("play", () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (audioElement as any).isPlaying = true;
         playPauseElement.classList.add("pause");
         notifyPlaybackLocation();
     });
     audioElement.addEventListener("pause", () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (audioElement as any).isPlaying = false;
         playPauseElement.classList.remove("pause");
         notifyPlaybackLocation();
@@ -348,6 +358,7 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
         progressDebounced(false);
     });
     audioElement.addEventListener("ended", () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (audioElement as any).isPlaying = false;
         playPauseElement.classList.remove("pause");
         notifyPlaybackLocation();
@@ -363,21 +374,27 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
         notifyPlaybackLocationThrottled();
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_AUDIO_DO_PLAY, async (_event: any) => {
         await audioElement.play();
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_AUDIO_DO_PAUSE, (_event: any) => {
         audioElement.pause();
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_AUDIO_DO_PLAY, async (_event: any) => {
         await audioElement.play();
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_AUDIO_TOGGLE_PLAY_PAUSE, (_event: any) => {
         togglePlayPause();
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_AUDIO_REWIND, (_event: any) => {
         rewind();
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_AUDIO_FORWARD, (_event: any) => {
         forward();
     });

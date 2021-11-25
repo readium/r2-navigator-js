@@ -133,12 +133,16 @@ const ontimeupdate = async (ev: Event) => {
 const ensureOnTimeUpdate = (remove: boolean) => {
     if (_currentAudioElement) {
         if (remove) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if ((_currentAudioElement as any).__ontimeupdate) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (_currentAudioElement as any).__ontimeupdate = false;
                 _currentAudioElement.removeEventListener("timeupdate", ontimeupdate);
             }
         } else {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (!(_currentAudioElement as any).__ontimeupdate) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (_currentAudioElement as any).__ontimeupdate = true;
                 _currentAudioElement.addEventListener("timeupdate", ontimeupdate);
             }
@@ -935,6 +939,7 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
         //     debug(arg0 + " => " + arg1);
         // });
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let moJson: any | undefined;
         try {
             moJson = await response.json();
@@ -981,6 +986,7 @@ let _lastClickedNotification: {
 } | undefined;
 export function mediaOverlaysHandleIpcMessage(
     eventChannel: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     eventArgs: any[],
     eventCurrentTarget: IReadiumElectronWebview): boolean {
 

@@ -87,6 +87,7 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 // import { consoleRedirect } from "../common/console-redirect";
 if (IS_DEV) {
     // tslint:disable-next-line:no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cr = require("../common/console-redirect");
     // const releaseConsoleRedirect =
     cr.consoleRedirect("r2:navigator#electron/renderer/webview/preload", process.stdout, process.stderr, true);
@@ -99,6 +100,7 @@ if (IS_DEV) {
 
 const debug = debug_("r2:navigator#electron/renderer/webview/preload");
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const win = (global as any).window as IReadiumElectronWebviewWindow;
 win.READIUM2 = {
     DEBUG_VISUALS: false,
@@ -140,15 +142,18 @@ win.READIUM2 = {
 };
 
 // const _winAlert = win.alert;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 win.alert = (...args: any[]) => {
     console.log.apply(win, args);
 };
 // const _winConfirm = win.confirm;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 win.confirm = (...args: any[]): boolean => {
     console.log.apply(win, args);
     return false;
 };
 // const _winPrompt = win.prompt;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 win.prompt = (...args: any[]): string => {
     console.log.apply(win, args);
     return "";
@@ -243,6 +248,7 @@ if (win.READIUM2.urlQueryParams) {
 }
 
 if (IS_DEV) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_DEBUG_VISUALS, (_event: any, payload: IEventPayload_R2_EVENT_DEBUG_VISUALS) => {
         win.READIUM2.DEBUG_VISUALS = payload.debugVisuals;
 
@@ -370,6 +376,7 @@ function computeVisibility_(element: Element, domRect: DOMRect | undefined): boo
     const scrollLeftPotentiallyExcessive = getScrollOffsetIntoView(element as HTMLElement, domRect);
 
     // const { maxScrollShift, maxScrollShiftAdjusted } = calculateMaxScrollShift();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const extraShift = (scrollElement as any).scrollLeftExtra;
     // extraShift === maxScrollShiftAdjusted - maxScrollShift
 
@@ -413,12 +420,14 @@ function computeVisibility(location: LocatorLocations): boolean {
     return visible;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ipcRenderer.on(R2_EVENT_LOCATOR_VISIBLE, (_event: any, payload: IEventPayload_R2_EVENT_LOCATOR_VISIBLE) => {
 
     payload.visible = computeVisibility(payload.location);
     ipcRenderer.sendToHost(R2_EVENT_LOCATOR_VISIBLE, payload);
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_SCROLLTO) => {
 
     if (win.READIUM2.isAudio) {
@@ -567,10 +576,12 @@ function ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable(): number {
 
     const scrollElement = getScrollingElement(win.document);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const val = (scrollElement as any).scrollLeftExtra;
     if (val === 0) {
         return 0;
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (scrollElement as any).scrollLeftExtra = 0;
     ipcRenderer.sendToHost(R2_EVENT_SHIFT_VIEW_X,
         { offset: 0, backgroundColor: undefined } as IEventPayload_R2_EVENT_SHIFT_VIEW_X);
@@ -580,7 +591,9 @@ function ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable(scrollLeftExtra: numb
 
     const scrollElement = getScrollingElement(win.document);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (scrollElement as any).scrollLeftExtra = scrollLeftExtra;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const scrollLeftExtraBackgroundColor = (scrollElement as any).scrollLeftExtraBackgroundColor;
 
     ipcRenderer.sendToHost(R2_EVENT_SHIFT_VIEW_X,
@@ -616,6 +629,7 @@ function ensureTwoPageSpreadWithOddColumnsIsOffset(scrollOffset: number, maxScro
         maxScrollShift <= 0 ||
         Math.abs(scrollOffset) <= maxScrollShift;
     if (noChange) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (scrollElement as any).scrollLeftExtra = 0;
 
         // console.log(`"""""""""""""""""""""""""""""""" noChange: ${maxScrollShift}`);
@@ -652,7 +666,9 @@ function ensureTwoPageSpreadWithOddColumnsIsOffset(scrollOffset: number, maxScro
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (scrollElement as any).scrollLeftExtra = extraOffset;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (scrollElement as any).scrollLeftExtraBackgroundColor = backgroundColor;
 
     ipcRenderer.sendToHost(R2_EVENT_SHIFT_VIEW_X,
@@ -671,6 +687,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
         if (win.document.hasFocus()) {
             leftRightKeyWasUsedInsideKeyboardCapture = true;
         } else {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const oldDate = (win.document.activeElement as any).r2_leftrightKeyboardTimeStamp;
             if (oldDate) {
                 const newDate = new Date();
@@ -941,6 +958,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
 
     ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
 }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT_PAGE_TURN) => {
     // Because 'r2_leftrightKeyboardTimeStamp' is set AFTER the main window left/right keyboard handler!
     setTimeout(() => { // we could debounce too?
@@ -1002,10 +1020,14 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
         //     element.addEventListener("animationEnd", (element as any)._TargetAnimationEnd);
         // }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((element as any)._timeoutTargetClass) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             clearTimeout((element as any)._timeoutTargetClass);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (element as any)._timeoutTargetClass = undefined;
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (element as any)._timeoutTargetClass = setTimeout(() => {
             debug("ANIMATION TIMEOUT REMOVE");
             // (element as HTMLElement).style.animationPlayState = "paused";
@@ -1564,6 +1586,7 @@ function handleFocusInRaw(target: HTMLElement, _tabKeyDownEvent: KeyboardEvent |
 //     }
 // }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ipcRenderer.on(R2_EVENT_READIUMCSS, (_event: any, payload: IEventPayload_R2_EVENT_READIUMCSS) => {
     showHideContentMask(true, payload.isFixedLayout || win.READIUM2.isFixedLayout);
     readiumCSS(win.document, payload);
@@ -1944,6 +1967,7 @@ function loaded(forced: boolean) {
         // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code/code_values
         if (ev.code === "ArrowLeft" || ev.code === "ArrowRight") {
             if (ev.target && elementCapturesKeyboardArrowKeys(ev.target as Element)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (ev.target as any).r2_leftrightKeyboardTimeStamp = new Date();
             }
         }
@@ -1961,6 +1985,7 @@ function loaded(forced: boolean) {
         return;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     win.document.body.addEventListener("focusin", (ev: any) => {
 
         // if (_ignoreFocusInEvent) {
@@ -1979,6 +2004,7 @@ function loaded(forced: boolean) {
                 if (!win.document.documentElement.classList.contains(ROOT_CLASS_KEYBOARD_INTERACT)) {
                     if (
                         (ev.target as HTMLElement).tagName.toLowerCase() === "a" &&
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         (ev.target as any).href
                         ||
                         ev.target.getAttribute("tabindex") === "-1" &&
@@ -2026,6 +2052,7 @@ function loaded(forced: boolean) {
 
         setTimeout(() => {
             let _firstResizeObserver = true;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const resizeObserver = new (window as any).ResizeObserver((_entries: any) => { // ResizeObserverEntries
                 // for (const entry of entries) {
                 //     const rect = entry.contentRect as DOMRect;
@@ -2040,6 +2067,7 @@ function loaded(forced: boolean) {
                 // debug("ResizeObserver");
 
                 // invalidateBoundingClientRectOfDocumentBody(win);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (win.document.body as any).tabbables = undefined;
 
                 // debug("++++ scrollToHashDebounced from ResizeObserver");
@@ -2156,6 +2184,7 @@ function loaded(forced: boolean) {
         return false;
     }, true);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on("R2_EVENT_WINDOW_RESIZE", (_event: any, zoomPercent: number) => {
         debug("R2_EVENT_WINDOW_RESIZE zoomPercent " + zoomPercent);
 
@@ -2480,6 +2509,7 @@ function loaded(forced: boolean) {
 
     win.document.addEventListener("mouseup", (ev: MouseEvent) => {
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (ev.target && (ev.target as any).getAttribute) {
 
             const iBooksMO = (ev.target as HTMLElement).getAttribute("ibooks:readaloud") ||
@@ -2778,6 +2808,7 @@ export const computeProgressionData = (): IProgressionData => {
             if (isVerticalWritingMode()) {
                 progressionRatio = scrollElement.scrollTop / maxScrollShift;
             } else {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 extraShift = (scrollElement as any).scrollLeftExtra;
                 // extraShift === maxScrollShiftAdjusted - maxScrollShift
 
@@ -3109,7 +3140,7 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): string | u
         const xpathResult = win.document.evaluate(
             // `//*[contains(@epub:type,'pagebreak')]`,
             // `//*[tokenize(@epub:type,'\s+')='pagebreak']`
-            `//*[contains(concat(' ', normalize-space(@epub:type), ' '), ' pagebreak ') or contains(concat(' ', normalize-space(role), ' '), ' doc-pagebreak ')]`,
+            "//*[contains(concat(' ', normalize-space(@epub:type), ' '), ' pagebreak ') or contains(concat(' ', normalize-space(role), ' '), ' doc-pagebreak ')]",
             win.document.body,
             namespaceResolver,
             XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
@@ -3280,6 +3311,7 @@ const notifyReadingLocationDebouncedImmediate = debounce((userInteract?: boolean
 }, 250, true);
 
 if (!win.READIUM2.isAudio) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_TTS_DO_PLAY, (_event: any, payload: IEventPayload_R2_EVENT_TTS_DO_PLAY) => {
         const rootElement = win.document.querySelector(payload.rootElement);
         const startElement = payload.startElement ? win.document.querySelector(payload.startElement) : null;
@@ -3295,48 +3327,59 @@ if (!win.READIUM2.isAudio) {
             ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_TTS_DO_STOP, (_event: any) => {
         ttsStop();
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_TTS_DO_PAUSE, (_event: any) => {
         ttsPause();
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_TTS_DO_RESUME, (_event: any) => {
         ttsResume();
     });
 
     ipcRenderer.on(R2_EVENT_TTS_DO_NEXT,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_event: any, payload?: IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS) => {
         ttsNext(payload?.skipSentences);
     });
 
     ipcRenderer.on(R2_EVENT_TTS_DO_PREVIOUS,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_event: any, payload?: IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS) => {
         ttsPrevious(payload?.skipSentences);
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_TTS_PLAYBACK_RATE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE) => {
         ttsPlaybackRate(payload.speed);
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_TTS_VOICE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_VOICE) => {
         ttsVoice(payload.voice);
     });
 
     ipcRenderer.on(R2_EVENT_TTS_SENTENCE_DETECT_ENABLE,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_event: any, payload: IEventPayload_R2_EVENT_TTS_SENTENCE_DETECT_ENABLE) => {
         win.READIUM2.ttsSentenceDetectionEnabled = payload.doEnable;
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_TTS_CLICK_ENABLE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_CLICK_ENABLE) => {
         win.READIUM2.ttsClickEnabled = payload.doEnable;
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_TTS_OVERLAY_ENABLE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_OVERLAY_ENABLE) => {
         win.READIUM2.ttsOverlayEnabled = payload.doEnable;
     });
 
     ipcRenderer.on(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_event: any, payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT) => {
 
             const styleAttr = win.document.documentElement.getAttribute("style");
@@ -3409,7 +3452,7 @@ if (!win.READIUM2.isAudio) {
                                     const usrFontSize = docStyle.getPropertyValue("--USER__fontSize");
                                     containerStyle += `font-size: ${usrFontSize};`;
                                 } else {
-                                    containerStyle += `font-size: 120%;`;
+                                    containerStyle += "font-size: 120%;";
                                 }
                                 const isUserLineHeight = styleAttr ?
                                     styleAttr.indexOf("--USER__lineHeight") >= 0 : false;
@@ -3417,7 +3460,7 @@ if (!win.READIUM2.isAudio) {
                                     const usrLineHeight = docStyle.getPropertyValue("--USER__lineHeight");
                                     containerStyle += `line-height: ${usrLineHeight};`;
                                 } else {
-                                    containerStyle += `line-height: 1.2;`;
+                                    containerStyle += "line-height: 1.2;";
                                 }
                                 const isUserFont = styleAttr ?
                                     styleAttr.indexOf("--USER__fontFamily") >= 0 : false;
@@ -3462,6 +3505,7 @@ if (!win.READIUM2.isAudio) {
             }
         });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_HIGHLIGHT_CREATE, (_event: any, payloadPing: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE) => {
 
         if (payloadPing.highlightDefinitions &&
@@ -3502,12 +3546,14 @@ if (!win.READIUM2.isAudio) {
         ipcRenderer.sendToHost(R2_EVENT_HIGHLIGHT_CREATE, payloadPong);
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_HIGHLIGHT_REMOVE, (_event: any, payload: IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE) => {
         payload.highlightIDs.forEach((highlightID) => {
             destroyHighlight(win.document, highlightID);
         });
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_HIGHLIGHT_REMOVE_ALL, (_event: any) => {
         destroyAllhighlights(win.document);
     });

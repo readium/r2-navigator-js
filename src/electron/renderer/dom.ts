@@ -209,7 +209,7 @@ function readiumCssApplyToWebview(
     if (loc && loc.locator.href === activeWebView.READIUM2.link?.Href) {
 
         setTimeout(() => {
-            debug(`readiumCssOnOff -> handleLinkLocator`);
+            debug("readiumCssOnOff -> handleLinkLocator");
             handleLinkLocator(loc.locator, actualReadiumCss);
         }, 60);
     }
@@ -494,13 +494,17 @@ function destroyWebView(second?: boolean): void {
     if (second) {
         if (_webview2) {
             domSlidingViewport.removeChild(_webview2 as Node);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (_webview2 as any).READIUM2 = undefined;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (_webview2 as any) = undefined;
         }
     } else {
         if (_webview1) {
             domSlidingViewport.removeChild(_webview1 as Node);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (_webview1 as any).READIUM2 = undefined;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (_webview1 as any) = undefined;
         }
     }
@@ -595,6 +599,7 @@ export function installNavigatorDOM(
 
         win.READIUM2.DEBUG_VISUALS = debugVisualz;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).READIUM2.debug = async (debugVisuals: boolean) => {
             debug("debugVisuals SET: ", debugVisuals);
             win.READIUM2.DEBUG_VISUALS = debugVisuals;
@@ -614,7 +619,7 @@ export function installNavigatorDOM(
 
                     await new Promise<void>((res, _rej) => {
                         setTimeout(() => {
-                            debug(`READIUM2.debug -> handleLinkLocator`);
+                            debug("READIUM2.debug -> handleLinkLocator");
                             handleLinkLocator(
                                 loc.locator,
                                 activeWebView.READIUM2.readiumCss,
@@ -626,6 +631,7 @@ export function installNavigatorDOM(
             }
         };
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).READIUM2.debugItems =
             (href: string, cssSelector: string, cssClass: string, cssStyles: string | undefined) => {
 
@@ -667,7 +673,7 @@ export function installNavigatorDOM(
     createWebView();
 
     setTimeout(() => {
-        debug(`installNavigatorDOM -> handleLinkLocator`);
+        debug("installNavigatorDOM -> handleLinkLocator");
         handleLinkLocator(location, rcss);
     }, 100);
 }

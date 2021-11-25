@@ -40,7 +40,9 @@ function isDEBUG_VISUALS(documant: Document): boolean {
     if (!IS_DEV) {
         return false;
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (documant.defaultView && (documant.defaultView as any).READIUM2 &&
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (documant.defaultView as any).READIUM2.DEBUG_VISUALS) {
         return true;
     }

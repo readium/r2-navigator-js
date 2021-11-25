@@ -10,6 +10,7 @@ export interface IPropertyAnimationState {
     duration: number;
     destVal: number;
     originVal: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     object: any;
     property: string;
     deltaVal: number;
@@ -24,6 +25,7 @@ export const animateProperty = (
     callback: ((cancelled: boolean) => void) | undefined,
     property: string, // numerical, e.g. "scrollTop" or "scrollLeft"
     duration: number, // e.g. 200
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     object: any, // typically, window.document.body (Element)
     destVal: number, // e.g. 0
     rAF: (func: () => void) => number, // typically: window.requestAnimationFrame

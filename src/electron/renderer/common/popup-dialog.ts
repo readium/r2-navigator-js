@@ -180,6 +180,7 @@ export class PopupDialog {
 
         closePopupDialogs(documant);
 
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         const that = this;
 
         this._onKeyUp = onKeyUp.bind(this);

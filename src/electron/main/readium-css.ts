@@ -58,6 +58,7 @@ export function setupReadiumCSS(
         maxAge: "1d",
         redirect: false,
         // extensions: ["css", "otf"],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setHeaders: (res: express.Response, _path: string, _stat: any) => {
             //   res.set('x-timestamp', Date.now())
             server.setResponseCORS(res);

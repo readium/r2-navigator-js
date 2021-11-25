@@ -42,12 +42,14 @@ export function consoleRedirect(
     // debug() default is:
     // process.stderr.write(util.format(...args) + '\n');
     // https://github.com/visionmedia/debug/blob/master/src/node.js#L190
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function debugLog(this: any, ...args: any[]): void {
         // const prefix = (this === debugNodeInstance) ? "i" :
         //     ((this === debugNode) ? "g" :
         //     ((this === debugBrowser) ? "b" : "?"));
 
         outStream.write(// prefix +
+            // eslint-disable-next-line prefer-spread
             util.format.apply(util, args) + "\n");
 
         // process.stderr.write(util.inspect(this,
@@ -60,6 +62,7 @@ export function consoleRedirect(
     // (debugNode as any).log = debugLog.bind(debugNode); // global
     debugNodeInstance.log = debugLog.bind(debugNodeInstance); // takes precedence
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function processConsoleFunctionCall(this: Console, ...args: any[]): void {
 
         // process.stderr.write("PROCESSING... " + util.inspect(args,
@@ -119,12 +122,14 @@ export function consoleRedirect(
         }
     }
     // processConsoleFunctionCall.bind(console);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (debugBrowser as any).log = (...args: any[]): void => {
         processConsoleFunctionCall.apply(console, args);
 
         if (printInOriginalConsole) {
             const consoleFunctionName = "log";
             const originalConsoleFunction =
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ((originalConsole as any)[consoleFunctionName] as ((...args: any[]) => void));
             // process.stderr.write(consoleFunctionName + " -- " + util.inspect(originalConsoleFunction,
             //     { showHidden: false, depth: 1000, colors: true, customInspect: true }) + "\n");
@@ -135,10 +140,13 @@ export function consoleRedirect(
     const originalConsole = {};
 
     _consoleFunctionNames.forEach((consoleFunctionName) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const consoleFunction = (console as any)[consoleFunctionName] as ((...args: any[]) => void);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (originalConsole as any)[consoleFunctionName] = consoleFunction.bind(console);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         function newConsoleFunction(this: Console, ...args: any[]): void {
 
             // [].slice.call(arguments) or Array.prototype.slice.call(arguments) or Array.from(arguments)
@@ -155,19 +163,23 @@ export function consoleRedirect(
 
             if (printInOriginalConsole) {
                 const originalConsoleFunction =
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     ((originalConsole as any)[consoleFunctionName] as ((...args: any[]) => void));
                 // process.stderr.write(consoleFunctionName + " -- " + util.inspect(originalConsoleFunction,
                 //     { showHidden: false, depth: 1000, colors: true, customInspect: true }) + "\n");
                 originalConsoleFunction.apply(this, args);
             }
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (console as any)[consoleFunctionName] = newConsoleFunction.bind(console);
     });
 
     return () => {
         _consoleFunctionNames.forEach((consoleFunctionName) => {
             const originalConsoleFunction =
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ((originalConsole as any)[consoleFunctionName] as ((...args: any[]) => void));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (console as any)[consoleFunctionName] = originalConsoleFunction.bind(console);
         });
     };

@@ -21,6 +21,7 @@ const win = window as IReadiumElectronBrowserWindow;
 
 export function highlightsHandleIpcMessage(
     eventChannel: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     eventArgs: any[],
     eventCurrentTarget: IReadiumElectronWebview): boolean {
 

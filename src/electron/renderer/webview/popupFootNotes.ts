@@ -88,7 +88,7 @@ export function popupFootNote(
     const ID_PREFIX_ = "r2-footnote-for_";
     const id_ = ID_PREFIX_ + targetElement.id;
     // htmltxt = htmltxt.replace(/id=["'][^"']+["']/, `id="${id_}"`);
-    htmltxt = htmltxt.replace(/id=["']([^"']+)["']/g, `idvoid="$1"`); // remove duplicate IDs
+    htmltxt = htmltxt.replace(/id=["']([^"']+)["']/g, "idvoid=\"$1\""); // remove duplicate IDs
 
     // tslint:disable-next-line:max-line-length
     htmltxt = `<div id="${id_}" class="${FOOTNOTES_CONTAINER_CLASS} ${CSS_CLASS_NO_FOCUS_OUTLINE}" tabindex="0" autofocus="autofocus">${htmltxt}</div>`;

@@ -15,6 +15,7 @@ import { IReadiumElectronWebview } from "./webview/state";
 
 export function soundtrackHandleIpcMessage(
     eventChannel: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     eventArgs: any[],
     _eventCurrentTarget: IReadiumElectronWebview): boolean {
 

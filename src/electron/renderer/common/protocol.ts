@@ -16,7 +16,9 @@ export const registerProtocol = () => {
     // protocol.registerStandardSchemes([READIUM2_ELECTRON_HTTP_PROTOCOL], { secure: true });
     // webFrame.registerURLSchemeAsSecure(READIUM2_ELECTRON_HTTP_PROTOCOL);
     // // webFrame.registerURLSchemeAsBypassingCSP(READIUM2_ELECTRON_HTTP_PROTOCOL);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((webFrame as any).registerURLSchemeAsPrivileged) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (webFrame as any).registerURLSchemeAsPrivileged(READIUM2_ELECTRON_HTTP_PROTOCOL, {
             allowServiceWorkers: false,
             bypassCSP: false,

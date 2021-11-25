@@ -37,6 +37,7 @@ import { IReadiumElectronWebviewWindow } from "./state";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const win = (global as any).window as IReadiumElectronWebviewWindow;
 
 interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
@@ -170,6 +171,7 @@ export function ttsPause() {
         // }
 
         if (_dialogState && _dialogState.ttsUtterance) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (_dialogState.ttsUtterance as any).r2_cancel = true;
         }
         setTimeout(() => {
@@ -179,6 +181,7 @@ export function ttsPause() {
         // we only queue a single utterance, so this isn't really needed.
 
         if (_dialogState && _dialogState.ttsUtterance) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (_dialogState.ttsUtterance as any).r2_cancel = true;
         }
         setTimeout(() => {
@@ -262,6 +265,7 @@ export function ttsResume() {
             if (_dialogState &&
                 _dialogState.ttsUtterance) {
 
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (_dialogState.ttsUtterance as any).r2_cancel = false;
                 win.speechSynthesis.speak(_dialogState.ttsUtterance);
             }
@@ -1027,6 +1031,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
 
     const utterance = new SpeechSynthesisUtterance(txtStr);
     _dialogState.ttsUtterance = utterance;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (utterance as any).r2_ttsQueueIndex = ttsQueueIndex;
 
     // TODO:
@@ -1048,12 +1053,14 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
     }) || null;
 
     utterance.onboundary = (ev: SpeechSynthesisEvent) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((utterance as any).r2_cancel) {
             return;
         }
         if (!_dialogState || !_dialogState.ttsQueueItem) {
             return;
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((utterance as any).r2_ttsQueueIndex !== _dialogState.ttsQueueItem.iGlobal) {
             return;
         }
@@ -1066,12 +1073,14 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
     };
 
     utterance.onend = (_ev: SpeechSynthesisEvent) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((utterance as any).r2_cancel) {
             return;
         }
         if (!_dialogState || !_dialogState.ttsQueueItem) {
             return;
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((utterance as any).r2_ttsQueueIndex !== _dialogState.ttsQueueItem.iGlobal) {
             return;
         }
@@ -1092,6 +1101,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
         ttsRootElement: _dialogState.ttsRootElement,
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (utterance as any).r2_cancel = false;
     setTimeout(() => {
         win.speechSynthesis.speak(utterance);
@@ -1169,7 +1179,7 @@ ${win.READIUM2.ttsOverlayEnabled ?
 <button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}" title="previous"><span>&#9668;</span></button>
 <button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}" title="next"><span>&#9658;</span></button>
 <input id="${TTS_ID_SLIDER}" type="range" min="0" max="${ttsQueueLength - 1}" value="0"
-    ${isRTL() ? `dir="rtl"` : `dir="ltr"`}  title="progress"/>
+    ${isRTL() ? "dir=\"rtl\"" : "dir=\"ltr\""}  title="progress"/>
 `
             : ""}
 `;

@@ -44,6 +44,7 @@ interface PromiseFulfilled<T> {
 }
 interface PromiseRejected {
     status: "rejected";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     reason: any;
 }
 
@@ -266,6 +267,7 @@ const streamProtocolHandler = async (
         // debug(ref);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const failure = (err: any) => {
         debug(err);
         callback({});
@@ -464,6 +466,7 @@ const streamProtocolHandler = async (
             .on("response", (response: request.RequestResponse) => {
                 success(response);
             })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .on("error", (err: any) => {
                 failure(err);
             });
@@ -839,7 +842,9 @@ export function initSessions() {
     }
 
     // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webframe
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((protocol as any).registerStandardSchemes) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (protocol as any).registerStandardSchemes([READIUM2_ELECTRON_HTTP_PROTOCOL], { secure: true });
     } else {
         // tslint:disable-next-line:max-line-length

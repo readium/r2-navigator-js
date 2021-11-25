@@ -12,6 +12,7 @@ import {
 import { FOOTNOTE_FORCE_SHOW, ROOT_CLASS_NO_FOOTNOTES } from "../../common/styles";
 import { IReadiumElectronWebviewWindow } from "./state";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const win = (global as any).window as IReadiumElectronWebviewWindow;
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");

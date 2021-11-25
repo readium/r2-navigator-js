@@ -86,7 +86,7 @@ export const contextMenuSetup = (webContent: Electron.WebContents, webContentID:
     // }
     wc.on("context-menu", (_ev, params) => {
         const { x, y } = params;
-        debug(`MAIN context-menu EVENT on WebView`);
+        debug("MAIN context-menu EVENT on WebView");
 
         const win = BrowserWindow.fromWebContents(webContent) || undefined;
 

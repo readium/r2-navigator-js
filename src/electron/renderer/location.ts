@@ -127,6 +127,7 @@ export function setWebViewStyle(wv: IReadiumElectronWebview, wvSlot: WebViewSlot
 
 export function locationHandleIpcMessage(
     eventChannel: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     eventArgs: any[],
     eventCurrentTarget: IReadiumElectronWebview): boolean {
 
@@ -265,6 +266,7 @@ export function locationHandleIpcMessage(
 
 // see webview.addEventListener("ipc-message", ...)
 // needed for main process browserWindow.webContents.send()
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ipcRenderer.on(R2_EVENT_LINK, (_event: any, payload: IEventPayload_R2_EVENT_LINK) => {
     debug("R2_EVENT_LINK (ipcRenderer.on)");
     debug(payload.url);
@@ -420,13 +422,13 @@ export function handleLink(
 
     const special = href.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
     if (special) {
-        debug(`handleLink R2 URL`);
+        debug("handleLink R2 URL");
         const okay = loadLink(href, previous, useGoto, rcss);
         if (!okay) {
             debug(`Readium link fail?! ${href}`);
         }
     } else {
-        debug(`handleLink non-R2 URL`);
+        debug("handleLink non-R2 URL");
         const okay = loadLink(href, previous, useGoto, rcss);
         if (!okay) {
             if (/^https?:\/\/127\.0\.0\.1/.test(href)) { // href.startsWith("https://127.0.0.1")
@@ -632,6 +634,7 @@ function loadLink(
             const hrefToLoadHttpObjUri = new URI(hrefToLoadHttp);
             hrefToLoadHttpObjUri.hash("").normalizeHash();
             // TODO: urijs types broke this! (lib remains unchanged)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (hrefToLoadHttpObjUri as any).search((data: any) => {
                 // overrides existing (leaves others intact)
                 data[URL_PARAM_PREVIOUS] = undefined;
@@ -748,6 +751,7 @@ function loadLink(
 
         publication.Spine.forEach((spineLink, i) => {
             if (!isFixedLayout(spineLink)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (spineLink as any).__notInSpread = true;
                 if (!spineLink.Properties) {
                     spineLink.Properties = new Properties();
@@ -758,11 +762,13 @@ function loadLink(
             const linkSpreadNone = spineLink.Properties?.Spread === SpreadEnum.None;
             const linkSpreadOther = !linkSpreadNone && spineLink.Properties?.Spread;
             const notInSpread = linkSpreadNone || (publicationSpreadNone && !linkSpreadOther);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (spineLink as any).__notInSpread = notInSpread;
             if (spineLink.Properties?.Page &&
                 spineLink.Properties.Page !== PageEnum.Left &&
                 spineLink.Properties.Page !== PageEnum.Right) {
 
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (spineLink as any).__notInSpread = true;
             }
             if (!spineLink.Properties?.Page) {
@@ -770,6 +776,7 @@ function loadLink(
                     spineLink.Properties = new Properties();
                 }
                 if (i === 0) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     (spineLink as any).__notInSpread = true;
                     spineLink.Properties.Page = notInSpread ? PageEnum.Center : slotOfSecondPageInSpread;
                 } else {
@@ -785,9 +792,11 @@ function loadLink(
         const page = pubLink.Properties?.Page;
         if (page === PageEnum.Left) {
             webViewSlot = WebViewSlotEnum.left;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (!secondWebView && !(pubLink as any).__notInSpread) {
                 const otherIndex = linkIndex + (rtl ? -1 : 1);
                 const otherLink = publication.Spine[otherIndex];
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 if (otherLink && !(otherLink as any).__notInSpread &&
                     otherLink.Properties?.Page === PageEnum.Right) {
 
@@ -816,9 +825,11 @@ function loadLink(
             }
         } else if (page === PageEnum.Right) {
             webViewSlot = WebViewSlotEnum.right;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (!secondWebView && !(pubLink as any).__notInSpread) {
                 const otherIndex = linkIndex + (!rtl ? -1 : 1);
                 const otherLink = publication.Spine[otherIndex];
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 if (otherLink && !(otherLink as any).__notInSpread &&
                     otherLink.Properties?.Page === PageEnum.Left) {
 
@@ -891,6 +902,7 @@ function loadLink(
         }
 
         // TODO: urijs types broke this! (lib remains unchanged)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (hrefToLoadHttpUri as any).search((data: any) => {
             // overrides existing (leaves others intact)
             data[URL_PARAM_PREVIOUS] = undefined;
@@ -906,6 +918,7 @@ function loadLink(
         });
     } else {
         // TODO: urijs types broke this! (lib remains unchanged)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (hrefToLoadHttpUri as any).search((data: any) => {
             // overrides existing (leaves others intact)
 
@@ -937,6 +950,7 @@ function loadLink(
         const rersJsonstrBase64 = Buffer.from(rersJsonstr).toString("base64");
 
         // TODO: urijs types broke this! (lib remains unchanged)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (hrefToLoadHttpUri as any).search((data: any) => {
             // overrides existing (leaves others intact)
 
@@ -1030,6 +1044,7 @@ function loadLink(
 
         if (webviewNeedsForcedRefresh) {
             // TODO: urijs types broke this! (lib remains unchanged)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (hrefToLoadHttpUri as any).search((data: any) => {
                 // overrides existing (leaves others intact)
 
@@ -1039,6 +1054,7 @@ function loadLink(
 
         if (win.READIUM2.sessionInfo) {
             // TODO: urijs types broke this! (lib remains unchanged)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (hrefToLoadHttpUri as any).search((data: any) => {
                 // overrides existing (leaves others intact)
 
@@ -1104,6 +1120,7 @@ function loadLink(
                 let title: string | undefined;
                 if (pubLink.Title) {
                     const regExp = /&(nbsp|amp|quot|lt|gt);/g;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const map: any = {
                         amp: "&",
                         gt: ">",
@@ -1130,7 +1147,7 @@ function loadLink(
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
 <head>
     <meta charset="utf-8" />
-    ${title ? `<title>${title}</title>` : `<!-- NO TITLE -->`}
+    ${title ? `<title>${title}</title>` : "<!-- NO TITLE -->"}
     <base href="${publicationURLHttp /* publicationURL */ }" id="${READIUM2_BASEURL_ID}" />
     <style type="text/css">
     /*<![CDATA[*/
@@ -1316,11 +1333,11 @@ function loadLink(
 </head>
 <body id="${AUDIO_BODY_ID}">
 <section id="${AUDIO_SECTION_ID}">
-${title ? `<h3 id="${AUDIO_TITLE_ID}">${title}</h3>` : ``}
-${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${coverLink.Height ? `height="${coverLink.Height}"` : ""} ${coverLink.Width ? `width="${coverLink.Width}"` : ""} ${coverLink.Width || coverLink.Height ? `style="${coverLink.Height ? `height: ${coverLink.Height}px !important;` : ""} ${coverLink.Width ? `width: ${coverLink.Width}px !important;` : ""}"` : ""}/>` : ``}
+${title ? `<h3 id="${AUDIO_TITLE_ID}">${title}</h3>` : ""}
+${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${coverLink.Height ? `height="${coverLink.Height}"` : ""} ${coverLink.Width ? `width="${coverLink.Width}"` : ""} ${coverLink.Width || coverLink.Height ? `style="${coverLink.Height ? `height: ${coverLink.Height}px !important;` : ""} ${coverLink.Width ? `width: ${coverLink.Width}px !important;` : ""}"` : ""}/>` : ""}
     <audio
         id="${AUDIO_ID}"
-        ${DEBUG_AUDIO ? `controlsx="controlsx"` : ""}
+        ${DEBUG_AUDIO ? "controlsx=\"controlsx\"" : ""}
         autoplay="autoplay"
         preload="metadata">
 

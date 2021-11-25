@@ -804,7 +804,7 @@ function createHighlightDom(
     highlightBounding.setAttribute("class", CLASS_HIGHLIGHT_BOUNDING_AREA);
     if (win.READIUM2.DEBUG_VISUALS) {
         // tslint:disable-next-line:max-line-length
-        highlightBounding.setAttribute("style", `background-color: transparent !important; outline-color: magenta; outline-style: solid; outline-width: 1px; outline-offset: -1px;`);
+        highlightBounding.setAttribute("style", "background-color: transparent !important; outline-color: magenta; outline-style: solid; outline-width: 1px; outline-offset: -1px;");
     } else {
         highlightBounding.setAttribute("style", "background-color: transparent !important");
     }

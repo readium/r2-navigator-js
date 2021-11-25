@@ -36,7 +36,7 @@ let rootDocument: Document | Element;
 
 export function uniqueCssSelector(input: Element, doc: Document, options?: Partial<Options>) {
     if (input.nodeType !== Node.ELEMENT_NODE) {
-        throw new Error(`Can't generate CSS selector for non-element node type.`);
+        throw new Error("Can't generate CSS selector for non-element node type.");
     }
 
     if ("html" === input.tagName.toLowerCase()) {
@@ -71,7 +71,7 @@ export function uniqueCssSelector(input: Element, doc: Document, options?: Parti
 
         return selector(path);
     } else {
-        throw new Error(`Selector was not found.`);
+        throw new Error("Selector was not found.");
     }
 }
 
