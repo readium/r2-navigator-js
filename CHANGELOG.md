@@ -1,10 +1,32 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.9.1...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.9.2...develop
 
 Changes:
 * TODO
+
+# 1.9.2
+
+> Build environment: NodeJS `16.13.0`, NPM `8.1.4`
+
+Changes:
+* NPM package updates
+* NodeJS 16 + NPM 8
+* Electron 16
+* ESLINT (was TSLINT)
+* Improved EPUB Media Overlays playback when no audio (skip fragment, was stalling)
+* Fixed highlights CSS reset (styles leak from host document)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.9.2/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.9.2/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.9.2
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.9.1...v1.9.2
 
 # 1.9.1
 
