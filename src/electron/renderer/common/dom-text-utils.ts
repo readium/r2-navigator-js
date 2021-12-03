@@ -276,12 +276,48 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
 
                     const childTagNameLow = childElement.tagName ? childElement.tagName.toLowerCase() : undefined;
                     const isMathJax = childTagNameLow && childTagNameLow.startsWith("mjx-");
-                    const isExcluded = isMathJax ||
+                    const isMathML = childTagNameLow === "math";
+                    const isExcluded = isMathJax || isMathML ||
                         // tslint:disable-next-line:max-line-length
                         childElement.matches("svg, img, sup, sub, audio, video, source, button, canvas, del, dialog, embed, form, head, iframe, meter, noscript, object, s, script, select, style, textarea");
                     // code, nav, dl, figure, table, ul, ol
                     if (!isExcluded) {
                         processElement(childElement);
+                    } else if (isMathML) {
+                        const altAttr = childElement.getAttribute("alttext");
+                        if (altAttr) {
+                            const txt = altAttr.trim();
+                            if (txt) {
+                                const lang = getLanguage(childElement);
+                                const dir = undefined;
+                                ttsQueue.push({
+                                    combinedText: txt,
+                                    combinedTextSentences: undefined,
+                                    combinedTextSentencesRangeBegin: undefined,
+                                    combinedTextSentencesRangeEnd: undefined,
+                                    dir,
+                                    lang,
+                                    parentElement: childElement,
+                                    textNodes: [],
+                                });
+                            }
+                        } else {
+                            const txt = childElement.textContent?.trim();
+                            if (txt) {
+                                const lang = getLanguage(childElement);
+                                const dir = getDirection(childElement);
+                                ttsQueue.push({
+                                    combinedText: txt,
+                                    combinedTextSentences: undefined,
+                                    combinedTextSentencesRangeBegin: undefined,
+                                    combinedTextSentencesRangeEnd: undefined,
+                                    dir,
+                                    lang,
+                                    parentElement: childElement,
+                                    textNodes: [],
+                                });
+                            }
+                        }
                     } else if (isMathJax) {
                         if (childTagNameLow === "mjx-container") {
 
