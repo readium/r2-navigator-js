@@ -3105,6 +3105,7 @@ let _allEpubPageBreaks: IPageBreak[] | undefined;
 
 const _htmlNamespaces: { [prefix: string]: string } = {
     epub: "http://www.idpf.org/2007/ops",
+    xhtml: "http://www.w3.org/1999/xhtml",
 };
 const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): string | undefined => {
     if (!_allEpubPageBreaks) {
@@ -3140,7 +3141,7 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): string | u
         const xpathResult = win.document.evaluate(
             // `//*[contains(@epub:type,'pagebreak')]`,
             // `//*[tokenize(@epub:type,'\s+')='pagebreak']`
-            "//*[contains(concat(' ', normalize-space(@epub:type), ' '), ' pagebreak ') or contains(concat(' ', normalize-space(role), ' '), ' doc-pagebreak ')]",
+            "//*[contains(concat(' ', normalize-space(@role), ' '), ' doc-pagebreak ')] | //*[contains(concat(' ', normalize-space(@epub:type), ' '), ' pagebreak ')]",
             win.document.body,
             namespaceResolver,
             XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
@@ -3172,7 +3173,7 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): string | u
         }
 
         // debug("_allEpubPageBreaks XPath", JSON.stringify(_allEpubPageBreaks, null, 4));
-        debug("_allEpubPageBreaks XPath", _allEpubPageBreaks.length);
+        debug("_allEpubPageBreaks XPath", _allEpubPageBreaks.length, xpathResult.snapshotLength);
     }
 
     for (let i = _allEpubPageBreaks.length - 1; i >= 0; i--) {
