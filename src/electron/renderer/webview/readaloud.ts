@@ -553,11 +553,18 @@ function wrapHighlight(
 
     const ttsQueueItem = ttsQueueItemRef.item;
     if (doHighlight &&
-        ttsQueueItem.parentElement &&
-        ttsQueueItem.textNodes && ttsQueueItem.textNodes.length) {
+        ttsQueueItem.parentElement) {
 
         let range: Range | undefined;
-        if (ttsQueueItem.combinedTextSentences &&
+        if (!ttsQueueItem.textNodes || !ttsQueueItem.textNodes.length) {
+            range = new Range();
+            range.selectNode(ttsQueueItem.parentElement);
+            // if (ttsQueueItem.parentElement.childNodes?.length) {
+            //     range = new Range();
+            //     range.setStart(ttsQueueItem.parentElement, 0);
+            //     range.setEnd(ttsQueueItem.parentElement, ttsQueueItem.parentElement.childNodes.length);
+            // }
+        } else if (ttsQueueItem.combinedTextSentences &&
             ttsQueueItem.combinedTextSentencesRangeBegin &&
             ttsQueueItem.combinedTextSentencesRangeEnd &&
             ttsQueueItemRef.iSentence >= 0) {

@@ -273,13 +273,91 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
             switch (childNode.nodeType) {
                 case Node.ELEMENT_NODE:
                     const childElement = childNode as Element;
-                    // tslint:disable-next-line:max-line-length
-                    const isExcluded = childElement.matches("svg, img, sup, sub, audio, video, source, button, canvas, del, dialog, embed, form, head, iframe, meter, noscript, object, s, script, select, style, textarea");
+
+                    const childTagNameLow = childElement.tagName ? childElement.tagName.toLowerCase() : undefined;
+                    const isMathJax = childTagNameLow && childTagNameLow.startsWith("mjx-");
+                    const isExcluded = isMathJax ||
+                        // tslint:disable-next-line:max-line-length
+                        childElement.matches("svg, img, sup, sub, audio, video, source, button, canvas, del, dialog, embed, form, head, iframe, meter, noscript, object, s, script, select, style, textarea");
                     // code, nav, dl, figure, table, ul, ol
                     if (!isExcluded) {
                         processElement(childElement);
-                    } else if (childElement.tagName
-                        && childElement.tagName.toLowerCase() === "img" &&
+                    } else if (isMathJax) {
+                        if (childTagNameLow === "mjx-container") {
+
+                            let mathJaxEl: Element | undefined;
+                            let mathJaxElMathML: Element | undefined;
+                            const mathJaxContainerChildren = Array.from(childElement.children);
+                            for (const mathJaxContainerChild of mathJaxContainerChildren) {
+                                if (mathJaxContainerChild.tagName?.toLowerCase() === "mjx-math") {
+                                    mathJaxEl = mathJaxContainerChild;
+                                } else if (mathJaxContainerChild.tagName?.toLowerCase() === "mjx-assistive-mml") {
+                                    const mathJaxAMMLChildren = Array.from(mathJaxContainerChild.children);
+                                    for (const mathJaxAMMLChild of mathJaxAMMLChildren) {
+                                        if (mathJaxAMMLChild.tagName?.toLowerCase() === "math") {
+                                            mathJaxElMathML = mathJaxAMMLChild;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            const altAttr = childElement.getAttribute("aria-label");
+                            if (altAttr) {
+                                const txt = altAttr.trim();
+                                if (txt) {
+                                    const lang = getLanguage(childElement);
+                                    const dir = undefined;
+                                    ttsQueue.push({
+                                        combinedText: txt,
+                                        combinedTextSentences: undefined,
+                                        combinedTextSentencesRangeBegin: undefined,
+                                        combinedTextSentencesRangeEnd: undefined,
+                                        dir,
+                                        lang,
+                                        parentElement: mathJaxEl ?? childElement,
+                                        textNodes: [],
+                                    });
+                                }
+                            } else if (mathJaxElMathML) {
+                                const altAttr = mathJaxElMathML.getAttribute("alttext");
+                                if (altAttr) {
+                                    const txt = altAttr.trim();
+                                    if (txt) {
+                                        const lang = getLanguage(mathJaxElMathML);
+                                        const dir = undefined;
+                                        ttsQueue.push({
+                                            combinedText: txt,
+                                            combinedTextSentences: undefined,
+                                            combinedTextSentencesRangeBegin: undefined,
+                                            combinedTextSentencesRangeEnd: undefined,
+                                            dir,
+                                            lang,
+                                            parentElement: mathJaxEl ?? childElement,
+                                            textNodes: [],
+                                        });
+                                    }
+                                } else {
+                                    const txt = mathJaxElMathML.textContent?.trim();
+                                    if (txt) {
+                                        const lang = getLanguage(mathJaxElMathML);
+                                        const dir = getDirection(mathJaxElMathML);
+                                        ttsQueue.push({
+                                            combinedText: txt,
+                                            combinedTextSentences: undefined,
+                                            combinedTextSentencesRangeBegin: undefined,
+                                            combinedTextSentencesRangeEnd: undefined,
+                                            dir,
+                                            lang,
+                                            parentElement: mathJaxEl ?? childElement,
+                                            textNodes: [],
+                                        });
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    } else if (childTagNameLow === "img" &&
                         (childElement as HTMLImageElement).src) {
                         const altAttr = childElement.getAttribute("alt");
                         if (altAttr) {
@@ -299,8 +377,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                 });
                             }
                         }
-                    } else if (childElement.tagName
-                        && childElement.tagName.toLowerCase() === "svg") {
+                    } else if (childTagNameLow === "svg") {
                         const altAttr = childElement.getAttribute("aria-label");
                         if (altAttr) {
                             const txt = altAttr.trim();
