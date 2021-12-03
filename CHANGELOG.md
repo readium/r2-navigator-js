@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.9.2...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.9.3...develop
 
 Changes:
 * TODO
+
+# 1.9.3
+
+> Build environment: NodeJS `16.13.0`, NPM `8.1.4`
+
+Changes:
+* NPM package updates
+* TTS support for MathJax / MathML
+* TTS highlight of images / SVG etc. (when alt text source not children textnodes)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.9.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.9.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.9.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.9.2...v1.9.3
 
 # 1.9.2
 
