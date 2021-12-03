@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.9.4...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.9.5...develop
 
 Changes:
 * TODO
+
+# 1.9.5
+
+> Build environment: NodeJS `16.13.1`, NPM `8.2.0`
+
+Changes:
+* Fixed epub:type and role (doc)-pagebreak attributes XPath, now performing a union / pipe on separate matches ("or" combinator inside the single / combined assertion predicate was breaking on first match)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.9.5/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.9.5/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.9.5
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.9.4...v1.9.5
 
 # 1.9.4
 
