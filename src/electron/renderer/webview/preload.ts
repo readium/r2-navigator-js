@@ -28,10 +28,11 @@ import {
     IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CAPTIONS,
     R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_FXL_CONFIGURE,
     R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
-    R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_MEDIA_OVERLAY_CLICK,
-    R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_PAGE_TURN,
-    R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO,
-    R2_EVENT_SHIFT_VIEW_X, R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE,
+    R2_EVENT_KEYBOARD_FOCUS_REQUEST, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE,
+    R2_EVENT_MEDIA_OVERLAY_CLICK, R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
+    R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
+    R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
+    R2_EVENT_SHOW, R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE,
     R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
     R2_EVENT_TTS_OVERLAY_ENABLE, R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_TTS_SENTENCE_DETECT_ENABLE,
     R2_EVENT_TTS_VOICE, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
@@ -966,6 +967,33 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
     }, 100);
 });
 
+function focusElement(element: Element) {
+
+    if (element === win.document.body) {
+        const attr = (element as HTMLElement).getAttribute("tabindex");
+        if (!attr) {
+            (element as HTMLElement).setAttribute("tabindex", "-1");
+            (element as HTMLElement).classList.add(CSS_CLASS_NO_FOCUS_OUTLINE);
+            if (IS_DEV) {
+                debug("tabindex -1 set BODY (focusable):");
+                debug(getCssSelector(element));
+            }
+        }
+        (element as HTMLElement).focus({preventScroll: true});
+    } else {
+        (element as HTMLElement).focus();
+    }
+
+    // win.blur();
+    // win.focus();
+    // const payload: IEventPayload_R2_EVENT_KEYBOARD_FOCUS_REQUEST = {
+    // };
+    ipcRenderer.sendToHost(R2_EVENT_KEYBOARD_FOCUS_REQUEST, null);
+    if (IS_DEV) {
+        debug("KEYBOARD FOCUS REQUEST (1) ", getCssSelector(element));
+    }
+}
+
 let _lastAnimState2: IPropertyAnimationState | undefined;
 const animationTime2 = 400;
 
@@ -1035,7 +1063,7 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
         }, 2000);
 
         if (!domRect) {
-            (element as HTMLElement).focus();
+            focusElement(element);
         }
     }
 
@@ -1356,6 +1384,7 @@ const scrollToHashRaw = (animate: boolean) => {
 
                     win.READIUM2.locationHashOverride = win.document.body;
                     resetLocationHashOverrideInfo();
+                    focusElement(win.READIUM2.locationHashOverride);
 
                     processXYRaw(0, 0, false);
 
@@ -1379,6 +1408,7 @@ const scrollToHashRaw = (animate: boolean) => {
 
                 win.READIUM2.locationHashOverride = win.document.body;
                 resetLocationHashOverrideInfo();
+                focusElement(win.READIUM2.locationHashOverride);
 
                 processXYRaw(0, 0, false);
 
@@ -1398,6 +1428,7 @@ const scrollToHashRaw = (animate: boolean) => {
 
         win.READIUM2.locationHashOverride = win.document.body;
         resetLocationHashOverrideInfo();
+        focusElement(win.READIUM2.locationHashOverride);
 
         debug("processXYRaw BODY");
         processXYRaw(0, 0, false);
@@ -1444,7 +1475,7 @@ function showHideContentMask(doHide: boolean, isFixedLayout: boolean | null) {
         win.document.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK);
         win.document.documentElement.classList.remove(ROOT_CLASS_INVISIBLE_MASK_REMOVED);
     } else {
-        ipcRenderer.sendToHost("R2_EVENT_SHOW", null);
+        ipcRenderer.sendToHost(R2_EVENT_SHOW, null);
 
         if (isFixedLayout) {
             win.document.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK_REMOVED);

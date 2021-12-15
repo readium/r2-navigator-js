@@ -86,6 +86,14 @@ export interface IEventPayload_R2_EVENT_FXL_CONFIGURE {
 
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_SHOW = "R2_EVENT_SHOW";
+
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_KEYBOARD_FOCUS_REQUEST = "R2_EVENT_KEYBOARD_FOCUS_REQUEST";
+
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
 export const R2_EVENT_READING_LOCATION = "R2_EVENT_READING_LOCATION";
 
 // tslint:disable-next-line:class-name

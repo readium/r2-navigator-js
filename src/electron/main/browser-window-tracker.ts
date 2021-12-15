@@ -9,7 +9,9 @@ import * as debug_ from "debug";
 import { BrowserWindow, Menu, app, ipcMain, webContents } from "electron";
 
 import { CONTEXT_MENU_SETUP } from "../common/context-menu";
-import { IEventPayload_R2_EVENT_LINK, R2_EVENT_LINK } from "../common/events";
+import {
+    IEventPayload_R2_EVENT_LINK, R2_EVENT_KEYBOARD_FOCUS_REQUEST, R2_EVENT_LINK,
+} from "../common/events";
 import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../common/sessions";
 
 const debug = debug_("r2:navigator#electron/main/browser-window-tracker");
@@ -132,6 +134,15 @@ export const contextMenuSetup = (webContent: Electron.WebContents, webContentID:
 };
 ipcMain.on(CONTEXT_MENU_SETUP, (event, webContentID: number) => {
     contextMenuSetup(event.sender, webContentID);
+});
+
+ipcMain.handle(R2_EVENT_KEYBOARD_FOCUS_REQUEST, (event, webContentsId) => {
+    const wc = webContents.fromId(webContentsId);
+    debug("KEYBOARD FOCUS REQUEST (3) ", wc ? wc.id : "??", " // ", webContentsId, " -- ", wc.hostWebContents.id, " == ", event.sender.id);
+    if (wc && wc.hostWebContents === event.sender) {
+        debug("KEYBOARD FOCUS REQUEST (3) GO! ", wc.id, wc.hostWebContents.id);
+        wc.focus();
+    }
 });
 
 // https://github.com/electron/electron/blob/master/docs/tutorial/security.md#how-9
