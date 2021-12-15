@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.9.5...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.9.6...develop
 
 Changes:
 * TODO
+
+# 1.9.6
+
+> Build environment: NodeJS `16.13.1`, NPM `8.3.0`
+
+Changes:
+* NPM package updates
+* Fixed keyboard focus management in content webview, works with screen readers (accessible UI / UX tested with VoiceOver on MacOS), TOC, landmarks, bookmarks, page numbers, search matches
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.9.6/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.9.6/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.9.6
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.9.5...v1.9.6
 
 # 1.9.5
 
