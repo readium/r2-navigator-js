@@ -2468,47 +2468,16 @@ function loaded(forced: boolean) {
 
         processXYDebouncedImmediate(x, y, false, true);
 
-        // const elems = win.document.elementsFromPoint(x, y);
+        const domPointData = domDataFromPoint(x, y);
 
-        // let element: Element | undefined = elems && elems.length ? elems[0] : undefined;
-        let element: Element | undefined;
-
-        // if ((win.document as any).caretPositionFromPoint) {
-        //     const range = (win.document as any).caretPositionFromPoint(x, y);
-        //     const node = range.offsetNode;
-        //     const offset = range.offset;
-        // } else if (win.document.caretRangeFromPoint) {
-        // }
-
-        let textNode: Node | undefined;
-        let textNodeOffset = -1;
-
-        const range = win.document.caretRangeFromPoint(x, y);
-        if (range) {
-            const node = range.startContainer;
-            const offset = range.startOffset;
-
-            if (node) {
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                    element = node as Element;
-                } else if (node.nodeType === Node.TEXT_NODE) {
-                    textNode = node;
-                    textNodeOffset = offset;
-                    if (node.parentNode && node.parentNode.nodeType === Node.ELEMENT_NODE) {
-                        element = node.parentNode as Element;
-                    }
-                }
-            }
-        }
-
-        if (element && win.READIUM2.ttsClickEnabled) {
-            if (element) {
+        if (domPointData.element && win.READIUM2.ttsClickEnabled) {
+            if (domPointData.element) {
                 if (ev.altKey) {
                     ttsPlay(
                         win.READIUM2.ttsPlaybackRate,
                         win.READIUM2.ttsVoice,
                         focusScrollRaw,
-                        element,
+                        domPointData.element,
                         undefined,
                         undefined,
                         -1,
@@ -2521,10 +2490,10 @@ function loaded(forced: boolean) {
                     win.READIUM2.ttsPlaybackRate,
                     win.READIUM2.ttsVoice,
                     focusScrollRaw,
-                    (element.ownerDocument as Document).body,
-                    element,
-                    textNode,
-                    textNodeOffset,
+                    (domPointData.element.ownerDocument as Document).body,
+                    domPointData.element,
+                    domPointData.textNode,
+                    domPointData.textNodeOffset,
                     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
                     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
             }
@@ -2683,18 +2652,15 @@ function findFirstVisibleElement(rootElement: Element): Element | undefined {
     return undefined;
 }
 
-// relative to fixed window top-left corner
-const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boolean) => {
-
-    if (isPopupDialogOpen(win.document)) {
-        return;
-    }
+type TDOMPointData = {
+    textNode: Node | undefined;
+    textNodeOffset: number;
+    element: Element | undefined;
+};
+const domDataFromPoint = (x: number, y: number): TDOMPointData => {
 
     // const elems = win.document.elementsFromPoint(x, y);
-
     // let element: Element | undefined = elems && elems.length ? elems[0] : undefined;
-    let element: Element | undefined;
-
     // if ((win.document as any).caretPositionFromPoint) {
     //     const range = (win.document as any).caretPositionFromPoint(x, y);
     //     const node = range.offsetNode;
@@ -2702,36 +2668,67 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
     // } else if (win.document.caretRangeFromPoint) {
     // }
 
-    // let textNode: Node | undefined;
-    // let textNodeOffset = 0;
-
+    const domPointData: TDOMPointData = {
+        textNode: undefined,
+        textNodeOffset: -1,
+        element: undefined,
+    };
     const range = win.document.caretRangeFromPoint(x, y);
     if (range) {
         const node = range.startContainer;
-        // const offset = range.startOffset;
 
         if (node) {
             if (node.nodeType === Node.ELEMENT_NODE) {
-                element = node as Element;
+                domPointData.element = node as Element;
+                const childrenCount = domPointData.element.childNodes?.length; // childElementCount
+                if (childrenCount > 0 &&
+                    range.startOffset > 0 &&
+                    range.startOffset === range.endOffset &&
+                    range.startOffset < childrenCount) {
+                    let c = domPointData.element.childNodes[range.startOffset]; // .children
+                    if (c.nodeType === Node.ELEMENT_NODE) {
+                        domPointData.element = c as Element;
+                    } else if (c.nodeType === Node.TEXT_NODE && range.startOffset > 0) { // hack (weird image click bug)
+                        c = domPointData.element.childNodes[range.startOffset - 1];
+                        if (c.nodeType === Node.ELEMENT_NODE) {
+                            domPointData.element = c as Element;
+                        }
+                    }
+                }
             } else if (node.nodeType === Node.TEXT_NODE) {
-                // textNode = node;
-                // textNodeOffset = offset;
+                domPointData.textNode = node;
+                domPointData.textNodeOffset = range.startOffset;
                 if (node.parentNode && node.parentNode.nodeType === Node.ELEMENT_NODE) {
-                    element = node.parentNode as Element;
+                    domPointData.element = node.parentNode as Element;
                 }
             }
         }
     }
 
-    if (!element || element === win.document.body || element === win.document.documentElement) {
+    return domPointData;
+};
+
+// relative to fixed window top-left corner
+const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boolean) => {
+
+    if (isPopupDialogOpen(win.document)) {
+        return;
+    }
+
+    const domPointData = domDataFromPoint(x, y);
+
+    if (!domPointData.element ||
+        domPointData.element === win.document.body ||
+        domPointData.element === win.document.documentElement) {
+
         const root = win.document.body; // || win.document.documentElement;
-        element = findFirstVisibleElement(root);
-        if (!element) {
+        domPointData.element = findFirstVisibleElement(root);
+        if (!domPointData.element) {
             debug("|||||||||||||| cannot find visible element inside BODY / HTML????");
-            element = win.document.body;
+            domPointData.element = win.document.body;
         }
-    } else if (!userInteract && !computeVisibility_(element, undefined)) { // isPaginated(win.document)
-        let next: Element | undefined = element;
+    } else if (!userInteract && !computeVisibility_(domPointData.element, undefined)) { // isPaginated(win.document)
+        let next: Element | undefined = domPointData.element;
         let found: Element | undefined;
         while (next) {
             // const blacklisted = checkBlacklisted(next);
@@ -2758,7 +2755,7 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
             next = sibling ? sibling : undefined;
         }
         if (found) {
-            element = found;
+            domPointData.element = found;
         } else {
             debug("|||||||||||||| cannot find visible element after current????");
         }
@@ -2770,22 +2767,24 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
     //         debug(uniqueCssSelector(element, win.document, undefined));
     //     }
     // }
-    if (element === win.document.body || element === win.document.documentElement) {
+    if (domPointData.element === win.document.body ||
+        domPointData.element === win.document.documentElement) {
+
         debug("|||||||||||||| BODY/HTML selected????");
     }
-    if (element) {
+    if (domPointData.element) {
         if (userInteract ||
             !win.READIUM2.locationHashOverride ||
             win.READIUM2.locationHashOverride === win.document.body ||
             win.READIUM2.locationHashOverride === win.document.documentElement) {
 
-            win.READIUM2.locationHashOverride = element;
+            win.READIUM2.locationHashOverride = domPointData.element;
         } else {
             const visible = win.READIUM2.isFixedLayout ||
                 win.READIUM2.locationHashOverride === win.document.body ||
                 computeVisibility_(win.READIUM2.locationHashOverride, undefined);
             if (!visible) {
-                win.READIUM2.locationHashOverride = element;
+                win.READIUM2.locationHashOverride = domPointData.element;
             }
         }
 
@@ -2796,7 +2795,7 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
         }
 
         if (win.READIUM2.DEBUG_VISUALS) {
-            const el = win.READIUM2.locationHashOverride ? win.READIUM2.locationHashOverride : element;
+            const el = win.READIUM2.locationHashOverride ? win.READIUM2.locationHashOverride : domPointData.element;
             const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr2}]`);
             existings.forEach((existing) => {
                 existing.removeAttribute(`${readPosCssStylesAttr2}`);
