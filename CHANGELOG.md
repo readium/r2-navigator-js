@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.9.8...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.9.9...develop
 
 Changes:
 * TODO
+
+# 1.9.9
+
+> Build environment: NodeJS `16.13.1`, NPM `8.3.0`
+
+Changes:
+* Fix: headings trail leading to current reading location now supports missing ID by looking up to nearest linkable containing ancestor (common HTML authoring pattern: headings without ID have linkable section parent)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.9.9/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.9.9/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.9.9
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.9.8...v1.9.9
 
 # 1.9.8
 
