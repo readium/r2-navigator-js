@@ -108,6 +108,7 @@ export interface IEventPayload_R2_EVENT_READING_LOCATION extends Locator {
     // but target HTML document's epub:type="pagebreak" / role="doc-pagebreak"
     // (nearest preceding ancestor/sibling)
     epubPage: string | undefined;
+    headings: Array<{ id: string | undefined, txt: string | undefined, level: number }> | undefined;
 
     userInteract: boolean;
 

@@ -119,6 +119,7 @@ win.READIUM2 = {
         audioPlaybackInfo: undefined,
         docInfo: undefined,
         epubPage: undefined,
+        headings: undefined,
         href: "",
         locations: {
             cfi: undefined,
@@ -534,6 +535,7 @@ function resetLocationHashOverrideInfo() {
         audioPlaybackInfo: undefined,
         docInfo: undefined,
         epubPage: undefined,
+        headings: undefined,
         href: "",
         locations: {
             cfi: undefined,
@@ -3127,16 +3129,96 @@ function getCssSelector(element: Element): string {
     }
 }
 
+const _htmlNamespaces: { [prefix: string]: string } = {
+    epub: "http://www.idpf.org/2007/ops",
+    xhtml: "http://www.w3.org/1999/xhtml",
+};
+const _namespaceResolver = (prefix: string | null): string | null => {
+    if (!prefix) {
+        return null;
+    }
+    return _htmlNamespaces[prefix] || null;
+};
+// type XPathNSResolver =
+// ((prefix: string | null) => string | null) |
+// { lookupNamespaceURI(prefix: string | null): string | null; };
+// const namespaceResolver = win.document.createNSResolver(win.document.documentElement);
+
+interface IHeading {
+    element: Element;
+    level: number;
+    id: string | undefined;
+    text: string | undefined;
+}
+let _allHeadings: IHeading[] | undefined;
+const findPrecedingAncestorSiblingHeadings = (element: Element):
+    Array<{ id: string | undefined, txt: string | undefined, level: number }> | undefined => {
+
+    if (!_allHeadings) {
+        // const xpathResult = win.document.evaluate(
+        //     "//h1 | //h2 | //h3 | //h4 | //h5 | //h6",
+        //     win.document.body,
+        //     _namespaceResolver,
+        //     XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+        //     null);
+
+        // for (let i = 0; i < xpathResult.snapshotLength; i++) {
+        //     const n = xpathResult.snapshotItem(i);
+        const headingElements = Array.from(win.document.querySelectorAll("h1,h2,h3,h4,h5,h6"));
+        for (const n of headingElements) {
+            if (n) {
+                const el = n as Element;
+                const t = el.textContent || el.getAttribute("title") || el.getAttribute("aria-label");
+                const i = el.getAttribute("id");
+                const heading: IHeading = {
+                    element: el,
+                    id: i ? i : undefined,
+                    // level: el.localName.toLowerCase(),
+                    level: parseInt(el.localName.substring(1), 10),
+                    text: t ? t : undefined,
+                };
+                if (!_allHeadings) {
+                    _allHeadings = [];
+                }
+                _allHeadings.push(heading);
+            }
+        }
+
+        if (!_allHeadings) {
+            _allHeadings = [];
+        }
+
+        // debug("_allHeadings", JSON.stringify(_allHeadings, null, 4));
+        debug("_allHeadings", _allHeadings.length, headingElements.length); // xpathResult.snapshotLength
+    }
+
+    let arr: Array<{ id: string | undefined, txt: string | undefined, level: number }> | undefined;
+    for (let i = _allHeadings.length - 1; i >= 0; i--) {
+        const heading = _allHeadings[i];
+
+        const c = element.compareDocumentPosition(heading.element);
+        // tslint:disable-next-line: no-bitwise
+        if (c === 0 || (c & Node.DOCUMENT_POSITION_PRECEDING) || (c & Node.DOCUMENT_POSITION_CONTAINS)) {
+            debug("preceding or containing heading", heading.id, heading.text);
+            if (!arr) {
+                arr = [];
+            }
+            arr.push({
+                id: heading.id,
+                level: heading.level,
+                txt: heading.text,
+            });
+        }
+    }
+
+    return arr;
+};
+
 interface IPageBreak {
     element: Element;
     text: string;
 }
 let _allEpubPageBreaks: IPageBreak[] | undefined;
-
-const _htmlNamespaces: { [prefix: string]: string } = {
-    epub: "http://www.idpf.org/2007/ops",
-    xhtml: "http://www.w3.org/1999/xhtml",
-};
 const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): string | undefined => {
     if (!_allEpubPageBreaks) {
         // // @namespace epub "http://www.idpf.org/2007/ops";
@@ -3158,22 +3240,12 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): string | u
         // debug("_allEpubPageBreaks CSS selector", _allEpubPageBreaks.length);
         // _allEpubPageBreaks = undefined;
 
-        // type XPathNSResolver =
-        // ((prefix: string | null) => string | null) |
-        // { lookupNamespaceURI(prefix: string | null): string | null; };
-        // const namespaceResolver = win.document.createNSResolver(win.document.documentElement);
-        const namespaceResolver = (prefix: string | null): string | null => {
-            if (!prefix) {
-                return null;
-            }
-            return _htmlNamespaces[prefix] || null;
-        };
         const xpathResult = win.document.evaluate(
             // `//*[contains(@epub:type,'pagebreak')]`,
             // `//*[tokenize(@epub:type,'\s+')='pagebreak']`
             "//*[contains(concat(' ', normalize-space(@role), ' '), ' doc-pagebreak ')] | //*[contains(concat(' ', normalize-space(@epub:type), ' '), ' pagebreak ')]",
             win.document.body,
-            namespaceResolver,
+            _namespaceResolver,
             XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
             null);
 
@@ -3288,6 +3360,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
     }
 
     const epubPage = findPrecedingAncestorSiblingEpubPageBreak(win.READIUM2.locationHashOverride);
+    const headings = findPrecedingAncestorSiblingHeadings(win.READIUM2.locationHashOverride);
 
     const secondWebViewHref = win.READIUM2.urlQueryParams &&
         win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW] &&
@@ -3304,6 +3377,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
             isVerticalWritingMode: isVerticalWritingMode(),
         },
         epubPage,
+        headings,
         href: "", // filled-in from host index.js renderer
         locations: {
             cfi,

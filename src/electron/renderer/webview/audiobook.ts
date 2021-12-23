@@ -304,6 +304,7 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
                 isVerticalWritingMode: false,
             },
             epubPage: undefined,
+            headings: undefined,
             href: "", // filled-in from host index.js renderer
             locations: {
                 cfi: undefined,
