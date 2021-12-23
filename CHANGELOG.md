@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.9.7...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.9.8...develop
 
 Changes:
 * TODO
+
+# 1.9.8
+
+> Build environment: NodeJS `16.13.1`, NPM `8.3.0`
+
+Changes:
+* NPM package updates
+* Feature: headings trail leading to current reading location (similar to contextual EPUB page break reporting via locator extended event payload)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.9.8/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.9.8/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.9.8
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.9.7...v1.9.8
 
 # 1.9.7
 
