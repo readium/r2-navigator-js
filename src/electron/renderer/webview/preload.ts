@@ -3169,7 +3169,29 @@ const findPrecedingAncestorSiblingHeadings = (element: Element):
             if (n) {
                 const el = n as Element;
                 const t = el.textContent || el.getAttribute("title") || el.getAttribute("aria-label");
-                const i = el.getAttribute("id");
+                let i = el.getAttribute("id");
+                if (!i) { // common authoring pattern: parent section (or other container element) has the navigation target anchor
+                    let cur = el;
+                    let p: Element | null;
+                    while ((p = (cur.parentNode as Element | null)) &&
+                        p?.nodeType === Node.ELEMENT_NODE) {
+                        // debug(`------ PARENT ID LOOP 1 ${cur.tagName} ${p.tagName} (${p.tagName} - ${t})`);
+
+                        if (p.firstElementChild !== cur) {
+                            // debug(`------ PARENT ID LOOP 2 ${cur.tagName} ${p.tagName} (${p.tagName} - ${t})`);
+                            break;
+                        }
+
+                        const di = p.getAttribute("id");
+                        if (di) {
+                            // debug(`------ PARENT ID LOOP 3 ${cur.tagName} ${p.tagName} (${p.tagName} - ${t})`);
+                            i = di;
+                            break;
+                        }
+
+                        cur = p;
+                    }
+                }
                 const heading: IHeading = {
                     element: el,
                     id: i ? i : undefined,
@@ -3189,6 +3211,7 @@ const findPrecedingAncestorSiblingHeadings = (element: Element):
         }
 
         // debug("_allHeadings", JSON.stringify(_allHeadings, null, 4));
+        // JSON.stringify(_allHeadings, null, 4)
         debug("_allHeadings", _allHeadings.length, headingElements.length); // xpathResult.snapshotLength
     }
 
