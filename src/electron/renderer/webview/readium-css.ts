@@ -283,10 +283,11 @@ export function checkHiddenFootNotes(documant: Document) {
             //     continue;
             // }
             const iHash = href.indexOf("#");
-            if (iHash < 0) {
+            if (iHash <= 0) { // includes "#ID" (as opposed to "file.xhtml#ID")
                 continue;
             }
-            if (href.substr(iHash) === id) { // does not account for ?query-params
+            // href.substring(0, iHash)
+            if (href.substring(iHash) === id) { // TODO: does not account for ?query-params
                 found = true;
                 break;
             }
