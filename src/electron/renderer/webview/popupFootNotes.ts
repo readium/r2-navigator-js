@@ -5,6 +5,8 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import * as path from "path";
+
 import {
     CSS_CLASS_NO_FOCUS_OUTLINE, FOOTNOTES_CONTAINER_CLASS, ROOT_CLASS_NO_FOOTNOTES,
 } from "../../common/styles";
@@ -14,33 +16,16 @@ import { PopupDialog } from "../common/popup-dialog";
 //     READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl,
 // } from "../../common/sessions";
 
-export function popupFootNote(
+export async function popupFootNote(
     element: HTMLElement,
     focusScrollRaw:
         (el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => void,
     href: string,
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: (val: number) => void,
-): boolean {
+): Promise<boolean> {
 
-    const url = new URL(href);
-    if (!url.hash) { // includes #
-        return false;
-    }
-
-    const documant = element.ownerDocument as Document;
-
-    const hrefSelf = documant.location.href;
-    // if (hrefSelf.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
-    //     hrefSelf = convertCustomSchemeToHttpUrl(hrefSelf);
-    // }
-    const urlSelf = new URL(hrefSelf);
-    if (urlSelf.protocol !== url.protocol ||
-        urlSelf.origin !== url.origin ||
-        urlSelf.pathname !== url.pathname) {
-
-        return false;
-    }
+    let documant = element.ownerDocument as Document;
 
     if (!documant.documentElement ||
         documant.documentElement.classList.contains(ROOT_CLASS_NO_FOOTNOTES)) {
@@ -63,8 +48,96 @@ export function popupFootNote(
         return false;
     }
 
+    const url = new URL(href);
+    if (!url.hash) { // includes #
+        return false;
+    }
+
+    const hrefSelf = documant.location.href;
+    // if (hrefSelf.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+    //     hrefSelf = convertCustomSchemeToHttpUrl(hrefSelf);
+    // }
+    const urlSelf = new URL(hrefSelf);
+    if (urlSelf.protocol !== url.protocol ||
+        urlSelf.origin !== url.origin) {
+
+        return false;
+    }
+
+    if (urlSelf.pathname !== url.pathname) {
+        try {
+            const res = await fetch(href);
+            const txt = await res.text();
+            const domparser = new DOMParser();
+            documant = domparser.parseFromString(
+                txt,
+                "application/xhtml+xml");
+
+            const aNodeList = documant.querySelectorAll("a[href]");
+
+            // tslint:disable-next-line:prefer-for-of
+            for (let i = 0; i < aNodeList.length; i++) {
+                const aNode = aNodeList[i];
+                const href = aNode.getAttribute("href");
+                if (!href
+                    // || !href.startsWith(".")
+                    || href.startsWith("/")
+                    || href.startsWith("data:")
+                    || /^https?:\/\//.test(href)) {
+                    continue;
+                }
+
+                // HTMLLinkElement
+                // let linkHref = (aNode as HTMLAnchorElement | SVGAElement).href;
+                // if (!linkHref) {
+                //     continue;
+                // }
+                // if ((linkHref as SVGAnimatedString).animVal) {
+                //     linkHref = (linkHref as SVGAnimatedString).animVal;
+
+                //     if (!linkHref) {
+                //         continue;
+                //     }
+                // }
+                // const linkUrl = new URL(linkHref as string);
+
+                // we want linkHref (full URL) expressed as path relative to urlSelf (also full URL)
+                const from = path.dirname(urlSelf.pathname).replace(/\\/g, "/");
+                const too = url.pathname;
+                const relFromMainToNotes = path.relative(
+                    from,
+                    too,
+                ).replace(/\\/g, "/");
+                const relPath = relFromMainToNotes + "/../" + href;
+                console.log(from, too, relFromMainToNotes, relPath);
+
+                // const newUrl = new URL(linkHref as string, urlSelf);
+                // console.log(
+                //     href.replace(urlSelf.origin, ""),
+                //     (linkHref as string).replace(urlSelf.origin, ""),
+                //     (new URL(href, url)).toString().replace(urlSelf.origin, ""),
+                //     newUrl.toString().replace(urlSelf.origin, ""));
+
+                aNode.setAttribute("href", relPath);
+            }
+
+        } catch (e) {
+            console.log("EPUB FOOTNOTE FETCH FAIL: " + href, e);
+            return false;
+        }
+    }
+
+    // ==> we're in preload here, so not streamer-injected
+    // (unlike checkHiddenFootNotes() called from readium-css.ts)
+    //
+    // if (!documant.querySelector) { // TODO: polyfill querySelector[All]() ?
+    //     return; // when streamer-injected
+    // }
+    // ... AND even when we fetch an external HTML document,
+    // we use the webview DOM parser (not the NodeJS XML parser)
+
     // const targetElement = win.document.getElementById(url.hash.substr(1));
-    const targetElement = documant.querySelector(url.hash);
+    const targetElement = documant.querySelector(url.hash); // documant.getElementById(url.substring(1));
     if (!targetElement) {
         return false;
     }
@@ -94,7 +167,7 @@ export function popupFootNote(
     htmltxt = `<div id="${id_}" class="${FOOTNOTES_CONTAINER_CLASS} ${CSS_CLASS_NO_FOCUS_OUTLINE}" tabindex="0" autofocus="autofocus">${htmltxt}</div>`;
 
     // htmltxt = htmltxt.replace(/click=["']javascript:.+["']/g, " ");
-    // debug(htmltxt);
+    // console.log(htmltxt);
 
     // import * as xmldom from "xmldom";
     // not application/xhtml+xml because:
@@ -124,8 +197,8 @@ export function popupFootNote(
             pop.dialog.remove();
         }, 50);
     }
-    const pop = new PopupDialog(documant, htmltxt, onDialogClosed);
-
+    const pop = new PopupDialog(element.ownerDocument as Document, htmltxt, onDialogClosed);
     pop.show(element);
+
     return true;
 }

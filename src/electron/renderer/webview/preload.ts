@@ -2150,7 +2150,7 @@ function loaded(forced: boolean) {
         }, 1000);
     });
 
-    win.document.addEventListener("click", (ev: MouseEvent) => {
+    win.document.addEventListener("click", async (ev: MouseEvent) => {
 
         let currentElement = ev.target as Element;
         let href: string | SVGAnimatedString | undefined;
@@ -2190,7 +2190,7 @@ function loaded(forced: boolean) {
         ev.preventDefault();
         ev.stopPropagation();
 
-        const done = popupFootNote(
+        const done = await popupFootNote(
             currentElement as HTMLElement,
             focusScrollRaw,
             hrefStr,
