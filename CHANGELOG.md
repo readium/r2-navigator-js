@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.9.10...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.9.11...develop
 
 Changes:
 * TODO
+
+# 1.9.11
+
+> Build environment: NodeJS `16.13.1`, NPM `8.3.0`
+
+Changes:
+* Screen reader support: fix for hyperlink activation which causes mouse interaction depending on which keyboard shortcut is used to trigger the link (regular Enter keystroke vs. control-option-space in VoiceOver, for example)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.9.11/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.9.11/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.9.11
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.9.10...v1.9.11
 
 # 1.9.10
 
