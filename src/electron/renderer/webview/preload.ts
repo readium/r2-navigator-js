@@ -495,6 +495,7 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
 
     let delayScrollIntoView = false;
     if (payload.hash) {
+        debug(".hashElement = 1");
         win.READIUM2.hashElement = win.document.getElementById(payload.hash);
         if (win.READIUM2.DEBUG_VISUALS) {
             if (win.READIUM2.hashElement) {
@@ -1319,6 +1320,7 @@ const scrollToHashRaw = (animate: boolean) => {
                 }
                 if (selected) {
                     win.READIUM2.locationHashOverride = selected;
+                    debug(".hashElement = 2");
                     win.READIUM2.hashElement = selected;
 
                     resetLocationHashOverrideInfo();
@@ -1498,6 +1500,9 @@ function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean, animate: boolean
         return;
     }
 
+    debug(".hashElement = 3");
+    // underscore special link will prioritise hashElement!
+    win.READIUM2.hashElement = doFocus ? el as HTMLElement : win.READIUM2.hashElement;
     win.READIUM2.locationHashOverride = el as HTMLElement;
     notifyReadingLocationDebounced();
 }
@@ -1524,6 +1529,9 @@ function handleFocusInRaw(target: HTMLElement, _tabKeyDownEvent: KeyboardEvent |
         return;
     }
     // _ignoreFocusInEvent = true;
+
+    // doFocus is false (important, as otherwise
+    // underscore special link will prioritise hashElement)
     focusScrollRaw(target, false, false, undefined);
 }
 // function handleTabRaw(target: HTMLElement, tabKeyDownEvent: KeyboardEvent | undefined) {
@@ -1644,6 +1652,7 @@ win.addEventListener("DOMContentLoaded", () => {
     if (!win.READIUM2.isAudio &&
         win.location.hash && win.location.hash.length > 1) {
 
+        debug(".hashElement = 4");
         win.READIUM2.hashElement = win.document.getElementById(win.location.hash.substr(1));
         if (win.READIUM2.DEBUG_VISUALS) {
             if (win.READIUM2.hashElement) {
@@ -1916,14 +1925,17 @@ function loaded(forced: boolean) {
                 focusLink.setAttribute("tabindex", "0");
                 win.document.body.insertAdjacentElement("afterbegin", focusLink);
                 setTimeout(() => {
-                    focusLink.addEventListener("click", (_ev) => {
+                    focusLink.addEventListener("click", (ev) => {
+                        ev.preventDefault();
+
                         if (IS_DEV) {
-                            debug("focus link click:");
+                            debug(">>>> focus link click: ");
                             debug(win.READIUM2.hashElement ?
                                 getCssSelector(win.READIUM2.hashElement) : "!hashElement");
                             debug(win.READIUM2.locationHashOverride ?
                                 getCssSelector(win.READIUM2.locationHashOverride) : "!locationHashOverride");
                         }
+
                         const el = win.READIUM2.hashElement || win.READIUM2.locationHashOverride;
                         if (el) {
                             focusScrollDebounced(el as HTMLElement, true, false, undefined);
@@ -2463,6 +2475,29 @@ function loaded(forced: boolean) {
             return;
         }
 
+        // debug(".hashElement = 5 DEBUUUUUG");
+        // if (win.document.activeElement) {
+        //     debug("win.document.activeElement:");
+        //     debug(getCssSelector(win.document.activeElement));
+        // }
+        // const elSkip = win.document.getElementById(SKIP_LINK_ID);
+        // if (elSkip) {
+        //     debug("elSkip:");
+        //     debug(getCssSelector(elSkip));
+        // }
+        // debug("ROOT_CLASS_KEYBOARD_INTERACT: ", win.document.documentElement.classList.contains(ROOT_CLASS_KEYBOARD_INTERACT));
+
+        // screen reader a@href click event without ENTER key generates touch/user interaction!
+        if (win.document.activeElement &&
+            win.document.activeElement === win.document.getElementById(SKIP_LINK_ID)
+
+            // can't filter with this, because screen reader emulates mouse click!
+            // && win.document.documentElement.classList.contains(ROOT_CLASS_KEYBOARD_INTERACT)
+            ) {
+            debug(".hashElement = 5 => SKIP_LINK_ID mouse click event - screen reader VoiceOver generates mouse click / non-keyboard event");
+            return;
+        }
+
         // relative to fixed window top-left corner
         // (unlike pageX/Y which is relative to top-left rendered content area, subject to scrolling)
         const x = ev.clientX;
@@ -2729,7 +2764,7 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
             debug("|||||||||||||| cannot find visible element inside BODY / HTML????");
             domPointData.element = win.document.body;
         }
-    } else if (!userInteract && !computeVisibility_(domPointData.element, undefined)) { // isPaginated(win.document)
+    } else if (!userInteract && domPointData.element && !computeVisibility_(domPointData.element, undefined)) { // isPaginated(win.document)
         let next: Element | undefined = domPointData.element;
         let found: Element | undefined;
         while (next) {
@@ -2780,12 +2815,19 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
             win.READIUM2.locationHashOverride === win.document.body ||
             win.READIUM2.locationHashOverride === win.document.documentElement) {
 
+            debug(".hashElement = 5 ", userInteract);
+            // underscore special link will prioritise hashElement!
+            win.READIUM2.hashElement = userInteract ? domPointData.element : win.READIUM2.hashElement;
             win.READIUM2.locationHashOverride = domPointData.element;
         } else {
             const visible = win.READIUM2.isFixedLayout ||
                 win.READIUM2.locationHashOverride === win.document.body ||
                 computeVisibility_(win.READIUM2.locationHashOverride, undefined);
             if (!visible) {
+
+                debug(".hashElement = 6");
+                // underscore special link will prioritise hashElement!
+                win.READIUM2.hashElement = userInteract ? domPointData.element : win.READIUM2.hashElement;
                 win.READIUM2.locationHashOverride = domPointData.element;
             }
         }
@@ -3607,6 +3649,9 @@ if (!win.READIUM2.isAudio) {
                         }
                     }
 
+                    debug(".hashElement = 7");
+                    // underscore special link will prioritise hashElement!
+                    win.READIUM2.hashElement = targetEl;
                     win.READIUM2.locationHashOverride = targetEl;
                     scrollElementIntoView(targetEl, false, true, undefined);
                     scrollToHashDebounced.clear();
