@@ -5,7 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import * as xmldom from "xmldom";
+import * as xmldom from "@xmldom/xmldom";
 
 export function serializeDOM(documant: Document): string {
 

@@ -169,7 +169,7 @@ export async function popupFootNote(
     // htmltxt = htmltxt.replace(/click=["']javascript:.+["']/g, " ");
     // console.log(htmltxt);
 
-    // import * as xmldom from "xmldom";
+    // import * as xmldom from "@xmldom/xmldom";
     // not application/xhtml+xml because:
     // https://github.com/jindw/xmldom/pull/208
     // https://github.com/jindw/xmldom/pull/242
