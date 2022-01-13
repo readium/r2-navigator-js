@@ -28,6 +28,8 @@ export const FOOTNOTES_CONTAINER_CLASS = "r2-footnote-container";
 export const FOOTNOTES_CLOSE_BUTTON_CLASS = "r2-footnote-close";
 export const FOOTNOTE_FORCE_SHOW = "r2-footnote-force-show";
 
+export const POPOUTIMAGE_CONTAINER_CLASS = "r2-popoutimage-container";
+
 export const POPUP_DIALOG_CLASS = "r2-popup-dialog";
 export const POPUP_DIALOG_CLASS_COLLAPSE = "r2-popup-dialog-collapse";
 
@@ -114,6 +116,93 @@ export const footnotesCssStyles = `
 :root dialog#${POPUP_DIALOG_CLASS}.${POPUP_DIALOG_CLASS_COLLAPSE} {
     top: auto;
     height: 1px;
+}
+
+:root[style] .${POPOUTIMAGE_CONTAINER_CLASS},
+:root .${POPOUTIMAGE_CONTAINER_CLASS} {
+    grid-column-start: 1;
+    grid-column-end: 4;
+    grid-row-start: 1;
+    grid-row-end: 3;
+
+    outline-color: magenta !important;
+    outline-style: dashed !important;
+    outline-width: 6px !important;
+    outline-offset: -6px !important;
+
+    padding: 0;
+    margin: 0;
+
+    box-sizing: border-box;
+
+    cursor: pointer;
+
+    /* position: relative; */
+
+    display: flex;
+    /* no need for vertical / horizontal control, as we use margin:auto
+    justify-content: center;
+    align-items: center;
+    */
+
+    /* FXL, just in case the top-level transform scale isn't applied */
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+:root[style] img[data-${POPOUTIMAGE_CONTAINER_CLASS}],
+:root img[data-${POPOUTIMAGE_CONTAINER_CLASS}] {
+    outline-color: magenta !important;
+    outline-style: dashed !important;
+    outline-width: 10px !important;
+    outline-offset: 2px !important;
+
+    cursor: pointer !important;
+}
+
+:root[style] .${POPOUTIMAGE_CONTAINER_CLASS} > img,
+:root .${POPOUTIMAGE_CONTAINER_CLASS} > img {
+    transform-origin: 0px 0px;
+
+    box-sizing: border-box;
+    border: 4px solid #333333;
+
+    object-fit: cover !important;
+    cursor: pointer !important;
+
+    margin: auto !important;
+    position: relative !important;
+
+    max-height: 100% !important;
+    max-width: 100% !important;
+    width: auto !important;
+    height: auto !important;
+
+    /* vertical centering breaks image height
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: none !important;
+    height: auto !important;
+
+    position: absolute !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    margin: auto !important;
+    */
+
+    /* this works with position:relative in the parent (no need for flex)
+    max-height: 100% !important;
+    max-width: 100% !important;
+    width: auto !important;
+    height: auto !important;
+
+    position: absolute !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: auto !important;
+    */
 }
 
 :root[style] .${FOOTNOTES_CONTAINER_CLASS},

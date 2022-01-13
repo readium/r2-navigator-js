@@ -45,12 +45,12 @@ import {
 import { sameSelections } from "../../common/selection";
 import {
     CLASS_PAGINATED, CSS_CLASS_NO_FOCUS_OUTLINE, HIDE_CURSOR_CLASS, LINK_TARGET_CLASS,
-    POPUP_DIALOG_CLASS, POPUP_DIALOG_CLASS_COLLAPSE, R2_MO_CLASS_ACTIVE,
-    R2_MO_CLASS_ACTIVE_PLAYBACK, ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_INVISIBLE_MASK_REMOVED,
-    ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
-    ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_ID_SPEAKING_DOC_ELEMENT, WebViewSlotEnum,
-    ZERO_TRANSFORM_CLASS, readPosCssStylesAttr1, readPosCssStylesAttr2, readPosCssStylesAttr3,
-    readPosCssStylesAttr4,
+    POPOUTIMAGE_CONTAINER_CLASS, POPUP_DIALOG_CLASS, POPUP_DIALOG_CLASS_COLLAPSE,
+    R2_MO_CLASS_ACTIVE, R2_MO_CLASS_ACTIVE_PLAYBACK, ROOT_CLASS_INVISIBLE_MASK,
+    ROOT_CLASS_INVISIBLE_MASK_REMOVED, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX,
+    ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_ID_SPEAKING_DOC_ELEMENT,
+    WebViewSlotEnum, ZERO_TRANSFORM_CLASS, readPosCssStylesAttr1, readPosCssStylesAttr2,
+    readPosCssStylesAttr3, readPosCssStylesAttr4,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector2";
@@ -71,6 +71,7 @@ import {
     ID_HIGHLIGHTS_CONTAINER, createHighlights, destroyAllhighlights, destroyHighlight,
     recreateAllHighlights,
 } from "./highlight";
+import { popoutImage } from "./popoutImages";
 import { popupFootNote } from "./popupFootNotes";
 import {
     ttsNext, ttsPause, ttsPlay, ttsPlaybackRate, ttsPrevious, ttsResume, ttsStop, ttsVoice,
@@ -2161,6 +2162,75 @@ function loaded(forced: boolean) {
             win.document.documentElement.classList.add(HIDE_CURSOR_CLASS);
         }, 1000);
     });
+
+    const imageMouseExit = (ev: Event) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((ev.target as any)._r2ImageHoverTimer) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            win.clearTimeout((ev.target as any)._r2ImageHoverTimer);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (ev.target as any)._r2ImageHoverTimer = 0;
+        }
+        if ((ev.target as HTMLElement).hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`)) {
+            (ev.target as HTMLElement).removeAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`);
+        }
+    };
+    setTimeout(() => {
+        const images = win.document.querySelectorAll("img[src]");
+        images.forEach((img) => {
+
+            // mouseover
+            img.addEventListener("mousemove", (ev) => {
+
+                if ((ev as MouseEvent).shiftKey) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    if ((ev.target as any)._r2ImageHoverTimer) {
+                        return;
+                    }
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (ev.target as any)._r2ImageHoverTimer = win.setTimeout(() => {
+                        (ev.target as HTMLElement).setAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`, "1");
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        (ev.target as any)._r2ImageHoverTimer = 0;
+                    }, 400);
+                    return;
+                }
+                imageMouseExit(ev);
+            });
+            img.addEventListener("mouseleave", (ev) => {
+                imageMouseExit(ev);
+            });
+
+            // see capturing delegate below (DOM event handler priority)
+            // img.addEventListener("click", (ev) => {
+            //     if ((ev.target as HTMLElement).hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`)) {
+            //         //
+            //     }
+            // });
+        });
+    }, 800);
+
+    win.document.addEventListener("mousedown", async (ev: MouseEvent) => {
+
+        const currentElement = ev.target as Element;
+        if (// ev.shiftKey &&
+            currentElement &&
+            (currentElement as HTMLImageElement).src &&
+            currentElement.nodeType === Node.ELEMENT_NODE &&
+            currentElement.tagName.toLowerCase() === "img" &&
+            currentElement.hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`)) {
+
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            popoutImage(
+                win,
+                currentElement as HTMLImageElement,
+                focusScrollRaw,
+                ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+                ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
+        }
+    }, true);
 
     win.document.addEventListener("click", async (ev: MouseEvent) => {
 

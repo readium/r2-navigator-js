@@ -656,6 +656,7 @@ export function configureFixedLayout(
         // documant.documentElement.style.transform = `translateX(${tx}px) translateY(${ty}px) scale3d(${ratio}, ${ratio}, 0)`;
         // documant.documentElement.style.transform = `translate(${tx}px, ${ty}px) scale(${ratio})`;
         documant.documentElement.style.transform = `scale(${ratio})`;
+        // documant.documentElement.style.setProperty("--r2_fxl_scale", `${ratio}`);
     }
     return wh;
 }
@@ -746,6 +747,13 @@ export function appendCSS(documant: Document, mod: string, urlRoot: string) {
 
     if (mod === "before" && childElementCount && firstElementChild) {
         documant.head.insertBefore(linkElement, firstElementChild);
+
+        // https://github.com/readium/readium-css/issues/94
+        const styleElement = documant.createElement("style");
+        styleElement.setAttribute("id", idz + "-PATCH");
+        styleElement.setAttribute("type", "text/css");
+        styleElement.appendChild(documant.createTextNode("audio[controls] { width: revert; height: revert; }"));
+        documant.head.insertBefore(styleElement, firstElementChild);
     } else {
         documant.head.appendChild(linkElement);
     }

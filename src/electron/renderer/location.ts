@@ -136,9 +136,11 @@ export function locationHandleIpcMessage(
     if (eventChannel === R2_EVENT_LOCATOR_VISIBLE) {
         // noop
     } else if (eventChannel === R2_EVENT_SHIFT_VIEW_X) {
-        shiftWebview(activeWebView,
-            (eventArgs[0] as IEventPayload_R2_EVENT_SHIFT_VIEW_X).offset,
-            (eventArgs[0] as IEventPayload_R2_EVENT_SHIFT_VIEW_X).backgroundColor);
+        if (!activeWebView.hasAttribute("data-wv-fxl")) {
+            shiftWebview(activeWebView,
+                (eventArgs[0] as IEventPayload_R2_EVENT_SHIFT_VIEW_X).offset,
+                (eventArgs[0] as IEventPayload_R2_EVENT_SHIFT_VIEW_X).backgroundColor);
+        }
     } else if (eventChannel === R2_EVENT_PAGE_TURN_RES) {
         const publication = win.READIUM2.publication;
         const publicationURL = win.READIUM2.publicationURL;
