@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.9.13...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.9.14...develop
 
 Changes:
 * TODO
+
+# 1.9.14
+
+> Build environment: NodeJS `16.14.0`, NPM `8.5.2`
+
+Changes:
+* NPM package updates
+* Fix CSS overflow edge case which was breaking column pagination (see https://github.com/edrlab/thorium-reader/issues/1535#issuecomment-1059113442 )
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.9.14/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.9.14/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.9.14
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.9.13...v1.9.14
 
 # 1.9.13
 
