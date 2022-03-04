@@ -8,12 +8,12 @@
   '
 
   'electron-renderer:all': '
-    cpy "./ReadiumCSS/**/*" ../dist/ --cwd=./misc --parents --no-dir
+    cpy "./ReadiumCSS/" "../dist/" --cwd="./misc"
   '
 
   'copydist': '
-    cpy "./dist/**/*" ../r2-testapp-js/node_modules/r2-navigator-js/ --cwd=./ --parents --no-dir &&
-    cpy "./dist/**/*" ../readium-desktop/node_modules/r2-navigator-js/ --cwd=./ --parents --no-dir
+    cpy "./dist/" "../r2-testapp-js/node_modules/r2-navigator-js/" --cwd="./" &&
+    cpy "./dist/" "../readium-desktop/node_modules/r2-navigator-js/" --cwd="./"
   '
 
   'quick-build-dist': '
@@ -31,12 +31,12 @@
     (git pull || echo "pull") &&
     (git --no-pager status || echo status) &&
     ((rimraf "*" && echo rimrafOK) || echo rimrafNOK) &&
-    cpy ../r2-navigator-js/package.json . &&
-    cpy ../r2-navigator-js/package-lock.json . &&
-    cpy ../r2-navigator-js/LICENSE . &&
-    cpy ../r2-navigator-js/README.md . &&
-    cpy "./docs/**/*" ../r2-navigator-js-dist/ --cwd=../r2-navigator-js/ --parents --no-dir &&
-    cpy "./dist/**/*" ../r2-navigator-js-dist/ --cwd=../r2-navigator-js/ --parents --no-dir &&
+    cpy "../r2-navigator-js/package.json" . &&
+    cpy "../r2-navigator-js/package-lock.json" . &&
+    cpy "../r2-navigator-js/LICENSE" . &&
+    cpy "../r2-navigator-js/README.md" . &&
+    cpy "./docs/" "../r2-navigator-js-dist/" --cwd="../r2-navigator-js/" &&
+    cpy "./dist/" "../r2-navigator-js-dist/" --cwd="../r2-navigator-js/" &&
     (git add * || echo add) &&
     (git commit -a -m "add new dist" || echo commit) &&
     (git push --set-upstream origin develop || echo push) &&
