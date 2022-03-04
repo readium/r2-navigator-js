@@ -702,10 +702,26 @@ export const ROOT_CLASS_INVISIBLE_MASK = "r2-visibility-mask-class";
 export const ROOT_CLASS_INVISIBLE_MASK_REMOVED = "r2-visibility-mask-removed-class";
 export const visibilityMaskCssStyles = `
 
+:root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}),
+:root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) {
+    overflow: visible !important;
+}
+:root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body,
+:root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body {
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+}
+
 :root[style].${ROOT_CLASS_FIXED_LAYOUT},
 :root.${ROOT_CLASS_FIXED_LAYOUT} {
     overflow: hidden !important;
 }
+:root[style].${ROOT_CLASS_FIXED_LAYOUT} > body,
+:root.${ROOT_CLASS_FIXED_LAYOUT} > body {
+    overflow: hidden !important;
+    margin: 0 !important;
+}
+
 /*
 // This workaround fixes the issue of "bleeding" body background color due to scale+translate CSS 2D transform
 // https://github.com/edrlab/thorium-reader/issues/1529#issuecomment-900166745

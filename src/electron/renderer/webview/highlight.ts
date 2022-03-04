@@ -558,9 +558,6 @@ function ensureHighlightsContainer(win: IReadiumElectronWebviewWindow): HTMLElem
         // documant.documentElement.style.position = "relative";
         documant.body.style.position = "relative";
 
-        // see https://github.com/edrlab/thorium-reader/issues/1535
-        documant.body.style.overflow = "hidden";
-
         // documant.body.style.setProperty("position", "relative", "important");
 
         if (!bodyEventListenersSet) {

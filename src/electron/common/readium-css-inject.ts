@@ -182,7 +182,7 @@ export function readiumCSSSet(
     const docElement = documant.documentElement;
 
     if (messageJson.isFixedLayout) {
-        // docElement.style.overflow = "hidden";
+        // see visibilityMaskCssStyles
         docElement.classList.add(ROOT_CLASS_FIXED_LAYOUT);
         return; // exit early
     }
@@ -196,11 +196,15 @@ export function readiumCSSSet(
         removeAllCSS(documant);
         // removeAllCSSInline(documant);
 
-        if (messageJson.isFixedLayout) {
-            docElement.style.overflow = "hidden";
-        } else {
-            docElement.style.overflow = "auto";
-        }
+        // This is always false, see 'if (messageJson.isFixedLayout)' returned code branch, above
+        // if (messageJson.isFixedLayout) {
+        //     docElement.style.overflow = "hidden";
+        // } else {
+        //     docElement.style.overflow = "auto";
+        // }
+        // see https://github.com/edrlab/thorium-reader/issues/1535
+        // "auto" fails! ("revert", "inherit", etc. work)
+        // docElement.style.overflow = "visible";
 
         const toRemove: string[] = [];
         for (let i = 0; i < docElement.style.length; i++) {
@@ -330,11 +334,20 @@ export function readiumCSSSet(
     // readium-paged-on | readium-scroll-on
     docElement.style.setProperty("--USER__view",
         setCSS.paged ? "readium-paged-on" : "readium-scroll-on");
+
+    // see visibilityMaskCssStyles
     if (setCSS.paged) {
-        docElement.style.overflow = "hidden";
+        // see https://github.com/edrlab/thorium-reader/issues/1535
+        // docElement.style.overflow = "hidden";
+        // "auto" fails! ("revert", "inherit", etc. work)
+        // docElement.style.overflow = "visible";
+        // docElement.style.overflowX = "hidden";
+        // docElement.style.overflowY = "visible";
         docElement.classList.add(CLASS_PAGINATED);
     } else {
-        docElement.style.overflow = "auto";
+        // docElement.style.overflow = "auto";
+        // docElement.style.overflowX = "auto";
+        // docElement.style.overflowY = "auto";
         docElement.classList.remove(CLASS_PAGINATED);
     }
 
@@ -612,14 +625,15 @@ export function configureFixedLayout(
     if (innerWidth && innerHeight && width && height && isFixedLayout
         && documant && documant.documentElement && documant.body) {
 
-        // documant.documentElement.style.overflow = "hidden";
+        // see visibilityMaskCssStyles
         documant.documentElement.classList.add(ROOT_CLASS_FIXED_LAYOUT);
+        // documant.documentElement.style.overflow = "hidden";
+        // documant.body.style.overflow = "hidden";
+        // documant.body.style.margin = "0"; // 8px by default!
 
         // Many FXL EPUBs lack the body dimensions (only viewport meta)
         documant.body.style.width = width + "px";
         documant.body.style.height = height + "px";
-        documant.body.style.overflow = "hidden";
-        documant.body.style.margin = "0"; // 8px by default!
 
         if (isDEBUG_VISUALS(documant)) {
             debug("FXL width: " + width);
