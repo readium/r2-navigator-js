@@ -107,6 +107,7 @@
     eclint
       check
       "**/*"
+      "!**/package-lock.json"
       "!**/*.node"
       "!.git/**/*"
       "!node_modules*/**/*"

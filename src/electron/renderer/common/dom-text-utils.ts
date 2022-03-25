@@ -390,9 +390,15 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
             return;
         }
 
-        // tslint:disable-next-line:max-line-length
+        const tagNameLow = element.tagName ? element.tagName.toLowerCase() : undefined;
+        const putInElementStackTagNames = ["h1", "h2", "h3", "h4", "h5", "h6", "p", "th", "td", "caption", "li", "blockquote", "q", "dt", "dd", "figcaption", "div", "pre"];
+
         const putInElementStack = first ||
-            element.matches("h1, h2, h3, h4, h5, h6, p, th, td, caption, li, blockquote, q, dt, dd, figcaption, div, pre");
+            tagNameLow && putInElementStackTagNames.includes(tagNameLow)
+            // tslint:disable-next-line:max-line-length
+            // element.matches("h1, h2, h3, h4, h5, h6, p, th, td, caption, li, blockquote, q, dt, dd, figcaption, div, pre")
+            ;
+        
 
         first = false;
 
@@ -408,12 +414,32 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
 
                     const isMathJax = childTagNameLow && childTagNameLow.startsWith("mjx-");
                     const isMathML = childTagNameLow === "math";
+
+                    const dataSSMLAttr = childElement.getAttribute("data-ssml");
+                    let dataSSMLJSON;
+                    try {
+                        dataSSMLJSON = dataSSMLAttr ? JSON.parse(dataSSMLAttr) : undefined;
+                    } catch (e) {
+                        console.log(dataSSMLAttr, e);
+                    }
+                    const dataSSMLSubAliasAttr = childElement.getAttribute("data-ssml-sub-alias");
+                    let ssmlSubstitution = typeof dataSSMLJSON?.sub?.alias === "string" ? (dataSSMLJSON.sub.alias as string) :
+                        (dataSSMLSubAliasAttr ? dataSSMLSubAliasAttr : undefined);
+                    if (ssmlSubstitution) {
+                        ssmlSubstitution = ssmlSubstitution.trim();
+                    }
+
+                    // tslint:disable-next-line:max-line-length
+                    const doNotProcessDeepChildTagNames = ["svg", "img", "sup", "sub", "audio", "video", "source", "button", "canvas", "del", "dialog", "embed", "form", "head", "iframe", "meter", "noscript", "object", "s", "script", "select", "style", "textarea"]; // "code", "nav", "dl", "figure", "table", "ul", "ol"
+
                     const processDeepChild =
+                        !ssmlSubstitution &&
                         !isMathJax &&
                         !isMathML &&
+                        childTagNameLow && !doNotProcessDeepChildTagNames.includes(childTagNameLow)
                         // tslint:disable-next-line:max-line-length
-                        !childElement.matches("svg, img, sup, sub, audio, video, source, button, canvas, del, dialog, embed, form, head, iframe, meter, noscript, object, s, script, select, style, textarea");
-                    // code, nav, dl, figure, table, ul, ol
+                        // !childElement.matches("svg, img, sup, sub, audio, video, source, button, canvas, del, dialog, embed, form, head, iframe, meter, noscript, object, s, script, select, style, textarea") // code, nav, dl, figure, table, ul, ol
+                        ;
 
                     if (processDeepChild) {
                         processElement(childElement);
@@ -529,6 +555,39 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                     break;
                                 }
                             }
+                        } else if (ssmlSubstitution) {
+                            const lang = getLanguage(childElement);
+                            const dir = undefined;
+                            ttsQueue.push({
+                                combinedText: ssmlSubstitution,
+                                combinedTextSentences: undefined,
+                                combinedTextSentencesRangeBegin: undefined,
+                                combinedTextSentencesRangeEnd: undefined,
+                                dir,
+                                lang,
+                                parentElement: childElement,
+                                textNodes: [],
+                            });
+                        } else if (childTagNameLow === "img" &&
+                            (childElement as HTMLImageElement).src) {
+                            const altAttr = childElement.getAttribute("alt");
+                            if (altAttr) {
+                                const txt = altAttr.trim();
+                                if (txt) {
+                                    const lang = getLanguage(childElement);
+                                    const dir = undefined;
+                                    ttsQueue.push({
+                                        combinedText: txt,
+                                        combinedTextSentences: undefined,
+                                        combinedTextSentencesRangeBegin: undefined,
+                                        combinedTextSentencesRangeEnd: undefined,
+                                        dir,
+                                        lang,
+                                        parentElement: childElement,
+                                        textNodes: [],
+                                    });
+                                }
+                            }
                         } else if (childTagNameLow === "img" &&
                             (childElement as HTMLImageElement).src) {
                             const altAttr = childElement.getAttribute("alt");
@@ -629,8 +688,11 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
         while (parent) {
             if (parent.tagName) {
                 const tag = parent.tagName.toLowerCase();
+
                 if (tag === "pre" || tag === "code" ||
-                    tag === "video" || tag === "audio") {
+                    tag === "video" || tag === "audio" ||
+                    tag === "img" || tag === "svg" ||
+                    tag === "math" || tag.startsWith("mjx-")) {
                     skipSplitSentences = true;
                     break;
                 }
