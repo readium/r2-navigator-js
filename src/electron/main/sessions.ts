@@ -956,6 +956,7 @@ export async function clearSession(sess: Electron.Session, str: string): Promise
             // "shadercache",
             // "websql",
             "serviceworkers",
+            "cachestorage",
         ],
     });
 
