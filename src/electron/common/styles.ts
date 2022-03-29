@@ -702,6 +702,16 @@ export const ROOT_CLASS_INVISIBLE_MASK = "r2-visibility-mask-class";
 export const ROOT_CLASS_INVISIBLE_MASK_REMOVED = "r2-visibility-mask-removed-class";
 export const visibilityMaskCssStyles = `
 
+/*
+https://github.com/readium/readium-css/issues/117
+no new stacking context, otherwise massive performance degradation with CSS Columns in large HTML documents
+(web inspector profiler shows long paint times, some layout recalc triggers too)
+*/
+:root {
+    -webkit-perspective: none !important;
+    perspective: none !important;
+}
+
 :root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}),
 :root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) {
     overflow: visible !important;
