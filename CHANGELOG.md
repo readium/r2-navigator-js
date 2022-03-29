@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.9.14...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.10.0...develop
 
 Changes:
 * TODO
+
+# 1.10.0
+
+> Build environment: NodeJS `16.14.2`, NPM `8.5.5`
+
+Changes:
+* NPM package updates (including Electron 18)
+* Fix Readium CSS -webkit-perspective stacking context hack (CSS column layout performance)
+* Attempted fix for Electron window.localStorage regression (partition session)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.10.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.10.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.10.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.9.14...v1.10.0
 
 # 1.9.14
 
