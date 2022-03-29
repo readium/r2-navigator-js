@@ -31,10 +31,10 @@
     (git pull || echo "pull") &&
     (git --no-pager status || echo status) &&
     ((rimraf "*" && echo rimrafOK) || echo rimrafNOK) &&
-    cpy "../r2-navigator-js/package.json" . &&
-    cpy "../r2-navigator-js/package-lock.json" . &&
-    cpy "../r2-navigator-js/LICENSE" . &&
-    cpy "../r2-navigator-js/README.md" . &&
+    cpy --flat "../r2-navigator-js/package.json" . &&
+    cpy --flat "../r2-navigator-js/package-lock.json" . &&
+    cpy --flat "../r2-navigator-js/LICENSE" . &&
+    cpy --flat "../r2-navigator-js/README.md" . &&
     cpy "./docs/" "../r2-navigator-js-dist/" --cwd="../r2-navigator-js/" &&
     cpy "./dist/" "../r2-navigator-js-dist/" --cwd="../r2-navigator-js/" &&
     (git add * || echo add) &&

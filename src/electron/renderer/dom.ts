@@ -614,43 +614,43 @@ export function installNavigatorDOM(
     if (IS_DEV) {
         debug("||||||++||||| installNavigatorDOM: ", JSON.stringify(location));
 
-        // const debugVisualz = (window.localStorage &&
-        //     window.localStorage.getItem(URL_PARAM_DEBUG_VISUALS) === "true") ? true : false;
-        // debug("debugVisuals GET: ", debugVisualz);
+        const debugVisualz = (window.localStorage &&
+            window.localStorage.getItem(URL_PARAM_DEBUG_VISUALS) === "true") ? true : false;
+        debug("debugVisuals GET: ", debugVisualz);
 
-        // win.READIUM2.DEBUG_VISUALS = debugVisualz;
+        win.READIUM2.DEBUG_VISUALS = debugVisualz;
 
-        // // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        // (window as any).READIUM2.debug = async (debugVisuals: boolean) => {
-        //     debug("debugVisuals SET: ", debugVisuals);
-        //     win.READIUM2.DEBUG_VISUALS = debugVisuals;
-        //     if (window.localStorage) {
-        //         window.localStorage.setItem(URL_PARAM_DEBUG_VISUALS, debugVisuals ? "true" : "false");
-        //     }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).READIUM2.debug = async (debugVisuals: boolean) => {
+            debug("debugVisuals SET: ", debugVisuals);
+            win.READIUM2.DEBUG_VISUALS = debugVisuals;
+            if (window.localStorage) {
+                window.localStorage.setItem(URL_PARAM_DEBUG_VISUALS, debugVisuals ? "true" : "false");
+            }
 
-        //     const loc = getCurrentReadingLocation();
+            const loc = getCurrentReadingLocation();
 
-        //     const activeWebViews = win.READIUM2.getActiveWebViews();
-        //     for (const activeWebView of activeWebViews) {
-        //         const payload: IEventPayload_R2_EVENT_DEBUG_VISUALS = { debugVisuals };
-        //         setTimeout(async () => {
-        //             await activeWebView.send(R2_EVENT_DEBUG_VISUALS, payload);
-        //         }, 0);
-        //         if (loc && loc.locator.href === activeWebView.READIUM2.link?.Href) {
+            const activeWebViews = win.READIUM2.getActiveWebViews();
+            for (const activeWebView of activeWebViews) {
+                const payload: IEventPayload_R2_EVENT_DEBUG_VISUALS = { debugVisuals };
+                setTimeout(async () => {
+                    await activeWebView.send(R2_EVENT_DEBUG_VISUALS, payload);
+                }, 0);
+                if (loc && loc.locator.href === activeWebView.READIUM2.link?.Href) {
 
-        //             await new Promise<void>((res, _rej) => {
-        //                 setTimeout(() => {
-        //                     debug("READIUM2.debug -> handleLinkLocator");
-        //                     handleLinkLocator(
-        //                         loc.locator,
-        //                         activeWebView.READIUM2.readiumCss,
-        //                     );
-        //                     res();
-        //                 }, 100);
-        //             });
-        //         }
-        //     }
-        // };
+                    await new Promise<void>((res, _rej) => {
+                        setTimeout(() => {
+                            debug("READIUM2.debug -> handleLinkLocator");
+                            handleLinkLocator(
+                                loc.locator,
+                                activeWebView.READIUM2.readiumCss,
+                            );
+                            res();
+                        }, 100);
+                    });
+                }
+            }
+        };
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).READIUM2.debugItems =
