@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.10.0...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.10.1...develop
 
 Changes:
 * TODO
+
+# 1.10.1
+
+> Build environment: NodeJS `16.15.0`, NPM `8.9.0`
+
+Changes:
+* NPM package updates
+* Fix CSS body position:relative with height:inherit
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.10.1/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.10.1/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.10.1
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.10.0...v1.10.1
 
 # 1.10.0
 
