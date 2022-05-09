@@ -556,12 +556,12 @@ function ensureHighlightsContainer(win: IReadiumElectronWebviewWindow): HTMLElem
         // Note that legacy ResizeSensor sets body position to "relative" (default static).
         // Also note that ReadiumCSS default to (via stylesheet :root):
         // documant.documentElement.style.position = "relative";
-        documant.body.style.position = "relative";
-
-        // https://github.com/edrlab/thorium-reader/issues/1658
-        documant.body.style.height = "inherit";
-
+        // see styles.js (static CSS injection):
+        // documant.documentElement.style.setProperty("height", "100vh", "important");
+        // documant.body.style.position = "relative";
         // documant.body.style.setProperty("position", "relative", "important");
+        // documant.body.style.height = "inherit";
+        // https://github.com/edrlab/thorium-reader/issues/1658
 
         if (!bodyEventListenersSet) {
             bodyEventListenersSet = true;

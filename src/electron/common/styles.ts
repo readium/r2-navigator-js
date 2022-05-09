@@ -732,6 +732,22 @@ no new stacking context, otherwise massive performance degradation with CSS Colu
     margin: 0 !important;
 }
 
+:root.${exports.CLASS_PAGINATED} > body,
+:root:not(.${exports.CLASS_PAGINATED}) > body,
+:root.${exports.ROOT_CLASS_FIXED_LAYOUT} > body,
+:root:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body {
+    position: relative !important; /* see ensureHighlightsContainer() */
+}
+
+:root[style]:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}),
+:root:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) {
+    height: 100vh !important;
+}
+:root[style]:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body,
+:root:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body {
+    height: inherit;
+}
+
 /*
 // This workaround fixes the issue of "bleeding" body background color due to scale+translate CSS 2D transform
 // https://github.com/edrlab/thorium-reader/issues/1529#issuecomment-900166745
