@@ -735,16 +735,37 @@ no new stacking context, otherwise massive performance degradation with CSS Colu
 :root.${exports.CLASS_PAGINATED} > body,
 :root:not(.${exports.CLASS_PAGINATED}) > body,
 :root.${exports.ROOT_CLASS_FIXED_LAYOUT} > body,
-:root:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body {
-    position: relative !important; /* see ensureHighlightsContainer() */
+:root:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body,
+:root[style].${exports.CLASS_PAGINATED} > body,
+:root[style]:not(.${exports.CLASS_PAGINATED}) > body,
+:root[style].${exports.ROOT_CLASS_FIXED_LAYOUT} > body,
+:root[style]:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body {
+    /* see ensureHighlightsContainer() */
+    position: relative !important;
+    /* display: block; */
 }
 
 :root[style]:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}),
 :root:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) {
     height: 100vh !important;
 }
+
+:root[style].${exports.CLASS_PAGINATED}:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}),
+:root.${exports.CLASS_PAGINATED}:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) {
+    /* display: block; */
+    /*
+    Chrome Electron 19 - Chrome v102 CSS regression bug!
+    display: flex; ... then transition to block or flow-root
+    See SKIP_LINK_ID rules below :(
+    (hacky, but works without regressions or layout shift)
+    */
+}
 :root[style]:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body,
 :root:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body {
+    min-height: inherit;
+}
+:root[style]:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body,
+:root:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body {
     height: inherit;
 }
 
@@ -786,21 +807,21 @@ export const CSS_CLASS_NO_FOCUS_OUTLINE = "r2-no-focus-outline";
 export const focusCssStyles = `
 
 #${SKIP_LINK_ID} {
-    display: block;
-    overflow: hidden;
-    visibility: visible;
-    opacity: 1;
-    position: absolute;
-    left: 10px;
-    top: 10px;
-    width: 1px;
-    height: 1px;
-    background-color: transparent;
-    color: transparent;
-    padding: 0;
-    margin: 0;
-    border: 0;
-    outline: 0;
+    display: flex !important;
+    overflow: hidden !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: absolute !important;
+    left: 0px !important;
+    top: 0px !important;
+    width: 1px !important;
+    height: 1px !important;
+    background-color: transparent !important;
+    color: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
 }
 /*
 #${SKIP_LINK_ID}:focus {
