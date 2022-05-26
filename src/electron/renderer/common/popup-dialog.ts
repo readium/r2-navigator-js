@@ -10,7 +10,7 @@ import * as tabbable from "tabbable";
 import { FOOTNOTES_CONTAINER_CLASS, POPUP_DIALOG_CLASS } from "../../common/styles";
 
 // HTMLDialogElement deprecated in TypeScript DOM type definitions!
-export interface IHTMLDialogElementWithPopup extends HTMLElement {
+export interface IHTMLDialogElementWithPopup extends HTMLDialogElement {
     popDialog: PopupDialog | undefined;
     close: () => void;
     showModal: () => void;
