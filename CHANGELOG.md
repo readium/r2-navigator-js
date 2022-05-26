@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.10.2...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.11.0...develop
 
 Changes:
 * TODO
+
+# 1.11.0
+
+> Build environment: NodeJS `16.15.0`, NPM `8.10.0`
+
+Changes:
+* Updated NPM packages, notably Electron v19
+* Bugfix for CSS regression in Chromium v102 (flex / flow-root reset breaking CSS columns layout)
+* Improved previous fix for CSS height:inherit, now using min-height in column pagination to allow full extent, but retain previous strategy in scrolling mode.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.11.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.11.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.11.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.10.2...v1.11.0
 
 # 1.10.2
 
