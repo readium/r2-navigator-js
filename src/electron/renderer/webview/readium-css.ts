@@ -283,9 +283,17 @@ export function checkHiddenFootNotes(documant: Document) {
             //     continue;
             // }
             const iHash = href.indexOf("#");
-            if (iHash <= 0) { // includes "#ID" (as opposed to "file.xhtml#ID")
+            if (iHash < 0) { // includes "#ID" (as opposed to "file.xhtml#ID")
                 continue;
             }
+
+            // TODO? (edge case) link to external HTML document fragment (not this "documant")
+            // with _exact_ same #ID => leaves note content hidden instead of forcing it to show!
+            // e.g. window.location.herf == chapter1.html
+            //      a@href == chapter2.html#id1
+            //      ==> aside#id1 in chapter1.html remains hidden
+            //          even though it may in fact not be linked from chapter1.html
+
             // href.substring(0, iHash)
             if (href.substring(iHash) === id) { // TODO: does not account for ?query-params
                 found = true;
