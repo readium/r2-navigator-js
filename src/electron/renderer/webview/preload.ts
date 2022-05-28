@@ -2047,9 +2047,11 @@ function loaded(forced: boolean) {
         if (ev.target) {
             let ignoreIncomingMouseClickOnFocusable = false;
             if (win.document && win.document.documentElement) {
-                if (!win.document.documentElement.classList.contains(ROOT_CLASS_KEYBOARD_INTERACT)) {
-                    if (
-                        (ev.target as HTMLElement).tagName.toLowerCase() === "a" &&
+                const low = (ev.target as HTMLElement).tagName.toLowerCase();
+                if (low === "body") {
+                    ignoreIncomingMouseClickOnFocusable = true;
+                } else if (!win.document.documentElement.classList.contains(ROOT_CLASS_KEYBOARD_INTERACT)) {
+                    if (low === "a" &&
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         (ev.target as any).href
                         ||
