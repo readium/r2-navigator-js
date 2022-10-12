@@ -255,7 +255,16 @@ export function locationHandleIpcMessage(
             debug(`R2_EVENT_LINK ABSOLUTE-ized: ${href}`);
         }
 
-        handleLinkUrl(href, activeWebView.READIUM2.readiumCss);
+        const eventPayload: IEventPayload_R2_EVENT_LINK = {
+            url: href,
+            rcss: activeWebView.READIUM2.readiumCss,
+        };
+        // ipcRenderer.sendTo(activeWebView.getWebContentsId(), R2_EVENT_LINK, eventPayload);
+        // ipcRenderer.sendToHost(R2_EVENT_LINK, eventPayload);
+        // activeWebView.send(R2_EVENT_LINK, eventPayload);
+        ipcRenderer.emit(R2_EVENT_LINK, eventPayload);
+        // see ipcRenderer.on(R2_EVENT_LINK...) below!
+        // handleLinkUrl(href, activeWebView.READIUM2.readiumCss);
     } else if (eventChannel === R2_EVENT_AUDIO_PLAYBACK_RATE) {
         // debug("R2_EVENT_AUDIO_PLAYBACK_RATE (webview.addEventListener('ipc-message')");
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_AUDIO_PLAYBACK_RATE;
@@ -267,16 +276,20 @@ export function locationHandleIpcMessage(
 }
 
 // see webview.addEventListener("ipc-message", ...)
-// needed for main process browserWindow.webContents.send()
+// also needed for main process browserWindow.webContents.send()
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-ipcRenderer.on(R2_EVENT_LINK, (_event: any, payload: IEventPayload_R2_EVENT_LINK) => {
+ipcRenderer.on(R2_EVENT_LINK, (event: Electron.IpcRendererEvent, payload: IEventPayload_R2_EVENT_LINK) => {
     debug("R2_EVENT_LINK (ipcRenderer.on)");
-    debug(payload.url);
+    // see ipcRenderer.emit(R2_EVENT_LINK...) above!
+    const pay = (!payload && (event as unknown as IEventPayload_R2_EVENT_LINK).url) ? event as unknown as IEventPayload_R2_EVENT_LINK : payload;
+    debug(pay.url);
 
-    const activeWebView = win.READIUM2.getFirstOrSecondWebView();
+    const activeWebView = pay.rcss ? undefined : win.READIUM2.getFirstOrSecondWebView();
     handleLinkUrl(
-        payload.url,
-        activeWebView ? activeWebView.READIUM2.readiumCss : undefined);
+        pay.url,
+        pay.rcss ? pay.rcss :
+        (activeWebView ? activeWebView.READIUM2.readiumCss : undefined),
+    );
 });
 
 export function shiftWebview(webview: IReadiumElectronWebview, offset: number, backgroundColor: string | undefined) {

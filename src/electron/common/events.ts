@@ -123,6 +123,7 @@ export const R2_EVENT_LINK = "R2_EVENT_LINK";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_LINK {
     url: string;
+    rcss?: IEventPayload_R2_EVENT_READIUMCSS | undefined;
 }
 
 // in WEBVIEW: ipcRenderer.sendToHost()
