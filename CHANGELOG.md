@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.11.1...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.11.2...develop
 
 Changes:
 * TODO
+
+# 1.11.2
+
+> Build environment: NodeJS `16.17.0`, NPM `8.19.1`
+
+Changes:
+* feature: internal document link handling now via IPC renderer process event emitter (local) so it can be intercepted for external additional logic (e.g. history state)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.11.2/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.11.2/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.11.2
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.11.1...v1.11.2
 
 # 1.11.1
 
