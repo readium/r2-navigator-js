@@ -12,7 +12,7 @@ import { CONTEXT_MENU_SETUP } from "../common/context-menu";
 import {
     IEventPayload_R2_EVENT_LINK, R2_EVENT_KEYBOARD_FOCUS_REQUEST, R2_EVENT_LINK,
 } from "../common/events";
-import { R2_SESSION_WEBVIEW, READIUM2_ELECTRON_HTTP_PROTOCOL } from "../common/sessions";
+import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../common/sessions";
 
 const debug = debug_("r2:navigator#electron/main/browser-window-tracker");
 
@@ -152,17 +152,18 @@ app.on("web-contents-created", (_evt, wc) => {
         if (params.src && !params.src.startsWith("data:")) {
             debug(params.src);
         }
+        debug(webPreferences);
 
         // delete webPreferences.preload;
         // delete webPreferences.preloadURL;
 
-        webPreferences.contextIsolation = false;
-        webPreferences.javascript = true;
-        webPreferences.webSecurity = true;
-        webPreferences.nodeIntegration = false;
-        webPreferences.nodeIntegrationInWorker = false;
-        webPreferences.allowRunningInsecureContent = false;
-        webPreferences.partition = R2_SESSION_WEBVIEW;
+        // webPreferences.contextIsolation = false;
+        // webPreferences.javascript = true;
+        // webPreferences.webSecurity = true;
+        // webPreferences.nodeIntegration = false;
+        // webPreferences.nodeIntegrationInWorker = false;
+        // webPreferences.allowRunningInsecureContent = false;
+        // webPreferences.partition = R2_SESSION_WEBVIEW;
 
         // works in Electron v3 because webPreferences is any instead of WebPreferences
         // webPreferences.enableRemoteModule = false;
