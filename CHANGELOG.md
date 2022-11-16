@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.11.2...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.11.3...develop
 
 Changes:
 * TODO
+
+# 1.11.3
+
+> Build environment: NodeJS `18.12.1`, NPM `9.1.1`
+
+Changes:
+* NPM package updates
+* CSS fix for Chromium regression (broken overflow hidden/clip style, column pagination)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.11.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.11.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.11.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.11.2...v1.11.3
 
 # 1.11.2
 
