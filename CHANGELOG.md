@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.11.4...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.11.5...develop
 
 Changes:
 * TODO
+
+# 1.11.5
+
+> Build environment: NodeJS `18.12.1`, NPM `9.1.2`
+
+Changes:
+* Fix: pagebreak (role or epub:type) in EPUB HTML documents can have empty text, to be correlated later with authored pagelist in navigation document (if any) via the target element ID (if any). Also take into account first available page break in HTML markup that does not have significant preceding text, when no specific text cursor is placed in chapter yet.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.11.5/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.11.5/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.11.5
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.11.4...v1.11.5
 
 # 1.11.4
 

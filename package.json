@@ -1,6 +1,6 @@
 {
   "name": "r2-navigator-js",
-  "version": "1.11.4",
+  "version": "1.11.5",
   "description": "Readium 2 'navigator' for NodeJS (TypeScript)",
   "keywords": [
     "readium",
