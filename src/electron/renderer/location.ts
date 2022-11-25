@@ -1500,6 +1500,8 @@ export interface LocatorExtended {
     // but target HTML document's epub:type="pagebreak" / role="doc-pagebreak"
     // (nearest preceding ancestor/sibling)
     epubPage: string | undefined;
+    epubPageID: string | undefined;
+
     headings: Array<{ id: string | undefined, txt: string | undefined, level: number }> | undefined;
 
     secondWebViewHref: string | undefined;
@@ -1556,6 +1558,7 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
         audioPlaybackInfo: locator.audioPlaybackInfo,
         docInfo: locator.docInfo,
         epubPage: locator.epubPage,
+        epubPageID: locator.epubPageID,
         headings: locator.headings,
         locator: {
             href: docHref,
