@@ -764,7 +764,20 @@ function loadLink(
         const slotOfFirstPageInSpread = rtl ? PageEnum.Right : PageEnum.Left;
         const slotOfSecondPageInSpread = slotOfFirstPageInSpread === PageEnum.Right ? PageEnum.Left : PageEnum.Right;
 
+        // console.log(">>>+++--- " + rcss?.setCSS?.colCount + " --- " + win.READIUM2.domSlidingViewport?.clientWidth + " // " + win.READIUM2.domSlidingViewport?.clientHeight);
+        const linkSpreadNoneForced = rcss?.setCSS?.colCount === "1" || // colCountEnum.one
+            rcss?.setCSS?.colCount === "auto" && // colCountEnum.auto ... excludes colCountEnum.two
+            win.READIUM2.domSlidingViewport &&
+            win.READIUM2.domSlidingViewport.clientWidth !== 0 &&
+            win.READIUM2.domSlidingViewport.clientHeight !== 0 &&
+            win.READIUM2.domSlidingViewport.clientWidth < win.READIUM2.domSlidingViewport.clientHeight;
+
         publication.Spine.forEach((spineLink, i) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (spineLink as any).__notInSpread = false;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (spineLink as any).__notInSpreadForced = false;
+
             if (!isFixedLayout(spineLink)) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (spineLink as any).__notInSpread = true;
@@ -774,7 +787,13 @@ function loadLink(
                 spineLink.Properties.Page = PageEnum.Center;
                 return; // continue
             }
-            const linkSpreadNone = spineLink.Properties?.Spread === SpreadEnum.None;
+
+            if (linkSpreadNoneForced) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (spineLink as any).__notInSpreadForced = true;
+            }
+            const linkSpreadNone = linkSpreadNoneForced || spineLink.Properties?.Spread === SpreadEnum.None;
+
             const linkSpreadOther = !linkSpreadNone && spineLink.Properties?.Spread;
             const notInSpread = linkSpreadNone || (publicationSpreadNone && !linkSpreadOther);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -804,7 +823,8 @@ function loadLink(
         });
 
         const prev = previous ? true : false;
-        const page = pubLink.Properties?.Page;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const page = (pubLink as any).__notInSpreadForced ? PageEnum.Center : pubLink.Properties?.Page;
         if (page === PageEnum.Left) {
             webViewSlot = WebViewSlotEnum.left;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
