@@ -1920,6 +1920,17 @@ function loaded(forced: boolean) {
             scrollToHashDebounced(false);
 
             if (win.document.body) {
+                /*
+                if (isPaginated(win.document)) {
+                    win.document.body.addEventListener("scroll", (ev) => {
+                        if (isPaginated(win.document)) {
+                            console.log("BODY SCROLL PREVENT");
+                            ev.preventDefault();
+                        }
+                    });
+                }
+                */
+
                 const focusLink = win.document.createElement("a");
                 focusLink.setAttribute("id", SKIP_LINK_ID);
                 focusLink.appendChild(win.document.createTextNode(INJECTED_LINK_TXT));

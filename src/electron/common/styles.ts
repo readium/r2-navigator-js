@@ -719,13 +719,26 @@ no new stacking context, otherwise massive performance degradation with CSS Colu
 :root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body,
 :root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body {
     /*
-    Electron v19 --> v23 breaking change :(
+    Electron v19 --> v21 breaking change :(
+    ("hidden" is now "clip")
     overflow-x: hidden !important;
     overflow-y: visible !important;
     */
     overflow-x: clip !important;
     overflow-y: visible !important;
 }
+
+/*
+This only visually hides the scrollbars,
+this does not prevent user-scrolling with keyboard arrows, space, drag on character selection, mouse wheel, etc.
+We cannot completely disable "scroll" event (prevent default) because we need to detect when user keyboard-tabs through hyperlinks, in order to reset the correct scroll offset programmatically (page alignment on CSS column boundaries).
+...so we continue to use "clip" for "overflow-x" (see above)
+
+:root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body::-webkit-scrollbar,
+:root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body::-webkit-scrollbar {
+    display: none;
+}
+*/
 
 :root[style].${ROOT_CLASS_FIXED_LAYOUT},
 :root.${ROOT_CLASS_FIXED_LAYOUT} {
