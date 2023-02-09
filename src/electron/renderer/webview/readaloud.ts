@@ -494,13 +494,15 @@ function wrapHighlightWord(
             _dialogState.focusScrollRaw(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect);
         }
 
-        const rangeInfo = convertRange(
+        const tuple = convertRange(
             range,
             getCssSelector,
             (_node: Node) => ""); // computeElementCFI
-        if (!rangeInfo) {
+        if (!tuple) {
             return;
         }
+        const rangeInfo = tuple[0];
+        const textInfo = tuple[1];
 
         const highlightDefinitions = [
             {
@@ -513,9 +515,15 @@ function wrapHighlightWord(
                 drawType: HighlightDrawTypeUnderline,
                 expand: 2,
                 selectionInfo: {
-                    cleanText: "",
+                    rawBefore: textInfo.rawBefore,
+                    rawText: textInfo.rawText,
+                    rawAfter: textInfo.rawAfter,
+
+                    cleanBefore: textInfo.cleanBefore,
+                    cleanText: textInfo.cleanText,
+                    cleanAfter: textInfo.cleanAfter,
+
                     rangeInfo,
-                    rawText: "",
                 },
             },
         ];
@@ -629,13 +637,15 @@ function wrapHighlight(
                 _dialogState.focusScrollRaw(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect);
             }
 
-            const rangeInfo = convertRange(
+            const tuple = convertRange(
                 range,
                 getCssSelector,
                 (_node: Node) => ""); // computeElementCFI
-            if (!rangeInfo) {
+            if (!tuple) {
                 return;
             }
+            const rangeInfo = tuple[0];
+            const textInfo = tuple[1];
 
             const highlightDefinitions = [
                 {
@@ -648,9 +658,15 @@ function wrapHighlight(
                     drawType: HighlightDrawTypeBackground,
                     expand: 4,
                     selectionInfo: {
-                        cleanText: "",
+                        rawBefore: textInfo.rawBefore,
+                        rawText: textInfo.rawText,
+                        rawAfter: textInfo.rawAfter,
+
+                        cleanBefore: textInfo.cleanBefore,
+                        cleanText: textInfo.cleanText,
+                        cleanAfter: textInfo.cleanAfter,
+
                         rangeInfo,
-                        rawText: "",
                     },
                 },
             ];

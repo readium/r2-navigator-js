@@ -69,10 +69,18 @@ export function sameRanges(r1: IRangeInfo, r2: IRangeInfo): boolean {
     return true;
 }
 
-export interface ISelectionInfo {
-    rangeInfo: IRangeInfo;
+export interface ISelectedTextInfo {
+    cleanBefore: string;
     cleanText: string;
+    cleanAfter: string;
+
+    rawBefore: string;
     rawText: string;
+    rawAfter: string;
+}
+
+export interface ISelectionInfo extends ISelectedTextInfo {
+    rangeInfo: IRangeInfo;
 }
 
 export function sameSelections(sel1: ISelectionInfo, sel2: ISelectionInfo): boolean {
