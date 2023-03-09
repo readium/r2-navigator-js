@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.11.6...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.12.0...develop
 
 Changes:
 * TODO
+
+# 1.12.0
+
+> Build environment: NodeJS `18.14.2`, NPM `9.5.1`
+
+Changes:
+* Electron major version update (22 -> 23)
+* Feat: support for before/previous text in highlighted / selected DOM range (as always, cleaned-up text is with collapsed whitespace, raw is as authored including line breaks, tabulations, etc.)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.12.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.12.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.12.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.11.6...v1.12.0
 
 # 1.11.6
 
