@@ -827,7 +827,7 @@ function updateTTSInfo(
 
     const ttsQueueItemText = utteranceText ? utteranceText : getTtsQueueItemRefText(ttsQueueItem);
 
-    let ttsQueueItemMarkup = ttsQueueItemText;
+    let ttsQueueItemMarkup = normalizeHtmlText(ttsQueueItemText);
 
     if (charIndex >= 0 && utteranceText) { // isWordBoundary
         const start = utteranceText.slice(0, charIndex + 1).search(/\S+$/);
