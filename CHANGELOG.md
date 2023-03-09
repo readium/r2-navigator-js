@@ -13,6 +13,7 @@ Changes:
 Changes:
 * NPM package updates
 * Fix: TTS caption/simple mode was not escaping ampersand characters on initial render (before word boundaries)
+* Fix: HTML5 audio controls with authored percentage dimensions were invisible, now using revert!important to not only override ReadiumCSS, but also authored dimensions
 
 Git revision info:
 * https://unpkg.com/r2-navigator-js@1.12.1/dist/gitrev.json
