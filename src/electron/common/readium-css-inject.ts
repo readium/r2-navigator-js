@@ -766,7 +766,7 @@ export function appendCSS(documant: Document, mod: string, urlRoot: string) {
         const styleElement = documant.createElement("style");
         styleElement.setAttribute("id", idz + "-PATCH");
         styleElement.setAttribute("type", "text/css");
-        styleElement.appendChild(documant.createTextNode("audio[controls] { width: revert; height: revert; }"));
+        styleElement.appendChild(documant.createTextNode("audio[controls] { width: revert !important; height: revert !important; }"));
         documant.head.insertBefore(styleElement, firstElementChild);
     } else {
         documant.head.appendChild(linkElement);
