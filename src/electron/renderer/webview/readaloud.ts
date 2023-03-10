@@ -1075,6 +1075,48 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
         return win.READIUM2.ttsVoice && (voice.name === win.READIUM2.ttsVoice.name && voice.lang === win.READIUM2.ttsVoice.lang && voice.voiceURI === win.READIUM2.ttsVoice.voiceURI && voice.default === win.READIUM2.ttsVoice.default && voice.localService === win.READIUM2.ttsVoice.localService);
     }) || null;
 
+    if (utterance.lang // authored lang
+        && utterance.voice?.lang // user-selected voice lang
+    ) {
+        const utteranceLang = utterance.lang.toLowerCase();
+        let utteranceLangShort = utteranceLang;
+        const i = utteranceLangShort.indexOf("-");
+        const utteranceLangIsSpecific = i > 0;
+        if (utteranceLangIsSpecific) {
+            utteranceLangShort = utteranceLangShort.substring(0, i);
+        }
+
+        const utteranceVoiceLang = utterance.voice.lang.toLowerCase();
+        let utteranceVoiceLangShort = utteranceVoiceLang;
+        const j = utteranceVoiceLangShort.indexOf("-");
+        const utteranceVoiceLangIsSpecific = j > 0;
+        if (utteranceVoiceLangIsSpecific) {
+            utteranceVoiceLangShort = utteranceVoiceLangShort.substring(0, j);
+        }
+
+        // is accepting a loose BCP47 match the correct heuristic?
+        // in other words, for example is fr-CA TTS voice suitable for authored fr-FR?
+        // (or en-US vs. en-UK which are somewhat acceptable semi-matches ... but what about locales / dialects with stronger differentiations?)
+        if (utteranceLang !== utteranceVoiceLang) { // strict (mis)match
+            let doReset = false;
+            if (utteranceVoiceLangShort !== utteranceLangShort) { // loose (mis)match
+                // we definitely fallback to system default here (auto lang selection, if there is a matching available TTS voice)
+                doReset = true;
+            } else if (utteranceLangIsSpecific) {
+                // loose langs do match, but authored requested strict ...
+                // at this point, we could force use of available matching TTS voice lang (if any),
+                // but what if the user *really* wanted to listen to fr-FR text with fr-CA?
+                // => yeah, that's a noop (no reset)
+            }
+            if (doReset) {
+                console.log("TTS voice diff, reset to default (utterance.voice.lang !== utterance.lang)", utterance.voice.lang, utterance.lang);
+                // TODO: Mac OS seems to always pick a suitable voice, but we've had reports of mismatch on Windows (SAPI5),
+                // so should we in fact *force* the use of a particular voice lang by finding the first matching one in the available list?
+                utterance.voice = null; // system default, will match an available voice automatically based on utterance.lang (well, we hope!)
+            }
+        }
+    }
+
     utterance.onboundary = (ev: SpeechSynthesisEvent) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((utterance as any).r2_cancel) {
