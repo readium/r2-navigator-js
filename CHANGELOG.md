@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.12.1...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.12.2...develop
 
 Changes:
 * TODO
+
+# 1.12.2
+
+> Build environment: NodeJS `18.14.2`, NPM `9.5.1`
+
+Changes:
+* Fix: TTS voice selected is user-forced unless strict and loose language mismatch (allows variants override like en-US vs. en-UK, user wins over authored lang)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.12.2/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.12.2/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.12.2
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.12.1...v1.12.2
 
 # 1.12.1
 

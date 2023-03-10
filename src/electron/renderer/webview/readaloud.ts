@@ -1109,7 +1109,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
                 // => yeah, that's a noop (no reset)
             }
             if (doReset) {
-                console.log("TTS voice diff, reset to default (utterance.voice.lang !== utterance.lang)", utterance.voice.lang, utterance.lang);
+                // console.log("TTS voice diff, reset to default (utterance.voice.lang !== utterance.lang)", utterance.voice.lang, utterance.lang);
                 // TODO: Mac OS seems to always pick a suitable voice, but we've had reports of mismatch on Windows (SAPI5),
                 // so should we in fact *force* the use of a particular voice lang by finding the first matching one in the available list?
                 utterance.voice = null; // system default, will match an available voice automatically based on utterance.lang (well, we hope!)
