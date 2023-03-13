@@ -2919,7 +2919,8 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
             }
         }
 
-        if (userInteract) {
+        // TODO: 250ms debounce on the leading edge (immediate) doesn't allow double-click to capture window.getSelection() for bookmark titles and annotations, because the notifyReadingLocation occurs before the DOM selection is ready. Instead of reverting to the debounce trailing edge (which causes a 200ms+ delay), could we detect double-click? Any other unintended side-effects / possible regression bugs from this change??
+        if (userInteract && win.READIUM2.DEBUG_VISUALS) {
             notifyReadingLocationDebouncedImmediate(userInteract);
         } else {
             notifyReadingLocationDebounced(userInteract);
