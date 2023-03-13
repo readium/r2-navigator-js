@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.12.2...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.12.3...develop
 
 Changes:
 * TODO
+
+# 1.12.3
+
+> Build environment: NodeJS `18.15.0`, NPM `9.6.1`
+
+Changes:
+* NPM package updates
+* Fix: mouse cursor double-click on trailing edge of debounce (instead of leading / immediate) in order to correctly capture user selection (for bookmarks and annotations)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.12.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.12.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.12.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.12.2...v1.12.3
 
 # 1.12.2
 
