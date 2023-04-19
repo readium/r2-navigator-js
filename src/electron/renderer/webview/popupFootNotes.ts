@@ -48,7 +48,9 @@ export async function popupFootNote(
         return false;
     }
 
-    const url = new URL(href);
+    const url = new URL(href,
+        // edge case: SVG a@href animVal doesn't automatically resolve full absolute URL
+        href.startsWith("#") ? documant.location.href : undefined);
     if (!url.hash) { // includes #
         return false;
     }
