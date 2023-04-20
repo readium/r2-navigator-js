@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.12.3...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.12.4...develop
 
 Changes:
 * TODO
+
+# 1.12.4
+
+> Build environment: NodeJS `18.16.0`, NPM `9.6.5`
+
+Changes:
+* NPM package updates
+* Fix: when SVG a@href animVal doesn't resolve to full absolute URL we explicitly prefix the # hash fragment identifier with the document location
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.12.4/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.12.4/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.12.4
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.12.3...v1.12.4
 
 # 1.12.3
 
