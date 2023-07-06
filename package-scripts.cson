@@ -1,3 +1,7 @@
+  'postinstall': '
+    node -e "const fs = require(\'fs\');let s = fs.readFileSync(\'node_modules/cpy/index.js\', { encoding: \'utf8\' });s = s.replace(/options, onProgress:/, \'options, cwd: null, onProgress:\');fs.writeFileSync(\'node_modules/cpy/index.js\', s, { encoding: \'utf8\' });"
+  '
+
   'cson2json': '
     sed -E "s/#ECMASCRIPT#/es5/g" package-scripts-build.cson > tmp-build.cson &&
     sed -E "s/#ECMASCRIPT#/es6-es2015/g" package-scripts-build.cson >> tmp-build.cson &&
