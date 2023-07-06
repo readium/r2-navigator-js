@@ -279,6 +279,11 @@ export function locationHandleIpcMessage(
 // also needed for main process browserWindow.webContents.send()
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ipcRenderer.on(R2_EVENT_LINK, (event: Electron.IpcRendererEvent, payload: IEventPayload_R2_EVENT_LINK) => {
+    // Skip non-navigator renderers that import this JS file for installNavigatorDOM() but don't actually use it (e.g. PDF or Divina in Thorium Reader.tsx)
+    if (!win.READIUM2) {
+        return;
+    }
+
     debug("R2_EVENT_LINK (ipcRenderer.on)");
     // see ipcRenderer.emit(R2_EVENT_LINK...) above!
     const pay = (!payload && (event as unknown as IEventPayload_R2_EVENT_LINK).url) ? event as unknown as IEventPayload_R2_EVENT_LINK : payload;

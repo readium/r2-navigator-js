@@ -52,8 +52,7 @@
     "traceResolution": false,
     "disableSizeLimit": false,
     "removeComments": true,
-    "skipLibCheck": false,
-    "locale": "en-US"
+    "skipLibCheck": false
   },
   "exclude": [
     "node_modules"

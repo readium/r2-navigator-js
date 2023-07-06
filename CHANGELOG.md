@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.12.4...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.13.0...develop
 
 Changes:
 * TODO
+
+# 1.13.0
+
+> Build environment: NodeJS `18.16.0`, NPM `9.8.0`
+
+Changes:
+* NPM package updates (Electron 25)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.12.4...v1.13.0
 
 # 1.12.4
 

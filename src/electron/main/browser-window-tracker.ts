@@ -80,6 +80,9 @@ export const contextMenuSetup = (webContent: Electron.WebContents, webContentID:
     // const wc = remote.webContents.fromId(wv.getWebContentsId());
     // const wc = wv.getWebContents();
     const wc = webContents.fromId(webContentID);
+    if (!wc) {
+        return;
+    }
 
     // This is always the case: webContentID is the inner WebView
     // inside the main reader BrowserWindow (webContent === event.sender)
@@ -138,6 +141,9 @@ ipcMain.on(CONTEXT_MENU_SETUP, (event, webContentID: number) => {
 
 ipcMain.handle(R2_EVENT_KEYBOARD_FOCUS_REQUEST, (event, webContentsId) => {
     const wc = webContents.fromId(webContentsId);
+    if (!wc) {
+        return;
+    }
     debug("KEYBOARD FOCUS REQUEST (3) ", wc ? wc.id : "??", " // ", webContentsId, " -- ", wc.hostWebContents.id, " == ", event.sender.id);
     if (wc && wc.hostWebContents === event.sender) {
         debug("KEYBOARD FOCUS REQUEST (3) GO! ", wc.id, wc.hostWebContents.id);

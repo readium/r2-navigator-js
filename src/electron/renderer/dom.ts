@@ -102,6 +102,11 @@ let _resizeWebviewsNeedReset = true;
 let _resizeTimeout: number | undefined;
 // let _resizeFirst = true;
 win.addEventListener("resize", () => {
+    // Skip non-navigator renderers that import this JS file for installNavigatorDOM() but don't actually use it (e.g. PDF or Divina in Thorium Reader.tsx)
+    if (!win.READIUM2) {
+        return;
+    }
+
     if (win.READIUM2.publication?.Metadata?.Rendition?.Layout !== "fixed") {
         return;
     }
@@ -154,6 +159,11 @@ win.addEventListener("resize", () => {
 });
 
 ipcRenderer.on("accessibility-support-changed", (_e, accessibilitySupportEnabled) => {
+    // Skip non-navigator renderers that import this JS file for installNavigatorDOM() but don't actually use it (e.g. PDF or Divina in Thorium Reader.tsx)
+    if (!win.READIUM2) {
+        return;
+    }
+
     debug("accessibility-support-changed event received in WebView ", accessibilitySupportEnabled);
     win.READIUM2.isScreenReaderMounted = accessibilitySupportEnabled;
 });
