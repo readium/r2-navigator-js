@@ -1,5 +1,5 @@
   'postinstall': '
-    node -e "const fs = require(\'fs\');let s = fs.readFileSync(\'node_modules/cpy/index.js\', { encoding: \'utf8\' });s = s.replace(/options, onProgress:/, \'options, cwd: null, onProgress:\');fs.writeFileSync(\'node_modules/cpy/index.js\', s, { encoding: \'utf8\' });"
+    node -e "try{const fs = require(\'fs\');let s = fs.readFileSync(\'node_modules/cpy/index.js\', { encoding: \'utf8\' });s = s.replace(/options, onProgress:/, \'options, cwd: null, onProgress:\');fs.writeFileSync(\'node_modules/cpy/index.js\', s, { encoding: \'utf8\' });}catch(e){console.log(e)}"
   '
 
   'cson2json': '

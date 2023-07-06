@@ -1,6 +1,6 @@
 {
   "name": "r2-navigator-js",
-  "version": "1.13.1",
+  "version": "1.13.2",
   "description": "Readium 2 'navigator' for NodeJS (TypeScript)",
   "keywords": [
     "readium",
@@ -99,7 +99,7 @@
     "dist/**/*"
   ],
   "scripts": {
-    "postinstall": "node -e \"const fs = require('fs');let s = fs.readFileSync('node_modules/cpy/index.js', { encoding: 'utf8' });s = s.replace(/, onProgress:/, ', cwd: null, onProgress:');fs.writeFileSync('node_modules/cpy/index.js', s, { encoding: 'utf8' });\"",
+    "postinstall": "node -e \"try{const fs = require('fs');let s = fs.readFileSync('node_modules/cpy/index.js', { encoding: 'utf8' });s = s.replace(/options, onProgress:/, 'options, cwd: null, onProgress:');fs.writeFileSync('node_modules/cpy/index.js', s, { encoding: 'utf8' });}catch(e){console.log(e)}\"",
     "cson2json": "sed -E \"s/#ECMASCRIPT#/es5/g\" package-scripts-build.cson > tmp-build.cson && sed -E \"s/#ECMASCRIPT#/es6-es2015/g\" package-scripts-build.cson >> tmp-build.cson && sed -E \"s/#ECMASCRIPT#/es7-es2016/g\" package-scripts-build.cson >> tmp-build.cson && sed -E \"s/#ECMASCRIPT#/es8-es2017/g\" package-scripts-build.cson >> tmp-build.cson && json -I -f package.json -e \"this.scripts=$(cat package-scripts.cson tmp-build.cson | node node_modules/.bin/cson2json)\" && rimraf tmp-build.cson",
     "electron-renderer:all": "cpy \"./ReadiumCSS/\" \"../dist/\" --cwd=\"./misc\"",
     "copydist": "cpy \"./dist/\" \"../r2-testapp-js/node_modules/r2-navigator-js/\" --cwd=\"./\" && cpy \"./dist/\" \"../readium-desktop/node_modules/r2-navigator-js/\" --cwd=\"./\"",

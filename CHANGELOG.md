@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.13.1...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.13.2...develop
 
 Changes:
 * TODO
+
+# 1.13.2
+
+> Build environment: NodeJS `18.16.0`, NPM `9.8.0`
+
+Changes:
+* HOTFIX (for the previous hotfix!): postinstall script runs in embedding context, fails to patch offending node_module lib
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.2/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.2/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.2
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.13.1...v1.13.2
 
 # 1.13.1
 
