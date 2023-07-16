@@ -12,6 +12,8 @@ import { isFocusable } from "tabbable";
 
 import { LocatorLocations, LocatorText } from "@r2-shared-js/models/locator";
 
+import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
+
 import {
     IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK, IEventPayload_R2_EVENT_CAPTIONS,
     IEventPayload_R2_EVENT_CLIPBOARD_COPY, IEventPayload_R2_EVENT_DEBUG_VISUALS,
@@ -53,7 +55,7 @@ import {
     readPosCssStylesAttr3, readPosCssStylesAttr4,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
-import { uniqueCssSelector } from "../common/cssselector2";
+import { uniqueCssSelector, FRAG_ID_CSS_SELECTOR } from "../common/cssselector2";
 import { normalizeText } from "../common/dom-text-utils";
 import { easings } from "../common/easings";
 import { closePopupDialogs, isPopupDialogOpen } from "../common/popup-dialog";
@@ -2288,6 +2290,11 @@ function loaded(forced: boolean) {
 
         ev.preventDefault();
         ev.stopPropagation();
+
+        const payload: IEventPayload_R2_EVENT_LINK = {
+            url: "#" + FRAG_ID_CSS_SELECTOR + encodeURIComponent_RFC3986(getCssSelector(currentElement)), // see location.ts locationHandleIpcMessage() eventChannel === R2_EVENT_LINK (URL is made absolute if necessary)
+        };
+        ipcRenderer.sendToHost(R2_EVENT_LINK, payload); // this will result in the app registering the element in the navigation history, but is skipped in location.ts ipcRenderer.on(R2_EVENT_LINK)
 
         const done = await popupFootNote(
             currentElement as HTMLElement,

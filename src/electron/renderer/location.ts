@@ -10,6 +10,8 @@ import { ipcRenderer, shell } from "electron";
 import * as path from "path";
 import { URL } from "url";
 
+import { FRAG_ID_CSS_SELECTOR } from "./common/cssselector2";
+
 import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
 import { PageEnum, Properties, SpreadEnum } from "@r2-shared-js/models/metadata-properties";
 import { Link } from "@r2-shared-js/models/publication-link";
@@ -288,6 +290,11 @@ ipcRenderer.on(R2_EVENT_LINK, (event: Electron.IpcRendererEvent, payload: IEvent
     // see ipcRenderer.emit(R2_EVENT_LINK...) above!
     const pay = (!payload && (event as unknown as IEventPayload_R2_EVENT_LINK).url) ? event as unknown as IEventPayload_R2_EVENT_LINK : payload;
     debug(pay.url);
+
+    if (pay.url.indexOf("#" + FRAG_ID_CSS_SELECTOR) >= 0) {
+        debug("R2_EVENT_LINK (ipcRenderer.on) SKIP link activation [FRAG_ID_CSS_SELECTOR]");
+        return;
+    }
 
     const activeWebView = pay.rcss ? undefined : win.READIUM2.getFirstOrSecondWebView();
     handleLinkUrl(
@@ -922,6 +929,21 @@ function loadLink(
     // which is necessary in cases where loadLink() is called with URL.toString() for hrefToLoadHttp
     // ... which it is!
     const hrefToLoadHttpUri = new URI(hrefToLoadHttp);
+
+    if (hrefToLoadHttpUri.fragment()?.startsWith(FRAG_ID_CSS_SELECTOR)) {
+        const cssSelector = decodeURIComponent(hrefToLoadHttpUri.fragment().substring(FRAG_ID_CSS_SELECTOR.length));
+        debug("FRAG_ID_CSS_SELECTOR: " + cssSelector);
+        hrefToLoadHttpUri.hash("").normalizeHash();
+
+        // TODO: urijs types broke this! (lib remains unchanged)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (hrefToLoadHttpUri as any).search((data: any) => {
+            // overrides existing (leaves others intact)
+            data[URL_PARAM_GOTO] = Buffer.from(JSON.stringify({ cssSelector } as LocatorLocations, null, "")).toString("base64");
+        });
+        useGoto = true;
+    }
+
     if (isAudio) {
         if (useGoto) {
             hrefToLoadHttpUri.hash("").normalizeHash();

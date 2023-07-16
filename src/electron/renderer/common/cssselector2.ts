@@ -9,6 +9,8 @@
 
 import * as cssesc from "cssesc";
 
+export const FRAG_ID_CSS_SELECTOR = "r2-css-selector_";
+
 interface CSSNode {
     name: string;
     penalty: number;
