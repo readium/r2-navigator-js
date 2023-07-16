@@ -703,6 +703,19 @@ export const ROOT_CLASS_INVISIBLE_MASK_REMOVED = "r2-visibility-mask-removed-cla
 export const visibilityMaskCssStyles = `
 
 /*
+bugfix: for some reason, "inherit" does not work in Chromium, so we patch ReadiumCSS here :(
+(was "text-align: var(--USER__textAlign);" on HTML root and "text-align: inherit !important;" on body etc.)
+*/
+:root[style*="readium-advanced-on"][style*="--USER__textAlign"] {
+text-align: var(--USER__textAlign) !important;
+}
+:root[style*="readium-advanced-on"][style*="--USER__textAlign"] body,
+:root[style*="readium-advanced-on"][style*="--USER__textAlign"] *:not(blockquote):not(figcaption) p,
+:root[style*="readium-advanced-on"][style*="--USER__textAlign"] li {
+text-align: var(--USER__textAlign) !important;
+}
+
+/*
 https://github.com/readium/readium-css/issues/117
 no new stacking context, otherwise massive performance degradation with CSS Columns in large HTML documents
 (web inspector profiler shows long paint times, some layout recalc triggers too)
