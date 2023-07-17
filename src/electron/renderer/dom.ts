@@ -321,11 +321,17 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
     // }, 500);
 
     wv.addEventListener("did-start-loading", () => {
+        debug("DOMisReady... did-start-loading => false");
         (wv as IReadiumElectronWebview).READIUM2.DOMisReady = false;
+    });
+    wv.addEventListener("did-navigate-in-page", () => {
+        debug("DOMisReady... did-navigate-in-page => true");
+        (wv as IReadiumElectronWebview).READIUM2.DOMisReady = true;
     });
     wv.addEventListener("dom-ready", () => {
         // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webcontents
 
+        debug("DOMisReady... dom-ready => true");
         (wv as IReadiumElectronWebview).READIUM2.DOMisReady = true;
 
         wv.clearHistory();
