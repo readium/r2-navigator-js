@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.13.2...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.13.3...develop
 
 Changes:
 * TODO
+
+# 1.13.3
+
+> Build environment: NodeJS `18.16.1`, NPM `9.8.0`
+
+Changes:
+* Fix: audio playback rate HTML select > option dark/night mode was white-on-white background+foreground colours
+* Fix: hyperlink activation now causes a recording in navigation history of the origination without triggering an actual navigation (only activates the link into the destination, not the source)
+* Fix: ReadiumCSS text alignment inherit did not work in some cases, must be forced on body not just HTML root
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.13.2...v1.13.3
 
 # 1.13.2
 
