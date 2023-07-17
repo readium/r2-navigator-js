@@ -148,7 +148,9 @@ win.addEventListener("resize", () => {
             if (wvSlot) {
                 try {
                     // will trigger R2_EVENT_FXL_CONFIGURE => setWebViewStyle
-                    await activeWebView.send("R2_EVENT_WINDOW_RESIZE", win.READIUM2.fixedLayoutZoomPercent);
+                    if (activeWebView.READIUM2?.DOMisReady) {
+                        await activeWebView.send("R2_EVENT_WINDOW_RESIZE", win.READIUM2.fixedLayoutZoomPercent);
+                    }
                 } catch (e) {
                     debug(e);
                 }
@@ -204,17 +206,22 @@ function readiumCssApplyToWebview(
 
         activeWebView.style.opacity = "0";
         // setTimeout(async () => {
+        //    if (activeWebView.READIUM2?.DOMisReady) {}
         //     await activeWebView.send("R2_EVENT_HIDE",
         //         activeWebView.READIUM2.link ? isFixedLayout(activeWebView.READIUM2.link) : null);
         // }, 0);
 
         setTimeout(async () => {
             shiftWebview(activeWebView, 0, undefined); // reset
-            await activeWebView.send(R2_EVENT_READIUMCSS, payloadRcss);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_READIUMCSS, payloadRcss);
+            }
         }, 10);
     } else {
         setTimeout(async () => {
-            await activeWebView.send(R2_EVENT_READIUMCSS, payloadRcss);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_READIUMCSS, payloadRcss);
+            }
         }, 0);
     }
 
@@ -255,7 +262,9 @@ export function fixedLayoutZoomPercent(zoomPercent: number) {
                     _fixedLayoutZoomPercentTimers[activeWebView.id] = undefined;
 
                     // will trigger R2_EVENT_FXL_CONFIGURE => setWebViewStyle
-                    await activeWebView.send("R2_EVENT_WINDOW_RESIZE", zoomPercent);
+                    if (activeWebView.READIUM2?.DOMisReady) {
+                        await activeWebView.send("R2_EVENT_WINDOW_RESIZE", zoomPercent);
+                    }
                 } catch (e) {
                     debug(e);
                 }
@@ -311,8 +320,13 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
     //     // wv.setAttribute("aria-label", "");
     // }, 500);
 
+    wv.addEventListener("did-start-loading", () => {
+        (wv as IReadiumElectronWebview).READIUM2.DOMisReady = false;
+    });
     wv.addEventListener("dom-ready", () => {
         // https://github.com/electron/electron/blob/v3.0.0/docs/api/breaking-changes.md#webcontents
+
+        (wv as IReadiumElectronWebview).READIUM2.DOMisReady = true;
 
         wv.clearHistory();
 
@@ -644,7 +658,9 @@ export function installNavigatorDOM(
             for (const activeWebView of activeWebViews) {
                 const payload: IEventPayload_R2_EVENT_DEBUG_VISUALS = { debugVisuals };
                 setTimeout(async () => {
-                    await activeWebView.send(R2_EVENT_DEBUG_VISUALS, payload);
+                    if (activeWebView.READIUM2?.DOMisReady) {
+                        await activeWebView.send(R2_EVENT_DEBUG_VISUALS, payload);
+                    }
                 }, 0);
                 if (loc && loc.locator.href === activeWebView.READIUM2.link?.Href) {
 
@@ -684,6 +700,7 @@ export function installNavigatorDOM(
                     //     if (activeWebView) {
                     //         const payload: IEventPayload_R2_EVENT_DEBUG_VISUALS
                     //             = { debugVisuals: true, cssSelector, cssClass, cssStyles };
+                    // if (activeWebView.READIUM2?.DOMisReady) {}
                     //         activeWebView.send(R2_EVENT_DEBUG_VISUALS, payload);
                     //     }
                     // }, delay);
@@ -693,7 +710,9 @@ export function installNavigatorDOM(
                         = { debugVisuals: d, cssSelector, cssClass, cssStyles };
 
                     setTimeout(async () => {
-                        await activeWebView.send(R2_EVENT_DEBUG_VISUALS, payload);
+                        if (activeWebView.READIUM2?.DOMisReady) {
+                            await activeWebView.send(R2_EVENT_DEBUG_VISUALS, payload);
+                        }
                     }, 0);
                 }
             };

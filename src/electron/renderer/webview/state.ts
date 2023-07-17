@@ -54,6 +54,8 @@ export interface IReadiumElectronWebviewState {
     forceRefresh?: boolean;
 
     readiumCss: IEventPayload_R2_EVENT_READIUMCSS | undefined;
+
+    DOMisReady?: boolean;
 }
 export interface IReadiumElectronWebview extends Electron.WebviewTag {
     READIUM2: IReadiumElectronWebviewState;

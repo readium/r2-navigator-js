@@ -51,7 +51,9 @@ export function highlightsRemoveAll(href: string) {
         }
 
         setTimeout(async () => {
-            await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE_ALL);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE_ALL);
+            }
         }, 0);
     }
 }
@@ -66,7 +68,9 @@ export function highlightsRemove(href: string, highlightIDs: string[]) {
             highlightIDs,
         };
         setTimeout(async () => {
-            await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE, payload);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE, payload);
+            }
         }, 0);
     }
 }
@@ -105,7 +109,9 @@ export async function highlightsCreate(
             };
 
             setTimeout(async () => {
-                await activeWebView.send(R2_EVENT_HIGHLIGHT_CREATE, payloadPing);
+                if (activeWebView.READIUM2?.DOMisReady) {
+                    await activeWebView.send(R2_EVENT_HIGHLIGHT_CREATE, payloadPing);
+                }
             }, 0);
 
             return;

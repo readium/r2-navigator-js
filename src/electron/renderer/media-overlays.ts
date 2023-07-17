@@ -1128,7 +1128,9 @@ function moHighlight(href: string | undefined, id: string | undefined) {
             }
         }
         setTimeout(async () => {
-            await activeWebView.send(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, payload);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, payload);
+            }
         }, 0);
     }
 }
@@ -1464,6 +1466,7 @@ export function mediaOverlaysClickEnable(doEnable: boolean) {
     // };
 
     // setTimeout(async () => {
+    // if (activeWebView.READIUM2?.DOMisReady) {
     //     await activeWebView.send(R2_EVENT_MEDIA_OVERLAYS_CLICK_ENABLE, payload);
     // }, 0);
 }
