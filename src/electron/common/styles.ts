@@ -1100,6 +1100,11 @@ export const AUDIO_FORWARD_ID = "r2-audio-forward";
 
 export const audioCssStyles = `
 
+#${AUDIO_CONTROLS_ID} select#${AUDIO_RATE_ID} option {
+    color: var(--RS__textColor) !important;
+    background: var(--RS__backgroundColor) !important;
+}
+
 #${AUDIO_BODY_ID} {
     padding: 0 !important;
     margin-top: 0 !important;
