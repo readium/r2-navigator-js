@@ -2251,8 +2251,15 @@ function loaded(forced: boolean) {
         }
     }, true);
 
+    win.document.addEventListener("auxclick", async (ev: MouseEvent) => {
+        debug(`AUX __CLICK: ${ev.button} (SKIP middle)`);
+        if (ev.button === 1) {
+            ev.preventDefault();
+            ev.stopPropagation();
+        }
+    }, true);
     win.document.addEventListener("click", async (ev: MouseEvent) => {
-
+        debug(`!AUX __CLICK: ${ev.button} ...`);
         let currentElement = ev.target as Element;
         let href: string | SVGAnimatedString | undefined;
         while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
@@ -2319,8 +2326,6 @@ function loaded(forced: boolean) {
             };
             ipcRenderer.sendToHost(R2_EVENT_LINK, payload);
         }
-
-        return false;
     }, true);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
