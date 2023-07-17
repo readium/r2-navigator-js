@@ -83,12 +83,19 @@ export const contextMenuSetup = (webContent: Electron.WebContents, webContentID:
     if (!wc) {
         return;
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((wc as any).__CONTEXT_MENU_SETUP) {
+        return;
+    }
 
     // This is always the case: webContentID is the inner WebView
     // inside the main reader BrowserWindow (webContent === event.sender)
     // if (wc !== webContent) {
     //     debug(`!!!!?? CONTEXT_MENU_SETUP __ wc ${wc.id} !== webContent ${webContentID}`);
     // }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wc as any).__CONTEXT_MENU_SETUP = true;
     wc.on("context-menu", (_ev, params) => {
         const { x, y } = params;
         debug("MAIN context-menu EVENT on WebView");
