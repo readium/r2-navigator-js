@@ -19,13 +19,13 @@ import {
 } from "../common/events";
 import { getCurrentReadingLocation, navLeftOrRight } from "./location";
 import { isRTL } from "./readium-css";
-import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
+import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 // import * as debug_ from "debug";
 // const debug = debug_("r2:navigator#electron/renderer/index");
 // const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-const win = window as IReadiumElectronBrowserWindow;
+const win = global.window as ReadiumElectronBrowserWindow;
 
 let _lastTTSWebView: IReadiumElectronWebview | undefined;
 let _lastTTSWebViewHref: string | undefined;
@@ -199,7 +199,7 @@ export function ttsPlay(speed: number, voice: SpeechSynthesisVoice | null) {
     _lastTTSWebViewHref = activeWebView.READIUM2.link?.Href;
 
     const payload: IEventPayload_R2_EVENT_TTS_DO_PLAY = {
-        rootElement: "html > body", // window.document.body
+        rootElement: "html > body", // win.document.body
         speed,
         startElement: startElementCSSSelector,
         voice,

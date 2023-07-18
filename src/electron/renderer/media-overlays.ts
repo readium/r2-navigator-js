@@ -21,7 +21,7 @@ import {
 } from "../common/events";
 import { handleLinkUrl, navLeftOrRight } from "./location";
 import { isRTL } from "./readium-css";
-import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
+import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 // import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "../common/sessions";
 
@@ -29,7 +29,7 @@ const debug = debug_("r2:navigator#electron/renderer/media-overlays");
 
 const IS_DEV = process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev";
 
-const win = window as IReadiumElectronBrowserWindow;
+const win = global.window as ReadiumElectronBrowserWindow;
 
 const AUDIO_MO_ID = "R2_AUDIO_MO_ID";
 

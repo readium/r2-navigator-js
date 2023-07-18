@@ -74,6 +74,7 @@ export const R2_EVENT_PAGE_TURN_RES = "R2_EVENT_PAGE_TURN_RES";
 export interface IEventPayload_R2_EVENT_PAGE_TURN {
     direction: string; // RTL, LTR
     go: string; // PREVIOUS, NEXT
+    nav?: boolean;
 }
 
 // in WEBVIEW: ipcRenderer.sendToHost()

@@ -10,10 +10,9 @@ import {
     isDocRTL, isDocVertical, isPaginated, readiumCSSSet,
 } from "../../common/readium-css-inject";
 import { FOOTNOTE_FORCE_SHOW, ROOT_CLASS_NO_FOOTNOTES } from "../../common/styles";
-import { IReadiumElectronWebviewWindow } from "./state";
+import { ReadiumElectronWebviewWindow } from "./state";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const win = (global as any).window as IReadiumElectronWebviewWindow;
+const win = global.window as ReadiumElectronWebviewWindow;
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -289,7 +288,7 @@ export function checkHiddenFootNotes(documant: Document) {
 
             // TODO? (edge case) link to external HTML document fragment (not this "documant")
             // with _exact_ same #ID => leaves note content hidden instead of forcing it to show!
-            // e.g. window.location.herf == chapter1.html
+            // e.g. win.location.herf == chapter1.html
             //      a@href == chapter2.html#id1
             //      ==> aside#id1 in chapter1.html remains hidden
             //          even though it may in fact not be linked from chapter1.html

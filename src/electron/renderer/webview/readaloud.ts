@@ -33,12 +33,11 @@ import { IHTMLDialogElementWithPopup, PopupDialog } from "../common/popup-dialog
 import { createHighlights, destroyHighlight } from "./highlight";
 import { isRTL } from "./readium-css";
 import { convertRange } from "./selection";
-import { IReadiumElectronWebviewWindow } from "./state";
+import { ReadiumElectronWebviewWindow } from "./state";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const win = (global as any).window as IReadiumElectronWebviewWindow;
+const win = global.window as ReadiumElectronWebviewWindow;
 
 interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
 

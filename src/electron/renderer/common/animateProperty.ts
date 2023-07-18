@@ -21,14 +21,14 @@ export interface IPropertyAnimationState {
 }
 
 export const animateProperty = (
-    cAF: (id: number) => void, // typically: window.cancelAnimationFrame
+    cAF: (id: number) => void, // typically: win.cancelAnimationFrame
     callback: ((cancelled: boolean) => void) | undefined,
     property: string, // numerical, e.g. "scrollTop" or "scrollLeft"
     duration: number, // e.g. 200
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    object: any, // typically, window.document.body (Element)
+    object: any, // typically, win.document.body (Element)
     destVal: number, // e.g. 0
-    rAF: (func: () => void) => number, // typically: window.requestAnimationFrame
+    rAF: (func: () => void) => number, // typically: win.requestAnimationFrame
     transition: (t: number, b: number, c: number, d: number) => number, // e.g. easings.easeInQuad
 ) => {
 

@@ -84,7 +84,7 @@ import {
     readiumCSS,
 } from "./readium-css";
 import { clearCurrentSelection, convertRangeInfo, getCurrentSelectionInfo } from "./selection";
-import { IReadiumElectronWebviewWindow } from "./state";
+import { ReadiumElectronWebviewWindow } from "./state";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -106,8 +106,8 @@ const debug = debug_("r2:navigator#electron/renderer/webview/preload");
 
 const INJECTED_LINK_TXT = "__";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const win = (global as any).window as IReadiumElectronWebviewWindow;
+const win = global.window as ReadiumElectronWebviewWindow;
+
 win.READIUM2 = {
     DEBUG_VISUALS: false,
     // dialogs = [],
@@ -174,19 +174,131 @@ win.prompt = (...args: any[]): string => {
 const CSS_PIXEL_TOLERANCE = 5;
 
 // setTimeout(() => {
-//     if (window.alert) {
-//         window.alert("window.alert!");
+//     if (win.alert) {
+//         win.alert("win.alert!");
 //     }
-//     if (window.confirm) {
-//         const ok = window.confirm("window.confirm?");
+//     if (win.confirm) {
+//         const ok = win.confirm("win.confirm?");
 //         console.log(ok);
 //     }
 //     // NOT SUPPORTED: fatal error in console.
-//     if (window.prompt) {
-//         const str = window.prompt("window.prompt:");
+//     if (win.prompt) {
+//         const str = win.prompt("win.prompt:");
 //         console.log(str);
 //     }
 // }, 2000);
+
+const TOUCH_SWIPE_DELTA_MIN = 80;
+const TOUCH_SWIPE_LONG_PRESS_MAX_TIME = 500;
+const TOUCH_SWIPE_MAX_TIME = 500;
+let touchstartEvent: TouchEvent | undefined;
+let touchEventEnd: TouchEvent | undefined;
+win.document.addEventListener(
+    "touchstart",
+    (event: TouchEvent) => {
+        if (isPopupDialogOpen(win.document)) {
+            touchstartEvent = undefined;
+            touchEventEnd = undefined;
+            return;
+        }
+        if (event.changedTouches.length !== 1) {
+            return;
+        }
+        touchstartEvent = event;
+    },
+    true,
+);
+win.document.addEventListener(
+    "touchend",
+    (event: TouchEvent) => {
+        if (isPopupDialogOpen(win.document)) {
+            touchstartEvent = undefined;
+            touchEventEnd = undefined;
+            return;
+        }
+        if (event.changedTouches.length !== 1) {
+            return;
+        }
+        if (!touchstartEvent) {
+            return;
+        }
+
+        const startTouch = touchstartEvent.changedTouches[0];
+        const endTouch = event.changedTouches[0];
+
+        if (!startTouch || !endTouch) {
+            return;
+        }
+
+        const deltaX =
+            (startTouch.clientX - endTouch.clientX) / win.devicePixelRatio;
+        const deltaY =
+            (startTouch.clientY - endTouch.clientY) / win.devicePixelRatio;
+
+        if (
+            Math.abs(deltaX) < TOUCH_SWIPE_DELTA_MIN &&
+            Math.abs(deltaY) < TOUCH_SWIPE_DELTA_MIN
+        ) {
+            if (touchEventEnd) {
+                touchstartEvent = undefined;
+                touchEventEnd = undefined;
+                return;
+            }
+
+            if (
+                event.timeStamp - touchstartEvent.timeStamp >
+                TOUCH_SWIPE_LONG_PRESS_MAX_TIME
+            ) {
+                touchstartEvent = undefined;
+                touchEventEnd = undefined;
+                return;
+            }
+
+            touchstartEvent = undefined;
+            touchEventEnd = event;
+            return;
+        }
+
+        touchEventEnd = undefined;
+
+        if (
+            event.timeStamp - touchstartEvent.timeStamp >
+            TOUCH_SWIPE_MAX_TIME
+        ) {
+            touchstartEvent = undefined;
+            return;
+        }
+
+        const slope =
+            (startTouch.clientY - endTouch.clientY) /
+            (startTouch.clientX - endTouch.clientX);
+        if (Math.abs(slope) > 0.5) {
+            touchstartEvent = undefined;
+            return;
+        }
+
+        if (deltaX < 0) {
+            // navLeftOrRight(!rtl);
+            const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+                direction: "LTR",
+                go: "NEXT",
+                nav: true,
+            };
+            ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+        } else {
+            // navLeftOrRight(rtl);
+            const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+                direction: "LTR",
+                go: "PREVIOUS",
+                nav: true,
+            };
+            ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+        }
+
+        touchstartEvent = undefined;
+    },
+    true,
+);
 
 function keyDownUpEventHandler(ev: KeyboardEvent, keyDown: boolean) {
     if (win.READIUM2.ignorekeyDownUpEvents) {
@@ -2121,8 +2233,7 @@ function loaded(forced: boolean) {
 
         setTimeout(() => {
             let _firstResizeObserver = true;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const resizeObserver = new (window as any).ResizeObserver((_entries: any) => { // ResizeObserverEntries
+            const resizeObserver = new win.ResizeObserver((_entries: ResizeObserverEntry[]) => {
                 // for (const entry of entries) {
                 //     const rect = entry.contentRect as DOMRect;
                 //     const element = entry.target as HTMLElement;
@@ -2935,7 +3046,7 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
             }
         }
 
-        // TODO: 250ms debounce on the leading edge (immediate) doesn't allow double-click to capture window.getSelection() for bookmark titles and annotations, because the notifyReadingLocation occurs before the DOM selection is ready. Instead of reverting to the debounce trailing edge (which causes a 200ms+ delay), could we detect double-click? Any other unintended side-effects / possible regression bugs from this change??
+        // TODO: 250ms debounce on the leading edge (immediate) doesn't allow double-click to capture win.getSelection() for bookmark titles and annotations, because the notifyReadingLocation occurs before the DOM selection is ready. Instead of reverting to the debounce trailing edge (which causes a 200ms+ delay), could we detect double-click? Any other unintended side-effects / possible regression bugs from this change??
         if (userInteract && win.READIUM2.DEBUG_VISUALS) {
             notifyReadingLocationDebouncedImmediate(userInteract);
         } else {

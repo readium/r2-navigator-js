@@ -6,7 +6,7 @@
 // ==LICENSE-END==
 
 import { IRangeInfo, ISelectedTextInfo, ISelectionInfo } from "../../common/selection";
-import { IReadiumElectronWebviewWindow } from "./state";
+import { ReadiumElectronWebviewWindow } from "./state";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -62,7 +62,7 @@ function dumpDebug(
     console.log("$$$$$$$$$$$$$$$$$");
 }
 
-export function clearCurrentSelection(win: IReadiumElectronWebviewWindow) {
+export function clearCurrentSelection(win: ReadiumElectronWebviewWindow) {
     const selection = win.getSelection();
     if (!selection) {
         return;
@@ -79,7 +79,7 @@ export const cleanupStr = (str: string) => {
 };
 
 export function getCurrentSelectionInfo(
-    win: IReadiumElectronWebviewWindow,
+    win: ReadiumElectronWebviewWindow,
     getCssSelector: (element: Element) => string,
     computeElementCFI: (node: Node) => string | undefined,
 ):

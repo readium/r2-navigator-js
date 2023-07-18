@@ -9,10 +9,10 @@ import {
     CSS_CLASS_NO_FOCUS_OUTLINE, POPOUTIMAGE_CONTAINER_ID, POPOUTIMAGE_CONTROLS_ID, POPOUTIMAGE_CLOSE_ID, POPOUTIMAGE_MINUS_ID, POPOUTIMAGE_PLUS_ID, POPOUTIMAGE_RESET_ID, TTS_POPUP_DIALOG_CLASS,
 } from "../../common/styles";
 import { PopupDialog, closePopupDialogs } from "../common/popup-dialog";
-import { IReadiumElectronWebviewWindow } from "./state";
+import { ReadiumElectronWebviewWindow } from "./state";
 
 export function popoutImage(
-    win: IReadiumElectronWebviewWindow,
+    win: ReadiumElectronWebviewWindow,
     element: HTMLImageElement,
     focusScrollRaw:
         (el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => void,
@@ -67,11 +67,11 @@ export function popoutImage(
                 return;
             }
 
-            const pageX1 = e.targetTouches[0].clientX;
-            const pageY1 = e.targetTouches[0].clientY;
+            const pageX1 = e.targetTouches[0].pageX;
+            const pageY1 = e.targetTouches[0].pageY;
 
-            const pageX2 = e.targetTouches[1].clientX;
-            const pageY2 = e.targetTouches[1].clientY;
+            const pageX2 = e.targetTouches[1].pageX;
+            const pageY2 = e.targetTouches[1].pageY;
 
             // Math.hypot()
             const touchHypot_ = Math.round(Math.sqrt(Math.pow(Math.abs(pageX1 - pageX2), 2) + Math.pow(Math.abs(pageY1 - pageY2), 2)));
@@ -87,8 +87,8 @@ export function popoutImage(
                     const pageY = Math.min(pageY1, pageY2) + (Math.abs(pageY1 - pageY2) / 2);
 
                     const rect = img.getBoundingClientRect();
-                    const offsetX = pageX - rect.left - window.pageXOffset;
-                    const offsetY = pageY - rect.top - window.pageYOffset;
+                    const offsetX = pageX - rect.left - win.pageXOffset;
+                    const offsetY = pageY - rect.top - win.pageYOffset;
 
                     const bgCursorX = offsetX - bgPosX;
                     const bgCursorY = offsetY - bgPosY;
@@ -119,8 +119,8 @@ export function popoutImage(
             e.stopPropagation();
 
             const rect = img.getBoundingClientRect();
-            const offsetX = e.pageX - rect.left - window.pageXOffset;
-            const offsetY = e.pageY - rect.top - window.pageYOffset;
+            const offsetX = e.pageX - rect.left - win.pageXOffset;
+            const offsetY = e.pageY - rect.top - win.pageYOffset;
 
             const bgCursorX = offsetX - bgPosX;
             const bgCursorY = offsetY - bgPosY;
@@ -228,7 +228,7 @@ export function popoutImage(
         }
 
         function reset() {
-            const computedStyle = window.getComputedStyle(img, null);
+            const computedStyle = win.getComputedStyle(img, null);
             viewportWidth = parseInt(computedStyle.width, 10);
             viewportHeight = parseInt(computedStyle.height, 10);
 
@@ -261,7 +261,7 @@ export function popoutImage(
             img.style.backgroundImage = "url(\"" + img.src + "\")";
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (img as any).__INITED = true;
-            img.src = "data:image/svg+xml;base64," + window.btoa("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" + naturalWidth + "\" height=\"" + naturalHeight + "\"></svg>");
+            img.src = "data:image/svg+xml;base64," + win.btoa("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" + naturalWidth + "\" height=\"" + naturalHeight + "\"></svg>");
 
             onclick(undefined, true);
 
@@ -271,7 +271,7 @@ export function popoutImage(
             img.addEventListener("mousedown", draggable);
             img.addEventListener("click", onclick);
 
-            const resizeObserver = new window.ResizeObserver((_entries) => {
+            const resizeObserver = new win.ResizeObserver((_entries) => {
                 reset();
                 onclick(undefined, true);
             });
@@ -422,18 +422,6 @@ export function popoutImage(
     if (!imgHref) {
         return;
     }
-
-    // const onclickhandler = "onclick=\"javascript: " +
-    //     "if (window.event.shiftKey || this.r2ImgScale &amp;&amp; this.r2ImgScale !== 1) " +
-    //     "{ this.r2ImgScale = !window.event.shiftKey ? " +
-    //     "1 : (this.r2ImgScale ? (this.r2ImgScale + 0.5) : 1.5);" +
-    //     "this.style.setProperty('margin-top', '0', 'important'); this.style.setProperty('margin-left', '0', 'important'); this.style.transform='scale('+this.r2ImgScale+')'; } " +
-    //     "else if (window.readiumClosePopupDialogs) { window.readiumClosePopupDialogs(); } " +
-    //     "window.event.preventDefault(); window.event.stopPropagation(); return false; \"";
-
-    // const onclickhandler = "onclick=\"javascript: " +
-    //     "if (window.event.shiftKey &amp;&amp; window.readiumClosePopupDialogs) { window.readiumClosePopupDialogs(); }" +
-    //     "window.event.preventDefault(); window.event.stopPropagation(); return false; \"";
 
     const onloadhandler = "onload=\"javascript: " +
         "window.wheelzoom(this);" +

@@ -9,9 +9,9 @@ import {
     R2_EVENT_AUDIO_DO_PAUSE, R2_EVENT_AUDIO_DO_PLAY, R2_EVENT_AUDIO_FORWARD, R2_EVENT_AUDIO_REWIND,
     R2_EVENT_AUDIO_TOGGLE_PLAY_PAUSE,
 } from "../common/events";
-import { IReadiumElectronBrowserWindow } from "./webview/state";
+import { ReadiumElectronBrowserWindow } from "./webview/state";
 
-const win = window as IReadiumElectronBrowserWindow;
+const win = global.window as ReadiumElectronBrowserWindow;
 
 export function audioPlay() {
     const activeWebView = win.READIUM2.getFirstOrSecondWebView();

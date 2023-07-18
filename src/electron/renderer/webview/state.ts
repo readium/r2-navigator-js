@@ -15,6 +15,8 @@ import {
 import { WebViewSlotEnum } from "../../common/styles";
 import { IStringMap } from "../common/querystring";
 
+export type TWindow = typeof window;
+
 export interface IReadiumElectronWebviewWindowState {
     // init'ed from  win.location.search immediately in preload.js
     // updated in R2_EVENT_SCROLLTO IPC renderer event
@@ -45,9 +47,10 @@ export interface IReadiumElectronWebviewWindowState {
 
     isClipboardIntercept: boolean;
 }
-export interface IReadiumElectronWebviewWindow extends Window {
+export interface IReadiumElectronWebviewWindow { // extends Window
     READIUM2: IReadiumElectronWebviewWindowState;
 }
+export type ReadiumElectronWebviewWindow = TWindow & IReadiumElectronWebviewWindow; // & typeof globalThis
 
 export interface IReadiumElectronWebviewState {
     id: number;
@@ -62,7 +65,7 @@ export interface IReadiumElectronWebview extends Electron.WebviewTag {
     READIUM2: IReadiumElectronWebviewState;
 }
 
-export interface IReadiumElectronBrowserWindowState {
+export interface IReadiumElectronBrowserWindow {
     publication: Publication;
     publicationURL: string;
 
@@ -102,8 +105,7 @@ export interface IReadiumElectronBrowserWindowState {
     isScreenReaderMounted: boolean;
 }
 
-export interface IWithReadiumElectronBrowserWindowState {
-    READIUM2: IReadiumElectronBrowserWindowState;
+export interface IWithIReadiumElectronBrowserWindow {
+    READIUM2: IReadiumElectronBrowserWindow;
 }
-export type TWindow = typeof window;
-export type IReadiumElectronBrowserWindow = TWindow & IWithReadiumElectronBrowserWindowState;
+export type ReadiumElectronBrowserWindow = TWindow & IWithIReadiumElectronBrowserWindow;

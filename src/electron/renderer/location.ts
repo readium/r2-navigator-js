@@ -51,14 +51,14 @@ import { mediaOverlaysInterrupt } from "./media-overlays";
 import {
     adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, isRTL, obtainReadiumCss,
 } from "./readium-css";
-import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
+import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 import URI = require("urijs");
 const debug = debug_("r2:navigator#electron/renderer/location");
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-const win = window as IReadiumElectronBrowserWindow;
+const win = global.window as ReadiumElectronBrowserWindow;
 
 const webviewStyleCommon = "display: flex; border: 0; margin: 0; padding: 0; box-sizing: border-box; position: absolute; ";
 
@@ -144,13 +144,18 @@ export function locationHandleIpcMessage(
                 (eventArgs[0] as IEventPayload_R2_EVENT_SHIFT_VIEW_X).backgroundColor);
         }
     } else if (eventChannel === R2_EVENT_PAGE_TURN_RES) {
+        const payload = eventArgs[0] as IEventPayload_R2_EVENT_PAGE_TURN;
+        if (payload.nav) {
+            const rtl = payload.direction === "LTR" && payload.go === "PREVIOUS" || payload.direction === "RTL" && payload.go === "NEXT";
+            navLeftOrRight(!rtl);
+            return true;
+        }
+
         const publication = win.READIUM2.publication;
         const publicationURL = win.READIUM2.publicationURL;
         if (!publication) {
             return true;
         }
-
-        const payload = eventArgs[0] as IEventPayload_R2_EVENT_PAGE_TURN;
 
         const doNothing = payload.go === "" && payload.direction === "";
         if (doNothing) {

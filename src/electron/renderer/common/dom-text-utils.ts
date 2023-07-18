@@ -9,12 +9,11 @@ import { split } from "sentence-splitter";
 
 import { SKIP_LINK_ID } from "../../common/styles";
 import { uniqueCssSelector } from "../common/cssselector2";
-import { IReadiumElectronWebviewWindow } from "../webview/state";
+import { ReadiumElectronWebviewWindow } from "../webview/state";
 
 // const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const win = (global as any).window as IReadiumElectronWebviewWindow;
+const win = global.window as ReadiumElectronWebviewWindow;
 
 export function combineTextNodes(textNodes: Node[], skipNormalize?: boolean): string {
     if (textNodes && textNodes.length) {

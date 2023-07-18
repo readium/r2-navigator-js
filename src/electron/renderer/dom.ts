@@ -42,7 +42,7 @@ import {
 } from "./readaloud";
 import { adjustReadiumCssJsonMessageForFixedLayout, obtainReadiumCss } from "./readium-css";
 import { soundtrackHandleIpcMessage } from "./soundtrack";
-import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
+import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 const ELEMENT_ID_SLIDING_VIEWPORT = "r2_navigator_sliding_viewport";
 const ELEMENT_ID_CAPTIONS = "r2_navigator_captions_overlay";
@@ -95,7 +95,7 @@ url("{RCSS_BASE_URL}fonts/iAWriterDuospace-Regular.ttf") format("truetype");
 
 const debug = debug_("r2:navigator#electron/renderer/index");
 
-const win = window as IReadiumElectronBrowserWindow;
+const win = global.window as ReadiumElectronBrowserWindow;
 
 let _resizeSkip = 0;
 let _resizeWebviewsNeedReset = true;
@@ -398,7 +398,7 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             if (_keyUpEventHandler) {
                 _keyUpEventHandler(payload, payload.elementName, payload.elementAttributes);
             }
-        }  else if (event.channel === R2_EVENT_CAPTIONS) {
+        } else if (event.channel === R2_EVENT_CAPTIONS) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_CAPTIONS;
 
             let captionElement = win.document.getElementById(ELEMENT_ID_CAPTIONS);
@@ -498,7 +498,7 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
 //             adjustResize(activeWebView);
 //         }
 //     }, 200);
-//     window.addEventListener("resize", () => {
+//     win.addEventListener("resize", () => {
 //         // const activeWebViews = win.READIUM2.getActiveWebViews();
 //         // if (!isFixedLayout(activeWebView.READIUM2.link)) {
 //         //     if (_rootHtmlElement) {
@@ -571,7 +571,7 @@ export function installNavigatorDOM(
     clipboardInterceptor: ((data: IEventPayload_R2_EVENT_CLIPBOARD_COPY) => void) | undefined,
     sessionInfo: string | undefined,
     rcss: IEventPayload_R2_EVENT_READIUMCSS | undefined,
-    ) {
+) {
 
     // debug(JSON.stringify(publication, null, 4));
     // debug(util.inspect(publication,
@@ -644,18 +644,18 @@ export function installNavigatorDOM(
     if (IS_DEV) {
         debug("||||||++||||| installNavigatorDOM: ", JSON.stringify(location));
 
-        const debugVisualz = (window.localStorage &&
-            window.localStorage.getItem(URL_PARAM_DEBUG_VISUALS) === "true") ? true : false;
+        const debugVisualz = (win.localStorage &&
+            win.localStorage.getItem(URL_PARAM_DEBUG_VISUALS) === "true") ? true : false;
         debug("debugVisuals GET: ", debugVisualz);
 
         win.READIUM2.DEBUG_VISUALS = debugVisualz;
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).READIUM2.debug = async (debugVisuals: boolean) => {
+        (win.READIUM2 as any).debug = async (debugVisuals: boolean) => {
             debug("debugVisuals SET: ", debugVisuals);
             win.READIUM2.DEBUG_VISUALS = debugVisuals;
-            if (window.localStorage) {
-                window.localStorage.setItem(URL_PARAM_DEBUG_VISUALS, debugVisuals ? "true" : "false");
+            if (win.localStorage) {
+                win.localStorage.setItem(URL_PARAM_DEBUG_VISUALS, debugVisuals ? "true" : "false");
             }
 
             const loc = getCurrentReadingLocation();
@@ -685,7 +685,7 @@ export function installNavigatorDOM(
         };
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).READIUM2.debugItems =
+        (win.READIUM2 as any).debugItems =
             (href: string, cssSelector: string, cssClass: string, cssStyles: string | undefined) => {
 
                 if (cssStyles) {
@@ -699,7 +699,7 @@ export function installNavigatorDOM(
                     }
                     // let delay = 0;
                     // if (!win.READIUM2.DEBUG_VISUALS) {
-                    //     (window as any).READIUM2.debug(true);
+                    //     (win.READIUM2 as any).debug(true);
                     //     delay = 200;
                     // }
                     // setTimeout(() => {
@@ -737,12 +737,12 @@ export function installNavigatorDOM(
 let _keyDownEventHandler: (
     ev: IKeyboardEvent,
     elementName: string,
-    elementAttributes: {[name: string]: string},
+    elementAttributes: { [name: string]: string },
 ) => void;
 export function setKeyDownEventHandler(func: (
     ev: IKeyboardEvent,
     elementName: string,
-    elementAttributes: {[name: string]: string},
+    elementAttributes: { [name: string]: string },
 ) => void) {
 
     _keyDownEventHandler = func;
@@ -751,12 +751,12 @@ export function setKeyDownEventHandler(func: (
 let _keyUpEventHandler: (
     ev: IKeyboardEvent,
     elementName: string,
-    elementAttributes: {[name: string]: string},
+    elementAttributes: { [name: string]: string },
 ) => void;
 export function setKeyUpEventHandler(func: (
     ev: IKeyboardEvent,
     elementName: string,
-    elementAttributes: {[name: string]: string},
+    elementAttributes: { [name: string]: string },
 ) => void) {
 
     _keyUpEventHandler = func;
