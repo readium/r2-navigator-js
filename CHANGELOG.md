@@ -1,10 +1,31 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.13.3...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.13.4...develop
 
 Changes:
 * TODO
+
+# 1.13.4
+
+> Build environment: NodeJS `18.16.1`, NPM `9.8.0`
+
+Changes:
+* Feature: image zoom with mouse wheel, trackpad and touch gestures (pinch stretch), panning, keyboard support
+* Feature: finger touch swipe gesture to turn pages / navigate left/right in book contents
+* Fix: in DEV mode, web inspector context menu was registering multiple times
+* Fix: mouse wheel middle click was opening Electron browser window
+* Fix: Electron now stricter with uncaught exceptions / rejected promises across IPC messaging system, must code fence properly for webview dom-ready state
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.4/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.4/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.4
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.13.3...v1.13.4
 
 # 1.13.3
 
