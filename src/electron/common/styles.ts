@@ -33,6 +33,9 @@ export const POPOUTIMAGE_CONTAINER_CLASS = "r2-popoutimage-container";
 export const POPUP_DIALOG_CLASS = "r2-popup-dialog";
 export const POPUP_DIALOG_CLASS_COLLAPSE = "r2-popup-dialog-collapse";
 
+export const ROOT_CLASS_KEYBOARD_INTERACT = "r2-keyboard-interact";
+export const CSS_CLASS_NO_FOCUS_OUTLINE = "r2-no-focus-outline";
+
 // 'a' element: noteref biblioref glossref annoref
 //
 // @namespace epub "http://www.idpf.org/2007/ops";
@@ -118,17 +121,21 @@ export const footnotesCssStyles = `
     height: 1px;
 }
 
-:root[style] .${POPOUTIMAGE_CONTAINER_CLASS},
-:root .${POPOUTIMAGE_CONTAINER_CLASS} {
+:root[style] div.${POPOUTIMAGE_CONTAINER_CLASS},
+:root div.${POPOUTIMAGE_CONTAINER_CLASS},
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} div.${POPOUTIMAGE_CONTAINER_CLASS},
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} div.${POPOUTIMAGE_CONTAINER_CLASS} {
     grid-column-start: 1;
     grid-column-end: 4;
     grid-row-start: 1;
     grid-row-end: 3;
 
+    /*
     outline-color: magenta !important;
-    outline-style: dashed !important;
-    outline-width: 6px !important;
-    outline-offset: -6px !important;
+    outline-style: dotted !important;
+    outline-width: 4px !important;
+    outline-offset: -4px !important;
+    */
 
     padding: 0;
     margin: 0;
@@ -150,44 +157,129 @@ export const footnotesCssStyles = `
     overflow-x: auto;
 }
 
-:root[style] img[data-${POPOUTIMAGE_CONTAINER_CLASS}],
-:root img[data-${POPOUTIMAGE_CONTAINER_CLASS}] {
-    outline-color: magenta !important;
-    outline-style: dashed !important;
-    outline-width: 10px !important;
-    outline-offset: 2px !important;
+@keyframes readium2ElectronAnimation_IMG_OUTLINE {
+    0% {
+        outline-offset: -0.4em;
+    }
+    25% {
+        outline-offset: 0em;
+    }
+    50% {
+        outline-offset: 0.8em;
+    }
+    75% {
+        outline-offset: 0em;
+    }
+    100% {
+        outline-offset: -0.4em;
+    }
+}
 
+:root[style] img[data-${POPOUTIMAGE_CONTAINER_CLASS}],
+:root img[data-${POPOUTIMAGE_CONTAINER_CLASS}],
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} img[data-${POPOUTIMAGE_CONTAINER_CLASS}],
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} img[data-${POPOUTIMAGE_CONTAINER_CLASS}]
+{
+    outline-color: magenta !important;
+    outline-style: solid !important;
+    outline-width: 0.2em !important;
+    /* outline-offset: 2px !important; */
+
+    cursor: pointer !important;
+
+    animation-name: readium2ElectronAnimation_IMG_OUTLINE;
+    animation-iteration-count: infinite;
+    animation-duration: 1s;
+    animation-delay: 0s;
+    animation-fill-mode: forwards;
+    animation-timing-function: linear;
+}
+
+/*
+:root[style*="readium-night-on"]
+*/
+:root[style] div.${POPOUTIMAGE_CONTAINER_CLASS} #imgZoomControls,
+:root div.${POPOUTIMAGE_CONTAINER_CLASS} #imgZoomControls {
+    border: 1px solid black;
+    background: white !important;
+    color: black !important;
+    padding: 0.2em;
+    margin: 0;
+    border-radius: 0.8em;
+    position: absolute;
+    top: 0.2em;
+    left: 0.4em;
+    width: auto;
+    height: auto;
+}
+:root[style] div.${POPOUTIMAGE_CONTAINER_CLASS} #imgZoomClose,
+:root div.${POPOUTIMAGE_CONTAINER_CLASS} #imgZoomClose {
+    position: absolute;
+    top: 0.2em;
+    right: 0.4em;
+}
+:root[style] div.${POPOUTIMAGE_CONTAINER_CLASS} button,
+:root div.${POPOUTIMAGE_CONTAINER_CLASS} button {
+    border: 2px solid black;
+    background: white !important;
+    color: black !important;
+    font-family: Arial !important;
+    font-size: 1.5em !important;
+    font-weight: bold;
+    user-select: none;
+    padding: 0.2em;
+    margin: 0;
+    border-radius: 0.8em;
+    width: 1.6em;
+    display: inline-block;
     cursor: pointer !important;
 }
 
-:root[style] .${POPOUTIMAGE_CONTAINER_CLASS} > img,
-:root .${POPOUTIMAGE_CONTAINER_CLASS} > img {
+:root[style] div.${POPOUTIMAGE_CONTAINER_CLASS} > img,
+:root div.${POPOUTIMAGE_CONTAINER_CLASS} > img {
+
+    /*
+    outline-color: red !important;
+    outline-style: dashed !important;
+    outline-width: 2px !important;
+    outline-offset: -2px !important;
+    */
+
     transform-origin: 0px 0px;
 
     box-sizing: border-box;
-    border: 4px solid #333333;
+    /* border: 2px solid #333333; */
 
-    object-fit: cover !important;
-    cursor: pointer !important;
+    cursor: move !important;
 
-    margin: auto !important;
+    margin: 0 !important;
+    object-fit: contain !important;
     position: relative !important;
+    max-height: 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 100% !important;
 
+    /*
+    margin: auto !important;
+    object-fit: cover !important;
+    position: relative !important;
     max-height: 100% !important;
     max-width: 100% !important;
     width: auto !important;
     height: auto !important;
+    */
 
     /* vertical centering breaks image height
+    margin: auto !important;
+    position: absolute !important;
+    max-height: none !important;
     max-width: 100% !important;
     width: 100% !important;
-    max-height: none !important;
     height: auto !important;
 
-    position: absolute !important;
     top: 0 !important;
     bottom: 0 !important;
-    margin: auto !important;
     */
 
     /* this works with position:relative in the parent (no need for flex)
@@ -833,8 +925,6 @@ background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQA
 }
 `;
 
-export const ROOT_CLASS_KEYBOARD_INTERACT = "r2-keyboard-interact";
-export const CSS_CLASS_NO_FOCUS_OUTLINE = "r2-no-focus-outline";
 export const focusCssStyles = `
 
 #${SKIP_LINK_ID} {

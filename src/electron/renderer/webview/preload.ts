@@ -2182,74 +2182,73 @@ function loaded(forced: boolean) {
         }, 1000);
     });
 
-    const imageMouseExit = (ev: Event) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((ev.target as any)._r2ImageHoverTimer) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            win.clearTimeout((ev.target as any)._r2ImageHoverTimer);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (ev.target as any)._r2ImageHoverTimer = 0;
-        }
-        if ((ev.target as HTMLElement).hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`)) {
-            (ev.target as HTMLElement).removeAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`);
-        }
-    };
-    setTimeout(() => {
-        const images = win.document.querySelectorAll("img[src]");
-        images.forEach((img) => {
+    // const imageMouseExit = (ev: Event) => {
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     if ((ev.target as any)._r2ImageHoverTimer) {
+    //         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //         win.clearTimeout((ev.target as any)._r2ImageHoverTimer);
+    //         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //         (ev.target as any)._r2ImageHoverTimer = 0;
+    //     }
+    //     if ((ev.target as HTMLElement).hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`)) {
+    //         (ev.target as HTMLElement).removeAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`);
+    //     }
+    // };
+    // setTimeout(() => {
+    //     const images = win.document.querySelectorAll("img[src]");
+    //     images.forEach((img) => {
 
-            // mouseover
-            img.addEventListener("mousemove", (ev) => {
+    //         // mouseover
+    //         img.addEventListener("mousemove", (ev) => {
 
-                if ((ev as MouseEvent).shiftKey) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    if ((ev.target as any)._r2ImageHoverTimer) {
-                        return;
-                    }
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (ev.target as any)._r2ImageHoverTimer = win.setTimeout(() => {
-                        (ev.target as HTMLElement).setAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`, "1");
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        (ev.target as any)._r2ImageHoverTimer = 0;
-                    }, 400);
-                    return;
-                }
-                imageMouseExit(ev);
-            });
-            img.addEventListener("mouseleave", (ev) => {
-                imageMouseExit(ev);
-            });
+    //             if ((ev as MouseEvent).shiftKey) {
+    //                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //                 if ((ev.target as any)._r2ImageHoverTimer) {
+    //                     return;
+    //                 }
+    //                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //                 (ev.target as any)._r2ImageHoverTimer = win.setTimeout(() => {
+    //                     (ev.target as HTMLElement).setAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`, "1");
+    //                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //                     (ev.target as any)._r2ImageHoverTimer = 0;
+    //                 }, 400);
+    //                 return;
+    //             }
+    //             imageMouseExit(ev);
+    //         });
+    //         img.addEventListener("mouseleave", (ev) => {
+    //             imageMouseExit(ev);
+    //         });
 
-            // see capturing delegate below (DOM event handler priority)
-            // img.addEventListener("click", (ev) => {
-            //     if ((ev.target as HTMLElement).hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`)) {
-            //         //
-            //     }
-            // });
-        });
-    }, 800);
+    //         // see capturing delegate below (DOM event handler priority)
+    //         // img.addEventListener("click", (ev) => {
+    //         //     if ((ev.target as HTMLElement).hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`)) {
+    //         //         //
+    //         //     }
+    //         // });
+    //     });
+    // }, 800);
+    // win.document.addEventListener("mousedown", async (ev: MouseEvent) => {
 
-    win.document.addEventListener("mousedown", async (ev: MouseEvent) => {
+    //     const currentElement = ev.target as Element;
+    //     if (// ev.shiftKey &&
+    //         currentElement &&
+    //         (currentElement as HTMLImageElement).src &&
+    //         currentElement.nodeType === Node.ELEMENT_NODE &&
+    //         currentElement.tagName.toLowerCase() === "img" &&
+    //         currentElement.hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`)) {
 
-        const currentElement = ev.target as Element;
-        if (// ev.shiftKey &&
-            currentElement &&
-            (currentElement as HTMLImageElement).src &&
-            currentElement.nodeType === Node.ELEMENT_NODE &&
-            currentElement.tagName.toLowerCase() === "img" &&
-            currentElement.hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`)) {
+    //         ev.preventDefault();
+    //         ev.stopPropagation();
 
-            ev.preventDefault();
-            ev.stopPropagation();
-
-            popoutImage(
-                win,
-                currentElement as HTMLImageElement,
-                focusScrollRaw,
-                ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
-                ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
-        }
-    }, true);
+    //         popoutImage(
+    //             win,
+    //             currentElement as HTMLImageElement,
+    //             focusScrollRaw,
+    //             ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+    //             ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
+    //     }
+    // }, true);
 
     win.document.addEventListener("auxclick", async (ev: MouseEvent) => {
         debug(`AUX __CLICK: ${ev.button} (SKIP middle)`);
@@ -2260,10 +2259,37 @@ function loaded(forced: boolean) {
     }, true);
     win.document.addEventListener("click", async (ev: MouseEvent) => {
         debug(`!AUX __CLICK: ${ev.button} ...`);
-        let currentElement = ev.target as Element;
+
+        const clearImages = () => {
+            const images = win.document.querySelectorAll(`img[data-${POPOUTIMAGE_CONTAINER_CLASS}]`);
+            images.forEach((img) => {
+                img.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`);
+            });
+        };
+
+        let linkElement: Element | undefined;
         let href: string | SVGAnimatedString | undefined;
+
+        let imageElement: Element | undefined;
+        let src: string | SVGAnimatedString | undefined;
+
+        let currentElement: Element | undefined = ev.target as Element;
         while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
-            if (currentElement.tagName.toLowerCase() === "a") {
+            if (currentElement.tagName.toLowerCase() === "img" && !currentElement.classList.contains(POPOUTIMAGE_CONTAINER_CLASS)) {
+
+                src = (currentElement as HTMLImageElement).src;
+                let src_ = currentElement.getAttribute("src");
+                if (!src) {
+                    // SVG img href property, absolute URL?
+                    src = (currentElement as SVGImageElement).href;
+
+                    // SVG img href attribute, relative URL?
+                    src_ = currentElement.getAttribute("href");
+                }
+                imageElement = currentElement;
+                debug(`IMG CLICK: ${src} (${src_})`);
+                // break;
+            } else if (currentElement.tagName.toLowerCase() === "a") {
 
                 // includes SVG xlink:href, absolute URL
                 href = (currentElement as HTMLAnchorElement | SVGAElement).href;
@@ -2271,40 +2297,82 @@ function loaded(forced: boolean) {
                 // excludes SVG xlink:href, relative URL
                 const href_ = currentElement.getAttribute("href");
 
+                linkElement = currentElement;
                 debug(`A LINK CLICK: ${href} (${href_})`);
                 break;
             }
             currentElement = currentElement.parentNode as Element;
         }
+        currentElement = undefined;
 
-        if (!href) {
+        if (!href && !src && !imageElement && !linkElement) {
+            clearImages();
             return;
         }
 
-        if ((href as SVGAnimatedString).animVal) {
+        if (href && (href as SVGAnimatedString).animVal) {
             href = (href as SVGAnimatedString).animVal;
 
             if (!href) {
+                clearImages();
                 return;
             }
         }
 
-        const hrefStr = href as string;
+        if (src && (src as SVGAnimatedString).animVal) {
+            src = (src as SVGAnimatedString).animVal;
 
-        if (/^javascript:/.test(hrefStr)) {
+            if (!src) {
+                clearImages();
+                return;
+            }
+        }
+
+        const has = imageElement?.hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`);
+        if (imageElement && src && (!href || has || ev.shiftKey)) {
+
+            clearImages();
+
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            if (has) {
+                popoutImage(
+                    win,
+                    imageElement as HTMLImageElement,
+                    focusScrollRaw,
+                    ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+                    ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
+            } else {
+                imageElement.setAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`, "1");
+            }
+
             return;
         }
+
+        if (!linkElement || !href) {
+            clearImages();
+            return;
+        }
+
+        const hrefStr = href as string;
+        if (/^javascript:/.test(hrefStr)) {
+            clearImages();
+            return;
+        }
+
+        clearImages();
 
         ev.preventDefault();
         ev.stopPropagation();
 
         const payload: IEventPayload_R2_EVENT_LINK = {
-            url: "#" + FRAG_ID_CSS_SELECTOR + encodeURIComponent_RFC3986(getCssSelector(currentElement)), // see location.ts locationHandleIpcMessage() eventChannel === R2_EVENT_LINK (URL is made absolute if necessary)
+            url: "#" + FRAG_ID_CSS_SELECTOR + encodeURIComponent_RFC3986(getCssSelector(linkElement)), // see location.ts locationHandleIpcMessage() eventChannel === R2_EVENT_LINK (URL is made absolute if necessary)
         };
         ipcRenderer.sendToHost(R2_EVENT_LINK, payload); // this will result in the app registering the element in the navigation history, but is skipped in location.ts ipcRenderer.on(R2_EVENT_LINK)
 
         const done = await popupFootNote(
-            currentElement as HTMLElement,
+            linkElement as HTMLElement,
             focusScrollRaw,
             hrefStr,
             ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
