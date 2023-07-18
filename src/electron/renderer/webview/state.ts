@@ -25,6 +25,7 @@ export interface IReadiumElectronWebviewWindowState {
     locationHashOverrideInfo: IEventPayload_R2_EVENT_READING_LOCATION | undefined;
 
     isAudio: boolean;
+    ignorekeyDownUpEvents: boolean;
 
     isFixedLayout: boolean;
     fxlViewportWidth: number;

@@ -47,7 +47,7 @@ import {
 import { sameSelections } from "../../common/selection";
 import {
     CLASS_PAGINATED, CSS_CLASS_NO_FOCUS_OUTLINE, HIDE_CURSOR_CLASS, LINK_TARGET_CLASS,
-    POPOUTIMAGE_CONTAINER_CLASS, POPUP_DIALOG_CLASS, POPUP_DIALOG_CLASS_COLLAPSE,
+    POPOUTIMAGE_CONTAINER_ID, POPUP_DIALOG_CLASS, POPUP_DIALOG_CLASS_COLLAPSE,
     R2_MO_CLASS_ACTIVE, R2_MO_CLASS_ACTIVE_PLAYBACK, ROOT_CLASS_INVISIBLE_MASK,
     ROOT_CLASS_INVISIBLE_MASK_REMOVED, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX,
     ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_ID_SPEAKING_DOC_ELEMENT,
@@ -117,6 +117,7 @@ win.READIUM2 = {
     fxlZoomPercent: 0,
     hashElement: null,
     isAudio: false,
+    ignorekeyDownUpEvents: false,
     isClipboardIntercept: false,
     isFixedLayout: false,
     locationHashOverride: undefined,
@@ -188,6 +189,9 @@ const CSS_PIXEL_TOLERANCE = 5;
 // }, 2000);
 
 function keyDownUpEventHandler(ev: KeyboardEvent, keyDown: boolean) {
+    if (win.READIUM2.ignorekeyDownUpEvents) {
+        return;
+    }
     const elementName = (ev.target && (ev.target as Element).nodeName) ?
         (ev.target as Element).nodeName : "";
     const elementAttributes: { [name: string]: string } = {};
@@ -2182,74 +2186,6 @@ function loaded(forced: boolean) {
         }, 1000);
     });
 
-    // const imageMouseExit = (ev: Event) => {
-    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //     if ((ev.target as any)._r2ImageHoverTimer) {
-    //         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //         win.clearTimeout((ev.target as any)._r2ImageHoverTimer);
-    //         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //         (ev.target as any)._r2ImageHoverTimer = 0;
-    //     }
-    //     if ((ev.target as HTMLElement).hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`)) {
-    //         (ev.target as HTMLElement).removeAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`);
-    //     }
-    // };
-    // setTimeout(() => {
-    //     const images = win.document.querySelectorAll("img[src]");
-    //     images.forEach((img) => {
-
-    //         // mouseover
-    //         img.addEventListener("mousemove", (ev) => {
-
-    //             if ((ev as MouseEvent).shiftKey) {
-    //                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //                 if ((ev.target as any)._r2ImageHoverTimer) {
-    //                     return;
-    //                 }
-    //                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //                 (ev.target as any)._r2ImageHoverTimer = win.setTimeout(() => {
-    //                     (ev.target as HTMLElement).setAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`, "1");
-    //                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //                     (ev.target as any)._r2ImageHoverTimer = 0;
-    //                 }, 400);
-    //                 return;
-    //             }
-    //             imageMouseExit(ev);
-    //         });
-    //         img.addEventListener("mouseleave", (ev) => {
-    //             imageMouseExit(ev);
-    //         });
-
-    //         // see capturing delegate below (DOM event handler priority)
-    //         // img.addEventListener("click", (ev) => {
-    //         //     if ((ev.target as HTMLElement).hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`)) {
-    //         //         //
-    //         //     }
-    //         // });
-    //     });
-    // }, 800);
-    // win.document.addEventListener("mousedown", async (ev: MouseEvent) => {
-
-    //     const currentElement = ev.target as Element;
-    //     if (// ev.shiftKey &&
-    //         currentElement &&
-    //         (currentElement as HTMLImageElement).src &&
-    //         currentElement.nodeType === Node.ELEMENT_NODE &&
-    //         currentElement.tagName.toLowerCase() === "img" &&
-    //         currentElement.hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`)) {
-
-    //         ev.preventDefault();
-    //         ev.stopPropagation();
-
-    //         popoutImage(
-    //             win,
-    //             currentElement as HTMLImageElement,
-    //             focusScrollRaw,
-    //             ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
-    //             ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
-    //     }
-    // }, true);
-
     win.document.addEventListener("auxclick", async (ev: MouseEvent) => {
         debug(`AUX __CLICK: ${ev.button} (SKIP middle)`);
         if (ev.button === 1) {
@@ -2261,9 +2197,9 @@ function loaded(forced: boolean) {
         debug(`!AUX __CLICK: ${ev.button} ...`);
 
         const clearImages = () => {
-            const images = win.document.querySelectorAll(`img[data-${POPOUTIMAGE_CONTAINER_CLASS}]`);
+            const images = win.document.querySelectorAll(`img[data-${POPOUTIMAGE_CONTAINER_ID}]`);
             images.forEach((img) => {
-                img.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`);
+                img.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
             });
         };
 
@@ -2275,7 +2211,7 @@ function loaded(forced: boolean) {
 
         let currentElement: Element | undefined = ev.target as Element;
         while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
-            if (currentElement.tagName.toLowerCase() === "img" && !currentElement.classList.contains(POPOUTIMAGE_CONTAINER_CLASS)) {
+            if (currentElement.tagName.toLowerCase() === "img" && !currentElement.classList.contains(POPOUTIMAGE_CONTAINER_ID)) {
 
                 src = (currentElement as HTMLImageElement).src;
                 let src_ = currentElement.getAttribute("src");
@@ -2328,7 +2264,7 @@ function loaded(forced: boolean) {
             }
         }
 
-        const has = imageElement?.hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`);
+        const has = imageElement?.hasAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
         if (imageElement && src && (!href || has || ev.shiftKey)) {
 
             clearImages();
@@ -2344,7 +2280,7 @@ function loaded(forced: boolean) {
                     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
                     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
             } else {
-                imageElement.setAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`, "1");
+                imageElement.setAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`, "1");
             }
 
             return;

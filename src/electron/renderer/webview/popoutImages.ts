@@ -6,7 +6,7 @@
 // ==LICENSE-END==
 
 import {
-    CSS_CLASS_NO_FOCUS_OUTLINE, POPOUTIMAGE_CONTAINER_CLASS, TTS_POPUP_DIALOG_CLASS,
+    CSS_CLASS_NO_FOCUS_OUTLINE, POPOUTIMAGE_CONTAINER_ID, POPOUTIMAGE_CONTROLS_ID, POPOUTIMAGE_CLOSE_ID, POPOUTIMAGE_MINUS_ID, POPOUTIMAGE_PLUS_ID, POPOUTIMAGE_RESET_ID, TTS_POPUP_DIALOG_CLASS,
 } from "../../common/styles";
 import { PopupDialog, closePopupDialogs } from "../common/popup-dialog";
 import { IReadiumElectronWebviewWindow } from "./state";
@@ -23,6 +23,7 @@ export function popoutImage(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (win as any).wheelzoom = (img: HTMLImageElement) => {
         const zoomStep = 0.10;
+        const panStep = 20;
 
         let viewportWidth = 0;
         let viewportHeight = 0;
@@ -249,6 +250,8 @@ export function popoutImage(
                 return;
             }
 
+            win.READIUM2.ignorekeyDownUpEvents = true;
+
             naturalHeight = img.naturalHeight;
             naturalWidth = img.naturalWidth;
 
@@ -278,14 +281,34 @@ export function popoutImage(
             //     onclick(undefined, true);
             // });
 
-            (win.document.getElementById("imgZoomClose") as HTMLElement).focus();
-            (win.document.getElementById("imgZoomClose") as HTMLElement).addEventListener("click", () => {
+            (win.document.getElementById(POPOUTIMAGE_CLOSE_ID) as HTMLElement).focus();
+            (win.document.getElementById(POPOUTIMAGE_CLOSE_ID) as HTMLElement).addEventListener("click", () => {
                 closePopupDialogs(win.document);
             });
-            (win.document.getElementById("imgZoomReset") as HTMLElement).addEventListener("click", () => {
+            (win.document.getElementById(POPOUTIMAGE_RESET_ID) as HTMLElement).addEventListener("click", () => {
                 onclick(undefined, true);
             });
-            (win.document.getElementById("imgZoomMinus") as HTMLElement).addEventListener("click", () => {
+            const panLeft = (fast: boolean) => {
+                bgPosX -= panStep * (fast ? 2 : 1);
+
+                updateBgStyle();
+            };
+            const panRight = (fast: boolean) => {
+                bgPosX += panStep * (fast ? 2 : 1);
+
+                updateBgStyle();
+            };
+            const panUp = (fast: boolean) => {
+                bgPosY -= panStep * (fast ? 2 : 1);
+
+                updateBgStyle();
+            };
+            const panDown = (fast: boolean) => {
+                bgPosY += panStep * (fast ? 2 : 1);
+
+                updateBgStyle();
+            };
+            const minus = () => {
                 // bgWidth -= bgWidth * zoomStep;
                 // bgHeight -= bgHeight * zoomStep;
 
@@ -305,8 +328,9 @@ export function popoutImage(
                 bgPosY = offsetY - (bgHeight * bgRatioY);
 
                 updateBgStyle();
-            });
-            (win.document.getElementById("imgZoomPlus") as HTMLElement).addEventListener("click", () => {
+            };
+            (win.document.getElementById(POPOUTIMAGE_MINUS_ID) as HTMLElement).addEventListener("click", minus);
+            const plus = () => {
                 // bgWidth += bgWidth * zoomStep;
                 // bgHeight += bgHeight * zoomStep;
 
@@ -326,8 +350,59 @@ export function popoutImage(
                 bgPosY = offsetY - (bgHeight * bgRatioY);
 
                 updateBgStyle();
-            });
+            };
+            (win.document.getElementById(POPOUTIMAGE_PLUS_ID) as HTMLElement).addEventListener("click", plus);
 
+            function keyDownUpEventHandler(ev: KeyboardEvent, _keyDown: boolean) {
+                // altKey: ev.altKey,
+                // code: ev.code,
+                // ctrlKey: ev.ctrlKey,
+                // key: ev.key,
+                // metaKey: ev.metaKey,
+                // shiftKey: ev.shiftKey,
+
+                let handled = false;
+                if (ev.keyCode === 37) { // left
+                    handled = true;
+                    panLeft(ev.ctrlKey);
+                } else if (ev.keyCode === 39) { // right
+                    handled = true;
+                    panRight(ev.ctrlKey);
+                } else if (ev.keyCode === 38) { // up
+                    handled = true;
+                    panUp(ev.ctrlKey);
+                } else if (ev.keyCode === 40) { // down
+                    handled = true;
+                    panDown(ev.ctrlKey);
+                } else if (ev.ctrlKey && ev.code === "Minus") {
+                    handled = true;
+                    minus();
+                } else if (ev.ctrlKey && ev.code === "Plus") {
+                    handled = true;
+                    plus();
+                } else if (ev.ctrlKey && (ev.code === "Digit0" || ev.code === "Digit1" || ev.code === "Backspace" || ev.code === "Equal")) {
+                    handled = true;
+                    reset();
+                }
+                if (handled) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                }
+            }
+            (win.document.getElementById(POPOUTIMAGE_CONTAINER_ID) as HTMLElement).addEventListener("keydown", (ev: KeyboardEvent) => {
+                keyDownUpEventHandler(ev, true);
+            }, {
+                capture: true,
+                once: false,
+                passive: false,
+            });
+            // (win.document.getElementById(POPOUTIMAGE_CONTAINER_ID) as HTMLElement).addEventListener("keyup", (ev: KeyboardEvent) => {
+            //     keyDownUpEventHandler(ev, false);
+            // }, {
+            //     capture: true,
+            //     once: false,
+            //     passive: false,
+            // });
         }
         init();
         // if (img.complete) {
@@ -367,21 +442,22 @@ export function popoutImage(
     // tslint:disable-next-line:max-line-length
     const htmltxt = `
 <div
-    class="${POPOUTIMAGE_CONTAINER_CLASS} ${CSS_CLASS_NO_FOCUS_OUTLINE}"
+    class="${CSS_CLASS_NO_FOCUS_OUTLINE}"
     tabindex="0"
     autofocus="autofocus"
+    id="${POPOUTIMAGE_CONTAINER_ID}"
     >
     <img
-        class="${POPOUTIMAGE_CONTAINER_CLASS}"
+        class="${POPOUTIMAGE_CONTAINER_ID}"
         ${onloadhandler}
         src="${imgHref}"
     />
-    <div id="imgZoomControls">
-    <button id="imgZoomMinus">-</button>
-    <button id="imgZoomReset">0</button>
-    <button id="imgZoomPlus">+</button>
+    <div id="${POPOUTIMAGE_CONTROLS_ID}">
+    <button id="${POPOUTIMAGE_MINUS_ID}">-</button>
+    <button id="${POPOUTIMAGE_RESET_ID}">0</button>
+    <button id="${POPOUTIMAGE_PLUS_ID}">+</button>
     </div>
-    <button id="imgZoomClose">X</button>
+    <button id="${POPOUTIMAGE_CLOSE_ID}">X</button>
 </div>`;
 
     // ${win.document.documentElement.classList.contains(ROOT_CLASS_FIXED_LAYOUT) ?
@@ -398,6 +474,7 @@ export function popoutImage(
     // }
 
     function onDialogClosed(el: HTMLOrSVGElement | null) {
+        win.READIUM2.ignorekeyDownUpEvents = false;
 
         if (el) {
             focusScrollRaw(el, true, true, undefined);

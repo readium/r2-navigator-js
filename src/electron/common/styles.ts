@@ -28,7 +28,12 @@ export const FOOTNOTES_CONTAINER_CLASS = "r2-footnote-container";
 export const FOOTNOTES_CLOSE_BUTTON_CLASS = "r2-footnote-close";
 export const FOOTNOTE_FORCE_SHOW = "r2-footnote-force-show";
 
-export const POPOUTIMAGE_CONTAINER_CLASS = "r2-popoutimage-container";
+export const POPOUTIMAGE_CONTAINER_ID = "r2-popoutimage-container-id";
+export const POPOUTIMAGE_CLOSE_ID = "r2-popoutimage-close-id";
+export const POPOUTIMAGE_CONTROLS_ID = "r2-popoutimage-controls-id";
+export const POPOUTIMAGE_MINUS_ID = "r2-popoutimage-minus-id";
+export const POPOUTIMAGE_PLUS_ID = "r2-popoutimage-plus-id";
+export const POPOUTIMAGE_RESET_ID = "r2-popoutimage-reset-id";
 
 export const POPUP_DIALOG_CLASS = "r2-popup-dialog";
 export const POPUP_DIALOG_CLASS_COLLAPSE = "r2-popup-dialog-collapse";
@@ -121,10 +126,10 @@ export const footnotesCssStyles = `
     height: 1px;
 }
 
-:root[style] div.${POPOUTIMAGE_CONTAINER_CLASS},
-:root div.${POPOUTIMAGE_CONTAINER_CLASS},
-:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} div.${POPOUTIMAGE_CONTAINER_CLASS},
-:root.${ROOT_CLASS_KEYBOARD_INTERACT} div.${POPOUTIMAGE_CONTAINER_CLASS} {
+:root[style] div#${POPOUTIMAGE_CONTAINER_ID},
+:root div#${POPOUTIMAGE_CONTAINER_ID},
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} div#${POPOUTIMAGE_CONTAINER_ID},
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} div#${POPOUTIMAGE_CONTAINER_ID} {
     grid-column-start: 1;
     grid-column-end: 4;
     grid-row-start: 1;
@@ -175,10 +180,10 @@ export const footnotesCssStyles = `
     }
 }
 
-:root[style] img[data-${POPOUTIMAGE_CONTAINER_CLASS}],
-:root img[data-${POPOUTIMAGE_CONTAINER_CLASS}],
-:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} img[data-${POPOUTIMAGE_CONTAINER_CLASS}],
-:root.${ROOT_CLASS_KEYBOARD_INTERACT} img[data-${POPOUTIMAGE_CONTAINER_CLASS}]
+:root[style] img[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root img[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} img[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} img[data-${POPOUTIMAGE_CONTAINER_ID}]
 {
     outline-color: magenta !important;
     outline-style: solid !important;
@@ -198,8 +203,8 @@ export const footnotesCssStyles = `
 /*
 :root[style*="readium-night-on"]
 */
-:root[style] div.${POPOUTIMAGE_CONTAINER_CLASS} #imgZoomControls,
-:root div.${POPOUTIMAGE_CONTAINER_CLASS} #imgZoomControls {
+:root[style] div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CONTROLS_ID},
+:root div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CONTROLS_ID} {
     border: 1px solid black;
     background: white !important;
     color: black !important;
@@ -212,14 +217,14 @@ export const footnotesCssStyles = `
     width: auto;
     height: auto;
 }
-:root[style] div.${POPOUTIMAGE_CONTAINER_CLASS} #imgZoomClose,
-:root div.${POPOUTIMAGE_CONTAINER_CLASS} #imgZoomClose {
+:root[style] div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CLOSE_ID},
+:root div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CLOSE_ID} {
     position: absolute;
     top: 0.2em;
     right: 0.4em;
 }
-:root[style] div.${POPOUTIMAGE_CONTAINER_CLASS} button,
-:root div.${POPOUTIMAGE_CONTAINER_CLASS} button {
+:root[style] div#${POPOUTIMAGE_CONTAINER_ID} button,
+:root div#${POPOUTIMAGE_CONTAINER_ID} button {
     border: 2px solid black;
     background: white !important;
     color: black !important;
@@ -235,8 +240,8 @@ export const footnotesCssStyles = `
     cursor: pointer !important;
 }
 
-:root[style] div.${POPOUTIMAGE_CONTAINER_CLASS} > img,
-:root div.${POPOUTIMAGE_CONTAINER_CLASS} > img {
+:root[style] div#${POPOUTIMAGE_CONTAINER_ID} > img,
+:root div#${POPOUTIMAGE_CONTAINER_ID} > img {
 
     /*
     outline-color: red !important;
