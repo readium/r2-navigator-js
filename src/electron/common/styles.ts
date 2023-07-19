@@ -183,7 +183,11 @@ export const footnotesCssStyles = `
 :root[style] img[data-${POPOUTIMAGE_CONTAINER_ID}],
 :root img[data-${POPOUTIMAGE_CONTAINER_ID}],
 :root[style].${ROOT_CLASS_KEYBOARD_INTERACT} img[data-${POPOUTIMAGE_CONTAINER_ID}],
-:root.${ROOT_CLASS_KEYBOARD_INTERACT} img[data-${POPOUTIMAGE_CONTAINER_ID}]
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} img[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root[style] image[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root image[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} image[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} image[data-${POPOUTIMAGE_CONTAINER_ID}]
 {
     outline-color: magenta !important;
     outline-style: solid !important;

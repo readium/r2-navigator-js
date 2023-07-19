@@ -14,6 +14,8 @@ import { LocatorLocations, LocatorText } from "@r2-shared-js/models/locator";
 
 import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
 
+import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../../common/sessions";
+
 import {
     IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK, IEventPayload_R2_EVENT_CAPTIONS,
     IEventPayload_R2_EVENT_CLIPBOARD_COPY, IEventPayload_R2_EVENT_DEBUG_VISUALS,
@@ -2308,75 +2310,81 @@ function loaded(forced: boolean) {
         debug(`!AUX __CLICK: ${ev.button} ...`);
 
         const clearImages = () => {
-            const images = win.document.querySelectorAll(`img[data-${POPOUTIMAGE_CONTAINER_ID}]`);
+            const imgs = win.document.querySelectorAll(`img[data-${POPOUTIMAGE_CONTAINER_ID}]`);
+            imgs.forEach((img) => {
+                img.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
+            });
+            const images = win.document.querySelectorAll(`image[data-${POPOUTIMAGE_CONTAINER_ID}]`);
             images.forEach((img) => {
                 img.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
             });
         };
 
         let linkElement: Element | undefined;
-        let href: string | SVGAnimatedString | undefined;
-
         let imageElement: Element | undefined;
-        let src: string | SVGAnimatedString | undefined;
+
+        let href_src: string | SVGAnimatedString | undefined;
 
         let currentElement: Element | undefined = ev.target as Element;
         while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
-            if (currentElement.tagName.toLowerCase() === "img" && !currentElement.classList.contains(POPOUTIMAGE_CONTAINER_ID)) {
+            if ((currentElement.tagName.toLowerCase() === "img" || currentElement.tagName.toLowerCase() === "image")
+                && !currentElement.classList.contains(POPOUTIMAGE_CONTAINER_ID)) {
 
-                src = (currentElement as HTMLImageElement).src;
-                let src_ = currentElement.getAttribute("src");
-                if (!src) {
-                    // SVG img href property, absolute URL?
-                    src = (currentElement as SVGImageElement).href;
+                // absolute (already resolved against base)
+                href_src = (currentElement as HTMLImageElement).src;
+                // possibly relative
+                let href_src_ = currentElement.getAttribute("src");
+                if (!href_src) {
+                    // SVGAnimatedString (animVal possibly relative)
+                    href_src = (currentElement as SVGImageElement).href;
 
-                    // SVG img href attribute, relative URL?
-                    src_ = currentElement.getAttribute("href");
+                    // possibly relative
+                    href_src_ = currentElement.getAttribute("href") || currentElement.getAttributeNS("http://www.w3.org/1999/xlink", "href");
                 }
                 imageElement = currentElement;
-                debug(`IMG CLICK: ${src} (${src_})`);
+                debug(`IMG CLICK: ${href_src} (${href_src_})`);
                 // break;
             } else if (currentElement.tagName.toLowerCase() === "a") {
 
-                // includes SVG xlink:href, absolute URL
-                href = (currentElement as HTMLAnchorElement | SVGAElement).href;
+                // absolute (already resolved against base),
+                // or SVGAnimatedString (animVal possibly relative)
+                href_src = (currentElement as HTMLAnchorElement | SVGAElement).href;
 
-                // excludes SVG xlink:href, relative URL
-                const href_ = currentElement.getAttribute("href");
+                // possibly relative
+                const href_ = currentElement.getAttribute("href") || currentElement.getAttributeNS("http://www.w3.org/1999/xlink", "href");
 
                 linkElement = currentElement;
-                debug(`A LINK CLICK: ${href} (${href_})`);
+                debug(`A LINK CLICK: ${href_src} (${href_})`);
                 break;
             }
             currentElement = currentElement.parentNode as Element;
         }
         currentElement = undefined;
 
-        if (!href && !src && !imageElement && !linkElement) {
+        // at that point, can be both an image and a link! ("img" element descendant of "a" ... clickable image link)
+
+        if (!href_src || (!imageElement && !linkElement)) {
             clearImages();
             return;
         }
 
-        if (href && (href as SVGAnimatedString).animVal) {
-            href = (href as SVGAnimatedString).animVal;
+        if ((href_src as SVGAnimatedString).animVal) {
+            href_src = (href_src as SVGAnimatedString).animVal;
 
-            if (!href) {
+            if (!href_src) {
                 clearImages();
                 return;
             }
         }
 
-        if (src && (src as SVGAnimatedString).animVal) {
-            src = (src as SVGAnimatedString).animVal;
-
-            if (!src) {
-                clearImages();
-                return;
-            }
+        if (typeof href_src !== "string") {
+            clearImages();
+            return;
         }
+        debug(`HREF SRC: ${href_src} (${win.location.href})`);
 
         const has = imageElement?.hasAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
-        if (imageElement && src && (!href || has || ev.shiftKey)) {
+        if (imageElement && href_src && (has || !linkElement || ev.shiftKey)) {
 
             clearImages();
 
@@ -2384,9 +2392,18 @@ function loaded(forced: boolean) {
             ev.stopPropagation();
 
             if (has) {
+                if (!/^(https?|thoriumhttps):\/\//.test(href_src) &&
+                    !href_src.startsWith((READIUM2_ELECTRON_HTTP_PROTOCOL + "://"))) {
+
+                    const destUrl = new URL(href_src, win.location.href);
+                    href_src = destUrl.toString();
+                    debug(`IMG CLICK ABSOLUTE-ized: ${href_src}`);
+                }
+
                 popoutImage(
                     win,
                     imageElement as HTMLImageElement,
+                    href_src,
                     focusScrollRaw,
                     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
                     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
@@ -2397,12 +2414,12 @@ function loaded(forced: boolean) {
             return;
         }
 
-        if (!linkElement || !href) {
+        if (!linkElement || !href_src) {
             clearImages();
             return;
         }
 
-        const hrefStr = href as string;
+        const hrefStr = href_src as string;
         if (/^javascript:/.test(hrefStr)) {
             clearImages();
             return;

@@ -14,6 +14,7 @@ import { ReadiumElectronWebviewWindow } from "./state";
 export function popoutImage(
     win: ReadiumElectronWebviewWindow,
     element: HTMLImageElement,
+    href_src: string,
     focusScrollRaw:
         (el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => void,
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
@@ -418,7 +419,7 @@ export function popoutImage(
     //     return false;
     // }
 
-    const imgHref = element.src;
+    const imgHref = href_src; // element.src;
     if (!imgHref) {
         return;
     }
