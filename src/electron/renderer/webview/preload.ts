@@ -2318,33 +2318,126 @@ function loaded(forced: boolean) {
             images.forEach((img) => {
                 img.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
             });
+            const svgs = win.document.querySelectorAll(`svg[data-${POPOUTIMAGE_CONTAINER_ID}]`);
+            svgs.forEach((svg) => {
+                svg.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
+            });
         };
 
         let linkElement: Element | undefined;
         let imageElement: Element | undefined;
 
         let href_src: string | SVGAnimatedString | undefined;
-
+        let isSVG = false;
+        let globalSVGDefs: NodeListOf<Element> | undefined;
         let currentElement: Element | undefined = ev.target as Element;
         while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
-            if ((currentElement.tagName.toLowerCase() === "img" || currentElement.tagName.toLowerCase() === "image")
+            const tagName = currentElement.tagName.toLowerCase();
+            if ((tagName === "img" || tagName === "image" || tagName === "svg")
                 && !currentElement.classList.contains(POPOUTIMAGE_CONTAINER_ID)) {
 
-                // absolute (already resolved against base)
-                href_src = (currentElement as HTMLImageElement).src;
-                // possibly relative
-                let href_src_ = currentElement.getAttribute("src");
-                if (!href_src) {
-                    // SVGAnimatedString (animVal possibly relative)
-                    href_src = (currentElement as SVGImageElement).href;
+                isSVG = false;
+                if (tagName === "svg") {
+                    if (imageElement) {
+                        // image inside SVG
+                        break;
+                    }
 
+                    isSVG = true;
+                    href_src = currentElement.outerHTML;
+
+                    const defs = currentElement.querySelectorAll("defs > *[id]");
+                    debug("SVG INNER defs: ", defs.length);
+                    const uses = currentElement.querySelectorAll("use");
+                    debug("SVG INNER uses: ", uses.length);
+                    const useIDs: string[] = [];
+                    uses.forEach((useElem) => {
+                        const href = useElem.getAttribute("href") || useElem.getAttributeNS("http://www.w3.org/1999/xlink", "href");
+                        if (href?.startsWith("#")) {
+                            const id = href.substring(1);
+                            let found = false;
+                            for (let i = 0; i < defs.length; i++) {
+                                const defElem = defs[i];
+                                if (defElem.getAttribute("id") === id) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (!found) {
+                                debug("SVG INNER use (need inject def): ", id);
+                                useIDs.push(id);
+                            } else {
+                                debug("SVG INNER use (already has def): ", id);
+                            }
+                        }
+                    });
+                    let defsToInject = "";
+                    for (const useID of useIDs) {
+                        if (!globalSVGDefs) {
+                            globalSVGDefs = win.document.querySelectorAll("defs > *[id]");
+                        }
+                        debug("SVG GLOBAL defs: ", globalSVGDefs.length);
+                        let found = false;
+                        globalSVGDefs.forEach((globalSVGDef) => {
+                            if (globalSVGDef.getAttribute("id") === useID) {
+                                found = true;
+                                const outer = globalSVGDef.outerHTML;
+                                if (outer.includes("<use")) {
+                                    debug("!!!!!! SVG WARNING use inside def: " + outer);
+                                }
+                                defsToInject += outer;
+                            }
+                        });
+                        if (found) {
+                            debug("SVG GLOBAL def for INNER use id: ", useID);
+                        } else {
+                            debug("no SVG GLOBAL def for INNER use id!! ", useID);
+                        }
+                    }
+                    if (href_src.indexOf("<defs") >= 0) {
+                        href_src = href_src.replace(/<\/defs>/, `${defsToInject} </defs>`);
+                    } else {
+                        href_src = href_src.replace(/>/, `> <defs> ${defsToInject} </defs>`);
+                    }
+
+                    // href_src = href_src.replace(/<svg/g, `<svg xml:base="${win.location.origin}${win.location.pathname}" `);
+                    href_src = href_src.replace(/:href[\s]*=(["|'])(.+?)(["|'])/g, (match, ...args: string[]) => {
+                        const l = args[1].trim();
+                        const ret = l.startsWith("#") || l.startsWith("/") || l.startsWith("data:") || /https?:/.test(l) ? match :
+                            `:href=${args[0]}${new URL(l, win.location.origin + win.location.pathname)}${args[2]}`;
+                        debug("SVG URL REPLACE: ", match, ret);
+                        return ret;
+                    });
+                    href_src = href_src.replace(/url[\s]*\((.+?)\)/g, (match, ...args: string[]) => {
+                        const l = args[0].trim();
+                        const ret = l.startsWith("#") || l.startsWith("/") || l.startsWith("data:") || /https?:/.test(l) ? match :
+                            `url(${new URL(l, win.location.origin + win.location.pathname)})`;
+                        debug("SVG URL REPLACE: ", match, ret);
+                        return ret;
+                    });
+
+                    href_src = href_src.replace(/\n/g, " ").replace(/\s\s+/g, " ").trim();
+                    href_src = href_src.replace(/<desc[^<]+<\/desc>/g, "");
+                    debug(`SVG CLICK: ${href_src}`);
+                } else {
+                    // absolute (already resolved against base)
+                    href_src = (currentElement as HTMLImageElement).src;
                     // possibly relative
-                    href_src_ = currentElement.getAttribute("href") || currentElement.getAttributeNS("http://www.w3.org/1999/xlink", "href");
+                    let href_src_ = currentElement.getAttribute("src");
+                    if (!href_src) {
+                        // SVGAnimatedString (animVal possibly relative)
+                        href_src = (currentElement as SVGImageElement).href;
+
+                        // possibly relative
+                        href_src_ = currentElement.getAttribute("href") || currentElement.getAttributeNS("http://www.w3.org/1999/xlink", "href");
+                    }
+                    debug(`IMG CLICK: ${href_src} (${href_src_})`);
                 }
                 imageElement = currentElement;
-                debug(`IMG CLICK: ${href_src} (${href_src_})`);
+
+                // DOM parent / ancestor could be link a@href, so let's continue walking up the tree
                 // break;
-            } else if (currentElement.tagName.toLowerCase() === "a") {
+            } else if (tagName === "a") {
 
                 // absolute (already resolved against base),
                 // or SVGAnimatedString (animVal possibly relative)
@@ -2355,6 +2448,8 @@ function loaded(forced: boolean) {
 
                 linkElement = currentElement;
                 debug(`A LINK CLICK: ${href_src} (${href_})`);
+
+                // DOM child / descendant could be img/image/svg (see if condition above)
                 break;
             }
             currentElement = currentElement.parentNode as Element;
@@ -2384,7 +2479,9 @@ function loaded(forced: boolean) {
         debug(`HREF SRC: ${href_src} (${win.location.href})`);
 
         const has = imageElement?.hasAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
-        if (imageElement && href_src && (has || !linkElement || ev.shiftKey)) {
+        if (imageElement && href_src && (has ||
+            ((!linkElement && !win.READIUM2.isFixedLayout && !isSVG) || ev.shiftKey)
+        )) {
 
             clearImages();
 
@@ -2392,17 +2489,18 @@ function loaded(forced: boolean) {
             ev.stopPropagation();
 
             if (has) {
-                if (!/^(https?|thoriumhttps):\/\//.test(href_src) &&
+                if (!isSVG &&
+                    !/^(https?|thoriumhttps):\/\//.test(href_src) &&
                     !href_src.startsWith((READIUM2_ELECTRON_HTTP_PROTOCOL + "://"))) {
 
-                    const destUrl = new URL(href_src, win.location.href);
+                    const destUrl = new URL(href_src, win.location.origin + win.location.pathname);
                     href_src = destUrl.toString();
                     debug(`IMG CLICK ABSOLUTE-ized: ${href_src}`);
                 }
 
                 popoutImage(
                     win,
-                    imageElement as HTMLImageElement,
+                    imageElement as HTMLImageElement | SVGElement,
                     href_src,
                     focusScrollRaw,
                     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,

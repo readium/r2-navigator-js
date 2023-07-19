@@ -13,7 +13,7 @@ import { ReadiumElectronWebviewWindow } from "./state";
 
 export function popoutImage(
     win: ReadiumElectronWebviewWindow,
-    element: HTMLImageElement,
+    element: HTMLImageElement | SVGElement,
     href_src: string,
     focusScrollRaw:
         (el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => void,
@@ -262,7 +262,8 @@ export function popoutImage(
             img.style.backgroundImage = "url(\"" + img.src + "\")";
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (img as any).__INITED = true;
-            img.src = "data:image/svg+xml;base64," + win.btoa("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" + naturalWidth + "\" height=\"" + naturalHeight + "\"></svg>");
+
+            img.src = "data:image/svg+xml;base64," + Buffer.from("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" + naturalWidth + "\" height=\"" + naturalHeight + "\"></svg>").toString("base64");
 
             onclick(undefined, true);
 
@@ -419,9 +420,10 @@ export function popoutImage(
     //     return false;
     // }
 
-    const imgHref = href_src; // element.src;
-    if (!imgHref) {
-        return;
+    const isSVG = href_src.startsWith("<svg");
+    if (isSVG) {
+        // href_src = href_src.replace(/\n/g, " ").replace(/\s\s+/g, " ").trim();
+        href_src = "data:image/svg+xml;base64," + Buffer.from(href_src).toString("base64");
     }
 
     const onloadhandler = "onload=\"javascript: " +
@@ -439,7 +441,7 @@ export function popoutImage(
     <img
         class="${POPOUTIMAGE_CONTAINER_ID}"
         ${onloadhandler}
-        src="${imgHref}"
+        src="${href_src}"
     />
     <div id="${POPOUTIMAGE_CONTROLS_ID}">
     <button id="${POPOUTIMAGE_MINUS_ID}">-</button>
