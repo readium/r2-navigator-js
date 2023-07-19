@@ -2328,6 +2328,7 @@ function loaded(forced: boolean) {
         let imageElement: Element | undefined;
 
         let href_src: string | SVGAnimatedString | undefined;
+        let href_src_image_nested_in_link: string | SVGAnimatedString | undefined;
         let isSVG = false;
         let globalSVGDefs: NodeListOf<Element> | undefined;
         let currentElement: Element | undefined = ev.target as Element;
@@ -2340,7 +2341,8 @@ function loaded(forced: boolean) {
                 if (tagName === "svg") {
                     if (imageElement) {
                         // image inside SVG
-                        break;
+                        currentElement = currentElement.parentNode as Element;
+                        continue;
                     }
 
                     isSVG = true;
@@ -2439,6 +2441,10 @@ function loaded(forced: boolean) {
                 // break;
             } else if (tagName === "a") {
 
+                if (href_src) {
+                    href_src_image_nested_in_link = href_src;
+                }
+
                 // absolute (already resolved against base),
                 // or SVGAnimatedString (animVal possibly relative)
                 href_src = (currentElement as HTMLAnchorElement | SVGAElement).href;
@@ -2463,6 +2469,15 @@ function loaded(forced: boolean) {
             return;
         }
 
+        if (href_src_image_nested_in_link && (href_src_image_nested_in_link as SVGAnimatedString).animVal) {
+            href_src_image_nested_in_link = (href_src_image_nested_in_link as SVGAnimatedString).animVal;
+
+            if (!href_src_image_nested_in_link) {
+                clearImages();
+                return;
+            }
+        }
+
         if ((href_src as SVGAnimatedString).animVal) {
             href_src = (href_src as SVGAnimatedString).animVal;
 
@@ -2473,15 +2488,25 @@ function loaded(forced: boolean) {
         }
 
         if (typeof href_src !== "string") {
+
             clearImages();
             return;
         }
-        debug(`HREF SRC: ${href_src} (${win.location.href})`);
+        if (href_src_image_nested_in_link && typeof href_src_image_nested_in_link !== "string") {
+
+            clearImages();
+            return;
+        }
+
+        debug(`HREF SRC: ${href_src} ${href_src_image_nested_in_link} (${win.location.href})`);
 
         const has = imageElement?.hasAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
         if (imageElement && href_src && (has ||
             ((!linkElement && !win.READIUM2.isFixedLayout && !isSVG) || ev.shiftKey)
         )) {
+            if (linkElement && href_src_image_nested_in_link) {
+                href_src = href_src_image_nested_in_link;
+            }
 
             clearImages();
 
