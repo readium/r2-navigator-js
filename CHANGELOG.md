@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.13.4...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.13.5...develop
 
 Changes:
 * TODO
+
+# 1.13.5
+
+> Build environment: NodeJS `18.16.1`, NPM `9.8.0`
+
+Changes:
+* Improved image zoom feature: in addition to HTML img@src (possibly SVG file instead of raster/bitmap) now SVG image@xlink:href too (if nested inside link, same logic as HTML a@href with shift-click modifier to bypass hyperlink activation)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.5/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.5/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.5
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.13.4...v1.13.5
 
 # 1.13.4
 
