@@ -80,6 +80,8 @@ export const footnotesCssStyles = `
 
 :root[style] dialog#${POPUP_DIALOG_CLASS},
 :root dialog#${POPUP_DIALOG_CLASS} {
+    -webkit-writing-mode: horizontal-tb;
+
     z-index: 3;
 
     position: fixed;
