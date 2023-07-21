@@ -64,8 +64,10 @@ interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
 
 let _dialogState: IHTMLDialogElementWithTTSState | undefined;
 
-function resetState() {
-    _resumableState = undefined;
+function resetState(stop: boolean) {
+    if (stop) {
+        _resumableState = undefined;
+    }
 
     if (_dialogState) {
         _dialogState.popDialog = undefined;
@@ -91,7 +93,10 @@ function resetState() {
     _dialogState = undefined;
 
     win.document.documentElement.classList.remove(TTS_CLASS_IS_ACTIVE);
-    ipcRenderer.sendToHost(R2_EVENT_TTS_IS_STOPPED);
+
+    if (stop) {
+        ipcRenderer.sendToHost(R2_EVENT_TTS_IS_STOPPED);
+    }
 }
 
 export function ttsPlay(
@@ -147,12 +152,14 @@ export function ttsPlay(
 export function ttsStop() {
     if (_dialogState) {
         if (_dialogState.hasAttribute("open")) {
+            ttsPause();
+            resetState(true);
             _dialogState.close(); // => onDialogClosed()
             return;
         }
     }
     ttsPause();
-    resetState();
+    resetState(true);
 }
 
 export function ttsPause() {
@@ -345,6 +352,8 @@ export function ttsNext(skipSentences = false) {
         }
         ttsPause();
         ttsPlayQueueIndexDebounced(j);
+    } else if (_resumableState) {
+        ttsResume();
     }
 }
 export function ttsPrevious(skipSentences = false) {
@@ -360,6 +369,8 @@ export function ttsPrevious(skipSentences = false) {
         }
         ttsPause();
         ttsPlayQueueIndexDebounced(j);
+    } else if (_resumableState) {
+        ttsResume();
     }
 }
 
@@ -1228,7 +1239,7 @@ function startTTSSession(
         }
 
         setTimeout(() => {
-            resetState();
+            resetState(false);
         }, 50);
     }
 
