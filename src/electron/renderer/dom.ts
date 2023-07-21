@@ -10,6 +10,7 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 import * as debug_ from "debug";
 import { ipcRenderer } from "electron";
 
+import { mediaOverlaysInterrupt } from "./media-overlays";
 import { Locator } from "@r2-shared-js/models/locator";
 import { Publication } from "@r2-shared-js/models/publication";
 
@@ -20,7 +21,7 @@ import {
     IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READIUMCSS,
     IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, IEventPayload_R2_EVENT_WEBVIEW_KEYUP, IKeyboardEvent,
     R2_EVENT_CAPTIONS, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_FXL_CONFIGURE,
-    R2_EVENT_KEYBOARD_FOCUS_REQUEST,
+    R2_EVENT_KEYBOARD_FOCUS_REQUEST, R2_EVENT_MEDIA_OVERLAY_INTERRUPT,
     R2_EVENT_PAGE_TURN_RES, R2_EVENT_READIUMCSS, R2_EVENT_SHOW, R2_EVENT_WEBVIEW_KEYDOWN,
     R2_EVENT_WEBVIEW_KEYUP,
 } from "../common/events";
@@ -359,7 +360,9 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             debug("Wrong navigator webview?!");
             return;
         }
-        if (event.channel === R2_EVENT_KEYBOARD_FOCUS_REQUEST) {
+        if (event.channel === R2_EVENT_MEDIA_OVERLAY_INTERRUPT) {
+            mediaOverlaysInterrupt();
+        } else if (event.channel === R2_EVENT_KEYBOARD_FOCUS_REQUEST) {
             debug("KEYBOARD FOCUS REQUEST (2) ", webview.id, win.document.activeElement?.id);
 
             if (win.document.activeElement && (win.document.activeElement as HTMLElement).blur) {

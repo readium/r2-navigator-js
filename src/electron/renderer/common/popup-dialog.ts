@@ -6,6 +6,9 @@
 // ==LICENSE-END==
 
 import * as tabbable from "tabbable";
+import { ipcRenderer } from "electron";
+
+import { R2_EVENT_MEDIA_OVERLAY_INTERRUPT } from "../../common/events";
 
 import { FOOTNOTES_CONTAINER_CLASS, POPUP_DIALOG_CLASS } from "../../common/styles";
 
@@ -400,6 +403,12 @@ export class PopupDialog {
         //     return;
         // }
         // this.shown = true;
+
+        // mediaOverlaysInterrupt();
+        // const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_INTERRUPT = {
+
+        // };
+        ipcRenderer.sendToHost(R2_EVENT_MEDIA_OVERLAY_INTERRUPT);
 
         const el = this.documant.documentElement;
         el.classList.add(POPUP_DIALOG_CLASS);

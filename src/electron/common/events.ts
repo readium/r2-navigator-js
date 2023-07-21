@@ -156,6 +156,10 @@ export interface IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP {
     startstop: boolean | undefined;
 }
 
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_MEDIA_OVERLAY_INTERRUPT = "R2_EVENT_MEDIA_OVERLAY_INTERRUPT";
+
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT = "R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT";
