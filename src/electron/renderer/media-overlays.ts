@@ -16,12 +16,20 @@ import { Link } from "@r2-shared-js/models/publication-link";
 import { DEBUG_AUDIO } from "../common/audiobook";
 import {
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK, IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
+    IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE, R2_EVENT_MEDIA_OVERLAY_STATE, MediaOverlaysStateEnum as MediaOverlaysStateEnum_,
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_MEDIA_OVERLAY_CLICK,
     R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, R2_EVENT_MEDIA_OVERLAY_STARTSTOP,
 } from "../common/events";
 import { handleLinkUrl, navLeftOrRight } from "./location";
 import { isRTL } from "./readium-css";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
+
+// export enum MediaOverlaysStateEnum {
+//     PAUSED = "PAUSED",
+//     PLAYING = "PLAYING",
+//     STOPPED = "STOPPED",
+// }
+export { MediaOverlaysStateEnum_ as MediaOverlaysStateEnum };
 
 // import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "../common/sessions";
 
@@ -109,9 +117,7 @@ async function playMediaOverlays(
             }
             _mediaOverlayRoot = rootMo;
             await playMediaOverlaysAudio(moTextAudioPair, undefined, undefined);
-            if (_mediaOverlaysListener) {
-                _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-            }
+            mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
         }
     } else {
         if (IS_DEV) {
@@ -246,9 +252,7 @@ async function playMediaOverlaysAudio(
                 _currentAudioElement.playbackRate = _mediaOverlaysPlaybackRate;
                 await _currentAudioElement.play();
 
-                // if (_mediaOverlaysListener) {
-                //     _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-                // }
+                // mediaOverlaysStateSetMediaOverlaysStateEnum_.PLAYING);
             } else {
                 if (IS_DEV) {
                     debug("playMediaOverlaysAudio() - playClip() - ontimeupdateSeeked");
@@ -265,9 +269,7 @@ async function playMediaOverlaysAudio(
                         _currentAudioElement.playbackRate = _mediaOverlaysPlaybackRate;
                         await _currentAudioElement.play();
                     }
-                    // if (_mediaOverlaysListener) {
-                    //     _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-                    // }
+                    // mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
                 };
                 _currentAudioElement.addEventListener("timeupdate", ontimeupdateSeeked);
                 _currentAudioElement.currentTime = timeToSeekTo;
@@ -515,17 +517,13 @@ async function playMediaOverlaysAudio(
 
         const onpause = async (_ev: Event) => {
             debug("onpause");
-            // if (_mediaOverlaysListener) {
-            //     _mediaOverlaysListener(MediaOverlaysStateEnum.PAUSED);
-            // }
+            // mediaOverlaysStateSet(MediaOverlaysStateEnum_.PAUSED);
         };
         _currentAudioElement.addEventListener("pause", onpause);
 
         const onplay = async (_ev: Event) => {
             debug("onplay");
-            // if (_mediaOverlaysListener) {
-            //     _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-            // }
+            // mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
         };
         _currentAudioElement.addEventListener("play", onplay);
 
@@ -907,9 +905,8 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
             const rtl = isRTL();
             navLeftOrRight(rtl, true, true);
         }, 600); // was 2 seconds, but transition too slow (user thinks playback is stalled)
-        if (_mediaOverlaysListener) {
-            _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-        }
+
+        mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
         return;
     }
     // typically undefined at first, because serialized JSON not init'ed, lazy-loaded
@@ -1135,13 +1132,26 @@ function moHighlight(href: string | undefined, id: string | undefined) {
     }
 }
 
-export enum MediaOverlaysStateEnum {
-    PAUSED = "PAUSED",
-    PLAYING = "PLAYING",
-    STOPPED = "STOPPED",
-}
-let _mediaOverlaysListener: ((mediaOverlaysState: MediaOverlaysStateEnum) => void) | undefined;
-export function mediaOverlaysListen(mediaOverlaysListener: (mediaOverlaysState: MediaOverlaysStateEnum) => void) {
+const mediaOverlaysStateSet = (mediaOverlaysState: MediaOverlaysStateEnum_) => {
+    const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE = {
+        state: mediaOverlaysState,
+    };
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        setTimeout(async () => {
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_MEDIA_OVERLAY_STATE, payload);
+            }
+        }, 0);
+    }
+
+    if (_mediaOverlaysListener) {
+        _mediaOverlaysListener(mediaOverlaysState);
+    }
+};
+
+let _mediaOverlaysListener: ((mediaOverlaysState: MediaOverlaysStateEnum_) => void) | undefined;
+export function mediaOverlaysListen(mediaOverlaysListener: (mediaOverlaysState: MediaOverlaysStateEnum_) => void) {
     _mediaOverlaysListener = mediaOverlaysListener;
 }
 
@@ -1197,9 +1207,7 @@ export function mediaOverlaysPause() {
         _currentAudioElement.pause();
     }
 
-    if (_mediaOverlaysListener) {
-        _mediaOverlaysListener(MediaOverlaysStateEnum.PAUSED);
-    }
+    mediaOverlaysStateSet(MediaOverlaysStateEnum_.PAUSED);
 }
 
 export function mediaOverlaysInterrupt() {
@@ -1232,9 +1240,7 @@ export function mediaOverlaysStop(stayActive?: boolean) {
     // _lastClickedNotification = undefined;
 
     if (!_mediaOverlayActive) {
-        if (_mediaOverlaysListener) {
-            _mediaOverlaysListener(MediaOverlaysStateEnum.STOPPED);
-        }
+        mediaOverlaysStateSet(MediaOverlaysStateEnum_.STOPPED);
     }
 }
 
@@ -1259,9 +1265,7 @@ export function mediaOverlaysResume() {
                 }
             }, 0);
         }
-        if (_mediaOverlaysListener) {
-            _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-        }
+        mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
         moHighlight_(_mediaOverlayTextAudioPair);
     } else {
         if (IS_DEV) {
@@ -1330,9 +1334,8 @@ export function mediaOverlaysPrevious() {
                 setTimeout(async () => {
                     await playMediaOverlaysAudio(previousTextAudioPair, undefined, undefined);
                 }, 0);
-                if (_mediaOverlaysListener) {
-                    _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-                }
+
+                mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
             }
         }
     } else {
@@ -1410,9 +1413,8 @@ export function mediaOverlaysNext(escape?: boolean) {
                 setTimeout(async () => {
                     await playMediaOverlaysAudio(nextTextAudioPair, undefined, undefined);
                 }, 0);
-                if (_mediaOverlaysListener) {
-                    _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-                }
+
+                mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
             }
         }
     } else {

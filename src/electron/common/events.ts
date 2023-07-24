@@ -160,6 +160,19 @@ export interface IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP {
 // in RENDERER: webview.addEventListener("ipc-message")
 export const R2_EVENT_MEDIA_OVERLAY_INTERRUPT = "R2_EVENT_MEDIA_OVERLAY_INTERRUPT";
 
+export enum MediaOverlaysStateEnum {
+    PAUSED = "PAUSED",
+    PLAYING = "PLAYING",
+    STOPPED = "STOPPED",
+}
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_MEDIA_OVERLAY_STATE = "R2_EVENT_MEDIA_OVERLAY_STATE";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE {
+    state: MediaOverlaysStateEnum;
+}
+
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT = "R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT";

@@ -23,18 +23,19 @@ import {
     IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, IEventPayload_R2_EVENT_LINK,
     IEventPayload_R2_EVENT_LOCATOR_VISIBLE, IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK,
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP,
+    IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE,
     IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READING_LOCATION,
     IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_SCROLLTO,
     IEventPayload_R2_EVENT_SHIFT_VIEW_X, IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
     IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS, IEventPayload_R2_EVENT_TTS_DO_PLAY,
     IEventPayload_R2_EVENT_TTS_OVERLAY_ENABLE, IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE,
     IEventPayload_R2_EVENT_TTS_SENTENCE_DETECT_ENABLE, IEventPayload_R2_EVENT_TTS_VOICE,
-    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CAPTIONS,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, MediaOverlaysStateEnum, R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CAPTIONS,
     R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_FXL_CONFIGURE,
     R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
     R2_EVENT_KEYBOARD_FOCUS_REQUEST, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE,
     R2_EVENT_MEDIA_OVERLAY_CLICK, R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
-    R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
+    R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_MEDIA_OVERLAY_STATE, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
     R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
     R2_EVENT_SHOW, R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE,
     R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
@@ -50,9 +51,9 @@ import { sameSelections } from "../../common/selection";
 import {
     CLASS_PAGINATED, CSS_CLASS_NO_FOCUS_OUTLINE, HIDE_CURSOR_CLASS, LINK_TARGET_CLASS,
     POPOUTIMAGE_CONTAINER_ID, POPUP_DIALOG_CLASS, POPUP_DIALOG_CLASS_COLLAPSE,
-    R2_MO_CLASS_ACTIVE, R2_MO_CLASS_ACTIVE_PLAYBACK, ROOT_CLASS_INVISIBLE_MASK,
+    R2_MO_CLASS_ACTIVE, R2_MO_CLASS_ACTIVE_PLAYBACK, R2_MO_CLASS_PAUSED, R2_MO_CLASS_PLAYING, R2_MO_CLASS_STOPPED, ROOT_CLASS_INVISIBLE_MASK,
     ROOT_CLASS_INVISIBLE_MASK_REMOVED, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX,
-    ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_ID_SPEAKING_DOC_ELEMENT,
+    ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_CLASS_PAUSED, TTS_CLASS_PLAYING, TTS_ID_SPEAKING_DOC_ELEMENT,
     WebViewSlotEnum, ZERO_TRANSFORM_CLASS, readPosCssStylesAttr1, readPosCssStylesAttr2,
     readPosCssStylesAttr3, readPosCssStylesAttr4,
 } from "../../common/styles";
@@ -2308,6 +2309,58 @@ function loaded(forced: boolean) {
     }, true);
     win.document.addEventListener("click", async (ev: MouseEvent) => {
         debug(`!AUX __CLICK: ${ev.button} ...`);
+        if (win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED) || win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING)) {
+            debug("!AUX __CLICK skip because MO playing/paused");
+            return;
+        }
+
+        if (!isPopupDialogOpen(win.document)) {
+            // relative to fixed window top-left corner
+            // (unlike pageX/Y which is relative to top-left rendered content area, subject to scrolling)
+            const x = ev.clientX;
+            const y = ev.clientY;
+
+            const domPointData = domDataFromPoint(x, y);
+
+            if (domPointData.element && win.READIUM2.ttsClickEnabled) {
+                debug("!AUX __CLICK domPointData.element && win.READIUM2.ttsClickEnabled");
+                if (ev.altKey) {
+                    ttsPlay(
+                        win.READIUM2.ttsPlaybackRate,
+                        win.READIUM2.ttsVoice,
+                        focusScrollRaw,
+                        domPointData.element,
+                        undefined,
+                        undefined,
+                        -1,
+                        ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+                        ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
+                    return;
+                }
+
+                ttsPlay(
+                    win.READIUM2.ttsPlaybackRate,
+                    win.READIUM2.ttsVoice,
+                    focusScrollRaw,
+                    (domPointData.element.ownerDocument as Document).body,
+                    domPointData.element,
+                    domPointData.textNode,
+                    domPointData.textNodeOffset,
+                    ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+                    ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
+
+                return;
+            }
+        }
+
+        if (win.READIUM2.ttsClickEnabled || win.document.documentElement.classList.contains(TTS_CLASS_PAUSED) || win.document.documentElement.classList.contains(TTS_CLASS_PLAYING)) {
+            debug("!AUX __CLICK skip because TTS playing/paused");
+            return;
+        }
+
+        win.document.documentElement.classList.forEach((c) => {
+            debug(c);
+        });
 
         const clearImages = () => {
             const imgs = win.document.querySelectorAll(`img[data-${POPOUTIMAGE_CONTAINER_ID}]`);
@@ -2859,36 +2912,34 @@ function loaded(forced: boolean) {
 
         processXYDebouncedImmediate(x, y, false, true);
 
-        const domPointData = domDataFromPoint(x, y);
+        // const domPointData = domDataFromPoint(x, y);
 
-        if (domPointData.element && win.READIUM2.ttsClickEnabled) {
-            if (domPointData.element) {
-                if (ev.altKey) {
-                    ttsPlay(
-                        win.READIUM2.ttsPlaybackRate,
-                        win.READIUM2.ttsVoice,
-                        focusScrollRaw,
-                        domPointData.element,
-                        undefined,
-                        undefined,
-                        -1,
-                        ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
-                        ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
-                    return;
-                }
+        // if (domPointData.element && win.READIUM2.ttsClickEnabled) {
+        //     if (ev.altKey) {
+        //         ttsPlay(
+        //             win.READIUM2.ttsPlaybackRate,
+        //             win.READIUM2.ttsVoice,
+        //             focusScrollRaw,
+        //             domPointData.element,
+        //             undefined,
+        //             undefined,
+        //             -1,
+        //             ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+        //             ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
+        //         return;
+        //     }
 
-                ttsPlay(
-                    win.READIUM2.ttsPlaybackRate,
-                    win.READIUM2.ttsVoice,
-                    focusScrollRaw,
-                    (domPointData.element.ownerDocument as Document).body,
-                    domPointData.element,
-                    domPointData.textNode,
-                    domPointData.textNodeOffset,
-                    ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
-                    ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
-            }
-        }
+        //     ttsPlay(
+        //         win.READIUM2.ttsPlaybackRate,
+        //         win.READIUM2.ttsVoice,
+        //         focusScrollRaw,
+        //         (domPointData.element.ownerDocument as Document).body,
+        //         domPointData.element,
+        //         domPointData.textNode,
+        //         domPointData.textNodeOffset,
+        //         ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+        //         ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
+        // }
     }
 
     // win.document.body.addEventListener("click", (ev: MouseEvent) => {
@@ -3928,6 +3979,16 @@ if (!win.READIUM2.isAudio) {
         win.READIUM2.ttsOverlayEnabled = payload.doEnable;
     });
 
+    ipcRenderer.on(R2_EVENT_MEDIA_OVERLAY_STATE,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (_event: any, payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE) => {
+
+        win.document.documentElement.classList.remove(R2_MO_CLASS_PAUSED, R2_MO_CLASS_PLAYING, R2_MO_CLASS_STOPPED);
+
+        win.document.documentElement.classList.add(payload.state === MediaOverlaysStateEnum.PAUSED ? R2_MO_CLASS_PAUSED :
+            (payload.state === MediaOverlaysStateEnum.PLAYING ? R2_MO_CLASS_PLAYING : R2_MO_CLASS_STOPPED));
+    });
+
     ipcRenderer.on(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_event: any, payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT) => {
@@ -3957,8 +4018,7 @@ if (!win.READIUM2.isAudio) {
 
             let removeCaptionContainer = true;
             if (!payload.id) {
-                win.document.documentElement.classList.remove(R2_MO_CLASS_ACTIVE_PLAYBACK);
-                win.document.documentElement.classList.remove(activeClassPlayback);
+                win.document.documentElement.classList.remove(R2_MO_CLASS_ACTIVE_PLAYBACK, activeClassPlayback);
             } else {
                 win.document.documentElement.classList.add(activeClassPlayback);
 

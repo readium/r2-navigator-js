@@ -182,18 +182,21 @@ export const footnotesCssStyles = `
     }
 }
 
-:root[style] img[data-${POPOUTIMAGE_CONTAINER_ID}],
-:root img[data-${POPOUTIMAGE_CONTAINER_ID}],
+/*
 :root[style].${ROOT_CLASS_KEYBOARD_INTERACT} img[data-${POPOUTIMAGE_CONTAINER_ID}],
 :root.${ROOT_CLASS_KEYBOARD_INTERACT} img[data-${POPOUTIMAGE_CONTAINER_ID}],
-:root[style] image[data-${POPOUTIMAGE_CONTAINER_ID}],
-:root image[data-${POPOUTIMAGE_CONTAINER_ID}],
 :root[style].${ROOT_CLASS_KEYBOARD_INTERACT} image[data-${POPOUTIMAGE_CONTAINER_ID}],
 :root.${ROOT_CLASS_KEYBOARD_INTERACT} image[data-${POPOUTIMAGE_CONTAINER_ID}],
-:root[style] svg[data-${POPOUTIMAGE_CONTAINER_ID}],
-:root svg[data-${POPOUTIMAGE_CONTAINER_ID}],
 :root[style].${ROOT_CLASS_KEYBOARD_INTERACT} svg[data-${POPOUTIMAGE_CONTAINER_ID}],
 :root.${ROOT_CLASS_KEYBOARD_INTERACT} svg[data-${POPOUTIMAGE_CONTAINER_ID}]
+*/
+
+:root[style] img[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root img[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root[style] image[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root image[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root[style] svg[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root svg[data-${POPOUTIMAGE_CONTAINER_ID}]
 {
     outline-color: magenta !important;
     outline-style: solid !important;
@@ -360,6 +363,10 @@ export const footnotesCssStyles = `
 export const R2_MO_CLASS_ACTIVE = "r2-mo-active";
 export const R2_MO_CLASS_ACTIVE_PLAYBACK = "r2-mo-active-playback";
 
+export const R2_MO_CLASS_PLAYING = "r2-mo-playing";
+export const R2_MO_CLASS_PAUSED = "r2-mo-paused";
+export const R2_MO_CLASS_STOPPED = "r2-mo-stopped";
+
 export const mediaOverlaysCssStyles = `
 :root[style] .${R2_MO_CLASS_ACTIVE},
 :root .${R2_MO_CLASS_ACTIVE} {
@@ -377,7 +384,10 @@ export const mediaOverlaysCssStyles = `
 `;
 
 export const TTS_CLASS_THEME1 = "r2-tts-theme1";
-export const TTS_CLASS_IS_ACTIVE = "r2-tts-isPlaying";
+export const TTS_CLASS_IS_ACTIVE = "r2-tts-isPlaying"; // TTS overlay, not in-document! (legacy)
+export const TTS_CLASS_PAUSED = "r2-tts-paused";
+export const TTS_CLASS_PLAYING = "r2-tts-playing";
+export const TTS_CLASS_STOPPED = "r2-tts-stopped";
 export const TTS_ID_PREVIOUS = "r2-tts-previous";
 export const TTS_ID_NEXT = "r2-tts-next";
 export const TTS_ID_SLIDER = "r2-tts-slider";
@@ -969,8 +979,8 @@ export const focusCssStyles = `
 :root *:focus {
     outline: none;
 }
-:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus:not(:target):not(.${LINK_TARGET_CLASS}),
-:root.${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus:not(:target):not(.${LINK_TARGET_CLASS}) {
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus:not(:target):not(.${LINK_TARGET_CLASS}):not([data-${POPOUTIMAGE_CONTAINER_ID}]),
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus:not(:target):not(.${LINK_TARGET_CLASS}):not([data-${POPOUTIMAGE_CONTAINER_ID}]) {
     outline: none !important;
 }
 :root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *:focus:not(:target):not(.${LINK_TARGET_CLASS}),
