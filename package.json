@@ -60,7 +60,7 @@
     "sentence-splitter": "^4.2.1",
     "ta-json-x": "^2.5.3",
     "tabbable": "^6.2.0",
-    "tslib": "^2.6.0",
+    "tslib": "^2.6.1",
     "urijs": "^1.19.11"
   },
   "devDependencies": {
@@ -72,8 +72,8 @@
     "@types/request-promise-native": "^1.0.18",
     "@types/urijs": "^1.19.19",
     "@types/xmldom": "^0.1.31",
-    "@typescript-eslint/eslint-plugin": "^6.1.0",
-    "@typescript-eslint/parser": "^6.1.0",
+    "@typescript-eslint/eslint-plugin": "^6.2.0",
+    "@typescript-eslint/parser": "^6.2.0",
     "cpy-cli": "^5.0.0",
     "cross-env": "^7.0.3",
     "cson": "^7.20.0",
@@ -81,7 +81,7 @@
     "eslint": "^8.45.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^5.0.0",
-    "electron": "^25.3.0",
+    "electron": "^25.3.1",
     "filehound": "^1.17.6",
     "git-rev-sync": "^3.0.2",
     "json": "^11.0.0",
