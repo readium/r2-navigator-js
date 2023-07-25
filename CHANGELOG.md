@@ -1,10 +1,31 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.13.6...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.13.7...develop
 
 Changes:
 * TODO
+
+# 1.13.7
+
+> Build environment: NodeJS `18.17.0`, NPM `9.8.1`
+
+Changes:
+* fix: popup dialog GUI (footnotes, image zoom, TTS + Media Overlays "captions" mode) forced to horizontal writing mode for chrome controls
+* fix: TTS pause from click-on-text now syncs properly (state was incorrectly STOPPED instead of PAUSE)
+* fix: TTS playback engine / state machine now handles hyperlinks and image zoom click properly
+* updated NPM packages
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.7/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.7/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.7
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.13.6...v1.13.7
+
 
 # 1.13.6
 
