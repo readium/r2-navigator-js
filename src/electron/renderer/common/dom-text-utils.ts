@@ -8,7 +8,7 @@
 import { split } from "sentence-splitter";
 
 import { SKIP_LINK_ID } from "../../common/styles";
-import { uniqueCssSelector } from "../common/cssselector2";
+import { uniqueCssSelector } from "../common/cssselector2-3";
 import { ReadiumElectronWebviewWindow } from "../webview/state";
 
 // const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");

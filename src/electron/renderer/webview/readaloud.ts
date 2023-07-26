@@ -23,7 +23,7 @@ import {
     TTS_POPUP_DIALOG_CLASS,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
-import { uniqueCssSelector } from "../common/cssselector2";
+import { uniqueCssSelector } from "../common/cssselector2-3";
 import {
     ITtsQueueItem, ITtsQueueItemReference, findTtsQueueItemIndex, generateTtsQueue,
     getTtsQueueItemRef, getTtsQueueItemRefText, getTtsQueueLength, normalizeHtmlText,

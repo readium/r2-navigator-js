@@ -58,7 +58,7 @@ import {
     readPosCssStylesAttr3, readPosCssStylesAttr4,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
-import { uniqueCssSelector, FRAG_ID_CSS_SELECTOR } from "../common/cssselector2";
+import { uniqueCssSelector, FRAG_ID_CSS_SELECTOR } from "../common/cssselector2-3";
 import { normalizeText } from "../common/dom-text-utils";
 import { easings } from "../common/easings";
 import { closePopupDialogs, isPopupDialogOpen } from "../common/popup-dialog";

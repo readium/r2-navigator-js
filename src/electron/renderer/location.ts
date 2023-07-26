@@ -10,7 +10,7 @@ import { ipcRenderer, shell } from "electron";
 import * as path from "path";
 import { URL } from "url";
 
-import { FRAG_ID_CSS_SELECTOR } from "./common/cssselector2";
+import { FRAG_ID_CSS_SELECTOR } from "./common/cssselector2-3";
 
 import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
 import { PageEnum, Properties, SpreadEnum } from "@r2-shared-js/models/metadata-properties";

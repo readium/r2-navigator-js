@@ -8,9 +8,7 @@
 // @medv/finder v3.1.0
 // https://github.com/antonmedv/finder/blob/df88b7266bdf21fc657efc00469001c2af04b433/finder.ts
 
-import * as CSS from "css.escape";
-
-export const FRAG_ID_CSS_SELECTOR = "r2-css-selector_";
+import * as CSSEscape from "css.escape";
 
 type Knot = {
     name: string
@@ -198,7 +196,7 @@ function id(input: Element): Knot | null {
     const elementId = input.getAttribute("id");
     if (elementId && config.idName(elementId)) {
         return {
-            name: "#" + CSS.escape(elementId),
+            name: "#" + CSSEscape(elementId),
             penalty: 0,
         };
     }
@@ -211,7 +209,7 @@ function attr(input: Element): Knot[] {
     );
     return attrs.map(
         (attr): Knot => ({
-            name: `[${CSS.escape(attr.name)}="${CSS.escape(attr.value)}"]`,
+            name: `[${CSSEscape(attr.name)}="${CSSEscape(attr.value)}"]`,
             penalty: 0.5,
         }),
     );
@@ -221,7 +219,7 @@ function classNames(input: Element): Knot[] {
     const names = Array.from(input.classList).filter(config.className);
     return names.map(
         (name): Knot => ({
-            name: "." + CSS.escape(name),
+            name: "." + CSSEscape(name),
             penalty: 1,
         }),
     );
