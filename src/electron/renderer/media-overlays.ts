@@ -90,19 +90,20 @@ let _mediaOverlayActive = false;
 async function playMediaOverlays(
     textHref: string,
     rootMo: MediaOverlayNode,
-    textFragmentIDChain: Array<string | null> | undefined) {
+    textFragmentIDChain: Array<string | null> | undefined,
+    isInteract: boolean) {
 
     if (IS_DEV) {
         debug("playMediaOverlays()");
     }
 
-    let textFragmentIDChain_ = textFragmentIDChain ? textFragmentIDChain.filter((id) => id) : undefined;
+    let textFragmentIDChain_: Array<string> | undefined | null = textFragmentIDChain ? textFragmentIDChain.filter((id) => id) as Array<string> : undefined;
     if (textFragmentIDChain_ && textFragmentIDChain_.length === 0) {
-        textFragmentIDChain_ = undefined;
+        textFragmentIDChain_ = null;
     }
 
     let moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, textFragmentIDChain_);
-    if (!moTextAudioPair && textFragmentIDChain_) {
+    if (!moTextAudioPair && (textFragmentIDChain_ || textFragmentIDChain_ === null && !isInteract)) {
         if (IS_DEV) {
             debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE ");
             debug(JSON.stringify(textFragmentIDChain_, null, 4));
@@ -741,7 +742,7 @@ function findPreviousTextAudioPair(
 function findDepthFirstTextAudioPair(
     textHref: string,
     mo: MediaOverlayNode,
-    textFragmentIDChain: Array<string | null> | undefined):
+    textFragmentIDChain: Array<string> | undefined | null):
     MediaOverlayNode | undefined | null { // returns null when skipped
 
     if (DEBUG_AUDIO) {
@@ -786,7 +787,9 @@ function findDepthFirstTextAudioPair(
             }
             return undefined;
         }
-        if (isFragmentIDMatch || (isTextUrlMatch && !textFragmentIDChain)) {
+        if (isFragmentIDMatch ||
+            (isTextUrlMatch && textFragmentIDChain === undefined) // excludes null which is for root call only
+        ) {
             if (isSkip) {
                 if (DEBUG_AUDIO) {
                     debug("findDepthFirstTextAudioPair() - leaf - isFragmentIDMatch || (isTextUrlMatch && !textFragmentIDChain (isSkip)");
@@ -859,7 +862,7 @@ function ensureKillAutoNextTimeout() {
         _timeoutAutoNext = undefined;
     }
 }
-async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<string | null> | undefined) {
+async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<string | null> | undefined, isInteract: boolean) {
 
     if (IS_DEV) {
         debug("playMediaOverlaysForLink()");
@@ -974,7 +977,7 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
     const hrefUrlObj = new URL("https://dummy.com/" + href);
     // hrefUrlObj.hash = "";
     // hrefUrlObj.search = "";
-    await playMediaOverlays(hrefUrlObj.pathname.substr(1), link.MediaOverlays, textFragmentIDChain);
+    await playMediaOverlays(hrefUrlObj.pathname.substr(1), link.MediaOverlays, textFragmentIDChain, isInteract);
 }
 
 let _lastClickedNotification: {
@@ -1030,6 +1033,9 @@ export function mediaOverlaysHandleIpcMessage(
             //     }
             // }
 
+            const wasPlaying = _mediaOverlaysState === MediaOverlaysStateEnum_.PLAYING;
+            const lastClickedNotification = _lastClickedNotification;
+
             mediaOverlaysInterrupt();
 
             _lastClickedNotification = {
@@ -1045,9 +1051,17 @@ export function mediaOverlaysHandleIpcMessage(
                 }
                 setTimeout(async () => {
                     if (activeWebView.READIUM2.link) {
-                        await playMediaOverlaysForLink(activeWebView.READIUM2.link, payload.textFragmentIDChain);
+                        await playMediaOverlaysForLink(activeWebView.READIUM2.link, payload.textFragmentIDChain, payload.userInteract);
+                        if (_mediaOverlaysState !== MediaOverlaysStateEnum_.PLAYING) {
+                            _lastClickedNotification = lastClickedNotification;
+                            if (wasPlaying) {
+                                mediaOverlaysResume();
+                            }
+                        }
                     }
                 }, 0);
+            } else {
+                _lastClickedNotification = lastClickedNotification;
             }
         }
     } else if (eventChannel === R2_EVENT_MEDIA_OVERLAY_STARTSTOP) {
@@ -1132,7 +1146,10 @@ function moHighlight(href: string | undefined, id: string | undefined) {
     }
 }
 
+let _mediaOverlaysState = MediaOverlaysStateEnum_.STOPPED;
 const mediaOverlaysStateSet = (mediaOverlaysState: MediaOverlaysStateEnum_) => {
+    _mediaOverlaysState = mediaOverlaysState;
+
     const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE = {
         state: mediaOverlaysState,
     };
@@ -1181,7 +1198,7 @@ export function mediaOverlaysPlay(speed: number) {
         }
         setTimeout(async () => {
             if (activeWebView && activeWebView.READIUM2.link) {
-                await playMediaOverlaysForLink(activeWebView.READIUM2.link, textFragmentIDChain);
+                await playMediaOverlaysForLink(activeWebView.READIUM2.link, textFragmentIDChain, false);
             }
         }, 0);
     } else {
