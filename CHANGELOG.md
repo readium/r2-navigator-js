@@ -1,10 +1,34 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.13.7...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.13.8...develop
 
 Changes:
 * TODO
+
+# 1.13.8
+
+> Build environment: NodeJS `18.17.0`, NPM `9.8.1`
+
+Changes:
+* fix: handle role attribute as well as epub:type (just in case the latter is ommitted)
+* TTS fixes / features: aria-label on img in addition to alt attribute, epub:type pagebreak (and role) title/label takes precedence over inner text, same with links, japanese ruby RT are ignored
+* fix: Media Overlays interact click on images or text without sync media now continues playback at current timestamp instead of resuming from begining
+* fix: ensure image zoom outline is deactivated when entering media overlay or TTS playback
+* fix: tabbable CJS import was broken!
+* fix: image zoom UI chrome controls now match colour scheme + fixed-size (like main GUI)
+* chore: switch to updated CSS selector lib (better performance)
+* updated NPM packages
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.8/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.8/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.8
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.13.7...v1.13.8
 
 # 1.13.7
 
@@ -25,7 +49,6 @@ Git commit history:
 
 Git diff:
 * https://github.com/readium/r2-navigator-js/compare/v1.13.6...v1.13.7
-
 
 # 1.13.6
 
