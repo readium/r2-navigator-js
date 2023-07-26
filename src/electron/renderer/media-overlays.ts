@@ -1149,6 +1149,7 @@ function moHighlight(href: string | undefined, id: string | undefined) {
 let _mediaOverlaysState = MediaOverlaysStateEnum_.STOPPED;
 const mediaOverlaysStateSet = (mediaOverlaysState: MediaOverlaysStateEnum_) => {
     _mediaOverlaysState = mediaOverlaysState;
+    debug("mediaOverlaysStateSet", mediaOverlaysState);
 
     const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE = {
         state: mediaOverlaysState,

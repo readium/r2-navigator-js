@@ -5,6 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import { debounce } from "debounce";
 import { IEventPayload_R2_EVENT_READIUMCSS } from "../../common/events";
 import {
     isDocRTL, isDocVertical, isPaginated, readiumCSSSet,
@@ -12,9 +13,37 @@ import {
 import { FOOTNOTE_FORCE_SHOW, ROOT_CLASS_NO_FOOTNOTES } from "../../common/styles";
 import { ReadiumElectronWebviewWindow } from "./state";
 
+import {
+    POPOUTIMAGE_CONTAINER_ID, R2_MO_CLASS_PAUSED, R2_MO_CLASS_PLAYING, TTS_CLASS_PAUSED, TTS_CLASS_PLAYING,
+} from "../../common/styles";
+
 const win = global.window as ReadiumElectronWebviewWindow;
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+
+export const clearImageZoomOutlineDebounced = debounce(() => {
+    if (win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED) ||
+        win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING) ||
+        win.READIUM2.ttsClickEnabled ||
+        win.document.documentElement.classList.contains(TTS_CLASS_PAUSED) ||
+        win.document.documentElement.classList.contains(TTS_CLASS_PLAYING)) {
+        clearImageZoomOutline();
+    }
+}, 200);
+export const clearImageZoomOutline = () => {
+    const imgs = win.document.querySelectorAll(`img[data-${POPOUTIMAGE_CONTAINER_ID}]`);
+    imgs.forEach((img) => {
+        img.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
+    });
+    const images = win.document.querySelectorAll(`image[data-${POPOUTIMAGE_CONTAINER_ID}]`);
+    images.forEach((img) => {
+        img.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
+    });
+    const svgs = win.document.querySelectorAll(`svg[data-${POPOUTIMAGE_CONTAINER_ID}]`);
+    svgs.forEach((svg) => {
+        svg.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
+    });
+};
 
 export const getScrollingElement = (documant: Document): Element => {
     if (documant.scrollingElement) {

@@ -84,7 +84,7 @@ import {
 import {
     calculateColumnDimension, calculateMaxScrollShift, calculateTotalColumns, checkHiddenFootNotes,
     computeVerticalRTL, getScrollingElement, isRTL, isTwoPageSpread, isVerticalWritingMode,
-    readiumCSS,
+    readiumCSS, clearImageZoomOutlineDebounced, clearImageZoomOutline,
 } from "./readium-css";
 import { clearCurrentSelection, convertRangeInfo, getCurrentSelectionInfo } from "./selection";
 import { ReadiumElectronWebviewWindow } from "./state";
@@ -2363,24 +2363,9 @@ function loaded(forced: boolean) {
             return;
         }
 
-        win.document.documentElement.classList.forEach((c) => {
-            debug(c);
-        });
-
-        const clearImages = () => {
-            const imgs = win.document.querySelectorAll(`img[data-${POPOUTIMAGE_CONTAINER_ID}]`);
-            imgs.forEach((img) => {
-                img.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
-            });
-            const images = win.document.querySelectorAll(`image[data-${POPOUTIMAGE_CONTAINER_ID}]`);
-            images.forEach((img) => {
-                img.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
-            });
-            const svgs = win.document.querySelectorAll(`svg[data-${POPOUTIMAGE_CONTAINER_ID}]`);
-            svgs.forEach((svg) => {
-                svg.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
-            });
-        };
+        // win.document.documentElement.classList.forEach((c) => {
+        //     debug(c);
+        // });
 
         let linkElement: Element | undefined;
         let imageElement: Element | undefined;
@@ -2523,7 +2508,7 @@ function loaded(forced: boolean) {
         // at that point, can be both an image and a link! ("img" element descendant of "a" ... clickable image link)
 
         if (!href_src || (!imageElement && !linkElement)) {
-            clearImages();
+            clearImageZoomOutline();
             return;
         }
 
@@ -2531,7 +2516,7 @@ function loaded(forced: boolean) {
             href_src_image_nested_in_link = (href_src_image_nested_in_link as SVGAnimatedString).animVal;
 
             if (!href_src_image_nested_in_link) {
-                clearImages();
+                clearImageZoomOutline();
                 return;
             }
         }
@@ -2540,19 +2525,19 @@ function loaded(forced: boolean) {
             href_src = (href_src as SVGAnimatedString).animVal;
 
             if (!href_src) {
-                clearImages();
+                clearImageZoomOutline();
                 return;
             }
         }
 
         if (typeof href_src !== "string") {
 
-            clearImages();
+            clearImageZoomOutline();
             return;
         }
         if (href_src_image_nested_in_link && typeof href_src_image_nested_in_link !== "string") {
 
-            clearImages();
+            clearImageZoomOutline();
             return;
         }
 
@@ -2566,7 +2551,7 @@ function loaded(forced: boolean) {
                 href_src = href_src_image_nested_in_link;
             }
 
-            clearImages();
+            clearImageZoomOutline();
 
             ev.preventDefault();
             ev.stopPropagation();
@@ -2596,17 +2581,17 @@ function loaded(forced: boolean) {
         }
 
         if (!linkElement || !href_src) {
-            clearImages();
+            clearImageZoomOutline();
             return;
         }
 
         const hrefStr = href_src as string;
         if (/^javascript:/.test(hrefStr)) {
-            clearImages();
+            clearImageZoomOutline();
             return;
         }
 
-        clearImages();
+        clearImageZoomOutline();
 
         ev.preventDefault();
         ev.stopPropagation();
@@ -3987,6 +3972,8 @@ if (!win.READIUM2.isAudio) {
     ipcRenderer.on(R2_EVENT_MEDIA_OVERLAY_STATE,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_event: any, payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE) => {
+
+        clearImageZoomOutlineDebounced();
 
         win.document.documentElement.classList.remove(R2_MO_CLASS_PAUSED, R2_MO_CLASS_PLAYING, R2_MO_CLASS_STOPPED);
 

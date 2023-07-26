@@ -31,7 +31,7 @@ import {
 import { easings } from "../common/easings";
 import { IHTMLDialogElementWithPopup, PopupDialog, isPopupDialogOpen } from "../common/popup-dialog";
 import { createHighlights, destroyHighlight } from "./highlight";
-import { isRTL } from "./readium-css";
+import { isRTL, clearImageZoomOutlineDebounced } from "./readium-css";
 import { convertRange } from "./selection";
 import { ReadiumElectronWebviewWindow } from "./state";
 
@@ -109,6 +109,7 @@ function resetState(stop: boolean) {
         win.document.documentElement.classList.remove(TTS_CLASS_PLAYING, TTS_CLASS_STOPPED);
         win.document.documentElement.classList.add(TTS_CLASS_PAUSED);
     }
+    clearImageZoomOutlineDebounced();
 }
 
 export function ttsPlay(
@@ -215,6 +216,7 @@ export function ttsPause(doNotReset = false) {
     }
     ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PAUSED);
     win.READIUM2.ttsClickEnabled = true;
+    clearImageZoomOutlineDebounced();
 
     const isOpen = _dialogState?.hasAttribute("open") || _dialogState?.open;
 
@@ -319,6 +321,7 @@ export function ttsResume() {
         }
         ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PLAYING);
         win.READIUM2.ttsClickEnabled = true;
+        clearImageZoomOutlineDebounced();
     } else if (_resumableState) {
         setTimeout(() => {
             if (_resumableState) {
@@ -1227,6 +1230,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
     }
     ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PLAYING);
     win.READIUM2.ttsClickEnabled = true;
+    clearImageZoomOutlineDebounced();
 }
 
 function startTTSSession(
