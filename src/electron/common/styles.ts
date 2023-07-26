@@ -218,39 +218,52 @@ export const footnotesCssStyles = `
 */
 :root[style] div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CONTROLS_ID},
 :root div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CONTROLS_ID} {
-    border: 1px solid black;
-    background: white !important;
-    color: black !important;
-    padding: 0.2em;
+    border: 1px solid var(--RS__backgroundColor) !important;
+    background: transparent !important;
+    color: var(--RS__textColor) !important;
+    padding: 4px;
     margin: 0;
-    border-radius: 0.8em;
+    border-radius: 16px;
     position: absolute;
-    top: 0.2em;
-    left: 0.4em;
+    top: 8px;
+    left: 8px;
     width: auto;
     height: auto;
 }
+:root[style]:not([style*="--USER__"]) div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CONTROLS_ID},
+:root:not([style]) div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CONTROLS_ID} {
+    border: 1px solid black !important;
+    background: white !important;
+    color: black !important;
+}
+
 :root[style] div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CLOSE_ID},
 :root div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CLOSE_ID} {
     position: absolute;
-    top: 0.2em;
-    right: 0.4em;
+    top: 8px;
+    right: 8px;
 }
 :root[style] div#${POPOUTIMAGE_CONTAINER_ID} button,
 :root div#${POPOUTIMAGE_CONTAINER_ID} button {
-    border: 2px solid black;
-    background: white !important;
-    color: black !important;
+    border: 2px solid var(--RS__textColor) !important;
+    background: var(--RS__backgroundColor) !important;
+    color: var(--RS__textColor) !important;
     font-family: Arial !important;
-    font-size: 1.5em !important;
+    font-size: 20px !important;
     font-weight: bold;
     user-select: none;
-    padding: 0.2em;
+    padding: 8px;
     margin: 0;
-    border-radius: 0.8em;
-    width: 1.6em;
+    border-radius: 16px;
+    width: 36px;
     display: inline-block;
     cursor: pointer !important;
+}
+:root[style]:not([style*="--USER__"]) div#${POPOUTIMAGE_CONTAINER_ID} button,
+:root:not([style]) div#${POPOUTIMAGE_CONTAINER_ID} button {
+    border: 2px solid black !important;
+    background: white !important;
+    color: black !important;
 }
 
 :root[style] div#${POPOUTIMAGE_CONTAINER_ID} > img,

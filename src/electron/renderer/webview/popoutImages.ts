@@ -445,7 +445,7 @@ export function popoutImage(
     />
     <div id="${POPOUTIMAGE_CONTROLS_ID}">
     <button id="${POPOUTIMAGE_MINUS_ID}">-</button>
-    <button id="${POPOUTIMAGE_RESET_ID}">0</button>
+    <button id="${POPOUTIMAGE_RESET_ID}" title="0">O</button>
     <button id="${POPOUTIMAGE_PLUS_ID}">+</button>
     </div>
     <button id="${POPOUTIMAGE_CLOSE_ID}">X</button>
