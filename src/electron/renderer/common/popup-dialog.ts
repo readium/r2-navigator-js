@@ -86,7 +86,7 @@ function getFocusables(rootElement: Element): HTMLOrSVGElement[] {
     // });
     // return focusables;
 
-    const tabbables = tabbable(rootElement);
+    const tabbables = tabbable.tabbable(rootElement);
     return tabbables;
 }
 function focusInside(rootElement: Element) {
