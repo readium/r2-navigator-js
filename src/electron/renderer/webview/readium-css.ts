@@ -247,6 +247,9 @@ export function checkHiddenFootNotes(documant: Document) {
         let epubType = aside.getAttribute("epub:type");
         if (!epubType) {
             epubType = aside.getAttributeNS("http://www.idpf.org/2007/ops", "type");
+            if (!epubType) {
+                epubType = aside.getAttribute("role");
+            }
         }
         if (!epubType) {
             return;
@@ -254,10 +257,18 @@ export function checkHiddenFootNotes(documant: Document) {
 
         epubType = epubType.trim().replace(/\s\s+/g, " "); // whitespace collapse
 
-        const isPotentiallyHiddenNote = epubType.indexOf("footnote") >= 0 ||
-            epubType.indexOf("endnote") >= 0 ||
-            epubType.indexOf("rearnote") >= 0 ||
-            epubType.indexOf("note") >= 0; // TODO: smarter regexp?
+        const isPotentiallyHiddenNote =
+            epubType.indexOf("note") >= 0 // this covers all of below (and more!) ... TODO: smarter regexp?
+            // epubType.indexOf("footnote") >= 0 ||
+            // epubType.indexOf("endnote") >= 0 ||
+            // epubType.indexOf("rearnote") >= 0 ||
+
+            // epubType.indexOf("doc-note") >= 0
+            // epubType.indexOf("doc-footnote") >= 0 ||
+            // epubType.indexOf("doc-endnote") >= 0 ||
+            // epubType.indexOf("doc-rearnote") >= 0 ||
+        ;
+
         if (!isPotentiallyHiddenNote) {
             return;
         }

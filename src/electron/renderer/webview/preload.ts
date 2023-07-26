@@ -1928,10 +1928,15 @@ function checkSoundtrack(documant: Document) {
     let epubType = audio.getAttribute("epub:type");
     if (!epubType) {
         epubType = audio.getAttributeNS("http://www.idpf.org/2007/ops", "type");
+        if (!epubType) {
+            epubType = audio.getAttribute("role");
+        }
     }
     if (!epubType) {
         return;
     }
+    epubType = epubType.trim().replace(/\s\s+/g, " "); // whitespace collapse
+
     if (epubType.indexOf("ibooks:soundtrack") < 0) {
         return;
     }
