@@ -283,6 +283,11 @@ export function findTtsQueueItemIndex(
     return -1;
 }
 
+// tslint:disable-next-line:max-line-length
+const putInElementStackTagNames = ["h1", "h2", "h3", "h4", "h5", "h6", "p", "th", "td", "caption", "li", "blockquote", "q", "dt", "dd", "figcaption", "div", "pre"];
+// tslint:disable-next-line:max-line-length
+const doNotProcessDeepChildTagNames = ["svg", "img", "sup", "sub", "audio", "video", "source", "button", "canvas", "del", "dialog", "embed", "form", "head", "iframe", "meter", "noscript", "object", "s", "script", "select", "style", "textarea"]; // "code", "nav", "dl", "figure", "table", "ul", "ol"
+
 export function generateTtsQueue(rootElement: Element, splitSentences: boolean): ITtsQueueItem[] {
 
     const ttsQueue: ITtsQueueItem[] = [];
@@ -393,14 +398,13 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
         }
 
         const tagNameLow = element.tagName ? element.tagName.toLowerCase() : undefined;
-        const putInElementStackTagNames = ["h1", "h2", "h3", "h4", "h5", "h6", "p", "th", "td", "caption", "li", "blockquote", "q", "dt", "dd", "figcaption", "div", "pre"];
 
+        // tslint:disable-next-line:max-line-length
         const putInElementStack = first ||
             tagNameLow && putInElementStackTagNames.includes(tagNameLow)
             // tslint:disable-next-line:max-line-length
             // element.matches("h1, h2, h3, h4, h5, h6, p, th, td, caption, li, blockquote, q, dt, dd, figcaption, div, pre")
             ;
-        
 
         first = false;
 
