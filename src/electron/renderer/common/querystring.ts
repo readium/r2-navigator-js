@@ -5,12 +5,16 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import { ReadiumElectronBrowserWindow } from "../webview/state";
+
+const win = global.window as ReadiumElectronBrowserWindow;
+
 export interface IStringMap { [key: string]: string; }
 
 export const getURLQueryParams = (search?: string): IStringMap => {
     const params: IStringMap = {};
 
-    let query = search || window.location.search;
+    let query = search || win.location.search;
     if (query && query.length) {
         query = query.substring(1);
         const keyParams = query.split("&");

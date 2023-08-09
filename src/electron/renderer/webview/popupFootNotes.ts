@@ -35,20 +35,29 @@ export async function popupFootNote(
     let epubType = element.getAttribute("epub:type");
     if (!epubType) {
         epubType = element.getAttributeNS("http://www.idpf.org/2007/ops", "type");
+        if (!epubType) {
+            epubType = element.getAttribute("role");
+        }
     }
     if (!epubType) {
         return false;
     }
+    epubType = epubType.trim().replace(/\s\s+/g, " "); // whitespace collapse
+
 
     // epubType.indexOf("biblioref") >= 0 ||
     // epubType.indexOf("glossref") >= 0 ||
     // epubType.indexOf("annoref") >= 0
-    const isNoteref = epubType.indexOf("noteref") >= 0;
+    const isNoteref = epubType.indexOf("noteref") >= 0 // this includes doc-* below
+        // || epubType.indexOf("doc-noteref") >= 0
+    ;
     if (!isNoteref) {
         return false;
     }
 
-    const url = new URL(href);
+    const url = new URL(href,
+        // edge case: SVG a@href animVal doesn't automatically resolve full absolute URL
+        href.startsWith("#") ? documant.location.href : undefined);
     if (!url.hash) { // includes #
         return false;
     }

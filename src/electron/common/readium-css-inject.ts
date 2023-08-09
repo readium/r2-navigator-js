@@ -34,8 +34,8 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 
 const debug = debug_("r2:navigator#electron/common/readium-css-inject");
 
-// import { IReadiumElectronWebviewWindow } from "../renderer/webview/state";
-// ((global as any).window as IReadiumElectronWebviewWindow).READIUM2.DEBUG_VISUALS
+// import { ReadiumElectronWebviewWindow } from "../renderer/webview/state";
+// (global.window as ReadiumElectronWebviewWindow).READIUM2.DEBUG_VISUALS
 function isDEBUG_VISUALS(documant: Document): boolean {
     if (!IS_DEV) {
         return false;
@@ -766,7 +766,7 @@ export function appendCSS(documant: Document, mod: string, urlRoot: string) {
         const styleElement = documant.createElement("style");
         styleElement.setAttribute("id", idz + "-PATCH");
         styleElement.setAttribute("type", "text/css");
-        styleElement.appendChild(documant.createTextNode("audio[controls] { width: revert; height: revert; }"));
+        styleElement.appendChild(documant.createTextNode("audio[controls] { width: revert !important; height: revert !important; }"));
         documant.head.insertBefore(styleElement, firstElementChild);
     } else {
         documant.head.appendChild(linkElement);

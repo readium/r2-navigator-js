@@ -19,13 +19,13 @@ import {
 } from "../common/events";
 import { getCurrentReadingLocation, navLeftOrRight } from "./location";
 import { isRTL } from "./readium-css";
-import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
+import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 // import * as debug_ from "debug";
 // const debug = debug_("r2:navigator#electron/renderer/index");
 // const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-const win = window as IReadiumElectronBrowserWindow;
+const win = global.window as ReadiumElectronBrowserWindow;
 
 let _lastTTSWebView: IReadiumElectronWebview | undefined;
 let _lastTTSWebViewHref: string | undefined;
@@ -199,7 +199,7 @@ export function ttsPlay(speed: number, voice: SpeechSynthesisVoice | null) {
     _lastTTSWebViewHref = activeWebView.READIUM2.link?.Href;
 
     const payload: IEventPayload_R2_EVENT_TTS_DO_PLAY = {
-        rootElement: "html > body", // window.document.body
+        rootElement: "html > body", // win.document.body
         speed,
         startElement: startElementCSSSelector,
         voice,
@@ -207,7 +207,9 @@ export function ttsPlay(speed: number, voice: SpeechSynthesisVoice | null) {
 
     setTimeout(async () => {
         if (activeWebView) {
-            await activeWebView.send(R2_EVENT_TTS_DO_PLAY, payload);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_TTS_DO_PLAY, payload);
+            }
         }
     }, 0);
 }
@@ -219,7 +221,9 @@ export function ttsPause() {
             continue;
         }
         setTimeout(async () => {
-            await activeWebView.send(R2_EVENT_TTS_DO_PAUSE);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_TTS_DO_PAUSE);
+            }
         }, 0);
     }
 }
@@ -232,7 +236,9 @@ export function ttsStop() {
         _lastTTSWebView = undefined;
         _lastTTSWebViewHref = undefined;
         setTimeout(async () => {
-            await activeWebView.send(R2_EVENT_TTS_DO_STOP);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_TTS_DO_STOP);
+            }
         }, 0);
     }
 }
@@ -243,7 +249,9 @@ export function ttsResume() {
             continue;
         }
         setTimeout(async () => {
-            await activeWebView.send(R2_EVENT_TTS_DO_RESUME);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_TTS_DO_RESUME);
+            }
         }, 0);
     }
 }
@@ -257,7 +265,9 @@ export function ttsPrevious(skipSentences = false) {
             const payload: IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS = {
                 skipSentences,
             };
-            await activeWebView.send(R2_EVENT_TTS_DO_PREVIOUS, payload);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_TTS_DO_PREVIOUS, payload);
+            }
         }, 0);
     }
 }
@@ -271,7 +281,9 @@ export function ttsNext(skipSentences = false) {
             const payload: IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS = {
                 skipSentences,
             };
-            await activeWebView.send(R2_EVENT_TTS_DO_NEXT, payload);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_TTS_DO_NEXT, payload);
+            }
         }, 0);
     }
 }
@@ -288,7 +300,9 @@ export function ttsOverlayEnable(doEnable: boolean) {
                 doEnable,
             };
 
-            await activeWebView.send(R2_EVENT_TTS_OVERLAY_ENABLE, payload);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_TTS_OVERLAY_ENABLE, payload);
+            }
         }, 0);
     }
 }
@@ -305,7 +319,9 @@ export function ttsClickEnable(doEnable: boolean) {
                 doEnable,
             };
 
-            await activeWebView.send(R2_EVENT_TTS_CLICK_ENABLE, payload);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_TTS_CLICK_ENABLE, payload);
+            }
         }, 0);
     }
 }
@@ -321,7 +337,9 @@ export function ttsVoice(voice: SpeechSynthesisVoice | null) {
             voice,
         };
         setTimeout(async () => {
-            await activeWebView.send(R2_EVENT_TTS_VOICE, payload);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_TTS_VOICE, payload);
+            }
         }, 0);
     }
 }
@@ -337,7 +355,9 @@ export function ttsPlaybackRate(speed: number) {
             speed,
         };
         setTimeout(async () => {
-            await activeWebView.send(R2_EVENT_TTS_PLAYBACK_RATE, payload);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_TTS_PLAYBACK_RATE, payload);
+            }
         }, 0);
     }
 }
@@ -355,7 +375,9 @@ export function ttsSentenceDetectionEnable(doEnable: boolean) {
                 doEnable,
             };
 
-            await activeWebView.send(R2_EVENT_TTS_SENTENCE_DETECT_ENABLE, payload);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_TTS_SENTENCE_DETECT_ENABLE, payload);
+            }
         }, 0);
     }
 }

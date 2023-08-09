@@ -12,7 +12,7 @@ import { CONTEXT_MENU_SETUP } from "../common/context-menu";
 import {
     IEventPayload_R2_EVENT_LINK, R2_EVENT_KEYBOARD_FOCUS_REQUEST, R2_EVENT_LINK,
 } from "../common/events";
-import { R2_SESSION_WEBVIEW, READIUM2_ELECTRON_HTTP_PROTOCOL } from "../common/sessions";
+import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../common/sessions";
 
 const debug = debug_("r2:navigator#electron/main/browser-window-tracker");
 
@@ -80,12 +80,22 @@ export const contextMenuSetup = (webContent: Electron.WebContents, webContentID:
     // const wc = remote.webContents.fromId(wv.getWebContentsId());
     // const wc = wv.getWebContents();
     const wc = webContents.fromId(webContentID);
+    if (!wc) {
+        return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((wc as any).__CONTEXT_MENU_SETUP) {
+        return;
+    }
 
     // This is always the case: webContentID is the inner WebView
     // inside the main reader BrowserWindow (webContent === event.sender)
     // if (wc !== webContent) {
     //     debug(`!!!!?? CONTEXT_MENU_SETUP __ wc ${wc.id} !== webContent ${webContentID}`);
     // }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wc as any).__CONTEXT_MENU_SETUP = true;
     wc.on("context-menu", (_ev, params) => {
         const { x, y } = params;
         debug("MAIN context-menu EVENT on WebView");
@@ -138,6 +148,9 @@ ipcMain.on(CONTEXT_MENU_SETUP, (event, webContentID: number) => {
 
 ipcMain.handle(R2_EVENT_KEYBOARD_FOCUS_REQUEST, (event, webContentsId) => {
     const wc = webContents.fromId(webContentsId);
+    if (!wc) {
+        return;
+    }
     debug("KEYBOARD FOCUS REQUEST (3) ", wc ? wc.id : "??", " // ", webContentsId, " -- ", wc.hostWebContents.id, " == ", event.sender.id);
     if (wc && wc.hostWebContents === event.sender) {
         debug("KEYBOARD FOCUS REQUEST (3) GO! ", wc.id, wc.hostWebContents.id);
@@ -152,17 +165,18 @@ app.on("web-contents-created", (_evt, wc) => {
         if (params.src && !params.src.startsWith("data:")) {
             debug(params.src);
         }
+        debug(webPreferences);
 
         // delete webPreferences.preload;
         // delete webPreferences.preloadURL;
 
-        webPreferences.contextIsolation = false;
-        webPreferences.javascript = true;
-        webPreferences.webSecurity = true;
-        webPreferences.nodeIntegration = false;
-        webPreferences.nodeIntegrationInWorker = false;
-        webPreferences.allowRunningInsecureContent = false;
-        webPreferences.partition = R2_SESSION_WEBVIEW;
+        // webPreferences.contextIsolation = false;
+        // webPreferences.javascript = true;
+        // webPreferences.webSecurity = true;
+        // webPreferences.nodeIntegration = false;
+        // webPreferences.nodeIntegrationInWorker = false;
+        // webPreferences.allowRunningInsecureContent = false;
+        // webPreferences.partition = R2_SESSION_WEBVIEW;
 
         // works in Electron v3 because webPreferences is any instead of WebPreferences
         // webPreferences.enableRemoteModule = false;

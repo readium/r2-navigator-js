@@ -11,7 +11,7 @@ import {
 import { IReadiumElectronWebview } from "./webview/state";
 
 // const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
-// const win = window as IReadiumElectronBrowserWindow;
+// const win = global.window as ReadiumElectronBrowserWindow;
 
 export function soundtrackHandleIpcMessage(
     eventChannel: string,

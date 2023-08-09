@@ -1,10 +1,14 @@
+  'postinstall': '
+    node -e "try{const fs = require(\'fs\');let s = fs.readFileSync(\'node_modules/cpy/index.js\', { encoding: \'utf8\' });s = s.replace(/options, onProgress:/, \'options, cwd: null, onProgress:\');fs.writeFileSync(\'node_modules/cpy/index.js\', s, { encoding: \'utf8\' });}catch(e){console.log(e)}"
+  '
+
   'cson2json': '
     sed -E "s/#ECMASCRIPT#/es5/g" package-scripts-build.cson > tmp-build.cson &&
     sed -E "s/#ECMASCRIPT#/es6-es2015/g" package-scripts-build.cson >> tmp-build.cson &&
     sed -E "s/#ECMASCRIPT#/es7-es2016/g" package-scripts-build.cson >> tmp-build.cson &&
     sed -E "s/#ECMASCRIPT#/es8-es2017/g" package-scripts-build.cson >> tmp-build.cson &&
     json -I -f package.json -e "this.scripts=$(cat package-scripts.cson tmp-build.cson | node node_modules/.bin/cson2json)" &&
-    rimraf tmp-*.cson
+    rimraf tmp-build.cson
   '
 
   'electron-renderer:all': '
@@ -30,7 +34,7 @@
     git checkout -B develop &&
     (git pull || echo "pull") &&
     (git --no-pager status || echo status) &&
-    ((rimraf "*" && echo rimrafOK) || echo rimrafNOK) &&
+    ((rimraf * && echo rimrafOK) || echo rimrafNOK) &&
     cpy --flat "../r2-navigator-js/package.json" . &&
     cpy --flat "../r2-navigator-js/package-lock.json" . &&
     cpy --flat "../r2-navigator-js/LICENSE" . &&

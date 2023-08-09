@@ -16,12 +16,20 @@ import { Link } from "@r2-shared-js/models/publication-link";
 import { DEBUG_AUDIO } from "../common/audiobook";
 import {
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK, IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
+    IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE, R2_EVENT_MEDIA_OVERLAY_STATE, MediaOverlaysStateEnum as MediaOverlaysStateEnum_,
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_MEDIA_OVERLAY_CLICK,
     R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, R2_EVENT_MEDIA_OVERLAY_STARTSTOP,
 } from "../common/events";
 import { handleLinkUrl, navLeftOrRight } from "./location";
 import { isRTL } from "./readium-css";
-import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
+import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
+
+// export enum MediaOverlaysStateEnum {
+//     PAUSED = "PAUSED",
+//     PLAYING = "PLAYING",
+//     STOPPED = "STOPPED",
+// }
+export { MediaOverlaysStateEnum_ as MediaOverlaysStateEnum };
 
 // import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "../common/sessions";
 
@@ -29,7 +37,7 @@ const debug = debug_("r2:navigator#electron/renderer/media-overlays");
 
 const IS_DEV = process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev";
 
-const win = window as IReadiumElectronBrowserWindow;
+const win = global.window as ReadiumElectronBrowserWindow;
 
 const AUDIO_MO_ID = "R2_AUDIO_MO_ID";
 
@@ -82,19 +90,20 @@ let _mediaOverlayActive = false;
 async function playMediaOverlays(
     textHref: string,
     rootMo: MediaOverlayNode,
-    textFragmentIDChain: Array<string | null> | undefined) {
+    textFragmentIDChain: Array<string | null> | undefined,
+    isInteract: boolean) {
 
     if (IS_DEV) {
         debug("playMediaOverlays()");
     }
 
-    let textFragmentIDChain_ = textFragmentIDChain ? textFragmentIDChain.filter((id) => id) : undefined;
+    let textFragmentIDChain_: Array<string> | undefined | null = textFragmentIDChain ? textFragmentIDChain.filter((id) => id) as Array<string> : undefined;
     if (textFragmentIDChain_ && textFragmentIDChain_.length === 0) {
-        textFragmentIDChain_ = undefined;
+        textFragmentIDChain_ = null;
     }
 
     let moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, textFragmentIDChain_);
-    if (!moTextAudioPair && textFragmentIDChain_) {
+    if (!moTextAudioPair && (textFragmentIDChain_ || textFragmentIDChain_ === null && !isInteract)) {
         if (IS_DEV) {
             debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE ");
             debug(JSON.stringify(textFragmentIDChain_, null, 4));
@@ -109,9 +118,7 @@ async function playMediaOverlays(
             }
             _mediaOverlayRoot = rootMo;
             await playMediaOverlaysAudio(moTextAudioPair, undefined, undefined);
-            if (_mediaOverlaysListener) {
-                _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-            }
+            mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
         }
     } else {
         if (IS_DEV) {
@@ -246,9 +253,7 @@ async function playMediaOverlaysAudio(
                 _currentAudioElement.playbackRate = _mediaOverlaysPlaybackRate;
                 await _currentAudioElement.play();
 
-                // if (_mediaOverlaysListener) {
-                //     _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-                // }
+                // mediaOverlaysStateSetMediaOverlaysStateEnum_.PLAYING);
             } else {
                 if (IS_DEV) {
                     debug("playMediaOverlaysAudio() - playClip() - ontimeupdateSeeked");
@@ -265,9 +270,7 @@ async function playMediaOverlaysAudio(
                         _currentAudioElement.playbackRate = _mediaOverlaysPlaybackRate;
                         await _currentAudioElement.play();
                     }
-                    // if (_mediaOverlaysListener) {
-                    //     _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-                    // }
+                    // mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
                 };
                 _currentAudioElement.addEventListener("timeupdate", ontimeupdateSeeked);
                 _currentAudioElement.currentTime = timeToSeekTo;
@@ -515,17 +518,13 @@ async function playMediaOverlaysAudio(
 
         const onpause = async (_ev: Event) => {
             debug("onpause");
-            // if (_mediaOverlaysListener) {
-            //     _mediaOverlaysListener(MediaOverlaysStateEnum.PAUSED);
-            // }
+            // mediaOverlaysStateSet(MediaOverlaysStateEnum_.PAUSED);
         };
         _currentAudioElement.addEventListener("pause", onpause);
 
         const onplay = async (_ev: Event) => {
             debug("onplay");
-            // if (_mediaOverlaysListener) {
-            //     _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-            // }
+            // mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
         };
         _currentAudioElement.addEventListener("play", onplay);
 
@@ -743,7 +742,7 @@ function findPreviousTextAudioPair(
 function findDepthFirstTextAudioPair(
     textHref: string,
     mo: MediaOverlayNode,
-    textFragmentIDChain: Array<string | null> | undefined):
+    textFragmentIDChain: Array<string> | undefined | null):
     MediaOverlayNode | undefined | null { // returns null when skipped
 
     if (DEBUG_AUDIO) {
@@ -788,7 +787,9 @@ function findDepthFirstTextAudioPair(
             }
             return undefined;
         }
-        if (isFragmentIDMatch || (isTextUrlMatch && !textFragmentIDChain)) {
+        if (isFragmentIDMatch ||
+            (isTextUrlMatch && textFragmentIDChain === undefined) // excludes null which is for root call only
+        ) {
             if (isSkip) {
                 if (DEBUG_AUDIO) {
                     debug("findDepthFirstTextAudioPair() - leaf - isFragmentIDMatch || (isTextUrlMatch && !textFragmentIDChain (isSkip)");
@@ -861,7 +862,7 @@ function ensureKillAutoNextTimeout() {
         _timeoutAutoNext = undefined;
     }
 }
-async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<string | null> | undefined) {
+async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<string | null> | undefined, isInteract: boolean) {
 
     if (IS_DEV) {
         debug("playMediaOverlaysForLink()");
@@ -907,9 +908,8 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
             const rtl = isRTL();
             navLeftOrRight(rtl, true, true);
         }, 600); // was 2 seconds, but transition too slow (user thinks playback is stalled)
-        if (_mediaOverlaysListener) {
-            _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-        }
+
+        mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
         return;
     }
     // typically undefined at first, because serialized JSON not init'ed, lazy-loaded
@@ -977,7 +977,7 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
     const hrefUrlObj = new URL("https://dummy.com/" + href);
     // hrefUrlObj.hash = "";
     // hrefUrlObj.search = "";
-    await playMediaOverlays(hrefUrlObj.pathname.substr(1), link.MediaOverlays, textFragmentIDChain);
+    await playMediaOverlays(hrefUrlObj.pathname.substr(1), link.MediaOverlays, textFragmentIDChain, isInteract);
 }
 
 let _lastClickedNotification: {
@@ -1033,6 +1033,9 @@ export function mediaOverlaysHandleIpcMessage(
             //     }
             // }
 
+            const wasPlaying = _mediaOverlaysState === MediaOverlaysStateEnum_.PLAYING;
+            const lastClickedNotification = _lastClickedNotification;
+
             mediaOverlaysInterrupt();
 
             _lastClickedNotification = {
@@ -1048,9 +1051,17 @@ export function mediaOverlaysHandleIpcMessage(
                 }
                 setTimeout(async () => {
                     if (activeWebView.READIUM2.link) {
-                        await playMediaOverlaysForLink(activeWebView.READIUM2.link, payload.textFragmentIDChain);
+                        await playMediaOverlaysForLink(activeWebView.READIUM2.link, payload.textFragmentIDChain, payload.userInteract);
+                        if (_mediaOverlaysState !== MediaOverlaysStateEnum_.PLAYING) {
+                            _lastClickedNotification = lastClickedNotification;
+                            if (wasPlaying) {
+                                mediaOverlaysResume();
+                            }
+                        }
                     }
                 }, 0);
+            } else {
+                _lastClickedNotification = lastClickedNotification;
             }
         }
     } else if (eventChannel === R2_EVENT_MEDIA_OVERLAY_STARTSTOP) {
@@ -1128,18 +1139,37 @@ function moHighlight(href: string | undefined, id: string | undefined) {
             }
         }
         setTimeout(async () => {
-            await activeWebView.send(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, payload);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, payload);
+            }
         }, 0);
     }
 }
 
-export enum MediaOverlaysStateEnum {
-    PAUSED = "PAUSED",
-    PLAYING = "PLAYING",
-    STOPPED = "STOPPED",
-}
-let _mediaOverlaysListener: ((mediaOverlaysState: MediaOverlaysStateEnum) => void) | undefined;
-export function mediaOverlaysListen(mediaOverlaysListener: (mediaOverlaysState: MediaOverlaysStateEnum) => void) {
+let _mediaOverlaysState = MediaOverlaysStateEnum_.STOPPED;
+const mediaOverlaysStateSet = (mediaOverlaysState: MediaOverlaysStateEnum_) => {
+    _mediaOverlaysState = mediaOverlaysState;
+    debug("mediaOverlaysStateSet", mediaOverlaysState);
+
+    const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE = {
+        state: mediaOverlaysState,
+    };
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        setTimeout(async () => {
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_MEDIA_OVERLAY_STATE, payload);
+            }
+        }, 0);
+    }
+
+    if (_mediaOverlaysListener) {
+        _mediaOverlaysListener(mediaOverlaysState);
+    }
+};
+
+let _mediaOverlaysListener: ((mediaOverlaysState: MediaOverlaysStateEnum_) => void) | undefined;
+export function mediaOverlaysListen(mediaOverlaysListener: (mediaOverlaysState: MediaOverlaysStateEnum_) => void) {
     _mediaOverlaysListener = mediaOverlaysListener;
 }
 
@@ -1169,7 +1199,7 @@ export function mediaOverlaysPlay(speed: number) {
         }
         setTimeout(async () => {
             if (activeWebView && activeWebView.READIUM2.link) {
-                await playMediaOverlaysForLink(activeWebView.READIUM2.link, textFragmentIDChain);
+                await playMediaOverlaysForLink(activeWebView.READIUM2.link, textFragmentIDChain, false);
             }
         }, 0);
     } else {
@@ -1195,9 +1225,7 @@ export function mediaOverlaysPause() {
         _currentAudioElement.pause();
     }
 
-    if (_mediaOverlaysListener) {
-        _mediaOverlaysListener(MediaOverlaysStateEnum.PAUSED);
-    }
+    mediaOverlaysStateSet(MediaOverlaysStateEnum_.PAUSED);
 }
 
 export function mediaOverlaysInterrupt() {
@@ -1230,9 +1258,7 @@ export function mediaOverlaysStop(stayActive?: boolean) {
     // _lastClickedNotification = undefined;
 
     if (!_mediaOverlayActive) {
-        if (_mediaOverlaysListener) {
-            _mediaOverlaysListener(MediaOverlaysStateEnum.STOPPED);
-        }
+        mediaOverlaysStateSet(MediaOverlaysStateEnum_.STOPPED);
     }
 }
 
@@ -1257,9 +1283,7 @@ export function mediaOverlaysResume() {
                 }
             }, 0);
         }
-        if (_mediaOverlaysListener) {
-            _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-        }
+        mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
         moHighlight_(_mediaOverlayTextAudioPair);
     } else {
         if (IS_DEV) {
@@ -1328,9 +1352,8 @@ export function mediaOverlaysPrevious() {
                 setTimeout(async () => {
                     await playMediaOverlaysAudio(previousTextAudioPair, undefined, undefined);
                 }, 0);
-                if (_mediaOverlaysListener) {
-                    _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-                }
+
+                mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
             }
         }
     } else {
@@ -1408,9 +1431,8 @@ export function mediaOverlaysNext(escape?: boolean) {
                 setTimeout(async () => {
                     await playMediaOverlaysAudio(nextTextAudioPair, undefined, undefined);
                 }, 0);
-                if (_mediaOverlaysListener) {
-                    _mediaOverlaysListener(MediaOverlaysStateEnum.PLAYING);
-                }
+
+                mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
             }
         }
     } else {
@@ -1464,6 +1486,7 @@ export function mediaOverlaysClickEnable(doEnable: boolean) {
     // };
 
     // setTimeout(async () => {
+    // if (activeWebView.READIUM2?.DOMisReady) {
     //     await activeWebView.send(R2_EVENT_MEDIA_OVERLAYS_CLICK_ENABLE, payload);
     // }, 0);
 }

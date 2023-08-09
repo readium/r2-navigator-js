@@ -28,10 +28,18 @@ export const FOOTNOTES_CONTAINER_CLASS = "r2-footnote-container";
 export const FOOTNOTES_CLOSE_BUTTON_CLASS = "r2-footnote-close";
 export const FOOTNOTE_FORCE_SHOW = "r2-footnote-force-show";
 
-export const POPOUTIMAGE_CONTAINER_CLASS = "r2-popoutimage-container";
+export const POPOUTIMAGE_CONTAINER_ID = "r2-popoutimage-container-id";
+export const POPOUTIMAGE_CLOSE_ID = "r2-popoutimage-close-id";
+export const POPOUTIMAGE_CONTROLS_ID = "r2-popoutimage-controls-id";
+export const POPOUTIMAGE_MINUS_ID = "r2-popoutimage-minus-id";
+export const POPOUTIMAGE_PLUS_ID = "r2-popoutimage-plus-id";
+export const POPOUTIMAGE_RESET_ID = "r2-popoutimage-reset-id";
 
 export const POPUP_DIALOG_CLASS = "r2-popup-dialog";
 export const POPUP_DIALOG_CLASS_COLLAPSE = "r2-popup-dialog-collapse";
+
+export const ROOT_CLASS_KEYBOARD_INTERACT = "r2-keyboard-interact";
+export const CSS_CLASS_NO_FOCUS_OUTLINE = "r2-no-focus-outline";
 
 // 'a' element: noteref biblioref glossref annoref
 //
@@ -72,6 +80,8 @@ export const footnotesCssStyles = `
 
 :root[style] dialog#${POPUP_DIALOG_CLASS},
 :root dialog#${POPUP_DIALOG_CLASS} {
+    -webkit-writing-mode: horizontal-tb;
+
     z-index: 3;
 
     position: fixed;
@@ -118,17 +128,21 @@ export const footnotesCssStyles = `
     height: 1px;
 }
 
-:root[style] .${POPOUTIMAGE_CONTAINER_CLASS},
-:root .${POPOUTIMAGE_CONTAINER_CLASS} {
+:root[style] div#${POPOUTIMAGE_CONTAINER_ID},
+:root div#${POPOUTIMAGE_CONTAINER_ID},
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} div#${POPOUTIMAGE_CONTAINER_ID},
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} div#${POPOUTIMAGE_CONTAINER_ID} {
     grid-column-start: 1;
     grid-column-end: 4;
     grid-row-start: 1;
     grid-row-end: 3;
 
+    /*
     outline-color: magenta !important;
-    outline-style: dashed !important;
-    outline-width: 6px !important;
-    outline-offset: -6px !important;
+    outline-style: dotted !important;
+    outline-width: 4px !important;
+    outline-offset: -4px !important;
+    */
 
     padding: 0;
     margin: 0;
@@ -150,44 +164,153 @@ export const footnotesCssStyles = `
     overflow-x: auto;
 }
 
-:root[style] img[data-${POPOUTIMAGE_CONTAINER_CLASS}],
-:root img[data-${POPOUTIMAGE_CONTAINER_CLASS}] {
-    outline-color: magenta !important;
-    outline-style: dashed !important;
-    outline-width: 10px !important;
-    outline-offset: 2px !important;
-
-    cursor: pointer !important;
+@keyframes readium2ElectronAnimation_IMG_OUTLINE {
+    0% {
+        outline-offset: -0.4em;
+    }
+    25% {
+        outline-offset: 0em;
+    }
+    50% {
+        outline-offset: 0.8em;
+    }
+    75% {
+        outline-offset: 0em;
+    }
+    100% {
+        outline-offset: -0.4em;
+    }
 }
 
-:root[style] .${POPOUTIMAGE_CONTAINER_CLASS} > img,
-:root .${POPOUTIMAGE_CONTAINER_CLASS} > img {
+/*
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} img[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} img[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} image[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} image[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} svg[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} svg[data-${POPOUTIMAGE_CONTAINER_ID}]
+*/
+
+:root[style] img[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root img[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root[style] image[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root image[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root[style] svg[data-${POPOUTIMAGE_CONTAINER_ID}],
+:root svg[data-${POPOUTIMAGE_CONTAINER_ID}]
+{
+    outline-color: magenta !important;
+    outline-style: solid !important;
+    outline-width: 0.2em !important;
+    /* outline-offset: 2px !important; */
+
+    cursor: pointer !important;
+
+    animation-name: readium2ElectronAnimation_IMG_OUTLINE;
+    animation-iteration-count: infinite;
+    animation-duration: 1s;
+    animation-delay: 0s;
+    animation-fill-mode: forwards;
+    animation-timing-function: linear;
+}
+
+/*
+:root[style*="readium-night-on"]
+*/
+:root[style] div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CONTROLS_ID},
+:root div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CONTROLS_ID} {
+    border: 1px solid var(--RS__backgroundColor) !important;
+    background: transparent !important;
+    color: var(--RS__textColor) !important;
+    padding: 4px;
+    margin: 0;
+    border-radius: 16px;
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: auto;
+    height: auto;
+}
+:root[style]:not([style*="--USER__"]) div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CONTROLS_ID},
+:root:not([style]) div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CONTROLS_ID} {
+    border: 1px solid black !important;
+    background: white !important;
+    color: black !important;
+}
+
+:root[style] div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CLOSE_ID},
+:root div#${POPOUTIMAGE_CONTAINER_ID} #${POPOUTIMAGE_CLOSE_ID} {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+}
+:root[style] div#${POPOUTIMAGE_CONTAINER_ID} button,
+:root div#${POPOUTIMAGE_CONTAINER_ID} button {
+    border: 2px solid var(--RS__textColor) !important;
+    background: var(--RS__backgroundColor) !important;
+    color: var(--RS__textColor) !important;
+    font-family: Arial !important;
+    font-size: 20px !important;
+    font-weight: bold;
+    user-select: none;
+    padding: 8px;
+    margin: 0;
+    border-radius: 16px;
+    width: 36px;
+    display: inline-block;
+    cursor: pointer !important;
+}
+:root[style]:not([style*="--USER__"]) div#${POPOUTIMAGE_CONTAINER_ID} button,
+:root:not([style]) div#${POPOUTIMAGE_CONTAINER_ID} button {
+    border: 2px solid black !important;
+    background: white !important;
+    color: black !important;
+}
+
+:root[style] div#${POPOUTIMAGE_CONTAINER_ID} > img,
+:root div#${POPOUTIMAGE_CONTAINER_ID} > img {
+
+    /*
+    outline-color: red !important;
+    outline-style: dashed !important;
+    outline-width: 2px !important;
+    outline-offset: -2px !important;
+    */
+
     transform-origin: 0px 0px;
 
     box-sizing: border-box;
-    border: 4px solid #333333;
+    /* border: 2px solid #333333; */
 
-    object-fit: cover !important;
-    cursor: pointer !important;
+    cursor: move !important;
 
-    margin: auto !important;
+    margin: 0 !important;
+    object-fit: contain !important;
     position: relative !important;
+    max-height: 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 100% !important;
 
+    /*
+    margin: auto !important;
+    object-fit: cover !important;
+    position: relative !important;
     max-height: 100% !important;
     max-width: 100% !important;
     width: auto !important;
     height: auto !important;
+    */
 
     /* vertical centering breaks image height
+    margin: auto !important;
+    position: absolute !important;
+    max-height: none !important;
     max-width: 100% !important;
     width: 100% !important;
-    max-height: none !important;
     height: auto !important;
 
-    position: absolute !important;
     top: 0 !important;
     bottom: 0 !important;
-    margin: auto !important;
     */
 
     /* this works with position:relative in the parent (no need for flex)
@@ -253,6 +376,10 @@ export const footnotesCssStyles = `
 export const R2_MO_CLASS_ACTIVE = "r2-mo-active";
 export const R2_MO_CLASS_ACTIVE_PLAYBACK = "r2-mo-active-playback";
 
+export const R2_MO_CLASS_PLAYING = "r2-mo-playing";
+export const R2_MO_CLASS_PAUSED = "r2-mo-paused";
+export const R2_MO_CLASS_STOPPED = "r2-mo-stopped";
+
 export const mediaOverlaysCssStyles = `
 :root[style] .${R2_MO_CLASS_ACTIVE},
 :root .${R2_MO_CLASS_ACTIVE} {
@@ -270,7 +397,10 @@ export const mediaOverlaysCssStyles = `
 `;
 
 export const TTS_CLASS_THEME1 = "r2-tts-theme1";
-export const TTS_CLASS_IS_ACTIVE = "r2-tts-isPlaying";
+export const TTS_CLASS_IS_ACTIVE = "r2-tts-isPlaying"; // TTS overlay, not in-document! (legacy)
+export const TTS_CLASS_PAUSED = "r2-tts-paused";
+export const TTS_CLASS_PLAYING = "r2-tts-playing";
+export const TTS_CLASS_STOPPED = "r2-tts-stopped";
 export const TTS_ID_PREVIOUS = "r2-tts-previous";
 export const TTS_ID_NEXT = "r2-tts-next";
 export const TTS_ID_SLIDER = "r2-tts-slider";
@@ -703,6 +833,19 @@ export const ROOT_CLASS_INVISIBLE_MASK_REMOVED = "r2-visibility-mask-removed-cla
 export const visibilityMaskCssStyles = `
 
 /*
+bugfix: for some reason, "inherit" does not work in Chromium, so we patch ReadiumCSS here :(
+(was "text-align: var(--USER__textAlign);" on HTML root and "text-align: inherit !important;" on body etc.)
+*/
+:root[style*="readium-advanced-on"][style*="--USER__textAlign"] {
+text-align: var(--USER__textAlign) !important;
+}
+:root[style*="readium-advanced-on"][style*="--USER__textAlign"] body,
+:root[style*="readium-advanced-on"][style*="--USER__textAlign"] *:not(blockquote):not(figcaption) p,
+:root[style*="readium-advanced-on"][style*="--USER__textAlign"] li {
+text-align: var(--USER__textAlign) !important;
+}
+
+/*
 https://github.com/readium/readium-css/issues/117
 no new stacking context, otherwise massive performance degradation with CSS Columns in large HTML documents
 (web inspector profiler shows long paint times, some layout recalc triggers too)
@@ -718,9 +861,27 @@ no new stacking context, otherwise massive performance degradation with CSS Colu
 }
 :root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body,
 :root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body {
+    /*
+    Electron v19 --> v21 breaking change :(
+    ("hidden" is now "clip")
     overflow-x: hidden !important;
     overflow-y: visible !important;
+    */
+    overflow-x: clip !important;
+    overflow-y: visible !important;
 }
+
+/*
+This only visually hides the scrollbars,
+this does not prevent user-scrolling with keyboard arrows, space, drag on character selection, mouse wheel, etc.
+We cannot completely disable "scroll" event (prevent default) because we need to detect when user keyboard-tabs through hyperlinks, in order to reset the correct scroll offset programmatically (page alignment on CSS column boundaries).
+...so we continue to use "clip" for "overflow-x" (see above)
+
+:root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body::-webkit-scrollbar,
+:root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body::-webkit-scrollbar {
+    display: none;
+}
+*/
 
 :root[style].${ROOT_CLASS_FIXED_LAYOUT},
 :root.${ROOT_CLASS_FIXED_LAYOUT} {
@@ -730,6 +891,43 @@ no new stacking context, otherwise massive performance degradation with CSS Colu
 :root.${ROOT_CLASS_FIXED_LAYOUT} > body {
     overflow: hidden !important;
     margin: 0 !important;
+}
+
+:root.${exports.CLASS_PAGINATED} > body,
+:root:not(.${exports.CLASS_PAGINATED}) > body,
+:root.${exports.ROOT_CLASS_FIXED_LAYOUT} > body,
+:root:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body,
+:root[style].${exports.CLASS_PAGINATED} > body,
+:root[style]:not(.${exports.CLASS_PAGINATED}) > body,
+:root[style].${exports.ROOT_CLASS_FIXED_LAYOUT} > body,
+:root[style]:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body {
+    /* see ensureHighlightsContainer() */
+    position: relative !important;
+    /* display: block; */
+}
+
+:root[style]:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}),
+:root:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) {
+    height: 100vh !important;
+}
+
+:root[style].${exports.CLASS_PAGINATED}:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}),
+:root.${exports.CLASS_PAGINATED}:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) {
+    /* display: block; */
+    /*
+    Chrome Electron 19 - Chrome v102 CSS regression bug!
+    display: flex; ... then transition to block or flow-root
+    See SKIP_LINK_ID rules below :(
+    (hacky, but works without regressions or layout shift)
+    */
+}
+:root[style]:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body,
+:root:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body {
+    min-height: inherit;
+}
+:root[style]:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body,
+:root:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body {
+    height: inherit;
 }
 
 /*
@@ -765,26 +963,24 @@ background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQA
 }
 `;
 
-export const ROOT_CLASS_KEYBOARD_INTERACT = "r2-keyboard-interact";
-export const CSS_CLASS_NO_FOCUS_OUTLINE = "r2-no-focus-outline";
 export const focusCssStyles = `
 
 #${SKIP_LINK_ID} {
-    display: block;
-    overflow: hidden;
-    visibility: visible;
-    opacity: 1;
-    position: absolute;
-    left: 10px;
-    top: 10px;
-    width: 1px;
-    height: 1px;
-    background-color: transparent;
-    color: transparent;
-    padding: 0;
-    margin: 0;
-    border: 0;
-    outline: 0;
+    display: flex !important;
+    overflow: hidden !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: absolute !important;
+    left: 0px !important;
+    top: 0px !important;
+    width: 1px !important;
+    height: 1px !important;
+    background-color: transparent !important;
+    color: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
 }
 /*
 #${SKIP_LINK_ID}:focus {
@@ -796,8 +992,8 @@ export const focusCssStyles = `
 :root *:focus {
     outline: none;
 }
-:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus:not(:target):not(.${LINK_TARGET_CLASS}),
-:root.${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus:not(:target):not(.${LINK_TARGET_CLASS}) {
+:root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus:not(:target):not(.${LINK_TARGET_CLASS}):not([data-${POPOUTIMAGE_CONTAINER_ID}]),
+:root.${ROOT_CLASS_KEYBOARD_INTERACT} *.${CSS_CLASS_NO_FOCUS_OUTLINE}:focus:not(:target):not(.${LINK_TARGET_CLASS}):not([data-${POPOUTIMAGE_CONTAINER_ID}]) {
     outline: none !important;
 }
 :root[style].${ROOT_CLASS_KEYBOARD_INTERACT} *:focus:not(:target):not(.${LINK_TARGET_CLASS}),
@@ -1031,6 +1227,11 @@ export const AUDIO_REWIND_ID = "r2-audio-rewind";
 export const AUDIO_FORWARD_ID = "r2-audio-forward";
 
 export const audioCssStyles = `
+
+#${AUDIO_CONTROLS_ID} select#${AUDIO_RATE_ID} option {
+    color: var(--RS__textColor) !important;
+    background: var(--RS__backgroundColor) !important;
+}
 
 #${AUDIO_BODY_ID} {
     padding: 0 !important;

@@ -74,6 +74,7 @@ export const R2_EVENT_PAGE_TURN_RES = "R2_EVENT_PAGE_TURN_RES";
 export interface IEventPayload_R2_EVENT_PAGE_TURN {
     direction: string; // RTL, LTR
     go: string; // PREVIOUS, NEXT
+    nav?: boolean;
 }
 
 // in WEBVIEW: ipcRenderer.sendToHost()
@@ -108,6 +109,8 @@ export interface IEventPayload_R2_EVENT_READING_LOCATION extends Locator {
     // but target HTML document's epub:type="pagebreak" / role="doc-pagebreak"
     // (nearest preceding ancestor/sibling)
     epubPage: string | undefined;
+    epubPageID: string | undefined;
+
     headings: Array<{ id: string | undefined, txt: string | undefined, level: number }> | undefined;
 
     userInteract: boolean;
@@ -123,6 +126,7 @@ export const R2_EVENT_LINK = "R2_EVENT_LINK";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_LINK {
     url: string;
+    rcss?: IEventPayload_R2_EVENT_READIUMCSS | undefined;
 }
 
 // in WEBVIEW: ipcRenderer.sendToHost()
@@ -150,6 +154,23 @@ export interface IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP {
     start: boolean | undefined;
     stop: boolean | undefined;
     startstop: boolean | undefined;
+}
+
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_MEDIA_OVERLAY_INTERRUPT = "R2_EVENT_MEDIA_OVERLAY_INTERRUPT";
+
+export enum MediaOverlaysStateEnum {
+    PAUSED = "PAUSED",
+    PLAYING = "PLAYING",
+    STOPPED = "STOPPED",
+}
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_MEDIA_OVERLAY_STATE = "R2_EVENT_MEDIA_OVERLAY_STATE";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE {
+    state: MediaOverlaysStateEnum;
 }
 
 // in RENDERER: webview.send()

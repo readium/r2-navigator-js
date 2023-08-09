@@ -5,8 +5,8 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { IRangeInfo, ISelectionInfo } from "../../common/selection";
-import { IReadiumElectronWebviewWindow } from "./state";
+import { IRangeInfo, ISelectedTextInfo, ISelectionInfo } from "../../common/selection";
+import { ReadiumElectronWebviewWindow } from "./state";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -62,7 +62,7 @@ function dumpDebug(
     console.log("$$$$$$$$$$$$$$$$$");
 }
 
-export function clearCurrentSelection(win: IReadiumElectronWebviewWindow) {
+export function clearCurrentSelection(win: ReadiumElectronWebviewWindow) {
     const selection = win.getSelection();
     if (!selection) {
         return;
@@ -70,8 +70,16 @@ export function clearCurrentSelection(win: IReadiumElectronWebviewWindow) {
     selection.removeAllRanges();
 }
 
+export const collapseWhitespaces = (str: string) => {
+    return str.replace(/\n/g, " ").replace(/\s\s+/g, " ");
+};
+
+export const cleanupStr = (str: string) => {
+    return collapseWhitespaces(str).trim();
+};
+
 export function getCurrentSelectionInfo(
-    win: IReadiumElectronWebviewWindow,
+    win: ReadiumElectronWebviewWindow,
     getCssSelector: (element: Element) => string,
     computeElementCFI: (node: Node) => string | undefined,
 ):
@@ -87,7 +95,7 @@ export function getCurrentSelectionInfo(
     }
 
     const rawText = selection.toString();
-    const cleanText = rawText.trim().replace(/\n/g, " ").replace(/\s\s+/g, " ");
+    const cleanText = collapseWhitespaces(rawText);
     if (cleanText.length === 0) {
         console.log("^^^ SELECTION TEXT EMPTY.");
         return undefined;
@@ -125,10 +133,23 @@ export function getCurrentSelectionInfo(
         }
     }
 
-    const rangeInfo = convertRange(range, getCssSelector, computeElementCFI);
-    if (!rangeInfo) {
+    const tuple = convertRange(range, getCssSelector, computeElementCFI);
+    if (!tuple) {
         console.log("^^^ SELECTION RANGE INFO FAIL?!");
         return undefined;
+    }
+    const rangeInfo = tuple[0];
+    const textInfo = tuple[1];
+
+    if (IS_DEV) {
+        if (textInfo.cleanText !== cleanText) {
+            console.log(">>>>>>>>>>>>>>>>>>>>>>> SELECTION TEXT INFO diff: cleanText");
+            console.log(`${textInfo.cleanText} !== ${cleanText}`);
+        }
+        if (textInfo.rawText !== rawText) {
+            console.log(">>>>>>>>>>>>>>>>>>>>>>> SELECTION TEXT INFO diff: rawText");
+            console.log(`${textInfo.rawText} !== ${rawText}`);
+        }
     }
 
     // selection.removeAllRanges();
@@ -164,7 +185,17 @@ export function getCurrentSelectionInfo(
         // selection.addRange(range);
     }
 
-    return { rangeInfo, cleanText, rawText };
+    return {
+        rangeInfo,
+
+        cleanBefore: textInfo.cleanBefore,
+        cleanText: textInfo.cleanText,
+        cleanAfter: textInfo.cleanAfter,
+
+        rawBefore: textInfo.rawBefore,
+        rawText: textInfo.rawText,
+        rawAfter: textInfo.rawAfter,
+    };
 }
 
 export function createOrderedRange(startNode: Node, startOffset: number, endNode: Node, endOffset: number):
@@ -254,7 +285,7 @@ export function convertRange(
     getCssSelector: (element: Element) => string,
     computeElementCFI: (node: Node) => string | undefined,
 ):
-    IRangeInfo | undefined {
+    [IRangeInfo, ISelectedTextInfo] | undefined {
 
     // -----------------
     const startIsElement = range.startContainer.nodeType === Node.ELEMENT_NODE;
@@ -303,6 +334,103 @@ export function convertRange(
             }
         }
     }
+    // -----------------
+    const SELECTION_BEFORE_AFTER_TEXT_LENGTH = 30;
+
+    let rawBefore = "";
+    const rawText = range.toString();
+    let rawAfter = "";
+
+    let cleanBefore = "";
+    const cleanText = collapseWhitespaces(rawText);
+    let cleanAfter = "";
+
+    let currentParent = commonElementAncestor;
+    while (currentParent) {
+        if (currentParent.tagName?.toLowerCase() === "html") {
+            break;
+        }
+
+        const beforeNeedsToGrow = cleanBefore.length < SELECTION_BEFORE_AFTER_TEXT_LENGTH;
+        const afterNeedsToGrow = cleanAfter.length < SELECTION_BEFORE_AFTER_TEXT_LENGTH;
+        if (!beforeNeedsToGrow && !afterNeedsToGrow) {
+            break;
+        }
+
+        if (beforeNeedsToGrow) {
+            try {
+                const rangeBefore = new Range(); // commonElementAncestor.ownerDocument.createRange()
+                rangeBefore.setStartBefore(currentParent);
+                // rangeBefore.setStart(currentParent, 0);
+                // rangeBefore.setEndBefore(range.startContainer);
+                rangeBefore.setEnd(range.startContainer, range.startOffset);
+                rawBefore = rangeBefore.toString();
+                cleanBefore = collapseWhitespaces(rawBefore);
+                if (cleanBefore.length > SELECTION_BEFORE_AFTER_TEXT_LENGTH) {
+                    cleanBefore = cleanBefore.substring(cleanBefore.length - SELECTION_BEFORE_AFTER_TEXT_LENGTH, cleanBefore.length);
+                }
+            } catch (ex1) {
+                console.log(ex1);
+            }
+        }
+
+        if (afterNeedsToGrow) {
+            try {
+                const rangeAfter = new Range(); // commonElementAncestor.ownerDocument.createRange()
+                rangeAfter.setStart(range.endContainer, range.endOffset);
+                rangeAfter.setEndAfter(currentParent);
+                rawAfter = rangeAfter.toString();
+                cleanAfter = collapseWhitespaces(rawAfter);
+                if (cleanAfter.length > SELECTION_BEFORE_AFTER_TEXT_LENGTH) {
+                    cleanAfter = cleanAfter.substring(0, SELECTION_BEFORE_AFTER_TEXT_LENGTH);
+                }
+            } catch (ex2) {
+                console.log(ex2);
+            }
+        }
+
+        if (currentParent.tagName?.toLowerCase() === "body") {
+            break;
+        }
+        currentParent = currentParent.parentNode as Element;
+    }
+    if (cleanBefore.length) {
+        let j = 0;
+        let i = rawBefore.length - 1;
+        let wasWhiteSpace = false;
+        for (; i >= 0; i--) {
+            const isWhiteSpace = /[\n\s]/.test(rawBefore[i]);
+            if (isWhiteSpace && i !== 0 && i !== rawBefore.length - 1 && wasWhiteSpace) {
+                wasWhiteSpace = isWhiteSpace;
+                continue;
+            }
+            wasWhiteSpace = isWhiteSpace;
+            j++;
+            if (j >= cleanBefore.length) {
+                break;
+            }
+        }
+        rawBefore = rawBefore.substring(i, rawBefore.length);
+    }
+    if (cleanAfter.length) {
+        let j = 0;
+        let i = 0;
+        let wasWhiteSpace = false;
+        for (; i < rawAfter.length; i++) {
+            const isWhiteSpace = /[\n\s]/.test(rawAfter[i]);
+            if (isWhiteSpace && i !== 0 && i !== rawAfter.length - 1 && wasWhiteSpace) {
+                wasWhiteSpace = isWhiteSpace;
+                continue;
+            }
+            wasWhiteSpace = isWhiteSpace;
+            j++;
+            if (j >= cleanAfter.length) {
+                break;
+            }
+        }
+        rawAfter = rawAfter.substring(0, i + 1);
+    }
+
     // -----------------
     const rootElementCfi = computeElementCFI(commonElementAncestor);
     // console.log(`ROOT CFI: ${rootElementCfi}`);
@@ -382,7 +510,7 @@ export function convertRange(
             endElementOrTextCfi.replace(rootElementCfi, "");
     }
     // -----------------
-    return {
+    return [{
         cfi,
 
         endContainerChildTextNodeIndex,
@@ -394,7 +522,15 @@ export function convertRange(
         startContainerElementCFI: startElementCfi,
         startContainerElementCssSelector,
         startOffset: range.startOffset,
-    };
+    }, {
+        cleanBefore,
+        cleanText,
+        cleanAfter,
+
+        rawBefore,
+        rawText,
+        rawAfter,
+    }];
 }
 
 export function convertRangeInfo(documant: Document, rangeInfo: IRangeInfo):

@@ -1,10 +1,427 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.10.0...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.13.8...develop
 
 Changes:
 * TODO
+
+# 1.13.8
+
+> Build environment: NodeJS `18.17.0`, NPM `9.8.1`
+
+Changes:
+* fix: handle role attribute as well as epub:type (just in case the latter is ommitted)
+* TTS fixes / features: aria-label on img in addition to alt attribute, epub:type pagebreak (and role) title/label takes precedence over inner text, same with links, japanese ruby RT are ignored
+* fix: Media Overlays interact click on images or text without sync media now continues playback at current timestamp instead of resuming from begining
+* fix: ensure image zoom outline is deactivated when entering media overlay or TTS playback
+* fix: tabbable CJS import was broken!
+* fix: image zoom UI chrome controls now match colour scheme + fixed-size (like main GUI)
+* chore: switch to updated CSS selector lib (better performance)
+* updated NPM packages
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.8/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.8/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.8
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.13.7...v1.13.8
+
+# 1.13.7
+
+> Build environment: NodeJS `18.17.0`, NPM `9.8.1`
+
+Changes:
+* fix: popup dialog GUI (footnotes, image zoom, TTS + Media Overlays "captions" mode) forced to horizontal writing mode for chrome controls
+* fix: TTS pause from click-on-text now syncs properly (state was incorrectly STOPPED instead of PAUSE)
+* fix: TTS playback engine / state machine now handles hyperlinks and image zoom click properly
+* updated NPM packages
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.7/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.7/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.7
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.13.6...v1.13.7
+
+# 1.13.6
+
+> Build environment: NodeJS `18.16.1`, NPM `9.8.0`
+
+Changes:
+* Image zoom feature: support for SVG markup island (foreign HTML5 namespace), which like fixed layout and images-inside-link require SHIFT key modifier to avoid interfering with authored hyperlinking or interactives.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.6/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.6/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.6
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.13.5...v1.13.6
+
+# 1.13.5
+
+> Build environment: NodeJS `18.16.1`, NPM `9.8.0`
+
+Changes:
+* Improved image zoom feature: in addition to HTML img@src (possibly SVG file instead of raster/bitmap) now SVG image@xlink:href too (if nested inside link, same logic as HTML a@href with shift-click modifier to bypass hyperlink activation)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.5/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.5/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.5
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.13.4...v1.13.5
+
+# 1.13.4
+
+> Build environment: NodeJS `18.16.1`, NPM `9.8.0`
+
+Changes:
+* Feature: image zoom with mouse wheel, trackpad and touch gestures (pinch stretch), panning, keyboard support
+* Feature: finger touch swipe gesture to turn pages / navigate left/right in book contents
+* Fix: in DEV mode, web inspector context menu was registering multiple times
+* Fix: mouse wheel middle click was opening Electron browser window
+* Fix: Electron now stricter with uncaught exceptions / rejected promises across IPC messaging system, must code fence properly for webview dom-ready state
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.4/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.4/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.4
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.13.3...v1.13.4
+
+# 1.13.3
+
+> Build environment: NodeJS `18.16.1`, NPM `9.8.0`
+
+Changes:
+* Fix: audio playback rate HTML select > option dark/night mode was white-on-white background+foreground colours
+* Fix: hyperlink activation now causes a recording in navigation history of the origination without triggering an actual navigation (only activates the link into the destination, not the source)
+* Fix: ReadiumCSS text alignment inherit did not work in some cases, must be forced on body not just HTML root
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.13.2...v1.13.3
+
+# 1.13.2
+
+> Build environment: NodeJS `18.16.0`, NPM `9.8.0`
+
+Changes:
+* HOTFIX (for the previous hotfix!): postinstall script runs in embedding context, fails to patch offending node_module lib
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.2/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.2/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.2
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.13.1...v1.13.2
+
+# 1.13.1
+
+> Build environment: NodeJS `18.16.0`, NPM `9.8.0`
+
+Changes:
+* HOTFIX: ReadiumCSS was not copied into NPM published dist folder
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.1/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.1/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.1
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.13.0...v1.13.1
+
+# 1.13.0
+
+> Build environment: NodeJS `18.16.0`, NPM `9.8.0`
+
+Changes:
+* NPM package updates (Electron 25)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.12.4...v1.13.0
+
+# 1.12.4
+
+> Build environment: NodeJS `18.16.0`, NPM `9.6.5`
+
+Changes:
+* NPM package updates
+* Fix: when SVG a@href animVal doesn't resolve to full absolute URL we explicitly prefix the # hash fragment identifier with the document location
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.12.4/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.12.4/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.12.4
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.12.3...v1.12.4
+
+# 1.12.3
+
+> Build environment: NodeJS `18.15.0`, NPM `9.6.1`
+
+Changes:
+* NPM package updates
+* Fix: mouse cursor double-click on trailing edge of debounce (instead of leading / immediate) in order to correctly capture user selection (for bookmarks and annotations)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.12.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.12.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.12.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.12.2...v1.12.3
+
+# 1.12.2
+
+> Build environment: NodeJS `18.14.2`, NPM `9.5.1`
+
+Changes:
+* Fix: TTS voice selected is user-forced unless strict and loose language mismatch (allows variants override like en-US vs. en-UK, user wins over authored lang)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.12.2/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.12.2/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.12.2
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.12.1...v1.12.2
+
+# 1.12.1
+
+> Build environment: NodeJS `18.14.2`, NPM `9.5.1`
+
+Changes:
+* NPM package updates
+* Fix: TTS caption/simple mode was not escaping ampersand characters on initial render (before word boundaries)
+* Fix: HTML5 audio controls with authored percentage dimensions were invisible, now using revert!important to not only override ReadiumCSS, but also authored dimensions
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.12.1/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.12.1/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.12.1
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.12.0...v1.12.1
+
+# 1.12.0
+
+> Build environment: NodeJS `18.14.2`, NPM `9.5.1`
+
+Changes:
+* Electron major version update (22 -> 23)
+* Feat: support for before/previous text in highlighted / selected DOM range (as always, cleaned-up text is with collapsed whitespace, raw is as authored including line breaks, tabulations, etc.)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.12.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.12.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.12.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.11.6...v1.12.0
+
+# 1.11.6
+
+> Build environment: NodeJS `18.12.1`, NPM `9.1.2`
+
+Changes:
+* Fix: EPUB FXL Fixed-Layout pre-paginated publications can now render with single centered pages (override from authored spread rules, when aspect ratio is portrait instead of landscape)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.11.6/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.11.6/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.11.6
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.11.5...v1.11.6
+
+# 1.11.5
+
+> Build environment: NodeJS `18.12.1`, NPM `9.1.2`
+
+Changes:
+* Fix: pagebreak (role or epub:type) in EPUB HTML documents can have empty text, to be correlated later with authored pagelist in navigation document (if any) via the target element ID (if any). Also take into account first available page break in HTML markup that does not have significant preceding text, when no specific text cursor is placed in chapter yet.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.11.5/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.11.5/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.11.5
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.11.4...v1.11.5
+
+# 1.11.4
+
+> Build environment: NodeJS `18.12.1`, NPM `9.1.1`
+
+Changes:
+* Fixed Electron webview session partition handling (protocol handler can be default unamed)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.11.4/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.11.4/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.11.4
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.11.3...v1.11.4
+
+# 1.11.3
+
+> Build environment: NodeJS `18.12.1`, NPM `9.1.1`
+
+Changes:
+* NPM package updates
+* CSS fix for Chromium regression (broken overflow hidden/clip style, column pagination)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.11.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.11.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.11.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.11.2...v1.11.3
+
+# 1.11.2
+
+> Build environment: NodeJS `16.17.0`, NPM `8.19.1`
+
+Changes:
+* feature: internal document link handling now via IPC renderer process event emitter (local) so it can be intercepted for external additional logic (e.g. history state)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.11.2/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.11.2/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.11.2
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.11.1...v1.11.2
+
+# 1.11.1
+
+> Build environment: NodeJS `16.15.0`, NPM `8.10.0`
+
+Changes:
+* fix: aside footnotes were not hidden
+* fix: keyboard focus inside webview was causing scroll reset
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.11.1/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.11.1/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.11.1
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.11.0...v1.11.1
+
+# 1.11.0
+
+> Build environment: NodeJS `16.15.0`, NPM `8.10.0`
+
+Changes:
+* Updated NPM packages, notably Electron v19
+* Bugfix for CSS regression in Chromium v102 (flex / flow-root reset breaking CSS columns layout)
+* Improved previous fix for CSS height:inherit, now using min-height in column pagination to allow full extent, but retain previous strategy in scrolling mode.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.11.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.11.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.11.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.10.2...v1.11.0
+
+# 1.10.2
+
+> Build environment: NodeJS `16.15.0`, NPM `8.9.0`
+
+Changes:
+* Improved fix for CSS body position:relative with height:inherit (paginated and scrolling views, excluding fixed layout)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.10.2/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.10.2/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.10.2
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.10.1...v1.10.2
+
+# 1.10.1
+
+> Build environment: NodeJS `16.15.0`, NPM `8.9.0`
+
+Changes:
+* NPM package updates
+* Fix CSS body position:relative with height:inherit
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.10.1/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.10.1/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.10.1
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.10.0...v1.10.1
 
 # 1.10.0
 

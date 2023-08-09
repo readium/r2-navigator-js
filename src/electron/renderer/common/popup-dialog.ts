@@ -6,14 +6,17 @@
 // ==LICENSE-END==
 
 import * as tabbable from "tabbable";
+import { ipcRenderer } from "electron";
+
+import { R2_EVENT_MEDIA_OVERLAY_INTERRUPT } from "../../common/events";
 
 import { FOOTNOTES_CONTAINER_CLASS, POPUP_DIALOG_CLASS } from "../../common/styles";
 
 // HTMLDialogElement deprecated in TypeScript DOM type definitions!
-export interface IHTMLDialogElementWithPopup extends HTMLElement {
+export interface IHTMLDialogElementWithPopup extends HTMLDialogElement {
     popDialog: PopupDialog | undefined;
-    close: () => void;
-    showModal: () => void;
+    // close: () => void;
+    // showModal: () => void;
 }
 
 export function isPopupDialogOpen(documant: Document): boolean {
@@ -22,13 +25,15 @@ export function isPopupDialogOpen(documant: Document): boolean {
 }
 
 export function closePopupDialogs(documant: Document) {
+    console.log("...DIALOG close all");
+
     const dialogs = documant.querySelectorAll(`dialog.${POPUP_DIALOG_CLASS}`);
     dialogs.forEach((dialog) => {
         const dia = dialog as IHTMLDialogElementWithPopup;
         if (dia.popDialog) {
             dia.popDialog.cancelRefocus();
         }
-        if (dia.hasAttribute("open")) {
+        if (dia.hasAttribute("open") || dia.open) {
             dia.close();
         }
         setTimeout(() => {
@@ -81,7 +86,7 @@ function getFocusables(rootElement: Element): HTMLOrSVGElement[] {
     // });
     // return focusables;
 
-    const tabbables = tabbable(rootElement);
+    const tabbables = tabbable.tabbable(rootElement);
     return tabbables;
 }
 function focusInside(rootElement: Element) {
@@ -103,8 +108,11 @@ function onKeyUp(this: PopupDialog, ev: KeyboardEvent) {
     const ESCAPE_KEY = 27;
     if (ev.which === ESCAPE_KEY) {
         if (this.role !== "alertdialog") {
+            console.log("...DIALOG ESCAPE ...");
             ev.preventDefault();
-            this.dialog.close();
+            if (this.dialog.hasAttribute("open") || this.dialog.open) {
+                this.dialog.close();
+            }
             return;
         }
     }
@@ -203,7 +211,7 @@ export class PopupDialog {
         // const txtClose = documant.createTextNode("X");
         // button.appendChild(txtClose);
         // button.addEventListener("click", (_ev: Event) => {
-        // if (that.dialog.hasAttribute("open")) {
+        // if (that.dialog.hasAttribute("open") || that.dialog.open) {
         //     that.dialog.close();
         // }
         // });
@@ -358,13 +366,15 @@ export class PopupDialog {
                 rect.left <= ev.clientX &&
                 ev.clientX <= rect.left + rect.width;
             if (!inside) {
-                if (that.dialog.hasAttribute("open")) {
+                if (that.dialog.hasAttribute("open") || that.dialog.open) {
+                    console.log("...DIALOG CLICK event => close()");
                     that.dialog.close();
                 }
             }
         });
 
         this.dialog.addEventListener("close", (_ev) => {
+            console.log("...DIALOG CLOSE event => hide()");
             that.hide();
         });
 
@@ -396,10 +406,17 @@ export class PopupDialog {
     // }
 
     public show(toRefocus: Element | undefined) {
+        console.log("...DIALOG show()");
+
         // if (this.shown) {
         //     return;
         // }
         // this.shown = true;
+
+        // mediaOverlaysInterrupt();
+        // const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_INTERRUPT = {
+        // };
+        ipcRenderer.sendToHost(R2_EVENT_MEDIA_OVERLAY_INTERRUPT);
 
         const el = this.documant.documentElement;
         el.classList.add(POPUP_DIALOG_CLASS);
@@ -407,6 +424,7 @@ export class PopupDialog {
         if (this.dialog.hasAttribute("open")) {
             return;
         }
+        console.log("...DIALOG show() 2");
 
         _focusedBeforeDialog = toRefocus ?
             toRefocus as HTMLElement :
@@ -428,6 +446,8 @@ export class PopupDialog {
     }
 
     public hide() {
+        console.log("...DIALOG hide()");
+
         // if (!this.shown) {
         //     return;
         // }
@@ -444,7 +464,8 @@ export class PopupDialog {
         _focusedBeforeDialog = null;
 
         // let the above occur even if not open!
-        if (this.dialog.hasAttribute("open")) {
+        if (this.dialog.hasAttribute("open") || this.dialog.open) {
+            console.log("...DIALOG hide().close()");
             this.dialog.close();
         }
 

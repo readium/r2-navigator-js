@@ -15,30 +15,29 @@ import {
     HighlightDrawTypeBackground, HighlightDrawTypeUnderline, IHighlight,
 } from "../../common/highlight";
 import {
-    CSS_CLASS_NO_FOCUS_OUTLINE, POPUP_DIALOG_CLASS_COLLAPSE, ROOT_CLASS_REDUCE_MOTION,
-    TTS_CLASS_IS_ACTIVE, TTS_CLASS_THEME1, TTS_CLASS_UTTERANCE, TTS_CLASS_UTTERANCE_HEADING1,
+    CSS_CLASS_NO_FOCUS_OUTLINE, POPUP_DIALOG_CLASS, POPUP_DIALOG_CLASS_COLLAPSE, ROOT_CLASS_REDUCE_MOTION,
+    TTS_CLASS_IS_ACTIVE, TTS_CLASS_PAUSED, TTS_CLASS_PLAYING, TTS_CLASS_STOPPED, TTS_CLASS_THEME1, TTS_CLASS_UTTERANCE, TTS_CLASS_UTTERANCE_HEADING1,
     TTS_CLASS_UTTERANCE_HEADING2, TTS_CLASS_UTTERANCE_HEADING3, TTS_CLASS_UTTERANCE_HEADING4,
     TTS_CLASS_UTTERANCE_HEADING5, TTS_ID_ACTIVE_UTTERANCE, TTS_ID_ACTIVE_WORD, TTS_ID_CONTAINER,
     TTS_ID_NEXT, TTS_ID_PREVIOUS, TTS_ID_SLIDER, TTS_ID_SPEAKING_DOC_ELEMENT, TTS_NAV_BUTTON_CLASS,
     TTS_POPUP_DIALOG_CLASS,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
-import { uniqueCssSelector } from "../common/cssselector2";
+import { uniqueCssSelector } from "../common/cssselector2-3";
 import {
     ITtsQueueItem, ITtsQueueItemReference, findTtsQueueItemIndex, generateTtsQueue,
     getTtsQueueItemRef, getTtsQueueItemRefText, getTtsQueueLength, normalizeHtmlText,
 } from "../common/dom-text-utils";
 import { easings } from "../common/easings";
-import { IHTMLDialogElementWithPopup, PopupDialog } from "../common/popup-dialog";
+import { IHTMLDialogElementWithPopup, PopupDialog, isPopupDialogOpen } from "../common/popup-dialog";
 import { createHighlights, destroyHighlight } from "./highlight";
-import { isRTL } from "./readium-css";
+import { isRTL, clearImageZoomOutlineDebounced } from "./readium-css";
 import { convertRange } from "./selection";
-import { IReadiumElectronWebviewWindow } from "./state";
+import { ReadiumElectronWebviewWindow } from "./state";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const win = (global as any).window as IReadiumElectronWebviewWindow;
+const win = global.window as ReadiumElectronWebviewWindow;
 
 interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
 
@@ -65,10 +64,18 @@ interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
 
 let _dialogState: IHTMLDialogElementWithTTSState | undefined;
 
-function resetState() {
-    _resumableState = undefined;
+function resetState(stop: boolean) {
+    if (stop) {
+        _resumableState = undefined;
+    }
 
     if (_dialogState) {
+        if (_dialogState.hasAttribute("open") || _dialogState.open) {
+            console.log("...DIALOG close() from TTS resetState()");
+            // _dialogState.popDialog?.dialog.close();
+            _dialogState.close();
+        }
+
         _dialogState.popDialog = undefined;
         _dialogState.focusScrollRaw = undefined;
         _dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable = undefined;
@@ -92,7 +99,17 @@ function resetState() {
     _dialogState = undefined;
 
     win.document.documentElement.classList.remove(TTS_CLASS_IS_ACTIVE);
-    ipcRenderer.sendToHost(R2_EVENT_TTS_IS_STOPPED);
+    if (stop || !_resumableState) {
+        ipcRenderer.sendToHost(R2_EVENT_TTS_IS_STOPPED);
+        win.READIUM2.ttsClickEnabled = false;
+        win.document.documentElement.classList.remove(TTS_CLASS_PLAYING, TTS_CLASS_PAUSED);
+        win.document.documentElement.classList.add(TTS_CLASS_STOPPED);
+    } else {
+        win.READIUM2.ttsClickEnabled = true;
+        win.document.documentElement.classList.remove(TTS_CLASS_PLAYING, TTS_CLASS_STOPPED);
+        win.document.documentElement.classList.add(TTS_CLASS_PAUSED);
+    }
+    clearImageZoomOutlineDebounced();
 }
 
 export function ttsPlay(
@@ -146,17 +163,20 @@ export function ttsPlay(
 }
 
 export function ttsStop() {
-    if (_dialogState) {
-        if (_dialogState.hasAttribute("open")) {
-            _dialogState.close(); // => onDialogClosed()
-            return;
-        }
-    }
-    ttsPause();
-    resetState();
+    // if (_dialogState) {
+    //     if (_dialogState.hasAttribute("open") || _dialogState.open) {
+    //         ttsPause(true);
+    //         resetState(true);
+    //         console.log("...DIALOG close() from TTS ttsStop()");
+    //         _dialogState.close(); // => onDialogClosed()
+    //         return;
+    //     }
+    // }
+    ttsPause(true);
+    resetState(true);
 }
 
-export function ttsPause() {
+export function ttsPause(doNotReset = false) {
 
     highlights(false);
 
@@ -189,10 +209,33 @@ export function ttsPause() {
         }, 0);
     }
 
+    win.document.documentElement.classList.remove(TTS_CLASS_PLAYING, TTS_CLASS_STOPPED);
+    win.document.documentElement.classList.add(TTS_CLASS_PAUSED);
     if (_dialogState && _dialogState.ttsOverlayEnabled) {
         win.document.documentElement.classList.add(TTS_CLASS_IS_ACTIVE);
     }
     ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PAUSED);
+    win.READIUM2.ttsClickEnabled = true;
+    clearImageZoomOutlineDebounced();
+
+    const isOpen = _dialogState?.hasAttribute("open") || _dialogState?.open;
+
+    if (isPopupDialogOpen(win.document) && isOpen) {
+        const diagEl = win.document.getElementById(POPUP_DIALOG_CLASS);
+        if (diagEl) {
+            const isCollapsed = diagEl.classList.contains(POPUP_DIALOG_CLASS_COLLAPSE);
+            if (!isCollapsed) {
+                doNotReset = true; // override
+            }
+        }
+    }
+
+    if (!doNotReset) {
+        if (isOpen) {
+            console.log("...DIALOG close() from TTS ttsPause()");
+            _dialogState?.close(); // => onDialogClosed()
+        }
+    }
 }
 
 // interface SpeechSynthesisVoice {
@@ -234,8 +277,8 @@ export function ttsPlaybackRate(speed: number) {
     win.READIUM2.ttsPlaybackRate = speed;
 
     if (_dialogState) {
-        ttsPause();
-        if (_dialogState.ttsUtterance) {
+        ttsPause(true);
+        if (_dialogState?.ttsUtterance) {
             _dialogState.ttsUtterance.rate = speed;
         }
         setTimeout(() => {
@@ -265,16 +308,20 @@ export function ttsResume() {
             if (_dialogState &&
                 _dialogState.ttsUtterance) {
 
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (_dialogState.ttsUtterance as any).r2_cancel = false;
                 win.speechSynthesis.speak(_dialogState.ttsUtterance);
             }
         }, 0);
 
+        win.document.documentElement.classList.remove(TTS_CLASS_PAUSED, TTS_CLASS_STOPPED);
+        win.document.documentElement.classList.add(TTS_CLASS_PLAYING);
         if (_dialogState && _dialogState.ttsOverlayEnabled) {
             win.document.documentElement.classList.add(TTS_CLASS_IS_ACTIVE);
         }
         ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PLAYING);
+        win.READIUM2.ttsClickEnabled = true;
+        clearImageZoomOutlineDebounced();
     } else if (_resumableState) {
         setTimeout(() => {
             if (_resumableState) {
@@ -297,7 +344,7 @@ export function isTtsPlaying() {
 }
 
 export function isTtsActive() {
-    if (_dialogState && _dialogState.hasAttribute("open") &&
+    if (_dialogState && (_dialogState.hasAttribute("open") || _dialogState.open) &&
         (win.speechSynthesis.speaking || win.speechSynthesis.pending)) {
         return true;
     }
@@ -344,8 +391,10 @@ export function ttsNext(skipSentences = false) {
         if (j >= _dialogState.ttsQueueLength || j < 0) {
             return;
         }
-        ttsPause();
+        ttsPause(true);
         ttsPlayQueueIndexDebounced(j);
+    } else if (_resumableState) {
+        ttsResume();
     }
 }
 export function ttsPrevious(skipSentences = false) {
@@ -359,14 +408,16 @@ export function ttsPrevious(skipSentences = false) {
         if (j >= _dialogState.ttsQueueLength || j < 0) {
             return;
         }
-        ttsPause();
+        ttsPause(true);
         ttsPlayQueueIndexDebounced(j);
+    } else if (_resumableState) {
+        ttsResume();
     }
 }
 
 export function ttsPreviewAndEventuallyPlayQueueIndex(n: number) {
 
-    ttsPause();
+    ttsPause(true);
 
     // if (_dialogState && _dialogState.ttsQueue) {
     //     updateTTSInfo(getTtsQueueItemRef(_dialogState.ttsQueue, n), -1, undefined);
@@ -494,13 +545,15 @@ function wrapHighlightWord(
             _dialogState.focusScrollRaw(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect);
         }
 
-        const rangeInfo = convertRange(
+        const tuple = convertRange(
             range,
             getCssSelector,
             (_node: Node) => ""); // computeElementCFI
-        if (!rangeInfo) {
+        if (!tuple) {
             return;
         }
+        const rangeInfo = tuple[0];
+        const textInfo = tuple[1];
 
         const highlightDefinitions = [
             {
@@ -513,9 +566,15 @@ function wrapHighlightWord(
                 drawType: HighlightDrawTypeUnderline,
                 expand: 2,
                 selectionInfo: {
-                    cleanText: "",
+                    rawBefore: textInfo.rawBefore,
+                    rawText: textInfo.rawText,
+                    rawAfter: textInfo.rawAfter,
+
+                    cleanBefore: textInfo.cleanBefore,
+                    cleanText: textInfo.cleanText,
+                    cleanAfter: textInfo.cleanAfter,
+
                     rangeInfo,
-                    rawText: "",
                 },
             },
         ];
@@ -629,13 +688,15 @@ function wrapHighlight(
                 _dialogState.focusScrollRaw(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect);
             }
 
-            const rangeInfo = convertRange(
+            const tuple = convertRange(
                 range,
                 getCssSelector,
                 (_node: Node) => ""); // computeElementCFI
-            if (!rangeInfo) {
+            if (!tuple) {
                 return;
             }
+            const rangeInfo = tuple[0];
+            const textInfo = tuple[1];
 
             const highlightDefinitions = [
                 {
@@ -648,9 +709,15 @@ function wrapHighlight(
                     drawType: HighlightDrawTypeBackground,
                     expand: 4,
                     selectionInfo: {
-                        cleanText: "",
+                        rawBefore: textInfo.rawBefore,
+                        rawText: textInfo.rawText,
+                        rawAfter: textInfo.rawAfter,
+
+                        cleanBefore: textInfo.cleanBefore,
+                        cleanText: textInfo.cleanText,
+                        cleanAfter: textInfo.cleanAfter,
+
                         rangeInfo,
-                        rawText: "",
                     },
                 },
             ];
@@ -777,7 +844,7 @@ function updateTTSInfo(
     charLength: number,
     utteranceText: string | undefined): string | undefined {
 
-    if (!_dialogState || !_dialogState.hasAttribute("open") || !_dialogState.domText ||
+    if (!_dialogState || !_dialogState.hasAttribute("open") || !_dialogState.open || !_dialogState.domText ||
         !_dialogState.ttsQueue || !_dialogState.ttsQueueItem) {
         return undefined;
     }
@@ -811,7 +878,7 @@ function updateTTSInfo(
 
     const ttsQueueItemText = utteranceText ? utteranceText : getTtsQueueItemRefText(ttsQueueItem);
 
-    let ttsQueueItemMarkup = ttsQueueItemText;
+    let ttsQueueItemMarkup = normalizeHtmlText(ttsQueueItemText);
 
     if (charIndex >= 0 && utteranceText) { // isWordBoundary
         const start = utteranceText.slice(0, charIndex + 1).search(/\S+$/);
@@ -990,7 +1057,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
         !_dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable ||
         !_dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable ||
         !_dialogState.ttsQueue ||
-        !_dialogState.hasAttribute("open")) {
+        !_dialogState.hasAttribute("open") || !_dialogState.open) {
         ttsStop();
         return;
     }
@@ -1057,6 +1124,48 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
         return win.READIUM2.ttsVoice && (voice.name === win.READIUM2.ttsVoice.name && voice.lang === win.READIUM2.ttsVoice.lang && voice.voiceURI === win.READIUM2.ttsVoice.voiceURI && voice.default === win.READIUM2.ttsVoice.default && voice.localService === win.READIUM2.ttsVoice.localService);
     }) || null;
 
+    if (utterance.lang // authored lang
+        && utterance.voice?.lang // user-selected voice lang
+    ) {
+        const utteranceLang = utterance.lang.toLowerCase();
+        let utteranceLangShort = utteranceLang;
+        const i = utteranceLangShort.indexOf("-");
+        const utteranceLangIsSpecific = i > 0;
+        if (utteranceLangIsSpecific) {
+            utteranceLangShort = utteranceLangShort.substring(0, i);
+        }
+
+        const utteranceVoiceLang = utterance.voice.lang.toLowerCase();
+        let utteranceVoiceLangShort = utteranceVoiceLang;
+        const j = utteranceVoiceLangShort.indexOf("-");
+        const utteranceVoiceLangIsSpecific = j > 0;
+        if (utteranceVoiceLangIsSpecific) {
+            utteranceVoiceLangShort = utteranceVoiceLangShort.substring(0, j);
+        }
+
+        // is accepting a loose BCP47 match the correct heuristic?
+        // in other words, for example is fr-CA TTS voice suitable for authored fr-FR?
+        // (or en-US vs. en-UK which are somewhat acceptable semi-matches ... but what about locales / dialects with stronger differentiations?)
+        if (utteranceLang !== utteranceVoiceLang) { // strict (mis)match
+            let doReset = false;
+            if (utteranceVoiceLangShort !== utteranceLangShort) { // loose (mis)match
+                // we definitely fallback to system default here (auto lang selection, if there is a matching available TTS voice)
+                doReset = true;
+            } else if (utteranceLangIsSpecific) {
+                // loose langs do match, but authored requested strict ...
+                // at this point, we could force use of available matching TTS voice lang (if any),
+                // but what if the user *really* wanted to listen to fr-FR text with fr-CA?
+                // => yeah, that's a noop (no reset)
+            }
+            if (doReset) {
+                // console.log("TTS voice diff, reset to default (utterance.voice.lang !== utterance.lang)", utterance.voice.lang, utterance.lang);
+                // TODO: Mac OS seems to always pick a suitable voice, but we've had reports of mismatch on Windows (SAPI5),
+                // so should we in fact *force* the use of a particular voice lang by finding the first matching one in the available list?
+                utterance.voice = null; // system default, will match an available voice automatically based on utterance.lang (well, we hope!)
+            }
+        }
+    }
+
     utterance.onboundary = (ev: SpeechSynthesisEvent) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((utterance as any).r2_cancel) {
@@ -1112,10 +1221,14 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
         win.speechSynthesis.speak(utterance);
     }, 0);
 
+    win.document.documentElement.classList.remove(TTS_CLASS_PAUSED, TTS_CLASS_STOPPED);
+    win.document.documentElement.classList.add(TTS_CLASS_PLAYING);
     if (_dialogState && _dialogState.ttsOverlayEnabled) {
         win.document.documentElement.classList.add(TTS_CLASS_IS_ACTIVE);
     }
     ipcRenderer.sendToHost(R2_EVENT_TTS_IS_PLAYING);
+    win.READIUM2.ttsClickEnabled = true;
+    clearImageZoomOutlineDebounced();
 }
 
 function startTTSSession(
@@ -1151,7 +1264,7 @@ function startTTSSession(
     const val = win.READIUM2.ttsOverlayEnabled ? ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable() : undefined;
 
     function onDialogClosed(el: HTMLOrSVGElement | null) {
-        ttsPause();
+        ttsPause(true);
 
         if (_dialogState && _dialogState.focusScrollRaw) {
             let toScrollTo = el;
@@ -1169,7 +1282,7 @@ function startTTSSession(
         }
 
         setTimeout(() => {
-            resetState();
+            resetState(false);
         }, 50);
     }
 
@@ -1266,7 +1379,7 @@ ${win.READIUM2.ttsOverlayEnabled ?
                         const ttsQItem = getTtsQueueItemRef(_dialogState.ttsQueue, index);
                         if (ttsQItem) {
                             if (ttsQItem.iGlobal !== _dialogState.ttsQueueItem.iGlobal) {
-                                ttsPause();
+                                ttsPause(true);
                                 ttsPlayQueueIndexDebounced(index);
                                 return;
                             }

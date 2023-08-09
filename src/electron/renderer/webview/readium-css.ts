@@ -5,17 +5,45 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+import { debounce } from "debounce";
 import { IEventPayload_R2_EVENT_READIUMCSS } from "../../common/events";
 import {
     isDocRTL, isDocVertical, isPaginated, readiumCSSSet,
 } from "../../common/readium-css-inject";
 import { FOOTNOTE_FORCE_SHOW, ROOT_CLASS_NO_FOOTNOTES } from "../../common/styles";
-import { IReadiumElectronWebviewWindow } from "./state";
+import { ReadiumElectronWebviewWindow } from "./state";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const win = (global as any).window as IReadiumElectronWebviewWindow;
+import {
+    POPOUTIMAGE_CONTAINER_ID, R2_MO_CLASS_PAUSED, R2_MO_CLASS_PLAYING, TTS_CLASS_PAUSED, TTS_CLASS_PLAYING,
+} from "../../common/styles";
+
+const win = global.window as ReadiumElectronWebviewWindow;
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+
+export const clearImageZoomOutlineDebounced = debounce(() => {
+    if (win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED) ||
+        win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING) ||
+        win.READIUM2.ttsClickEnabled ||
+        win.document.documentElement.classList.contains(TTS_CLASS_PAUSED) ||
+        win.document.documentElement.classList.contains(TTS_CLASS_PLAYING)) {
+        clearImageZoomOutline();
+    }
+}, 200);
+export const clearImageZoomOutline = () => {
+    const imgs = win.document.querySelectorAll(`img[data-${POPOUTIMAGE_CONTAINER_ID}]`);
+    imgs.forEach((img) => {
+        img.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
+    });
+    const images = win.document.querySelectorAll(`image[data-${POPOUTIMAGE_CONTAINER_ID}]`);
+    images.forEach((img) => {
+        img.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
+    });
+    const svgs = win.document.querySelectorAll(`svg[data-${POPOUTIMAGE_CONTAINER_ID}]`);
+    svgs.forEach((svg) => {
+        svg.removeAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
+    });
+};
 
 export const getScrollingElement = (documant: Document): Element => {
     if (documant.scrollingElement) {
@@ -248,6 +276,9 @@ export function checkHiddenFootNotes(documant: Document) {
         let epubType = aside.getAttribute("epub:type");
         if (!epubType) {
             epubType = aside.getAttributeNS("http://www.idpf.org/2007/ops", "type");
+            if (!epubType) {
+                epubType = aside.getAttribute("role");
+            }
         }
         if (!epubType) {
             return;
@@ -255,10 +286,18 @@ export function checkHiddenFootNotes(documant: Document) {
 
         epubType = epubType.trim().replace(/\s\s+/g, " "); // whitespace collapse
 
-        const isPotentiallyHiddenNote = epubType.indexOf("footnote") >= 0 ||
-            epubType.indexOf("endnote") >= 0 ||
-            epubType.indexOf("rearnote") >= 0 ||
-            epubType.indexOf("note") >= 0; // TODO: smarter regexp?
+        const isPotentiallyHiddenNote =
+            epubType.indexOf("note") >= 0 // this covers all of below (and more!) ... TODO: smarter regexp?
+            // epubType.indexOf("footnote") >= 0 ||
+            // epubType.indexOf("endnote") >= 0 ||
+            // epubType.indexOf("rearnote") >= 0 ||
+
+            // epubType.indexOf("doc-note") >= 0
+            // epubType.indexOf("doc-footnote") >= 0 ||
+            // epubType.indexOf("doc-endnote") >= 0 ||
+            // epubType.indexOf("doc-rearnote") >= 0 ||
+        ;
+
         if (!isPotentiallyHiddenNote) {
             return;
         }
@@ -283,9 +322,17 @@ export function checkHiddenFootNotes(documant: Document) {
             //     continue;
             // }
             const iHash = href.indexOf("#");
-            if (iHash <= 0) { // includes "#ID" (as opposed to "file.xhtml#ID")
+            if (iHash < 0) { // includes "#ID" (as opposed to "file.xhtml#ID")
                 continue;
             }
+
+            // TODO? (edge case) link to external HTML document fragment (not this "documant")
+            // with _exact_ same #ID => leaves note content hidden instead of forcing it to show!
+            // e.g. win.location.herf == chapter1.html
+            //      a@href == chapter2.html#id1
+            //      ==> aside#id1 in chapter1.html remains hidden
+            //          even though it may in fact not be linked from chapter1.html
+
             // href.substring(0, iHash)
             if (href.substring(iHash) === id) { // TODO: does not account for ?query-params
                 found = true;

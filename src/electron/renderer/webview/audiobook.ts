@@ -20,10 +20,9 @@ import {
     AUDIO_PERCENT_ID, AUDIO_PLAYPAUSE_ID, AUDIO_PREVIOUS_ID, AUDIO_PROGRESS_CLASS, AUDIO_RATE_ID,
     AUDIO_REWIND_ID, AUDIO_SLIDER_ID, AUDIO_TIME_ID,
 } from "../../common/styles";
-import { IReadiumElectronWebviewWindow } from "./state";
+import { ReadiumElectronWebviewWindow } from "./state";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const win = (global as any).window as IReadiumElectronWebviewWindow;
+const win = global.window as ReadiumElectronWebviewWindow;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function throttle(fn: (...argz: any[]) => any, time: number) {
@@ -304,6 +303,7 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
                 isVerticalWritingMode: false,
             },
             epubPage: undefined,
+            epubPageID: undefined,
             headings: undefined,
             href: "", // filled-in from host index.js renderer
             locations: {

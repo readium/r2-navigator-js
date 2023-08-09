@@ -11,13 +11,13 @@ import {
     R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
 } from "../common/events";
 import { IHighlight, IHighlightDefinition } from "../common/highlight";
-import { IReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
+import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 // import * as debug_ from "debug";
 // const debug = debug_("r2:navigator#electron/renderer/index");
 // const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-const win = window as IReadiumElectronBrowserWindow;
+const win = global.window as ReadiumElectronBrowserWindow;
 
 export function highlightsHandleIpcMessage(
     eventChannel: string,
@@ -51,7 +51,9 @@ export function highlightsRemoveAll(href: string) {
         }
 
         setTimeout(async () => {
-            await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE_ALL);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE_ALL);
+            }
         }, 0);
     }
 }
@@ -66,7 +68,9 @@ export function highlightsRemove(href: string, highlightIDs: string[]) {
             highlightIDs,
         };
         setTimeout(async () => {
-            await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE, payload);
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE, payload);
+            }
         }, 0);
     }
 }
@@ -105,7 +109,9 @@ export async function highlightsCreate(
             };
 
             setTimeout(async () => {
-                await activeWebView.send(R2_EVENT_HIGHLIGHT_CREATE, payloadPing);
+                if (activeWebView.READIUM2?.DOMisReady) {
+                    await activeWebView.send(R2_EVENT_HIGHLIGHT_CREATE, payloadPing);
+                }
             }, 0);
 
             return;

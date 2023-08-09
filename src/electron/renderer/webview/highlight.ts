@@ -21,7 +21,7 @@ import { ISelectionInfo } from "../../common/selection";
 import { IRectSimple, getClientRectsNoOverlap_ } from "../common/rect-utils";
 import { getScrollingElement } from "./readium-css";
 import { convertRangeInfo } from "./selection";
-import { IReadiumElectronWebviewWindow } from "./state";
+import { ReadiumElectronWebviewWindow } from "./state";
 
 // import { isRTL } from './readium-css';
 
@@ -80,7 +80,7 @@ interface ISVGLineElementWithRect extends SVGLineElement, IWithRect {
 //     _CachedBoundingClientRect: DOMRect | undefined;
 //     _CachedMargins: IRect | undefined;
 // }
-export function getBoundingClientRectOfDocumentBody(win: IReadiumElectronWebviewWindow): DOMRect {
+export function getBoundingClientRectOfDocumentBody(win: ReadiumElectronWebviewWindow): DOMRect {
     // TODO: does this need to be cached? (performance, notably during mouse hover)
     return win.document.body.getBoundingClientRect();
 
@@ -91,10 +91,10 @@ export function getBoundingClientRectOfDocumentBody(win: IReadiumElectronWebview
     //     JSON.stringify((win.document.body as IDocumentBody)._CachedBoundingClientRect));
     // return (win.document.body as IDocumentBody)._CachedBoundingClientRect as DOMRect;
 }
-// export function invalidateBoundingClientRectOfDocumentBody(win: IReadiumElectronWebviewWindow) {
+// export function invalidateBoundingClientRectOfDocumentBody(win: ReadiumElectronWebviewWindow) {
 //     (win.document.body as IDocumentBody)._CachedBoundingClientRect = undefined;
 // }
-// function getBodyMargin(win: IReadiumElectronWebviewWindow): IRect {
+// function getBodyMargin(win: ReadiumElectronWebviewWindow): IRect {
 //     const bodyStyle = win.getComputedStyle(win.document.body);
 //     if (!(win.document.body as IDocumentBody)._CachedMargins) {
 //         (win.document.body as IDocumentBody)._CachedMargins = {
@@ -111,7 +111,7 @@ export function getBoundingClientRectOfDocumentBody(win: IReadiumElectronWebview
 //     return (win.document.body as IDocumentBody)._CachedMargins as IRect;
 // }
 
-function resetHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highlightBounding: HTMLElement) {
+function resetHighlightBoundingStyle(_win: ReadiumElectronWebviewWindow, highlightBounding: HTMLElement) {
 
     if (!(highlightBounding as unknown as IAreaWithActiveFlag).active) {
         return;
@@ -127,7 +127,7 @@ function resetHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highli
 }
 
 // tslint:disable-next-line:max-line-length
-function setHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highlightBounding: HTMLElement, highlight: IHighlight) {
+function setHighlightBoundingStyle(_win: ReadiumElectronWebviewWindow, highlightBounding: HTMLElement, highlight: IHighlight) {
 
     if ((highlightBounding as unknown as IAreaWithActiveFlag).active) {
         return;
@@ -154,7 +154,7 @@ function setHighlightBoundingStyle(_win: IReadiumElectronWebviewWindow, highligh
     highlightBounding.style.setProperty("outline-offset", "0px", "important");
 }
 
-function resetHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightArea: HTMLElement | SVGElement) {
+function resetHighlightAreaStyle(win: ReadiumElectronWebviewWindow, highlightArea: HTMLElement | SVGElement) {
 
     if (USE_BLEND_MODE) {
         return;
@@ -228,7 +228,7 @@ function resetHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightAr
 }
 
 // tslint:disable-next-line:max-line-length
-function setHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightAreas: NodeList, highlight: IHighlight) {
+function setHighlightAreaStyle(win: ReadiumElectronWebviewWindow, highlightAreas: NodeList, highlight: IHighlight) {
 
     if (USE_BLEND_MODE) {
         return;
@@ -301,7 +301,7 @@ function setHighlightAreaStyle(win: IReadiumElectronWebviewWindow, highlightArea
     }
 }
 
-function processMouseEvent(win: IReadiumElectronWebviewWindow, ev: MouseEvent) {
+function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
 
     // const highlightsContainer = documant.getElementById(`${ID_HIGHLIGHTS_CONTAINER}`);
     if (!_highlightsContainer) {
@@ -548,7 +548,7 @@ let lastMouseDownX = -1;
 let lastMouseDownY = -1;
 let bodyEventListenersSet = false;
 let _highlightsContainer: HTMLElement | null;
-function ensureHighlightsContainer(win: IReadiumElectronWebviewWindow): HTMLElement {
+function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow): HTMLElement {
     const documant = win.document;
 
     if (!_highlightsContainer) {
@@ -556,9 +556,12 @@ function ensureHighlightsContainer(win: IReadiumElectronWebviewWindow): HTMLElem
         // Note that legacy ResizeSensor sets body position to "relative" (default static).
         // Also note that ReadiumCSS default to (via stylesheet :root):
         // documant.documentElement.style.position = "relative";
-        documant.body.style.position = "relative";
-
+        // see styles.js (static CSS injection):
+        // documant.documentElement.style.setProperty("height", "100vh", "important");
+        // documant.body.style.position = "relative";
         // documant.body.style.setProperty("position", "relative", "important");
+        // documant.body.style.height = "inherit";
+        // https://github.com/edrlab/thorium-reader/issues/1658
 
         if (!bodyEventListenersSet) {
             bodyEventListenersSet = true;
@@ -648,7 +651,7 @@ export function destroyHighlight(documant: Document, id: string) {
     }
 }
 
-export function recreateAllHighlightsRaw(win: IReadiumElectronWebviewWindow) {
+export function recreateAllHighlightsRaw(win: ReadiumElectronWebviewWindow) {
     const documant = win.document;
     hideAllhighlights(documant);
 
@@ -666,17 +669,17 @@ export function recreateAllHighlightsRaw(win: IReadiumElectronWebviewWindow) {
     highlightsContainer.append(docFrag);
 }
 
-export const recreateAllHighlightsDebounced = debounce((win: IReadiumElectronWebviewWindow) => {
+export const recreateAllHighlightsDebounced = debounce((win: ReadiumElectronWebviewWindow) => {
     recreateAllHighlightsRaw(win);
 }, 500);
 
-export function recreateAllHighlights(win: IReadiumElectronWebviewWindow) {
+export function recreateAllHighlights(win: ReadiumElectronWebviewWindow) {
     hideAllhighlights(win.document);
     recreateAllHighlightsDebounced(win);
 }
 
 export function createHighlights(
-    win: IReadiumElectronWebviewWindow,
+    win: ReadiumElectronWebviewWindow,
     highDefs: IHighlightDefinition[],
     pointerInteraction: boolean): Array<IHighlight | null> {
 
@@ -712,7 +715,7 @@ export function createHighlights(
     return highlights;
 }
 export function createHighlight(
-    win: IReadiumElectronWebviewWindow,
+    win: ReadiumElectronWebviewWindow,
     selectionInfo: ISelectionInfo,
     color: IColor | undefined,
     pointerInteraction: boolean,
@@ -760,7 +763,7 @@ export function createHighlight(
 }
 
 function createHighlightDom(
-    win: IReadiumElectronWebviewWindow,
+    win: ReadiumElectronWebviewWindow,
     highlight: IHighlight,
     bodyRect: DOMRect): HTMLDivElement | null {
 

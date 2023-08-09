@@ -10,7 +10,11 @@ import * as debug_ from "debug";
 import { ipcRenderer } from "electron";
 import { isFocusable } from "tabbable";
 
-import { LocatorLocations } from "@r2-shared-js/models/locator";
+import { LocatorLocations, LocatorText } from "@r2-shared-js/models/locator";
+
+import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
+
+import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../../common/sessions";
 
 import {
     IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK, IEventPayload_R2_EVENT_CAPTIONS,
@@ -19,18 +23,19 @@ import {
     IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, IEventPayload_R2_EVENT_LINK,
     IEventPayload_R2_EVENT_LOCATOR_VISIBLE, IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK,
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP,
+    IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE,
     IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READING_LOCATION,
     IEventPayload_R2_EVENT_READIUMCSS, IEventPayload_R2_EVENT_SCROLLTO,
     IEventPayload_R2_EVENT_SHIFT_VIEW_X, IEventPayload_R2_EVENT_TTS_CLICK_ENABLE,
     IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS, IEventPayload_R2_EVENT_TTS_DO_PLAY,
     IEventPayload_R2_EVENT_TTS_OVERLAY_ENABLE, IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE,
     IEventPayload_R2_EVENT_TTS_SENTENCE_DETECT_ENABLE, IEventPayload_R2_EVENT_TTS_VOICE,
-    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CAPTIONS,
+    IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, MediaOverlaysStateEnum, R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CAPTIONS,
     R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_FXL_CONFIGURE,
     R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
     R2_EVENT_KEYBOARD_FOCUS_REQUEST, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE,
     R2_EVENT_MEDIA_OVERLAY_CLICK, R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
-    R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
+    R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_MEDIA_OVERLAY_STATE, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
     R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
     R2_EVENT_SHOW, R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE,
     R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
@@ -45,15 +50,15 @@ import {
 import { sameSelections } from "../../common/selection";
 import {
     CLASS_PAGINATED, CSS_CLASS_NO_FOCUS_OUTLINE, HIDE_CURSOR_CLASS, LINK_TARGET_CLASS,
-    POPOUTIMAGE_CONTAINER_CLASS, POPUP_DIALOG_CLASS, POPUP_DIALOG_CLASS_COLLAPSE,
-    R2_MO_CLASS_ACTIVE, R2_MO_CLASS_ACTIVE_PLAYBACK, ROOT_CLASS_INVISIBLE_MASK,
+    POPOUTIMAGE_CONTAINER_ID, POPUP_DIALOG_CLASS, POPUP_DIALOG_CLASS_COLLAPSE,
+    R2_MO_CLASS_ACTIVE, R2_MO_CLASS_ACTIVE_PLAYBACK, R2_MO_CLASS_PAUSED, R2_MO_CLASS_PLAYING, R2_MO_CLASS_STOPPED, ROOT_CLASS_INVISIBLE_MASK,
     ROOT_CLASS_INVISIBLE_MASK_REMOVED, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX,
-    ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_ID_SPEAKING_DOC_ELEMENT,
+    ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_CLASS_PAUSED, TTS_CLASS_PLAYING, TTS_ID_SPEAKING_DOC_ELEMENT,
     WebViewSlotEnum, ZERO_TRANSFORM_CLASS, readPosCssStylesAttr1, readPosCssStylesAttr2,
     readPosCssStylesAttr3, readPosCssStylesAttr4,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
-import { uniqueCssSelector } from "../common/cssselector2";
+import { uniqueCssSelector, FRAG_ID_CSS_SELECTOR } from "../common/cssselector2-3";
 import { normalizeText } from "../common/dom-text-utils";
 import { easings } from "../common/easings";
 import { closePopupDialogs, isPopupDialogOpen } from "../common/popup-dialog";
@@ -79,10 +84,10 @@ import {
 import {
     calculateColumnDimension, calculateMaxScrollShift, calculateTotalColumns, checkHiddenFootNotes,
     computeVerticalRTL, getScrollingElement, isRTL, isTwoPageSpread, isVerticalWritingMode,
-    readiumCSS,
+    readiumCSS, clearImageZoomOutlineDebounced, clearImageZoomOutline,
 } from "./readium-css";
 import { clearCurrentSelection, convertRangeInfo, getCurrentSelectionInfo } from "./selection";
-import { IReadiumElectronWebviewWindow } from "./state";
+import { ReadiumElectronWebviewWindow } from "./state";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -102,8 +107,10 @@ if (IS_DEV) {
 
 const debug = debug_("r2:navigator#electron/renderer/webview/preload");
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const win = (global as any).window as IReadiumElectronWebviewWindow;
+const INJECTED_LINK_TXT = "__";
+
+const win = global.window as ReadiumElectronWebviewWindow;
+
 win.READIUM2 = {
     DEBUG_VISUALS: false,
     // dialogs = [],
@@ -113,6 +120,7 @@ win.READIUM2 = {
     fxlZoomPercent: 0,
     hashElement: null,
     isAudio: false,
+    ignorekeyDownUpEvents: false,
     isClipboardIntercept: false,
     isFixedLayout: false,
     locationHashOverride: undefined,
@@ -120,6 +128,7 @@ win.READIUM2 = {
         audioPlaybackInfo: undefined,
         docInfo: undefined,
         epubPage: undefined,
+        epubPageID: undefined,
         headings: undefined,
         href: "",
         locations: {
@@ -168,21 +177,136 @@ win.prompt = (...args: any[]): string => {
 const CSS_PIXEL_TOLERANCE = 5;
 
 // setTimeout(() => {
-//     if (window.alert) {
-//         window.alert("window.alert!");
+//     if (win.alert) {
+//         win.alert("win.alert!");
 //     }
-//     if (window.confirm) {
-//         const ok = window.confirm("window.confirm?");
+//     if (win.confirm) {
+//         const ok = win.confirm("win.confirm?");
 //         console.log(ok);
 //     }
 //     // NOT SUPPORTED: fatal error in console.
-//     if (window.prompt) {
-//         const str = window.prompt("window.prompt:");
+//     if (win.prompt) {
+//         const str = win.prompt("win.prompt:");
 //         console.log(str);
 //     }
 // }, 2000);
 
+const TOUCH_SWIPE_DELTA_MIN = 80;
+const TOUCH_SWIPE_LONG_PRESS_MAX_TIME = 500;
+const TOUCH_SWIPE_MAX_TIME = 500;
+let touchstartEvent: TouchEvent | undefined;
+let touchEventEnd: TouchEvent | undefined;
+win.document.addEventListener(
+    "touchstart",
+    (event: TouchEvent) => {
+        if (isPopupDialogOpen(win.document)) {
+            touchstartEvent = undefined;
+            touchEventEnd = undefined;
+            return;
+        }
+        if (event.changedTouches.length !== 1) {
+            return;
+        }
+        touchstartEvent = event;
+    },
+    true,
+);
+win.document.addEventListener(
+    "touchend",
+    (event: TouchEvent) => {
+        if (isPopupDialogOpen(win.document)) {
+            touchstartEvent = undefined;
+            touchEventEnd = undefined;
+            return;
+        }
+        if (event.changedTouches.length !== 1) {
+            return;
+        }
+        if (!touchstartEvent) {
+            return;
+        }
+
+        const startTouch = touchstartEvent.changedTouches[0];
+        const endTouch = event.changedTouches[0];
+
+        if (!startTouch || !endTouch) {
+            return;
+        }
+
+        const deltaX =
+            (startTouch.clientX - endTouch.clientX) / win.devicePixelRatio;
+        const deltaY =
+            (startTouch.clientY - endTouch.clientY) / win.devicePixelRatio;
+
+        if (
+            Math.abs(deltaX) < TOUCH_SWIPE_DELTA_MIN &&
+            Math.abs(deltaY) < TOUCH_SWIPE_DELTA_MIN
+        ) {
+            if (touchEventEnd) {
+                touchstartEvent = undefined;
+                touchEventEnd = undefined;
+                return;
+            }
+
+            if (
+                event.timeStamp - touchstartEvent.timeStamp >
+                TOUCH_SWIPE_LONG_PRESS_MAX_TIME
+            ) {
+                touchstartEvent = undefined;
+                touchEventEnd = undefined;
+                return;
+            }
+
+            touchstartEvent = undefined;
+            touchEventEnd = event;
+            return;
+        }
+
+        touchEventEnd = undefined;
+
+        if (
+            event.timeStamp - touchstartEvent.timeStamp >
+            TOUCH_SWIPE_MAX_TIME
+        ) {
+            touchstartEvent = undefined;
+            return;
+        }
+
+        const slope =
+            (startTouch.clientY - endTouch.clientY) /
+            (startTouch.clientX - endTouch.clientX);
+        if (Math.abs(slope) > 0.5) {
+            touchstartEvent = undefined;
+            return;
+        }
+
+        if (deltaX < 0) {
+            // navLeftOrRight(!rtl);
+            const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+                direction: "LTR",
+                go: "NEXT",
+                nav: true,
+            };
+            ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+        } else {
+            // navLeftOrRight(rtl);
+            const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+                direction: "LTR",
+                go: "PREVIOUS",
+                nav: true,
+            };
+            ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+        }
+
+        touchstartEvent = undefined;
+    },
+    true,
+);
+
 function keyDownUpEventHandler(ev: KeyboardEvent, keyDown: boolean) {
+    if (win.READIUM2.ignorekeyDownUpEvents) {
+        return;
+    }
     const elementName = (ev.target && (ev.target as Element).nodeName) ?
         (ev.target as Element).nodeName : "";
     const elementAttributes: { [name: string]: string } = {};
@@ -537,6 +661,7 @@ function resetLocationHashOverrideInfo() {
         audioPlaybackInfo: undefined,
         docInfo: undefined,
         epubPage: undefined,
+        epubPageID: undefined,
         headings: undefined,
         href: "",
         locations: {
@@ -1803,10 +1928,15 @@ function checkSoundtrack(documant: Document) {
     let epubType = audio.getAttribute("epub:type");
     if (!epubType) {
         epubType = audio.getAttributeNS("http://www.idpf.org/2007/ops", "type");
+        if (!epubType) {
+            epubType = audio.getAttribute("role");
+        }
     }
     if (!epubType) {
         return;
     }
+    epubType = epubType.trim().replace(/\s\s+/g, " "); // whitespace collapse
+
     if (epubType.indexOf("ibooks:soundtrack") < 0) {
         return;
     }
@@ -1916,12 +2046,23 @@ function loaded(forced: boolean) {
             scrollToHashDebounced(false);
 
             if (win.document.body) {
-                const linkTxt = "__";
+                /*
+                if (isPaginated(win.document)) {
+                    win.document.body.addEventListener("scroll", (ev) => {
+                        if (isPaginated(win.document)) {
+                            console.log("BODY SCROLL PREVENT");
+                            ev.preventDefault();
+                        }
+                    });
+                }
+                */
+
                 const focusLink = win.document.createElement("a");
                 focusLink.setAttribute("id", SKIP_LINK_ID);
-                focusLink.appendChild(win.document.createTextNode(linkTxt));
-                focusLink.setAttribute("title", linkTxt);
-                focusLink.setAttribute("aria-label", linkTxt);
+                // focusLink.appendChild(win.document.createTextNode(INJECTED_LINK_TXT));
+                focusLink.appendChild(win.document.createTextNode(" "));
+                focusLink.setAttribute("title", INJECTED_LINK_TXT);
+                focusLink.setAttribute("aria-label", INJECTED_LINK_TXT);
                 focusLink.setAttribute("href", "javascript:;");
                 focusLink.setAttribute("tabindex", "0");
                 win.document.body.insertAdjacentElement("afterbegin", focusLink);
@@ -2047,9 +2188,11 @@ function loaded(forced: boolean) {
         if (ev.target) {
             let ignoreIncomingMouseClickOnFocusable = false;
             if (win.document && win.document.documentElement) {
-                if (!win.document.documentElement.classList.contains(ROOT_CLASS_KEYBOARD_INTERACT)) {
-                    if (
-                        (ev.target as HTMLElement).tagName.toLowerCase() === "a" &&
+                const low = (ev.target as HTMLElement).tagName.toLowerCase();
+                if (low === "body") {
+                    ignoreIncomingMouseClickOnFocusable = true;
+                } else if (!win.document.documentElement.classList.contains(ROOT_CLASS_KEYBOARD_INTERACT)) {
+                    if (low === "a" &&
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         (ev.target as any).href
                         ||
@@ -2098,8 +2241,7 @@ function loaded(forced: boolean) {
 
         setTimeout(() => {
             let _firstResizeObserver = true;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const resizeObserver = new (window as any).ResizeObserver((_entries: any) => { // ResizeObserverEntries
+            const resizeObserver = new win.ResizeObserver((_entries: ResizeObserverEntry[]) => {
                 // for (const entry of entries) {
                 //     const rect = entry.contentRect as DOMRect;
                 //     const element = entry.target as HTMLElement;
@@ -2163,117 +2305,304 @@ function loaded(forced: boolean) {
         }, 1000);
     });
 
-    const imageMouseExit = (ev: Event) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((ev.target as any)._r2ImageHoverTimer) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            win.clearTimeout((ev.target as any)._r2ImageHoverTimer);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (ev.target as any)._r2ImageHoverTimer = 0;
-        }
-        if ((ev.target as HTMLElement).hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`)) {
-            (ev.target as HTMLElement).removeAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`);
-        }
-    };
-    setTimeout(() => {
-        const images = win.document.querySelectorAll("img[src]");
-        images.forEach((img) => {
-
-            // mouseover
-            img.addEventListener("mousemove", (ev) => {
-
-                if ((ev as MouseEvent).shiftKey) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    if ((ev.target as any)._r2ImageHoverTimer) {
-                        return;
-                    }
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (ev.target as any)._r2ImageHoverTimer = win.setTimeout(() => {
-                        (ev.target as HTMLElement).setAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`, "1");
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        (ev.target as any)._r2ImageHoverTimer = 0;
-                    }, 400);
-                    return;
-                }
-                imageMouseExit(ev);
-            });
-            img.addEventListener("mouseleave", (ev) => {
-                imageMouseExit(ev);
-            });
-
-            // see capturing delegate below (DOM event handler priority)
-            // img.addEventListener("click", (ev) => {
-            //     if ((ev.target as HTMLElement).hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`)) {
-            //         //
-            //     }
-            // });
-        });
-    }, 800);
-
-    win.document.addEventListener("mousedown", async (ev: MouseEvent) => {
-
-        const currentElement = ev.target as Element;
-        if (// ev.shiftKey &&
-            currentElement &&
-            (currentElement as HTMLImageElement).src &&
-            currentElement.nodeType === Node.ELEMENT_NODE &&
-            currentElement.tagName.toLowerCase() === "img" &&
-            currentElement.hasAttribute(`data-${POPOUTIMAGE_CONTAINER_CLASS}`)) {
-
+    win.document.addEventListener("auxclick", async (ev: MouseEvent) => {
+        debug(`AUX __CLICK: ${ev.button} (SKIP middle)`);
+        if (ev.button === 1) {
             ev.preventDefault();
             ev.stopPropagation();
-
-            popoutImage(
-                win,
-                currentElement as HTMLImageElement,
-                focusScrollRaw,
-                ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
-                ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
         }
     }, true);
-
     win.document.addEventListener("click", async (ev: MouseEvent) => {
-
-        let currentElement = ev.target as Element;
-        let href: string | SVGAnimatedString | undefined;
-        while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
-            if (currentElement.tagName.toLowerCase() === "a") {
-
-                // includes SVG xlink:href, absolute URL
-                href = (currentElement as HTMLAnchorElement | SVGAElement).href;
-
-                // excludes SVG xlink:href, relative URL
-                const href_ = currentElement.getAttribute("href");
-
-                debug(`A LINK CLICK: ${href} (${href_})`);
-                break;
-            }
-            currentElement = currentElement.parentNode as Element;
-        }
-
-        if (!href) {
+        debug(`!AUX __CLICK: ${ev.button} ...`);
+        if (win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED) || win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING)) {
+            debug("!AUX __CLICK skip because MO playing/paused");
             return;
         }
 
-        if ((href as SVGAnimatedString).animVal) {
-            href = (href as SVGAnimatedString).animVal;
+        if (!isPopupDialogOpen(win.document)) {
+            // relative to fixed window top-left corner
+            // (unlike pageX/Y which is relative to top-left rendered content area, subject to scrolling)
+            const x = ev.clientX;
+            const y = ev.clientY;
 
-            if (!href) {
+            const domPointData = domDataFromPoint(x, y);
+
+            if (domPointData.element && win.READIUM2.ttsClickEnabled) {
+                debug("!AUX __CLICK domPointData.element && win.READIUM2.ttsClickEnabled");
+                if (ev.altKey) {
+                    ttsPlay(
+                        win.READIUM2.ttsPlaybackRate,
+                        win.READIUM2.ttsVoice,
+                        focusScrollRaw,
+                        domPointData.element,
+                        undefined,
+                        undefined,
+                        -1,
+                        ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+                        ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
+                    return;
+                }
+
+                ttsPlay(
+                    win.READIUM2.ttsPlaybackRate,
+                    win.READIUM2.ttsVoice,
+                    focusScrollRaw,
+                    (domPointData.element.ownerDocument as Document).body,
+                    domPointData.element,
+                    domPointData.textNode,
+                    domPointData.textNodeOffset,
+                    ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+                    ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
+
                 return;
             }
         }
 
-        const hrefStr = href as string;
-
-        if (/^javascript:/.test(hrefStr)) {
+        if (win.READIUM2.ttsClickEnabled || win.document.documentElement.classList.contains(TTS_CLASS_PAUSED) || win.document.documentElement.classList.contains(TTS_CLASS_PLAYING)) {
+            debug("!AUX __CLICK skip because TTS playing/paused");
             return;
         }
+
+        // win.document.documentElement.classList.forEach((c) => {
+        //     debug(c);
+        // });
+
+        let linkElement: Element | undefined;
+        let imageElement: Element | undefined;
+
+        let href_src: string | SVGAnimatedString | undefined;
+        let href_src_image_nested_in_link: string | SVGAnimatedString | undefined;
+        let isSVG = false;
+        let globalSVGDefs: NodeListOf<Element> | undefined;
+        let currentElement: Element | undefined = ev.target as Element;
+        while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
+            const tagName = currentElement.tagName.toLowerCase();
+            if ((tagName === "img" || tagName === "image" || tagName === "svg")
+                && !currentElement.classList.contains(POPOUTIMAGE_CONTAINER_ID)) {
+
+                isSVG = false;
+                if (tagName === "svg") {
+                    if (imageElement) {
+                        // image inside SVG
+                        currentElement = currentElement.parentNode as Element;
+                        continue;
+                    }
+
+                    isSVG = true;
+                    href_src = currentElement.outerHTML;
+
+                    const defs = currentElement.querySelectorAll("defs > *[id]");
+                    debug("SVG INNER defs: ", defs.length);
+                    const uses = currentElement.querySelectorAll("use");
+                    debug("SVG INNER uses: ", uses.length);
+                    const useIDs: string[] = [];
+                    uses.forEach((useElem) => {
+                        const href = useElem.getAttribute("href") || useElem.getAttributeNS("http://www.w3.org/1999/xlink", "href");
+                        if (href?.startsWith("#")) {
+                            const id = href.substring(1);
+                            let found = false;
+                            for (let i = 0; i < defs.length; i++) {
+                                const defElem = defs[i];
+                                if (defElem.getAttribute("id") === id) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (!found) {
+                                debug("SVG INNER use (need inject def): ", id);
+                                useIDs.push(id);
+                            } else {
+                                debug("SVG INNER use (already has def): ", id);
+                            }
+                        }
+                    });
+                    let defsToInject = "";
+                    for (const useID of useIDs) {
+                        if (!globalSVGDefs) {
+                            globalSVGDefs = win.document.querySelectorAll("defs > *[id]");
+                        }
+                        debug("SVG GLOBAL defs: ", globalSVGDefs.length);
+                        let found = false;
+                        globalSVGDefs.forEach((globalSVGDef) => {
+                            if (globalSVGDef.getAttribute("id") === useID) {
+                                found = true;
+                                const outer = globalSVGDef.outerHTML;
+                                if (outer.includes("<use")) {
+                                    debug("!!!!!! SVG WARNING use inside def: " + outer);
+                                }
+                                defsToInject += outer;
+                            }
+                        });
+                        if (found) {
+                            debug("SVG GLOBAL def for INNER use id: ", useID);
+                        } else {
+                            debug("no SVG GLOBAL def for INNER use id!! ", useID);
+                        }
+                    }
+                    if (href_src.indexOf("<defs") >= 0) {
+                        href_src = href_src.replace(/<\/defs>/, `${defsToInject} </defs>`);
+                    } else {
+                        href_src = href_src.replace(/>/, `> <defs> ${defsToInject} </defs>`);
+                    }
+
+                    // href_src = href_src.replace(/<svg/g, `<svg xml:base="${win.location.origin}${win.location.pathname}" `);
+                    href_src = href_src.replace(/:href[\s]*=(["|'])(.+?)(["|'])/g, (match, ...args: string[]) => {
+                        const l = args[1].trim();
+                        const ret = l.startsWith("#") || l.startsWith("/") || l.startsWith("data:") || /https?:/.test(l) ? match :
+                            `:href=${args[0]}${new URL(l, win.location.origin + win.location.pathname)}${args[2]}`;
+                        debug("SVG URL REPLACE: ", match, ret);
+                        return ret;
+                    });
+                    href_src = href_src.replace(/url[\s]*\((.+?)\)/g, (match, ...args: string[]) => {
+                        const l = args[0].trim();
+                        const ret = l.startsWith("#") || l.startsWith("/") || l.startsWith("data:") || /https?:/.test(l) ? match :
+                            `url(${new URL(l, win.location.origin + win.location.pathname)})`;
+                        debug("SVG URL REPLACE: ", match, ret);
+                        return ret;
+                    });
+
+                    href_src = href_src.replace(/\n/g, " ").replace(/\s\s+/g, " ").trim();
+                    href_src = href_src.replace(/<desc[^<]+<\/desc>/g, "");
+                    debug(`SVG CLICK: ${href_src}`);
+                } else {
+                    // absolute (already resolved against base)
+                    href_src = (currentElement as HTMLImageElement).src;
+                    // possibly relative
+                    let href_src_ = currentElement.getAttribute("src");
+                    if (!href_src) {
+                        // SVGAnimatedString (animVal possibly relative)
+                        href_src = (currentElement as SVGImageElement).href;
+
+                        // possibly relative
+                        href_src_ = currentElement.getAttribute("href") || currentElement.getAttributeNS("http://www.w3.org/1999/xlink", "href");
+                    }
+                    debug(`IMG CLICK: ${href_src} (${href_src_})`);
+                }
+                imageElement = currentElement;
+
+                // DOM parent / ancestor could be link a@href, so let's continue walking up the tree
+                // break;
+            } else if (tagName === "a") {
+
+                if (href_src) {
+                    href_src_image_nested_in_link = href_src;
+                }
+
+                // absolute (already resolved against base),
+                // or SVGAnimatedString (animVal possibly relative)
+                href_src = (currentElement as HTMLAnchorElement | SVGAElement).href;
+
+                // possibly relative
+                const href_ = currentElement.getAttribute("href") || currentElement.getAttributeNS("http://www.w3.org/1999/xlink", "href");
+
+                linkElement = currentElement;
+                debug(`A LINK CLICK: ${href_src} (${href_})`);
+
+                // DOM child / descendant could be img/image/svg (see if condition above)
+                break;
+            }
+            currentElement = currentElement.parentNode as Element;
+        }
+        currentElement = undefined;
+
+        // at that point, can be both an image and a link! ("img" element descendant of "a" ... clickable image link)
+
+        if (!href_src || (!imageElement && !linkElement)) {
+            clearImageZoomOutline();
+            return;
+        }
+
+        if (href_src_image_nested_in_link && (href_src_image_nested_in_link as SVGAnimatedString).animVal) {
+            href_src_image_nested_in_link = (href_src_image_nested_in_link as SVGAnimatedString).animVal;
+
+            if (!href_src_image_nested_in_link) {
+                clearImageZoomOutline();
+                return;
+            }
+        }
+
+        if ((href_src as SVGAnimatedString).animVal) {
+            href_src = (href_src as SVGAnimatedString).animVal;
+
+            if (!href_src) {
+                clearImageZoomOutline();
+                return;
+            }
+        }
+
+        if (typeof href_src !== "string") {
+
+            clearImageZoomOutline();
+            return;
+        }
+        if (href_src_image_nested_in_link && typeof href_src_image_nested_in_link !== "string") {
+
+            clearImageZoomOutline();
+            return;
+        }
+
+        debug(`HREF SRC: ${href_src} ${href_src_image_nested_in_link} (${win.location.href})`);
+
+        const has = imageElement?.hasAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
+        if (imageElement && href_src && (has ||
+            ((!linkElement && !win.READIUM2.isFixedLayout && !isSVG) || ev.shiftKey)
+        )) {
+            if (linkElement && href_src_image_nested_in_link) {
+                href_src = href_src_image_nested_in_link;
+            }
+
+            clearImageZoomOutline();
+
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            if (has) {
+                if (!isSVG &&
+                    !/^(https?|thoriumhttps):\/\//.test(href_src) &&
+                    !href_src.startsWith((READIUM2_ELECTRON_HTTP_PROTOCOL + "://"))) {
+
+                    const destUrl = new URL(href_src, win.location.origin + win.location.pathname);
+                    href_src = destUrl.toString();
+                    debug(`IMG CLICK ABSOLUTE-ized: ${href_src}`);
+                }
+
+                popoutImage(
+                    win,
+                    imageElement as HTMLImageElement | SVGElement,
+                    href_src,
+                    focusScrollRaw,
+                    ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+                    ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
+            } else {
+                imageElement.setAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`, "1");
+            }
+
+            return;
+        }
+
+        if (!linkElement || !href_src) {
+            clearImageZoomOutline();
+            return;
+        }
+
+        const hrefStr = href_src as string;
+        if (/^javascript:/.test(hrefStr)) {
+            clearImageZoomOutline();
+            return;
+        }
+
+        clearImageZoomOutline();
 
         ev.preventDefault();
         ev.stopPropagation();
 
+        const payload: IEventPayload_R2_EVENT_LINK = {
+            url: "#" + FRAG_ID_CSS_SELECTOR + encodeURIComponent_RFC3986(getCssSelector(linkElement)), // see location.ts locationHandleIpcMessage() eventChannel === R2_EVENT_LINK (URL is made absolute if necessary)
+        };
+        ipcRenderer.sendToHost(R2_EVENT_LINK, payload); // this will result in the app registering the element in the navigation history, but is skipped in location.ts ipcRenderer.on(R2_EVENT_LINK)
+
         const done = await popupFootNote(
-            currentElement as HTMLElement,
+            linkElement as HTMLElement,
             focusScrollRaw,
             hrefStr,
             ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
@@ -2295,8 +2624,6 @@ function loaded(forced: boolean) {
             };
             ipcRenderer.sendToHost(R2_EVENT_LINK, payload);
         }
-
-        return false;
     }, true);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2575,36 +2902,34 @@ function loaded(forced: boolean) {
 
         processXYDebouncedImmediate(x, y, false, true);
 
-        const domPointData = domDataFromPoint(x, y);
+        // const domPointData = domDataFromPoint(x, y);
 
-        if (domPointData.element && win.READIUM2.ttsClickEnabled) {
-            if (domPointData.element) {
-                if (ev.altKey) {
-                    ttsPlay(
-                        win.READIUM2.ttsPlaybackRate,
-                        win.READIUM2.ttsVoice,
-                        focusScrollRaw,
-                        domPointData.element,
-                        undefined,
-                        undefined,
-                        -1,
-                        ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
-                        ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
-                    return;
-                }
+        // if (domPointData.element && win.READIUM2.ttsClickEnabled) {
+        //     if (ev.altKey) {
+        //         ttsPlay(
+        //             win.READIUM2.ttsPlaybackRate,
+        //             win.READIUM2.ttsVoice,
+        //             focusScrollRaw,
+        //             domPointData.element,
+        //             undefined,
+        //             undefined,
+        //             -1,
+        //             ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+        //             ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
+        //         return;
+        //     }
 
-                ttsPlay(
-                    win.READIUM2.ttsPlaybackRate,
-                    win.READIUM2.ttsVoice,
-                    focusScrollRaw,
-                    (domPointData.element.ownerDocument as Document).body,
-                    domPointData.element,
-                    domPointData.textNode,
-                    domPointData.textNodeOffset,
-                    ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
-                    ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
-            }
-        }
+        //     ttsPlay(
+        //         win.READIUM2.ttsPlaybackRate,
+        //         win.READIUM2.ttsVoice,
+        //         focusScrollRaw,
+        //         (domPointData.element.ownerDocument as Document).body,
+        //         domPointData.element,
+        //         domPointData.textNode,
+        //         domPointData.textNodeOffset,
+        //         ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+        //         ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
+        // }
     }
 
     // win.document.body.addEventListener("click", (ev: MouseEvent) => {
@@ -2902,7 +3227,8 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
             }
         }
 
-        if (userInteract) {
+        // TODO: 250ms debounce on the leading edge (immediate) doesn't allow double-click to capture win.getSelection() for bookmark titles and annotations, because the notifyReadingLocation occurs before the DOM selection is ready. Instead of reverting to the debounce trailing edge (which causes a 200ms+ delay), could we detect double-click? Any other unintended side-effects / possible regression bugs from this change??
+        if (userInteract && win.READIUM2.DEBUG_VISUALS) {
             notifyReadingLocationDebouncedImmediate(userInteract);
         } else {
             notifyReadingLocationDebounced(userInteract);
@@ -3354,7 +3680,7 @@ interface IPageBreak {
     text: string;
 }
 let _allEpubPageBreaks: IPageBreak[] | undefined;
-const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): string | undefined => {
+const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): { epubPage: string | undefined, epubPageID: string | undefined } => {
     if (!_allEpubPageBreaks) {
         // // @namespace epub "http://www.idpf.org/2007/ops";
         // // [epub|type~="pagebreak"]
@@ -3391,7 +3717,7 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): string | u
                 const elTitle = el.getAttribute("title");
                 const elLabel = el.getAttribute("aria-label");
                 const elText = el.textContent;
-                const pageLabel = elTitle || elLabel || elText;
+                const pageLabel = elTitle || elLabel || elText || " "; // ("_" + (el.getAttribute("id") || ""));
                 if (pageLabel) {
                     const pageBreak: IPageBreak = {
                         element: el,
@@ -3420,11 +3746,32 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): string | u
         // tslint:disable-next-line: no-bitwise
         if (c === 0 || (c & Node.DOCUMENT_POSITION_PRECEDING) || (c & Node.DOCUMENT_POSITION_CONTAINS)) {
             debug("preceding or containing EPUB page break", pageBreak.text);
-            return pageBreak.text;
+            return { epubPage: pageBreak.text, epubPageID: pageBreak.element.getAttribute("id") || undefined };
         }
     }
 
-    return undefined;
+    const nil = { epubPage: undefined, epubPageID: undefined };
+    if (_allEpubPageBreaks.length > 0) {
+        const first = { epubPage: _allEpubPageBreaks[0].text, epubPageID: _allEpubPageBreaks[0].element.getAttribute("id") || undefined };
+
+        if (win.document.body.firstChild === _allEpubPageBreaks[0].element) {
+            debug("pagebreak first", first);
+            return first;
+        }
+
+        const range = new Range(); // document.createRange()
+        range.setStart(win.document.body, 0);
+        range.setEnd(_allEpubPageBreaks[0].element, 0);
+        let txt = range.toString() || "";
+        if (txt) {
+            // txt = txt.trim().replace(new RegExp(`^${INJECTED_LINK_TXT}`), "").trim();
+            txt = txt.trim();
+        }
+        const pass = txt.length <= 10;
+        debug("pagebreak first? txt", first, txt.length, pass ? txt : "");
+        return pass ? first : nil;
+    }
+    return nil;
 };
 
 const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: boolean) => {
@@ -3481,10 +3828,13 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
     }
 
     const text = selInfo ? {
-        after: undefined, // TODO?
-        before: undefined, // TODO?
+        after: selInfo.cleanAfter,
+        before: selInfo.cleanBefore,
         highlight: selInfo.cleanText,
-    } : undefined;
+        afterRaw: selInfo.rawAfter,
+        beforeRaw: selInfo.rawBefore,
+        highlightRaw: selInfo.rawText,
+    } as LocatorText : undefined;
 
     let selectionIsNew: boolean | undefined;
     if (selInfo) {
@@ -3494,7 +3844,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
             !sameSelections(win.READIUM2.locationHashOverrideInfo.selectionInfo, selInfo);
     }
 
-    const epubPage = findPrecedingAncestorSiblingEpubPageBreak(win.READIUM2.locationHashOverride);
+    const { epubPage, epubPageID } = findPrecedingAncestorSiblingEpubPageBreak(win.READIUM2.locationHashOverride);
     const headings = findPrecedingAncestorSiblingHeadings(win.READIUM2.locationHashOverride);
 
     const secondWebViewHref = win.READIUM2.urlQueryParams &&
@@ -3512,6 +3862,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
             isVerticalWritingMode: isVerticalWritingMode(),
         },
         epubPage,
+        epubPageID,
         headings,
         href: "", // filled-in from host index.js renderer
         locations: {
@@ -3618,6 +3969,18 @@ if (!win.READIUM2.isAudio) {
         win.READIUM2.ttsOverlayEnabled = payload.doEnable;
     });
 
+    ipcRenderer.on(R2_EVENT_MEDIA_OVERLAY_STATE,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (_event: any, payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE) => {
+
+        clearImageZoomOutlineDebounced();
+
+        win.document.documentElement.classList.remove(R2_MO_CLASS_PAUSED, R2_MO_CLASS_PLAYING, R2_MO_CLASS_STOPPED);
+
+        win.document.documentElement.classList.add(payload.state === MediaOverlaysStateEnum.PAUSED ? R2_MO_CLASS_PAUSED :
+            (payload.state === MediaOverlaysStateEnum.PLAYING ? R2_MO_CLASS_PLAYING : R2_MO_CLASS_STOPPED));
+    });
+
     ipcRenderer.on(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_event: any, payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT) => {
@@ -3647,8 +4010,7 @@ if (!win.READIUM2.isAudio) {
 
             let removeCaptionContainer = true;
             if (!payload.id) {
-                win.document.documentElement.classList.remove(R2_MO_CLASS_ACTIVE_PLAYBACK);
-                win.document.documentElement.classList.remove(activeClassPlayback);
+                win.document.documentElement.classList.remove(R2_MO_CLASS_ACTIVE_PLAYBACK, activeClassPlayback);
             } else {
                 win.document.documentElement.classList.add(activeClassPlayback);
 
