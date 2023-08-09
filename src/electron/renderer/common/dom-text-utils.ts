@@ -756,7 +756,9 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
             if (parent.tagName) {
                 const tag = parent.tagName.toLowerCase();
                 if (tag === "pre" || tag === "code" ||
-                    tag === "video" || tag === "audio") {
+                    tag === "video" || tag === "audio" ||
+                    tag === "img" || tag === "svg" ||
+                    tag === "math" || tag.startsWith("mjx-")) {
                     skipSplitSentences = true;
                     break;
                 }
