@@ -677,26 +677,6 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                             });
                         } else if (childTagNameLow === "img" &&
                             (childElement as HTMLImageElement).src) {
-                            const altAttr = childElement.getAttribute("alt");
-                            if (altAttr) {
-                                const txt = altAttr.trim();
-                                if (txt) {
-                                    const lang = getLanguage(childElement);
-                                    const dir = undefined;
-                                    ttsQueue.push({
-                                        combinedText: txt,
-                                        combinedTextSentences: undefined,
-                                        combinedTextSentencesRangeBegin: undefined,
-                                        combinedTextSentencesRangeEnd: undefined,
-                                        dir,
-                                        lang,
-                                        parentElement: childElement,
-                                        textNodes: [],
-                                    });
-                                }
-                            }
-                        } else if (childTagNameLow === "img" &&
-                            (childElement as HTMLImageElement).src) {
                             let altAttr = childElement.getAttribute("alt");
                             if (altAttr) {
                                 const txt = altAttr.trim();
