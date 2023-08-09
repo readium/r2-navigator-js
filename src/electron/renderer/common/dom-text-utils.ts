@@ -794,7 +794,6 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
         while (parent) {
             if (parent.tagName) {
                 const tag = parent.tagName.toLowerCase();
-
                 if (tag === "pre" || tag === "code" ||
                     tag === "video" || tag === "audio" ||
                     tag === "img" || tag === "svg" ||
