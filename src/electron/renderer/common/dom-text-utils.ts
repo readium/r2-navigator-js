@@ -531,9 +531,6 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                         ssmlSubstitution = ssmlSubstitution.trim();
                     }
 
-                    // tslint:disable-next-line:max-line-length
-                    const doNotProcessDeepChildTagNames = ["svg", "img", "sup", "sub", "audio", "video", "source", "button", "canvas", "del", "dialog", "embed", "form", "head", "iframe", "meter", "noscript", "object", "s", "script", "select", "style", "textarea"]; // "code", "nav", "dl", "figure", "table", "ul", "ol"
-
                     const processDeepChild =
                         pageBreakNeedsDeepDive ||
                         linkNeedsDeepDive ||
