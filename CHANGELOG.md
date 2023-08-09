@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.13.8...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.13.9...develop
 
 Changes:
 * TODO
+
+# 1.13.9
+
+> Build environment: NodeJS `18.17.0`, NPM `9.8.1`
+
+Changes:
+* TTS readaloud now supports "skippability" (like EPUB3 Media Overlays), typically page breaks identified by epub:type or ARIA role
+* NPM package updates
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.13.9/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.13.9/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.13.9
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.13.8...v1.13.9
 
 # 1.13.8
 
