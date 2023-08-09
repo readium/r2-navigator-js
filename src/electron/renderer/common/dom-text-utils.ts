@@ -399,7 +399,6 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
 
         const tagNameLow = element.tagName ? element.tagName.toLowerCase() : undefined;
 
-        // tslint:disable-next-line:max-line-length
         const putInElementStack = first ||
             tagNameLow && putInElementStackTagNames.includes(tagNameLow)
             // tslint:disable-next-line:max-line-length
