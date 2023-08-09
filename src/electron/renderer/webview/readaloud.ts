@@ -1109,8 +1109,6 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
     (utterance as any).r2_ttsQueueIndex = ttsQueueIndex;
 
     // TODO:
-    // utterance.voice
-    // utterance.rate
     // utterance.pitch
     // utterance.volume
     if (_dialogState.ttsQueueItem.item.lang) {
