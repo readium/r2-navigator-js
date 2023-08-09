@@ -538,8 +538,8 @@ async function playMediaOverlaysAudio(
     }
 }
 
-// https://www.w3.org/publishing/epub3/epub-mediaoverlays.html#sec-skippability
-// https://idpf.github.io/epub-vocabs/structure/
+// https://www.w3.org/TR/epub-33/#sec-behaviors-skip-escape
+// https://www.w3.org/TR/epub-ssv-11/
 const _skippables = [
     "footnote",
     "endnote",

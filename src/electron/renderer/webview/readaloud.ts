@@ -1186,7 +1186,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
         updateTTSInfo(ev.charIndex, ev.charLength, utterance.text);
     };
 
-    utterance.onend = (_ev: SpeechSynthesisEvent) => {
+    const onEnd = () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((utterance as any).r2_cancel) {
             return;
@@ -1203,6 +1203,9 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
 
         ttsPlayQueueIndexDebounced(ttsQueueIndex + 1);
     };
+    utterance.onend = (_ev: SpeechSynthesisEvent) => {
+        onEnd();
+    };
 
     _resumableState = {
         ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable:
@@ -1218,6 +1221,12 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (utterance as any).r2_cancel = false;
     setTimeout(() => {
+        // note that isSkippable===true never reaches into a ttsQueueItem because we eject at compilation time instead of runtime / playback:
+        // if (win.READIUM2.ttsSkippabilityEnabled && ttsQueueItem.item.isSkippable) {
+        //     onEnd();
+        // } else {
+        //     win.speechSynthesis.speak(utterance);
+        // }
         win.speechSynthesis.speak(utterance);
     }, 0);
 

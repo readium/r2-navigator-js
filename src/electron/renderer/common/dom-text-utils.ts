@@ -90,6 +90,7 @@ export interface ITtsQueueItem {
     combinedTextSentences: string[] | undefined;
     combinedTextSentencesRangeBegin: number[] | undefined;
     combinedTextSentencesRangeEnd: number[] | undefined;
+    // isSkippable: boolean | undefined;
 }
 
 export interface ITtsQueueItemReference {
@@ -284,9 +285,50 @@ export function findTtsQueueItemIndex(
 }
 
 // tslint:disable-next-line:max-line-length
-const putInElementStackTagNames = ["h1", "h2", "h3", "h4", "h5", "h6", "p", "th", "td", "caption", "li", "blockquote", "q", "dt", "dd", "figcaption", "div", "pre"];
+const _putInElementStackTagNames = ["h1", "h2", "h3", "h4", "h5", "h6", "p", "th", "td", "caption", "li", "blockquote", "q", "dt", "dd", "figcaption", "div", "pre"];
 // tslint:disable-next-line:max-line-length
-const doNotProcessDeepChildTagNames = ["svg", "img", "sup", "sub", "audio", "video", "source", "button", "canvas", "del", "dialog", "embed", "form", "head", "iframe", "meter", "noscript", "object", "s", "script", "select", "style", "textarea"]; // "code", "nav", "dl", "figure", "table", "ul", "ol"
+const _doNotProcessDeepChildTagNames = ["svg", "img", "sup", "sub", "audio", "video", "source", "button", "canvas", "del", "dialog", "embed", "form", "head", "iframe", "meter", "noscript", "object", "s", "script", "select", "style", "textarea"]; // "code", "nav", "dl", "figure", "table", "ul", "ol"
+
+// https://www.w3.org/TR/epub-33/#sec-behaviors-skip-escape
+// https://www.w3.org/TR/epub-ssv-11/
+const _skippables = [
+    "footnote",
+    "endnote",
+    "pagebreak",
+    //
+    "note",
+    "rearnote",
+    "sidebar",
+    "marginalia",
+    "annotation",
+    // "practice",
+    // "help",
+];
+// TODO: invisible page breaks but labeled (aria-label, title, etc.) can occur mid-sentence as span/etc. elements without descendant text content or with display:none (edge case or common practice?),
+// so ideally we should ignore the fragment and merge together the adjacent text(s) to form the utterance ...
+// but this is technically challenging in this algorithm (previous/next may have different language, etc.),
+
+const computeEpubTypes = (childElement: Element) => {
+
+    let epubType = childElement.getAttribute("epub:type");
+    if (!epubType) {
+        epubType = childElement.getAttributeNS("http://www.idpf.org/2007/ops", "type");
+        if (!epubType) { // TODO merge epub:type and role instead of fallback?
+            epubType = childElement.getAttribute("role");
+            if (epubType) {
+                epubType = epubType.replace(/doc-/g, "");
+            }
+        }
+    }
+    if (epubType) {
+        epubType = epubType.replace(/\s\s+/g, " ").trim();
+        if (epubType.length === 0) {
+            epubType = null;
+        }
+    }
+    const epubTypes = epubType ? epubType.split(" ") : [];
+    return epubTypes;
+};
 
 export function generateTtsQueue(rootElement: Element, splitSentences: boolean): ITtsQueueItem[] {
 
@@ -307,11 +349,27 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
             return;
         }
 
+        let current = ttsQueue[ttsQueue.length - 1];
+
+        // note that isSkippable===true never reaches into a ttsQueueItem because we eject at compilation time instead of runtime / playback:
+        // if (win.READIUM2.ttsSkippabilityEnabled && current && current.isSkippable) {
+        //     return;
+        // }
+
         const lang = textNode.parentElement ? getLanguage(textNode.parentElement) : undefined;
         const dir = textNode.parentElement ? getDirection(textNode.parentElement) : undefined;
 
-        let current = ttsQueue[ttsQueue.length - 1];
         if (!current || current.parentElement !== parentElement || current.lang !== lang || current.dir !== dir) {
+
+            // note that isSkippable===true never reaches into a ttsQueueItem because we eject at compilation time instead of runtime / playback:
+            if (win.READIUM2.ttsSkippabilityEnabled) {
+                const epubTypes = computeEpubTypes(parentElement);
+                const isSkippable = epubTypes.find((et) => _skippables.includes(et)) ? true : undefined;
+                if (isSkippable) {
+                    return;
+                }
+            }
+
             current = {
                 combinedText: "", // filled in later (see trySplitTexts())
                 combinedTextSentences: undefined, // filled in later, if text is further chunkable
@@ -321,9 +379,11 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                 lang,
                 parentElement,
                 textNodes: [],
+                // isSkippable: undefined,
             };
             ttsQueue.push(current);
         }
+
         current.textNodes.push(textNode);
     }
 
@@ -397,10 +457,20 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
             return;
         }
 
+        // note that isSkippable===true never reaches into a ttsQueueItem because we eject at compilation time instead of runtime / playback:
+        if (win.READIUM2.ttsSkippabilityEnabled) {
+            const epubTypes = computeEpubTypes(element);
+            const isSkippable = epubTypes.find((et) => _skippables.includes(et)) ? true : undefined;
+            if (isSkippable) {
+                first = false;
+                return;
+            }
+        }
+
         const tagNameLow = element.tagName ? element.tagName.toLowerCase() : undefined;
 
         const putInElementStack = first ||
-            tagNameLow && putInElementStackTagNames.includes(tagNameLow)
+            tagNameLow && _putInElementStackTagNames.includes(tagNameLow)
             // tslint:disable-next-line:max-line-length
             // element.matches("h1, h2, h3, h4, h5, h6, p, th, td, caption, li, blockquote, q, dt, dd, figcaption, div, pre")
             ;
@@ -419,14 +489,18 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
 
                     const hidden = isHidden(childElement);
 
-                    let epubType = childElement.getAttribute("epub:type");
-                    if (!epubType) {
-                        epubType = childElement.getAttributeNS("http://www.idpf.org/2007/ops", "type");
-                        if (!epubType) {
-                            epubType = childElement.getAttribute("role");
-                        }
+                    const epubTypes = computeEpubTypes(childElement);
+
+                    const isSkippable = epubTypes.find((et) => _skippables.includes(et)) ? true : undefined;
+
+                    // note that isSkippable===true never reaches into a ttsQueueItem because we eject at compilation time instead of runtime / playback:
+                    if (win.READIUM2.ttsSkippabilityEnabled && isSkippable) {
+                        continue; // next child node
                     }
-                    const isPageBreak = epubType ? epubType.indexOf("pagebreak") >= 0 : false; // this includes doc-*
+
+                    // const isPageBreak = epubType ? epubType.indexOf("pagebreak") >= 0 : false; // this includes doc-*
+                    const isPageBreak = epubTypes.find((et) => et === "pagebreak") ? true : false;
+
                     let pageBreakNeedsDeepDive = isPageBreak && !hidden;
                     if (pageBreakNeedsDeepDive) {
                         let altAttr = childElement.getAttribute("title");
@@ -445,6 +519,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                     lang,
                                     parentElement: childElement,
                                     textNodes: [],
+                                    // isSkippable,
                                 });
                             }
                         } else {
@@ -464,6 +539,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                         lang,
                                         parentElement: childElement,
                                         textNodes: [],
+                                        // isSkippable,
                                     });
                                 }
                             }
@@ -489,6 +565,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                     lang,
                                     parentElement: childElement,
                                     textNodes: [],
+                                    // isSkippable,
                                 });
                             }
                         } else {
@@ -508,6 +585,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                         lang,
                                         parentElement: childElement,
                                         textNodes: [],
+                                        // isSkippable,
                                     });
                                 }
                             }
@@ -524,7 +602,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                         !isLink &&
                         !isMathJax &&
                         !isMathML &&
-                        childTagNameLow && !doNotProcessDeepChildTagNames.includes(childTagNameLow)
+                        childTagNameLow && !_doNotProcessDeepChildTagNames.includes(childTagNameLow)
                         // tslint:disable-next-line:max-line-length
                         // !childElement.matches("svg, img, sup, sub, audio, video, source, button, canvas, del, dialog, embed, form, head, iframe, meter, noscript, object, s, script, select, style, textarea")
                         // code, nav, dl, figure, table, ul, ol
@@ -552,6 +630,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                         lang,
                                         parentElement: childElement,
                                         textNodes: [],
+                                        // isSkippable,
                                     });
                                 }
                             } else {
@@ -568,6 +647,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                         lang,
                                         parentElement: childElement,
                                         textNodes: [],
+                                        // isSkippable,
                                     });
                                 }
                             }
@@ -606,6 +686,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                             lang,
                                             parentElement: mathJaxEl ?? childElement,
                                             textNodes: [],
+                                            // isSkippable,
                                         });
                                     }
                                 } else if (mathJaxElMathML) {
@@ -624,6 +705,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                                 lang,
                                                 parentElement: mathJaxEl ?? childElement,
                                                 textNodes: [],
+                                                // isSkippable,
                                             });
                                         }
                                     } else {
@@ -640,6 +722,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                                 lang,
                                                 parentElement: mathJaxEl ?? childElement,
                                                 textNodes: [],
+                                                // isSkippable,
                                             });
                                         }
                                     }
@@ -663,6 +746,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                         lang,
                                         parentElement: childElement,
                                         textNodes: [],
+                                        // isSkippable,
                                     });
                                 }
                             } else {
@@ -681,6 +765,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                             lang,
                                             parentElement: childElement,
                                             textNodes: [],
+                                            // isSkippable,
                                         });
                                     }
                                 }
@@ -701,6 +786,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                         lang,
                                         parentElement: childElement,
                                         textNodes: [],
+                                        // isSkippable,
                                     });
                                 }
                             } else {
@@ -720,6 +806,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                                 lang,
                                                 parentElement: childElement,
                                                 textNodes: [],
+                                                // isSkippable,
                                             });
                                         }
                                         break;

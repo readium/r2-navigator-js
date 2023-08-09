@@ -39,7 +39,7 @@ import {
 import { mediaOverlaysHandleIpcMessage } from "./media-overlays";
 import {
     checkTtsState, ttsClickEnable, ttsHandleIpcMessage, ttsOverlayEnable, ttsPlaybackRate,
-    ttsSentenceDetectionEnable, ttsVoice,
+    ttsSentenceDetectionEnable, ttsSkippabilityEnable, ttsVoice,
 } from "./readaloud";
 import { adjustReadiumCssJsonMessageForFixedLayout, obtainReadiumCss } from "./readium-css";
 import { soundtrackHandleIpcMessage } from "./soundtrack";
@@ -346,6 +346,7 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             ttsPlaybackRate(win.READIUM2.ttsPlaybackRate);
             ttsClickEnable(win.READIUM2.ttsClickEnabled);
             ttsSentenceDetectionEnable(win.READIUM2.ttsSentenceDetectionEnabled);
+            ttsSkippabilityEnable(win.READIUM2.ttsSkippabilityEnabled);
             ttsOverlayEnable(win.READIUM2.ttsOverlayEnabled);
             // fixedLayoutZoomPercent(win.READIUM2.fixedLayoutZoomPercent);
         }
@@ -639,6 +640,7 @@ export function installNavigatorDOM(
         ttsClickEnabled: false,
         ttsOverlayEnabled: false,
         ttsPlaybackRate: 1,
+        ttsSkippabilityEnabled: false,
         ttsSentenceDetectionEnabled: true,
         ttsVoice: null,
     };
