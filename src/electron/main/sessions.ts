@@ -944,11 +944,9 @@ export async function clearSession(sess: Electron.Session, str: string): Promise
         origin: "*",
         quotas: [
             "temporary",
-            "persistent",
             "syncable",
         ],
         storages: [
-            "appcache",
             // "cookies",
             // "filesystem",
             // "indexdb",

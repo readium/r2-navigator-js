@@ -5,7 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { debounce } from "debounce";
+import * as debounce from "debounce";
 import * as debug_ from "debug";
 import { ipcRenderer } from "electron";
 import { isFocusable } from "tabbable";
@@ -3252,7 +3252,7 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
 // }, 300);
 const processXYDebouncedImmediate = debounce((x: number, y: number, reverse: boolean, userInteract?: boolean) => {
     processXYRaw(x, y, reverse, userInteract);
-}, 300, true);
+}, 300, { immediate: true });
 
 interface IProgressionData {
     percentRatio: number;
@@ -3902,7 +3902,7 @@ const notifyReadingLocationDebounced = debounce((userInteract?: boolean, ignoreM
 }, 250);
 const notifyReadingLocationDebouncedImmediate = debounce((userInteract?: boolean, ignoreMediaOverlays?: boolean) => {
     notifyReadingLocationRaw(userInteract, ignoreMediaOverlays);
-}, 250, true);
+}, 250, { immediate: true });
 
 if (!win.READIUM2.isAudio) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
