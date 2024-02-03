@@ -1213,10 +1213,12 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
             const scrollTopMax = vwm ?
                 (isRTL() ? -1 : 1) * (scrollElement.scrollWidth - win.document.documentElement.clientWidth) :
                 scrollElement.scrollHeight - win.document.documentElement.clientHeight;
+
             let offset = vwm ?
                 scrollElement.scrollLeft + (rect.left - (win.document.documentElement.clientWidth / 2)) :
                 scrollElement.scrollTop + (rect.top - (win.document.documentElement.clientHeight / 2));
-            if (isRTL()) {
+
+            if (vwm && isRTL()) {
                 if (offset < scrollTopMax) {
                     offset = scrollTopMax;
                 } else if (offset > 0) {
@@ -1362,6 +1364,8 @@ const scrollToHashRaw = (animate: boolean) => {
 
     const isPaged = isPaginated(win.document);
 
+    const vwm = isVerticalWritingMode();
+
     if (win.READIUM2.locationHashOverride) {
         // if (win.READIUM2.locationHashOverride === win.document.body) {
         //     notifyReadingLocationDebounced();
@@ -1392,7 +1396,7 @@ const scrollToHashRaw = (animate: boolean) => {
 
                 _ignoreScrollEvent = true;
                 if (isPaged) {
-                    if (isVerticalWritingMode()) {
+                    if (vwm) {
                         scrollElement.scrollLeft = 0;
                         scrollElement.scrollTop = maxScrollShift;
                     } else {
@@ -1404,7 +1408,7 @@ const scrollToHashRaw = (animate: boolean) => {
                         scrollElement.scrollTop = 0;
                     }
                 } else {
-                    if (isVerticalWritingMode()) {
+                    if (vwm) {
                         scrollElement.scrollLeft = (isRTL() ? -1 : 1) * maxScrollShift;
                         scrollElement.scrollTop = 0;
                     } else {
@@ -1419,10 +1423,10 @@ const scrollToHashRaw = (animate: boolean) => {
                 setTimeout(() => {
                     // relative to fixed window top-left corner
                     // const y = (isPaged ?
-                    //     (isVerticalWritingMode() ?
+                    //     (vwm ?
                     //         win.document.documentElement.offsetWidth :
                     //         win.document.documentElement.offsetHeight) :
-                    //     (isVerticalWritingMode() ?
+                    //     (vwm ?
                     //         win.document.documentElement.clientWidth :
                     //         win.document.documentElement.clientHeight))
                     // - 1;
@@ -1505,11 +1509,11 @@ const scrollToHashRaw = (animate: boolean) => {
                     const nUnits = isTwoPage ? Math.ceil(nColumns / 2) : nColumns;
                     const unitIndex = Math.floor(gotoProgression * nUnits);
 
-                    const unit = isVerticalWritingMode() ?
+                    const unit = vwm ?
                         win.document.documentElement.offsetHeight :
                         win.document.documentElement.offsetWidth;
 
-                    const scrollOffsetPotentiallyExcessive = isVerticalWritingMode() ?
+                    const scrollOffsetPotentiallyExcessive = vwm ?
                         (unitIndex * unit) :
                         ((isRTL() ? -1 : 1) * unitIndex * unit);
 
@@ -1520,7 +1524,7 @@ const scrollToHashRaw = (animate: boolean) => {
                         Math.min(Math.abs(scrollOffsetPotentiallyExcessive), maxScrollShift);
 
                     _ignoreScrollEvent = true;
-                    if (isVerticalWritingMode()) {
+                    if (vwm) {
                         scrollElement.scrollTop = scrollOffsetPaged;
                     } else {
                         scrollElement.scrollLeft = scrollOffsetPaged;
@@ -1544,7 +1548,7 @@ const scrollToHashRaw = (animate: boolean) => {
                 const scrollOffset = gotoProgression * maxScrollShift;
 
                 _ignoreScrollEvent = true;
-                if (isVerticalWritingMode()) {
+                if (vwm) {
                     scrollElement.scrollLeft = scrollOffset;
                 } else {
                     scrollElement.scrollTop = scrollOffset;
@@ -2759,6 +2763,8 @@ function loaded(forced: boolean) {
 
         const scrollElement = getScrollingElement(documant);
 
+        const vwm = isVerticalWritingMode();
+
         const goPREVIOUS = ev.deltaY < 0;
         if (!goPREVIOUS) { // goPREVIOUS && isRTL() || !goPREVIOUS && !isRTL()) { // right
 
@@ -2766,10 +2772,10 @@ function loaded(forced: boolean) {
             const maxScrollShiftTolerated = maxScrollShift - CSS_PIXEL_TOLERANCE;
 
             if (isPaged) {
-                const unit = isVerticalWritingMode() ?
+                const unit = vwm ?
                     win.document.documentElement.offsetHeight :
                     win.document.documentElement.offsetWidth;
-                let scrollElementOffset = Math.round(isVerticalWritingMode() ?
+                let scrollElementOffset = Math.round(vwm ?
                     scrollElement.scrollTop :
                     scrollElement.scrollLeft);
                 const isNegative = scrollElementOffset < 0;
@@ -2783,8 +2789,8 @@ function loaded(forced: boolean) {
                 } else if (partial >= (unit - CSS_PIXEL_TOLERANCE)) {
                     scrollElementOffset = (isNegative ? -1 : 1) * (integral + 1) * unit;
                 }
-                if (isVerticalWritingMode() && (scrollElementOffsetAbs >= maxScrollShiftTolerated) ||
-                    !isVerticalWritingMode() && (scrollElementOffsetAbs >= maxScrollShiftTolerated)) {
+                if (vwm && (scrollElementOffsetAbs >= maxScrollShiftTolerated) ||
+                    !vwm && (scrollElementOffsetAbs >= maxScrollShiftTolerated)) {
 
                     const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
                         direction: "LTR",
@@ -2794,8 +2800,8 @@ function loaded(forced: boolean) {
                     return;
                 }
             } else {
-                if (isVerticalWritingMode() && (Math.abs(scrollElement.scrollLeft) >= maxScrollShiftTolerated) ||
-                    !isVerticalWritingMode() && (Math.abs(scrollElement.scrollTop) >= maxScrollShiftTolerated)) {
+                if (vwm && (Math.abs(scrollElement.scrollLeft) >= maxScrollShiftTolerated) ||
+                    !vwm && (Math.abs(scrollElement.scrollTop) >= maxScrollShiftTolerated)) {
 
                     const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
                         direction: "LTR",
@@ -2807,10 +2813,10 @@ function loaded(forced: boolean) {
             }
         } else if (goPREVIOUS) { //  && !isRTL() || !goPREVIOUS && isRTL()) { // left
             if (isPaged) {
-                const unit = isVerticalWritingMode() ?
+                const unit = vwm ?
                     win.document.documentElement.offsetHeight :
                     win.document.documentElement.offsetWidth;
-                let scrollElementOffset = Math.round(isVerticalWritingMode() ?
+                let scrollElementOffset = Math.round(vwm ?
                     scrollElement.scrollTop :
                     scrollElement.scrollLeft);
                 const isNegative = scrollElementOffset < 0;
@@ -2824,8 +2830,8 @@ function loaded(forced: boolean) {
                 } else if (partial >= (unit - CSS_PIXEL_TOLERANCE)) {
                     scrollElementOffset = (isNegative ? -1 : 1) * (integral + 1) * unit;
                 }
-                if (isVerticalWritingMode() && (scrollElementOffsetAbs <= 0) ||
-                    !isVerticalWritingMode() && (scrollElementOffsetAbs <= 0)) {
+                if (vwm && (scrollElementOffsetAbs <= 0) ||
+                    !vwm && (scrollElementOffsetAbs <= 0)) {
 
                     const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
                         direction: "LTR",
@@ -2835,8 +2841,8 @@ function loaded(forced: boolean) {
                     return;
                 }
             } else {
-                if (isVerticalWritingMode() && (Math.abs(scrollElement.scrollLeft) <= 0) ||
-                    !isVerticalWritingMode() && (Math.abs(scrollElement.scrollTop) <= 0)) {
+                if (vwm && (Math.abs(scrollElement.scrollLeft) <= 0) ||
+                    !vwm && (Math.abs(scrollElement.scrollTop) <= 0)) {
 
                     const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
                         direction: "LTR",
@@ -3290,10 +3296,12 @@ export const computeProgressionData = (): IProgressionData => {
 
     const scrollElement = getScrollingElement(win.document);
 
+    const vwm = isVerticalWritingMode();
+
     let extraShift = 0;
     if (isPaged) {
         if (maxScrollShift > 0) {
-            if (isVerticalWritingMode()) {
+            if (vwm) {
                 progressionRatio = scrollElement.scrollTop / maxScrollShift;
             } else {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -3330,8 +3338,11 @@ export const computeProgressionData = (): IProgressionData => {
         currentColumn = Math.round(currentColumn);
     } else {
         if (maxScrollShift > 0) {
-            if (isVerticalWritingMode()) {
-                progressionRatio = ((isRTL() ? -1 : 1) * scrollElement.scrollLeft) / maxScrollShift;
+            if (vwm) {
+                // (isRTL() ? -1 : 1) * scrollElement.scrollLeft
+                // CSS quirk? scrollLeft should always be negative?!
+                // ... using abs() instead
+                progressionRatio = Math.abs(scrollElement.scrollLeft) / maxScrollShift;
             } else {
                 progressionRatio = scrollElement.scrollTop / maxScrollShift;
             }
@@ -3358,7 +3369,7 @@ export const computeProgressionData = (): IProgressionData => {
                 // console.log("##### columnDimension");
                 // console.log(columnDimension);
 
-                if (isVerticalWritingMode()) {
+                if (vwm) {
                     const rect = element.getBoundingClientRect();
                     offset = (curCol * scrollElement.scrollWidth) + rect.left +
                         (rect.top >= columnDimension ? scrollElement.scrollWidth : 0);
@@ -3432,7 +3443,7 @@ export const computeProgressionData = (): IProgressionData => {
                 // console.log(offset);
 
                 // includes whitespace beyond bottom/end of document, to fill the unnocupied remainder of the column
-                const totalDocumentDimension = ((isVerticalWritingMode() ? scrollElement.scrollWidth :
+                const totalDocumentDimension = ((vwm ? scrollElement.scrollWidth :
                     scrollElement.scrollHeight) * totalColumns);
                 // console.log("##### totalDocumentDimension");
                 // console.log(totalDocumentDimension);
@@ -3449,16 +3460,21 @@ export const computeProgressionData = (): IProgressionData => {
                 currentColumn = Math.floor(currentColumn);
             }
         } else {
-            const rect = element.getBoundingClientRect();
 
-            if (isVerticalWritingMode()) {
-                offset = ((isRTL() ? -1 : 1) * scrollElement.scrollLeft) + rect.left + (isRTL() ? rect.width : 0);
+            const rect = element.getBoundingClientRect();
+            if (vwm) {
+                offset = scrollElement.scrollLeft + rect.left;
             } else {
                 offset = scrollElement.scrollTop + rect.top;
             }
 
-            progressionRatio = offset /
-                (isVerticalWritingMode() ? scrollElement.scrollWidth : scrollElement.scrollHeight);
+            // (isRTL() ? -1 : 1) * offset (derived from scrollElement.scrollLeft)
+            // CSS quirk? scrollLeft should always be negative?!
+            // ... using abs() instead
+            progressionRatio =
+                (vwm ? Math.abs(offset - win.document.documentElement.clientWidth) : offset)
+                /
+                (vwm ? scrollElement.scrollWidth : scrollElement.scrollHeight);
         }
     }
 

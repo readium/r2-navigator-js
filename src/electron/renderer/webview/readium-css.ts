@@ -111,19 +111,21 @@ export const calculateMaxScrollShift = ():
 
     const scrollElement = getScrollingElement(win.document);
 
+    const vwm = isVerticalWritingMode();
+
     const maxScrollShift = isPaged ?
-        ((isVerticalWritingMode() ?
+        ((vwm ?
             (scrollElement.scrollHeight - win.document.documentElement.offsetHeight) :
             (scrollElement.scrollWidth - win.document.documentElement.offsetWidth))) :
-        ((isVerticalWritingMode() ?
+        ((vwm ?
             (scrollElement.scrollWidth - win.document.documentElement.clientWidth) :
             (scrollElement.scrollHeight - win.document.documentElement.clientHeight)));
 
     const maxScrollShiftAdjusted = isPaged ?
-        ((isVerticalWritingMode() ?
+        ((vwm ?
             maxScrollShift :
             (calculateDocumentColumnizedWidthAdjustedForTwoPageSpread() - win.document.documentElement.offsetWidth))) :
-        ((isVerticalWritingMode() ?
+        ((vwm ?
             maxScrollShift :
             maxScrollShift));
 
