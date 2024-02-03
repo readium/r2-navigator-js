@@ -11,6 +11,8 @@ export enum WebViewSlotEnum {
     right = "right",
 }
 
+export const CLASS_VWM = "r2-class-VWM";
+
 export const CLASS_PAGINATED = "r2-css-paginated";
 
 export const HIDE_CURSOR_CLASS = "r2-hideCursor";
@@ -906,9 +908,13 @@ We cannot completely disable "scroll" event (prevent default) because we need to
     /* display: block; */
 }
 
-:root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}),
-:root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}) {
+:root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}),
+:root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) {
     height: 100vh !important;
+}
+:root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM},
+:root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} {
+    width: 100vw !important;
 }
 
 :root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}),

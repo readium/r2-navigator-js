@@ -13,6 +13,7 @@ import { IwidthHeight } from "./fxl";
 import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
 import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "./sessions";
 import {
+    CLASS_VWM,
     CLASS_PAGINATED, ROOT_CLASS_FIXED_LAYOUT, ROOT_CLASS_INVISIBLE_MASK,
     ROOT_CLASS_INVISIBLE_MASK_REMOVED, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
     ROOT_CLASS_REDUCE_MOTION, WebViewSlotEnum, audioCssStyles, focusCssStyles, footnotesCssStyles,
@@ -138,6 +139,12 @@ export function isPaginated(documant: Document): boolean {
         documant.documentElement.classList.contains(CLASS_PAGINATED);
 }
 
+// see comments below for readiumCSSSet() isVerticalWritingMode and isRTL arguments
+// export function isVerticalWritingMode(documant: Document): boolean {
+//     return documant && documant.documentElement &&
+//         documant.documentElement.classList.contains(CLASS_VWM);
+// }
+
 // tslint:disable-next-line:max-line-length
 // https://github.com/readium/readium-css/blob/develop/docs/CSS12-user_prefs.md
 // tslint:disable-next-line:max-line-length
@@ -147,7 +154,8 @@ export function isPaginated(documant: Document): boolean {
 export function readiumCSSSet(
     documant: Document,
     messageJson: IEventPayload_R2_EVENT_READIUMCSS,
-    isVerticalWritingMode: boolean, isRTL: boolean) {
+    isVerticalWritingMode: boolean, isRTL: boolean, // obtained from live DOM getComputedStyle() see readium-css.ts (preload.ts computeVerticalRTL() / isVerticalWritingMode() and re-call to readiumCSS() ), otherwise from statically from dir and land in readiumCssTransformHtml() see here
+) {
 
     if (!messageJson) {
         return;
@@ -220,6 +228,11 @@ export function readiumCSSSet(
         // docElement.classList.remove(CSS_CLASS_DARK_THEME);
 
         return;
+    }
+
+    if (isVerticalWritingMode) {
+        docElement.classList.add(CLASS_VWM);
+        setCSS.paged = false; // force disabled column pagination (too many issues)
     }
 
     if (!docElement.hasAttribute("data-readiumcss")) {
@@ -434,6 +447,7 @@ export function readiumCSSSet(
 
     const isCJK = false; // TODO, lang tag?
     if (isVerticalWritingMode || (isRTL || isCJK)) {
+
         docElement.style.removeProperty("--USER__bodyHyphens");
 
         docElement.style.removeProperty("--USER__wordSpacing");
