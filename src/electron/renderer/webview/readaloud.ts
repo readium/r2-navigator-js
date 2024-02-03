@@ -1306,8 +1306,8 @@ function startTTSSession(
     tabindex="0" autofocus="autofocus"></div>
 ${win.READIUM2.ttsOverlayEnabled ?
             `
-<button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}" title="previous"><span>&#9668;</span></button>
-<button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}" title="next"><span>&#9658;</span></button>
+<button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}" title="${isRTL() ? "next" : "previous"}"><span>&#9668;</span></button>
+<button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}" title="${isRTL() ? "previous" : "next"}"><span>&#9658;</span></button>
 <input id="${TTS_ID_SLIDER}" type="range" min="0" max="${ttsQueueLength - 1}" value="0"
     ${isRTL() ? "dir=\"rtl\"" : "dir=\"ltr\""}  title="progress"/>
 `
