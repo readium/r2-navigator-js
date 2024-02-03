@@ -469,6 +469,8 @@ function computeVisibility_(element: Element, domRect: DOMRect | undefined): boo
 
     const scrollElement = getScrollingElement(win.document);
 
+    const vwm = isVerticalWritingMode();
+
     if (!isPaginated(win.document)) { // scroll
 
         const rect = domRect || element.getBoundingClientRect();
@@ -486,19 +488,27 @@ function computeVisibility_(element: Element, domRect: DOMRect | undefined): boo
         // const progressionRatio = offset /
         //     (isVerticalWritingMode() ? scrollElement.scrollWidth : scrollElement.scrollHeight);
 
-        // TODO: vertical writing mode
-        if (rect.top >= 0 &&
-            // (rect.top + rect.height) >= 0 &&
-            rect.top <= win.document.documentElement.clientHeight) {
-            return true;
+        if (vwm) {
+            if (rect.left >= 0 &&
+                // (rect.left + rect.width) >= 0 &&
+                rect.left <= win.document.documentElement.clientWidth) {
+                return true;
+            }
+        } else {
+            if (rect.top >= 0 &&
+                // (rect.top + rect.height) >= 0 &&
+                rect.top <= win.document.documentElement.clientHeight) {
+                return true;
+            }
         }
+
         // tslint:disable-next-line:max-line-length
         // debug(`computeVisibility_ FALSE: clientRect TOP: ${rect.top} -- win.document.documentElement.clientHeight: ${win.document.documentElement.clientHeight}`);
         return false;
     }
 
     // TODO: vertical writing mode
-    if (isVerticalWritingMode()) {
+    if (vwm) {
         return false;
     }
 
