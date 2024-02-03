@@ -456,7 +456,8 @@ export function readiumCSSSet(
 
         if (isVerticalWritingMode || isCJK) {
             if (isVerticalWritingMode) {
-                docElement.style.removeProperty("--USER__colCount");
+                // docElement.style.removeProperty("--USER__colCount");
+                docElement.style.setProperty("--USER__colCount", "1"); // force single page solves layout issues
             }
 
             docElement.style.removeProperty("--USER__paraIndent");

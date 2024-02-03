@@ -861,8 +861,8 @@ no new stacking context, otherwise massive performance degradation with CSS Colu
 :root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) {
     overflow: visible !important;
 }
-:root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body,
-:root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body {
+:root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body,
+:root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body {
     /*
     Electron v19 --> v21 breaking change :(
     ("hidden" is now "clip")
@@ -871,6 +871,17 @@ no new stacking context, otherwise massive performance degradation with CSS Colu
     */
     overflow-x: clip !important;
     overflow-y: visible !important;
+}
+:root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body,
+:root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body {
+    /*
+    Electron v19 --> v21 breaking change :(
+    ("hidden" is now "clip")
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    */
+    overflow-x: visible !important;
+    overflow-y: clip !important;
 }
 
 /*
