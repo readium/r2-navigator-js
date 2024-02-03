@@ -893,26 +893,26 @@ We cannot completely disable "scroll" event (prevent default) because we need to
     margin: 0 !important;
 }
 
-:root.${exports.CLASS_PAGINATED} > body,
-:root:not(.${exports.CLASS_PAGINATED}) > body,
-:root.${exports.ROOT_CLASS_FIXED_LAYOUT} > body,
-:root:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body,
-:root[style].${exports.CLASS_PAGINATED} > body,
-:root[style]:not(.${exports.CLASS_PAGINATED}) > body,
-:root[style].${exports.ROOT_CLASS_FIXED_LAYOUT} > body,
-:root[style]:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body {
+:root.${CLASS_PAGINATED} > body,
+:root:not(.${CLASS_PAGINATED}) > body,
+:root.${ROOT_CLASS_FIXED_LAYOUT} > body,
+:root:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body,
+:root[style].${CLASS_PAGINATED} > body,
+:root[style]:not(.${CLASS_PAGINATED}) > body,
+:root[style].${ROOT_CLASS_FIXED_LAYOUT} > body,
+:root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body {
     /* see ensureHighlightsContainer() */
     position: relative !important;
     /* display: block; */
 }
 
-:root[style]:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}),
-:root:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) {
+:root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}),
+:root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}) {
     height: 100vh !important;
 }
 
-:root[style].${exports.CLASS_PAGINATED}:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}),
-:root.${exports.CLASS_PAGINATED}:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) {
+:root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}),
+:root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) {
     /* display: block; */
     /*
     Chrome Electron 19 - Chrome v102 CSS regression bug!
@@ -921,12 +921,12 @@ We cannot completely disable "scroll" event (prevent default) because we need to
     (hacky, but works without regressions or layout shift)
     */
 }
-:root[style]:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body,
-:root:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body {
+:root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body,
+:root:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body {
     min-height: inherit;
 }
-:root[style]:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body,
-:root:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body {
+:root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}) > body,
+:root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}) > body {
     height: inherit;
 }
 
