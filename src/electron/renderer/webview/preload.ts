@@ -1557,9 +1557,13 @@ const scrollToHashRaw = (animate: boolean) => {
                 // !isPaged
                 const scrollOffset = gotoProgression * maxScrollShift;
 
+                // console.log(`DEBUGxx maxScrollShift: ${maxScrollShift}`);
+                // console.log(`DEBUGxx gotoProgression: ${gotoProgression}`);
+                // console.log(`DEBUGxx scrollOffset: ${scrollOffset}`);
+
                 _ignoreScrollEvent = true;
                 if (vwm) {
-                    scrollElement.scrollLeft = scrollOffset;
+                    scrollElement.scrollLeft = (isRTL() ? -1 : 1) * scrollOffset;
                 } else {
                     scrollElement.scrollTop = scrollOffset;
                 }
@@ -1571,7 +1575,10 @@ const scrollToHashRaw = (animate: boolean) => {
                 resetLocationHashOverrideInfo();
                 focusElement(win.READIUM2.locationHashOverride);
 
-                processXYRaw(0, 0, false);
+                // maxScrollShift === scrollElement.scrollWidth - win.document.documentElement.clientWidth
+                // * gotoProgression ?
+                const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
+                processXYRaw(x, 0, false);
 
                 if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
                     notifyReadingLocationDebounced();
