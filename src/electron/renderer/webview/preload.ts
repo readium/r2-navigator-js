@@ -861,16 +861,18 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
         _lastAnimState.object[_lastAnimState.property] = _lastAnimState.destVal;
     }
 
+    const vwm = isVerticalWritingMode();
+
     if (!goPREVIOUS) { // goPREVIOUS && isRTL() || !goPREVIOUS && !isRTL()) { // right
 
         const maxScrollShift = calculateMaxScrollShift().maxScrollShift;
         const maxScrollShiftTolerated = maxScrollShift - CSS_PIXEL_TOLERANCE;
 
         if (isPaged) {
-            const unit = isVerticalWritingMode() ?
+            const unit = vwm ?
                 win.document.documentElement.offsetHeight :
                 win.document.documentElement.offsetWidth;
-            let scrollElementOffset = Math.round(isVerticalWritingMode() ?
+            let scrollElementOffset = Math.round(vwm ?
                 scrollElement.scrollTop :
                 scrollElement.scrollLeft);
             const isNegative = scrollElementOffset < 0;
@@ -884,10 +886,10 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
             } else if (partial >= (unit - CSS_PIXEL_TOLERANCE)) {
                 scrollElementOffset = (isNegative ? -1 : 1) * (integral + 1) * unit;
             }
-            if (isVerticalWritingMode() && (scrollElementOffsetAbs < maxScrollShiftTolerated) ||
-                !isVerticalWritingMode() && (scrollElementOffsetAbs < maxScrollShiftTolerated)) {
+            if (vwm && (scrollElementOffsetAbs < maxScrollShiftTolerated) ||
+                !vwm && (scrollElementOffsetAbs < maxScrollShiftTolerated)) {
 
-                const scrollOffsetPotentiallyExcessive_ = isVerticalWritingMode() ?
+                const scrollOffsetPotentiallyExcessive_ = vwm ?
                     (scrollElementOffset + unit) :
                     (scrollElementOffset + (isRTL() ? -1 : 1) * unit);
                 // now snap (just in case):
@@ -908,7 +910,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     Math.min(Math.abs(scrollOffsetPotentiallyExcessive), maxScrollShift);
 
                 const targetObj = scrollElement;
-                const targetProp = isVerticalWritingMode() ? "scrollTop" : "scrollLeft";
+                const targetProp = vwm ? "scrollTop" : "scrollLeft";
                 if (reduceMotion) {
                     _lastAnimState = undefined;
                     targetObj[targetProp] = scrollOffset;
@@ -920,7 +922,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     // (targetObj as HTMLElement).style.transition =
                     //     `transform ${animationTime}ms ease-in-out 0s`;
                     // (targetObj as HTMLElement).style.transform =
-                    //     isVerticalWritingMode() ?
+                    //     vwm ?
                     //     `translateY(${unit}px)` :
                     //     `translateX(${(isRTL() ? -1 : 1) * unit}px)`;
                     // setTimeout(() => {
@@ -950,14 +952,14 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                 return;
             }
         } else {
-            if (isVerticalWritingMode() && (Math.abs(scrollElement.scrollLeft) < maxScrollShiftTolerated) ||
-                !isVerticalWritingMode() && (Math.abs(scrollElement.scrollTop) < maxScrollShiftTolerated)) {
-                const newVal = isVerticalWritingMode() ?
+            if (vwm && (Math.abs(scrollElement.scrollLeft) < maxScrollShiftTolerated) ||
+                !vwm && (Math.abs(scrollElement.scrollTop) < maxScrollShiftTolerated)) {
+                const newVal = vwm ?
                     (scrollElement.scrollLeft + (isRTL() ? -1 : 1) * win.document.documentElement.clientWidth) :
                     (scrollElement.scrollTop + win.document.documentElement.clientHeight);
 
                 const targetObj = scrollElement;
-                const targetProp = isVerticalWritingMode() ? "scrollLeft" : "scrollTop";
+                const targetProp = vwm ? "scrollLeft" : "scrollTop";
                 if (reduceMotion) {
                     _lastAnimState = undefined;
                     targetObj[targetProp] = newVal;
@@ -987,10 +989,10 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
         }
     } else if (goPREVIOUS) { //  && !isRTL() || !goPREVIOUS && isRTL()) { // left
         if (isPaged) {
-            const unit = isVerticalWritingMode() ?
+            const unit = vwm ?
                 win.document.documentElement.offsetHeight :
                 win.document.documentElement.offsetWidth;
-            let scrollElementOffset = Math.round(isVerticalWritingMode() ?
+            let scrollElementOffset = Math.round(vwm ?
                 scrollElement.scrollTop :
                 scrollElement.scrollLeft);
             const isNegative = scrollElementOffset < 0;
@@ -1004,10 +1006,10 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
             } else if (partial >= (unit - CSS_PIXEL_TOLERANCE)) {
                 scrollElementOffset = (isNegative ? -1 : 1) * (integral + 1) * unit;
             }
-            if (isVerticalWritingMode() && (scrollElementOffsetAbs > 0) ||
-                !isVerticalWritingMode() && (scrollElementOffsetAbs > 0)) {
+            if (vwm && (scrollElementOffsetAbs > 0) ||
+                !vwm && (scrollElementOffsetAbs > 0)) {
 
-                const scrollOffset_ = isVerticalWritingMode() ?
+                const scrollOffset_ = vwm ?
                     (scrollElementOffset - unit) :
                     (scrollElementOffset - (isRTL() ? -1 : 1) * unit);
                 // now snap (just in case):
@@ -1023,7 +1025,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                 ensureTwoPageSpreadWithOddColumnsIsOffset(scrollOffset, 0);
 
                 const targetObj = scrollElement;
-                const targetProp = isVerticalWritingMode() ? "scrollTop" : "scrollLeft";
+                const targetProp = vwm ? "scrollTop" : "scrollLeft";
                 if (reduceMotion) {
                     _lastAnimState = undefined;
                     targetObj[targetProp] = scrollOffset;
@@ -1051,14 +1053,14 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                 return;
             }
         } else {
-            if (isVerticalWritingMode() && (Math.abs(scrollElement.scrollLeft) > 0) ||
-                !isVerticalWritingMode() && (Math.abs(scrollElement.scrollTop) > 0)) {
-                const newVal = isVerticalWritingMode() ?
+            if (vwm && (Math.abs(scrollElement.scrollLeft) > 0) ||
+                !vwm && (Math.abs(scrollElement.scrollTop) > 0)) {
+                const newVal = vwm ?
                     (scrollElement.scrollLeft - (isRTL() ? -1 : 1) * win.document.documentElement.clientWidth) :
                     (scrollElement.scrollTop - win.document.documentElement.clientHeight);
 
                 const targetObj = scrollElement;
-                const targetProp = isVerticalWritingMode() ? "scrollLeft" : "scrollTop";
+                const targetProp = vwm ? "scrollLeft" : "scrollTop";
                 if (reduceMotion) {
                     _lastAnimState = undefined;
                     targetObj[targetProp] = newVal;
@@ -1206,20 +1208,34 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
             const scrollElement = getScrollingElement(win.document);
             const rect = domRect || element.getBoundingClientRect();
             // calculateMaxScrollShift()
-            // TODO: vertical writing mode
-            const scrollTopMax = scrollElement.scrollHeight - win.document.documentElement.clientHeight;
-            let offset = scrollElement.scrollTop + (rect.top - (win.document.documentElement.clientHeight / 2));
-            if (offset > scrollTopMax) {
-                offset = scrollTopMax;
-            } else if (offset < 0) {
-                offset = 0;
+
+            const vwm = isVerticalWritingMode();
+            const scrollTopMax = vwm ?
+                (isRTL() ? -1 : 1) * (scrollElement.scrollWidth - win.document.documentElement.clientWidth) :
+                scrollElement.scrollHeight - win.document.documentElement.clientHeight;
+            let offset = vwm ?
+                scrollElement.scrollLeft + (rect.left - (win.document.documentElement.clientWidth / 2)) :
+                scrollElement.scrollTop + (rect.top - (win.document.documentElement.clientHeight / 2));
+            if (isRTL()) {
+                if (offset < scrollTopMax) {
+                    offset = scrollTopMax;
+                } else if (offset > 0) {
+                    offset = 0;
+                }
+            } else {
+                if (offset > scrollTopMax) {
+                    offset = scrollTopMax;
+                } else if (offset < 0) {
+                    offset = 0;
+                }
             }
 
-            const diff = Math.abs(scrollElement.scrollTop - offset);
+            const diff = Math.abs((vwm ? scrollElement.scrollLeft : scrollElement.scrollTop) - offset);
             if (diff < 10) {
                 return; // prevents jittering
             }
 
+            const targetProp = vwm ? "scrollLeft" : "scrollTop";
             if (animate) {
                 const reduceMotion = win.document.documentElement.classList.contains(ROOT_CLASS_REDUCE_MOTION);
 
@@ -1230,7 +1246,6 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
 
                 // scrollElement.scrollTop = offset;
                 const targetObj = scrollElement;
-                const targetProp = "scrollTop";
                 if (reduceMotion) {
                     _lastAnimState2 = undefined;
                     targetObj[targetProp] = offset;
@@ -1267,7 +1282,7 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
                     );
                 }
             } else {
-                scrollElement.scrollTop = offset;
+                scrollElement[targetProp] = offset;
             }
 
             // element.scrollIntoView({
