@@ -8,6 +8,8 @@
 import * as debug_ from "debug";
 import * as util from "util";
 
+import { getCurrentReadingLocation } from "./location";
+
 import { TaJsonDeserialize } from "@r2-lcp-js/serializable";
 import { MediaOverlayNode } from "@r2-shared-js/models/media-overlay";
 import { Publication } from "@r2-shared-js/models/publication";
@@ -18,7 +20,7 @@ import {
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK, IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE, R2_EVENT_MEDIA_OVERLAY_STATE, MediaOverlaysStateEnum as MediaOverlaysStateEnum_,
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_MEDIA_OVERLAY_CLICK,
-    R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, R2_EVENT_MEDIA_OVERLAY_STARTSTOP,
+    R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, R2_EVENT_MEDIA_OVERLAY_STARTSTOP, IEventPayload_R2_EVENT_READING_LOCATION,
 } from "../common/events";
 import { handleLinkUrl, navLeftOrRight } from "./location";
 import { isRTL } from "./readium-css";
@@ -94,7 +96,54 @@ async function playMediaOverlays(
     isInteract: boolean) {
 
     if (IS_DEV) {
-        debug("playMediaOverlays()");
+        debug("playMediaOverlays() : " + textHref);
+        debug(JSON.stringify(textFragmentIDChain, null, 4));
+    }
+
+    const loc = getCurrentReadingLocation();
+    const locationHashOverrideInfo = _lastClickedNotification?.locationHashOverrideInfo;
+
+    if (!textFragmentIDChain) {
+        if (loc) {
+            if (IS_DEV) {
+                debug("playMediaOverlays() CURRENT LOCATOR");
+                debug(JSON.stringify(loc, null, 4));
+            }
+            if (textHref === loc.locator?.href) {
+                if (loc.locator.locations?.cssSelector) {
+                    debug("playMediaOverlays() CSS SELECTOR: " + loc.locator.locations.cssSelector);
+                    const hashI = loc.locator.locations.cssSelector.lastIndexOf("#");
+                    if (hashI >= 0) {
+                        const after = loc.locator.locations.cssSelector.substring(hashI + 1);
+                        if (after) {
+                            const spaceI = after.indexOf(" ");
+                            let hashID = after;
+                            if (spaceI > 0) {
+                                hashID = after.substring(0, spaceI);
+                            }
+                            debug("playMediaOverlays() CSS SELECTOR ID: " + hashID);
+                            // textFragmentIDChain = [hashID];
+                        }
+                    }
+                }
+                if (loc.locator.locations?.cfi) {
+                    debug("playMediaOverlays() CFI: " + loc.locator.locations.cfi);
+                    let arrayIDs: string[] = [];
+                    const regexpr = /\[([^\]]+)\]/g;
+                    const matches = loc.locator.locations.cfi.matchAll(regexpr);
+                    // debug("playMediaOverlays() CFI MATCHES: " + JSON.stringify(matches, null, 4));
+                    if (matches) {
+                        arrayIDs = Array.from(matches, (m) => m[1]);
+                    }
+                    // let match;
+                    // while (match = regexpr.exec(loc.locator.locations.cfi)) {
+                    //     arrayIDs.push(match[1]);
+                    // }
+                    debug("playMediaOverlays() CFI IDs: " + JSON.stringify(arrayIDs, null, 4));
+                    textFragmentIDChain = arrayIDs;
+                }
+            }
+        }
     }
 
     let textFragmentIDChain_: Array<string> | undefined | null = textFragmentIDChain ? textFragmentIDChain.filter((id) => id) as Array<string> : undefined;
@@ -102,14 +151,41 @@ async function playMediaOverlays(
         textFragmentIDChain_ = null;
     }
 
-    let moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, textFragmentIDChain_);
+    let moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, textFragmentIDChain_, false);
     if (!moTextAudioPair && (textFragmentIDChain_ || textFragmentIDChain_ === null && !isInteract)) {
-        if (IS_DEV) {
-            debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE ");
-            debug(JSON.stringify(textFragmentIDChain_, null, 4));
-            debug(JSON.stringify(rootMo, null, 4));
+        const followingElementIDs = loc?.followingElementIDs || locationHashOverrideInfo?.followingElementIDs;
+        if (followingElementIDs) {
+            if (IS_DEV) {
+                debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE TRY ... ");
+                debug(JSON.stringify(textFragmentIDChain_, null, 4));
+                debug(JSON.stringify(followingElementIDs, null, 4));
+            }
+            for (const id of followingElementIDs) {
+                moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, [id], false);
+                if (moTextAudioPair) {
+                    debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE FOUND: " + id);
+                    break;
+                }
+            }
         }
-        moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, undefined);
+        if (!moTextAudioPair) {
+            debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE FALLBACK...");
+            moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, textFragmentIDChain_, true);
+        }
+        // if (textFragmentIDChain) {
+        //     if (IS_DEV) {
+        //         debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE SKIP (jump back to body begin not desirable)");
+        //         debug(JSON.stringify(textFragmentIDChain, null, 4));
+        //         debug(JSON.stringify(textFragmentIDChain_, null, 4));
+        //     }
+        // } else {
+        //     if (IS_DEV) {
+        //         debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE ");
+        //         debug(JSON.stringify(textFragmentIDChain_, null, 4));
+        //         debug(JSON.stringify(rootMo, null, 4));
+        //     }
+        //     moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, undefined);
+        // }
     }
     if (moTextAudioPair) {
         if (moTextAudioPair.Audio) {
@@ -742,7 +818,8 @@ function findPreviousTextAudioPair(
 function findDepthFirstTextAudioPair(
     textHref: string,
     mo: MediaOverlayNode,
-    textFragmentIDChain: Array<string> | undefined | null):
+    textFragmentIDChain: Array<string> | undefined | null,
+    allowFallbackSeek: boolean):
     MediaOverlayNode | undefined | null { // returns null when skipped
 
     if (DEBUG_AUDIO) {
@@ -777,7 +854,8 @@ function findDepthFirstTextAudioPair(
         debug("isFragmentIDMatch: " + isFragmentIDMatch);
         debug("isTextUrlMatch: " + isTextUrlMatch);
     }
-    if (!mo.Children || !mo.Children.length) { // leaf === text/audio pair (SMIL par)
+    const isLeaf = mo.Children?.length;
+    if (!isLeaf) { // leaf === text/audio pair (SMIL par)
         if (DEBUG_AUDIO) {
             debug("findDepthFirstTextAudioPair() - leaf text/audio pair");
         }
@@ -811,7 +889,7 @@ function findDepthFirstTextAudioPair(
             debug("findDepthFirstTextAudioPair() - child");
             debug(JSON.stringify(child));
         }
-        const match = findDepthFirstTextAudioPair(textHref, child, frags);
+        const match = findDepthFirstTextAudioPair(textHref, child, frags, allowFallbackSeek);
         if (match === null) { // match, but skipped ... let's ignore the fragment IDs and just pick the next
             if (DEBUG_AUDIO) {
                 debug("findDepthFirstTextAudioPair() - child - match null (skip)");
@@ -826,7 +904,7 @@ function findDepthFirstTextAudioPair(
             return match;
         }
     }
-    if (isFragmentIDMatch) {
+    if (allowFallbackSeek && isFragmentIDMatch) {
         if (isSkip) {
             if (DEBUG_AUDIO) {
                 debug("findDepthFirstTextAudioPair() - post isFragmentIDMatch (skip)");
@@ -836,7 +914,7 @@ function findDepthFirstTextAudioPair(
             if (DEBUG_AUDIO) {
                 debug("findDepthFirstTextAudioPair() - post isFragmentIDMatch");
             }
-            const match = findDepthFirstTextAudioPair(textHref, mo, undefined);
+            const match = findDepthFirstTextAudioPair(textHref, mo, undefined, false);
             if (match) {
                 if (DEBUG_AUDIO) {
                     debug("findDepthFirstTextAudioPair() - post isFragmentIDMatch - match");
@@ -981,6 +1059,7 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
 }
 
 let _lastClickedNotification: {
+    locationHashOverrideInfo: IEventPayload_R2_EVENT_READING_LOCATION | undefined;
     textFragmentIDChain: Array<string | null> | undefined;
     link: Link | undefined;
 } | undefined;
@@ -1041,6 +1120,7 @@ export function mediaOverlaysHandleIpcMessage(
             _lastClickedNotification = {
                 link: activeWebView.READIUM2.link,
                 textFragmentIDChain: payload.textFragmentIDChain,
+                locationHashOverrideInfo: payload.locationHashOverrideInfo,
             };
 
             if ((payload.userInteract && _mediaOverlaysClickEnabled) ||
@@ -1130,9 +1210,12 @@ function moHighlight(href: string | undefined, id: string | undefined) {
 
         if (href) {
             if (id) {
+                // const loc = getCurrentReadingLocation();
+                // loc?.followingElementIDs
                 _lastClickedNotification = {
                     link: activeWebView.READIUM2.link,
                     textFragmentIDChain: [id],
+                    locationHashOverrideInfo: undefined,
                 };
             } else {
                 _lastClickedNotification = undefined;
@@ -1242,7 +1325,7 @@ export function mediaOverlaysInterrupt() {
 }
 export function mediaOverlaysStop(stayActive?: boolean) {
     if (IS_DEV) {
-        debug("mediaOverlaysStop()");
+        debug("mediaOverlaysStop() stayActive: " + stayActive);
     }
     if (!win.READIUM2 || !win.READIUM2.publication) {
         return;
@@ -1255,9 +1338,9 @@ export function mediaOverlaysStop(stayActive?: boolean) {
     _mediaOverlayRoot = undefined;
     _mediaOverlayTextAudioPair = undefined;
     _mediaOverlayTextId = undefined;
-    // _lastClickedNotification = undefined;
 
     if (!_mediaOverlayActive) {
+        _lastClickedNotification = undefined;
         mediaOverlaysStateSet(MediaOverlaysStateEnum_.STOPPED);
     }
 }

@@ -116,6 +116,8 @@ export interface IEventPayload_R2_EVENT_READING_LOCATION extends Locator {
     userInteract: boolean;
 
     secondWebViewHref: string | undefined;
+
+    followingElementIDs?: string[];
 }
 
 // in MAIN: browserWindow.webContents.send()
@@ -142,6 +144,7 @@ export interface IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK {
 export const R2_EVENT_MEDIA_OVERLAY_CLICK = "R2_EVENT_MEDIA_OVERLAY_CLICK";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK {
+    locationHashOverrideInfo: IEventPayload_R2_EVENT_READING_LOCATION | undefined;
     textFragmentIDChain: Array<string | null> | undefined;
     userInteract: boolean;
 }

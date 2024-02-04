@@ -2034,6 +2034,7 @@ function mediaOverlaysClickRaw(element: Element | undefined, userInteract: boole
         } while (curEl && curEl.nodeType === Node.ELEMENT_NODE);
     }
     const payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK = {
+        locationHashOverrideInfo: win.READIUM2.locationHashOverrideInfo,
         textFragmentIDChain,
         userInteract,
     };
@@ -2053,6 +2054,12 @@ const onScrollRaw = () => {
     const el = win.READIUM2.locationHashOverride; // || win.READIUM2.hashElement
     if (el && computeVisibility_(el, undefined)) {
         debug("onScrollRaw VISIBLE SKIP");
+        return;
+    }
+
+    // win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED)
+    if (win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING)) {
+        debug("onScrollRaw Media OVerlays PLAYING/PAUSED ... skip"); // also note that display:none pagebreaks may have sync MO!
         return;
     }
 
@@ -3825,6 +3832,7 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): { epubPage
     return nil;
 };
 
+let _elementsWithID: Array<Element> | undefined;
 const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: boolean) => {
     if (!win.READIUM2.locationHashOverride) {
         return;
@@ -3898,6 +3906,31 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
     const { epubPage, epubPageID } = findPrecedingAncestorSiblingEpubPageBreak(win.READIUM2.locationHashOverride);
     const headings = findPrecedingAncestorSiblingHeadings(win.READIUM2.locationHashOverride);
 
+    let followingElementIDs: string[] | undefined;
+    if (true // win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING) || win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED)
+    ) {
+        followingElementIDs = [];
+
+        if (!_elementsWithID) {
+            _elementsWithID = Array.from(win.document.querySelectorAll("*[id]"));
+        }
+
+        // for (let i = _elementsWithID.length - 1; i >= 0; i--) {
+        for (let i = 0; i < _elementsWithID.length; i++) {
+            const elementWithID = _elementsWithID[i];
+            const id = elementWithID.id || elementWithID.getAttribute("id");
+            if (!id) {
+                continue;
+            }
+
+            const c = win.READIUM2.locationHashOverride.compareDocumentPosition(elementWithID);
+            // tslint:disable-next-line: no-bitwise
+            if (c === 0 || (c & Node.DOCUMENT_POSITION_FOLLOWING) || (c & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+                followingElementIDs.push(id);
+            }
+        }
+    }
+
     const secondWebViewHref = win.READIUM2.urlQueryParams &&
         win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW] &&
         win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW].length > 1 &&
@@ -3930,6 +3963,10 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
         title: _docTitle,
         userInteract: userInteract ? true : false,
     };
+    if (followingElementIDs) {
+        win.READIUM2.locationHashOverrideInfo.followingElementIDs = followingElementIDs;
+    }
+
     const payload: IEventPayload_R2_EVENT_READING_LOCATION = win.READIUM2.locationHashOverrideInfo;
     ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION, payload);
 

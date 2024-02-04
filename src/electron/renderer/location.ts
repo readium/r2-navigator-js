@@ -1565,6 +1565,8 @@ export interface LocatorExtended {
     headings: Array<{ id: string | undefined, txt: string | undefined, level: number }> | undefined;
 
     secondWebViewHref: string | undefined;
+
+    followingElementIDs?: string[];
 }
 
 let _lastSavedReadingLocation: LocatorExtended | undefined;
@@ -1640,6 +1642,10 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
         selectionInfo: locator.selectionInfo,
         selectionIsNew: locator.selectionIsNew,
     };
+
+    if (locator.followingElementIDs) {
+        _lastSavedReadingLocation.followingElementIDs = locator.followingElementIDs;
+    }
 
     if (IS_DEV) {
         // debug(">->->", JSON.stringify(_lastSavedReadingLocation, null, "  "));
