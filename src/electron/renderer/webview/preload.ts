@@ -3833,6 +3833,36 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): { epubPage
 };
 
 let _elementsWithID: Array<Element> | undefined;
+const findFollowingDescendantSiblingElementsWithID = (el: Element): string[] | undefined => {
+    let followingElementIDs: string[] | undefined;
+    if (true // win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING) || win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED)
+    ) {
+        followingElementIDs = [];
+
+        if (!_elementsWithID) {
+            _elementsWithID = Array.from(win.document.querySelectorAll("*[id]"));
+        }
+
+        // for (let i = _elementsWithID.length - 1; i >= 0; i--) {
+        for (let i = 0; i < _elementsWithID.length; i++) {
+            const elementWithID = _elementsWithID[i];
+            const id = elementWithID.id || elementWithID.getAttribute("id");
+            if (!id) {
+                continue;
+            }
+
+            const c = el.compareDocumentPosition(elementWithID);
+            // tslint:disable-next-line: no-bitwise
+            if ( // c === 0 ||
+                (c & Node.DOCUMENT_POSITION_FOLLOWING) || (c & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+
+                followingElementIDs.push(id);
+            }
+        }
+    }
+    return followingElementIDs;
+};
+
 const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: boolean) => {
     if (!win.READIUM2.locationHashOverride) {
         return;
@@ -3905,31 +3935,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
 
     const { epubPage, epubPageID } = findPrecedingAncestorSiblingEpubPageBreak(win.READIUM2.locationHashOverride);
     const headings = findPrecedingAncestorSiblingHeadings(win.READIUM2.locationHashOverride);
-
-    let followingElementIDs: string[] | undefined;
-    if (true // win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING) || win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED)
-    ) {
-        followingElementIDs = [];
-
-        if (!_elementsWithID) {
-            _elementsWithID = Array.from(win.document.querySelectorAll("*[id]"));
-        }
-
-        // for (let i = _elementsWithID.length - 1; i >= 0; i--) {
-        for (let i = 0; i < _elementsWithID.length; i++) {
-            const elementWithID = _elementsWithID[i];
-            const id = elementWithID.id || elementWithID.getAttribute("id");
-            if (!id) {
-                continue;
-            }
-
-            const c = win.READIUM2.locationHashOverride.compareDocumentPosition(elementWithID);
-            // tslint:disable-next-line: no-bitwise
-            if (c === 0 || (c & Node.DOCUMENT_POSITION_FOLLOWING) || (c & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
-                followingElementIDs.push(id);
-            }
-        }
-    }
+    const followingElementIDs = findFollowingDescendantSiblingElementsWithID(win.READIUM2.locationHashOverride);
 
     const secondWebViewHref = win.READIUM2.urlQueryParams &&
         win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW] &&

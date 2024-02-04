@@ -112,6 +112,21 @@ function resetState(stop: boolean) {
     clearImageZoomOutlineDebounced();
 }
 
+function documentForward(node: Node): Node | null {
+    if (node.firstChild) {
+        return node.firstChild;
+    }
+
+    let n: Node | null = node;
+    while (!n.nextSibling) {
+        n = n.parentNode;
+        if (!n) {
+            return null;
+        }
+    }
+    return n.nextSibling;
+}
+
 export function ttsPlay(
     speed: number,
     voice: SpeechSynthesisVoice | null,
@@ -124,7 +139,6 @@ export function ttsPlay(
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: (val: number) => void,
 ) {
-
     ttsStop();
 
     let rootEl = rootElem;
@@ -141,9 +155,21 @@ export function ttsPlay(
 
     let ttsQueueIndex = -1;
     if (startElem) {
-        const idx = findTtsQueueItemIndex(ttsQueue, startElem, startTextNode, startTextNodeOffset, rootEl);
+        let idx = findTtsQueueItemIndex(ttsQueue, startElem, startTextNode, startTextNodeOffset, rootEl);
         if (idx >= 0) {
             ttsQueueIndex = idx;
+        } else {
+            let nextEl: Node | null = startElem;
+            while (nextEl = documentForward(nextEl)) {
+                if (nextEl.nodeType !== Node.ELEMENT_NODE) {
+                    continue;
+                }
+                idx = findTtsQueueItemIndex(ttsQueue, nextEl as Element, undefined, 0, rootEl);
+                if (idx >= 0) {
+                    ttsQueueIndex = idx;
+                    break;
+                }
+            }
         }
     }
     if (ttsQueueIndex < 0) {
