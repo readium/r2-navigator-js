@@ -96,7 +96,7 @@ async function playMediaOverlays(
     isInteract: boolean) {
 
     if (IS_DEV) {
-        debug("playMediaOverlays() : " + textHref);
+        debug("playMediaOverlays() : " + textHref + " //// " + decodeURIComponent(textHref));
         debug(JSON.stringify(textFragmentIDChain, null, 4));
     }
 
@@ -106,10 +106,11 @@ async function playMediaOverlays(
     if (!textFragmentIDChain) {
         if (loc) {
             if (IS_DEV) {
-                debug("playMediaOverlays() CURRENT LOCATOR");
+                debug("playMediaOverlays() CURRENT LOCATOR " + textHref + " -- " + loc.locator?.href);
                 debug(JSON.stringify(loc, null, 4));
             }
-            if (textHref === loc.locator?.href) {
+            const hrefUrlObj = new URL("https://dummy.com/" + loc.locator?.href);
+            if (textHref === hrefUrlObj.pathname.substr(1)) { // includes leading slash
                 if (loc.locator.locations?.cssSelector) {
                     debug("playMediaOverlays() CSS SELECTOR: " + loc.locator.locations.cssSelector);
                     const hashI = loc.locator.locations.cssSelector.lastIndexOf("#");

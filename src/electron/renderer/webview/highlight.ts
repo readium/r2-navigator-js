@@ -19,7 +19,7 @@ import {
 import { isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";
 import { IRectSimple, getClientRectsNoOverlap_ } from "../common/rect-utils";
-import { getScrollingElement } from "./readium-css";
+import { getScrollingElement, isVerticalWritingMode } from "./readium-css";
 import { convertRangeInfo } from "./selection";
 import { ReadiumElectronWebviewWindow } from "./state";
 
@@ -900,6 +900,8 @@ function createHighlightDom(
             }
 
             if (drawUnderline) {
+                // TODO isVerticalWritingMode()
+
                 // tslint:disable-next-line:max-line-length
                 const highlightAreaSVGLine = documant.createElementNS(SVG_XML_NAMESPACE, "line") as ISVGLineElementWithRect;
                 highlightAreaSVGLine.setAttribute("class", CLASS_HIGHLIGHT_AREA);
@@ -1080,7 +1082,8 @@ function createHighlightDom(
                     // box-shadow: inset 0 0 0 1px #600;
                 } else if (drawUnderline) {
                     // tslint:disable-next-line:max-line-length
-                    extra = `border-bottom: ${underlineThickness * scale}px solid ` +
+                    const side = isVerticalWritingMode() ? "left" : "bottom"; // isRTL()?
+                    extra = `border-${side}: ${underlineThickness * scale}px solid ` +
                         (USE_BLEND_MODE ?
                         // tslint:disable-next-line: max-line-length
                         `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important` :

@@ -473,6 +473,46 @@ function getCssSelector(element: Element): string {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function throttle(fn: (...argz: any[]) => any, time: number) {
+    let called = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let lastCalled: any[] | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const func = (...args: any[]) => {
+        if (!called) {
+            fn(...args);
+            called = true;
+            setTimeout(() => {
+                called = false;
+                if (lastCalled) {
+                    const argos = lastCalled;
+                    lastCalled = undefined;
+                    func(argos);
+                    // setTimeout(() => {
+                    // }, 0);
+                }
+            }, time);
+        } else {
+            lastCalled = args;
+        }
+    };
+    return func;
+}
+
+// const focusScrollImmediate =
+//     debounce((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => {
+//         if (_dialogState && _dialogState.focusScrollRaw) {
+//                 _dialogState.focusScrollRaw(el, doFocus, animate, domRect);
+//         }
+//     }, 500, { immediate: true });
+
+const focusScrollImmediate = throttle((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => {
+    if (_dialogState && _dialogState.focusScrollRaw) {
+        _dialogState.focusScrollRaw(el, doFocus, animate, domRect);
+    }
+}, 500);
+
 let _ttsQueueItemHighlightsSentence: Array<IHighlight | null> | undefined;
 let _ttsQueueItemHighlightsWord: Array<IHighlight | null> | undefined;
 
@@ -568,7 +608,8 @@ function wrapHighlightWord(
 
         if (_dialogState && _dialogState.focusScrollRaw) {
             const domRect = range.getBoundingClientRect();
-            _dialogState.focusScrollRaw(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect);
+            //_dialogState.focusScrollRaw
+            focusScrollImmediate(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect);
         }
 
         const tuple = convertRange(
@@ -711,7 +752,8 @@ function wrapHighlight(
 
             if (_dialogState && _dialogState.focusScrollRaw) {
                 const domRect = range.getBoundingClientRect();
-                _dialogState.focusScrollRaw(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect);
+                // _dialogState.focusScrollRaw
+                focusScrollImmediate(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect);
             }
 
             const tuple = convertRange(

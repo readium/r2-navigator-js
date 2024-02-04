@@ -925,6 +925,7 @@ We cannot completely disable "scroll" event (prevent default) because we need to
 }
 :root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM},
 :root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} {
+    overflow-y: clip !important;
     width: 100vw !important;
 }
 

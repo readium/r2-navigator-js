@@ -489,9 +489,9 @@ function computeVisibility_(element: Element, domRect: DOMRect | undefined): boo
         //     (isVerticalWritingMode() ? scrollElement.scrollWidth : scrollElement.scrollHeight);
 
         if (vwm) {
-            if (rect.left >= 0 &&
-                // (rect.left + rect.width) >= 0 &&
-                rect.left <= win.document.documentElement.clientWidth) {
+            if (
+                rect.left >= 0 &&
+                (rect.left + rect.width) <= win.document.documentElement.clientWidth) {
                 return true;
             }
         } else {
@@ -3853,9 +3853,8 @@ const findFollowingDescendantSiblingElementsWithID = (el: Element): string[] | u
 
             const c = el.compareDocumentPosition(elementWithID);
             // tslint:disable-next-line: no-bitwise
-            if ( // c === 0 ||
+            if (// c === 0 ||
                 (c & Node.DOCUMENT_POSITION_FOLLOWING) || (c & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
-
                 followingElementIDs.push(id);
             }
         }
