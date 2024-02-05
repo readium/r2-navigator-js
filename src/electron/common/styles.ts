@@ -20,6 +20,7 @@ export const HIDE_CURSOR_CLASS = "r2-hideCursor";
 export const ZERO_TRANSFORM_CLASS = "r2-zeroTransform";
 export const SKIP_LINK_ID = "r2-skip-link";
 export const LINK_TARGET_CLASS = "r2-link-target";
+export const LINK_TARGET_ALT_CLASS = "r2-link-target-alt";
 
 export const ROOT_CLASS_REDUCE_MOTION = "r2-reduce-motion";
 export const ROOT_CLASS_MATHJAX = "r2-mathjax";
@@ -1052,12 +1053,28 @@ export const targetCssStyles = `
 :root[style] *:target,
 :root *:target,
 */
-:root[style] *.${LINK_TARGET_CLASS},
-:root *.${LINK_TARGET_CLASS}
+:root[style] *.${LINK_TARGET_CLASS}:not(.${LINK_TARGET_ALT_CLASS}),
+:root *.${LINK_TARGET_CLASS}:not(.${LINK_TARGET_ALT_CLASS})
 {
     outline-color: green !important;
     outline-style: solid !important;
     outline-width: 2px !important;
+    outline-offset: 2px !important;
+
+    /*
+    animation-name: readium2ElectronAnimation_TARGET;
+    animation-duration: 3s;
+    animation-delay: 1s;
+    animation-fill-mode: forwards;
+    animation-timing-function: linear;
+    */
+}
+:root[style] *.${LINK_TARGET_CLASS}.${LINK_TARGET_ALT_CLASS},
+:root *.${LINK_TARGET_CLASS}.${LINK_TARGET_ALT_CLASS}
+{
+    outline-color: orange !important;
+    outline-style: solid !important;
+    outline-width: 1px !important;
     outline-offset: 2px !important;
 
     /*

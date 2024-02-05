@@ -50,7 +50,7 @@ import {
 } from "../../common/readium-css-inject";
 import { sameSelections } from "../../common/selection";
 import {
-    CLASS_PAGINATED, CSS_CLASS_NO_FOCUS_OUTLINE, HIDE_CURSOR_CLASS, LINK_TARGET_CLASS,
+    CLASS_PAGINATED, CSS_CLASS_NO_FOCUS_OUTLINE, HIDE_CURSOR_CLASS, LINK_TARGET_CLASS, LINK_TARGET_ALT_CLASS,
     POPOUTIMAGE_CONTAINER_ID, POPUP_DIALOG_CLASS, POPUP_DIALOG_CLASS_COLLAPSE,
     R2_MO_CLASS_ACTIVE, R2_MO_CLASS_ACTIVE_PLAYBACK, R2_MO_CLASS_PAUSED, R2_MO_CLASS_PLAYING, R2_MO_CLASS_STOPPED, ROOT_CLASS_INVISIBLE_MASK,
     ROOT_CLASS_INVISIBLE_MASK_REMOVED, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX,
@@ -491,13 +491,18 @@ function computeVisibility_(element: Element, domRect: DOMRect | undefined): boo
         if (vwm) {
             if (
                 rect.left >= 0 &&
-                (rect.left + rect.width) <= win.document.documentElement.clientWidth) {
+                // (rect.left + rect.width) >= 0 &&
+                (rect.left + rect.width) <= win.document.documentElement.clientWidth
+                // rect.left <= win.document.documentElement.clientWidth
+            ) {
                 return true;
             }
         } else {
             if (rect.top >= 0 &&
                 // (rect.top + rect.height) >= 0 &&
-                rect.top <= win.document.documentElement.clientHeight) {
+                (rect.top + rect.height) <= win.document.documentElement.clientHeight
+                // rect.top <= win.document.documentElement.clientHeight
+            ) {
                 return true;
             }
         }
@@ -963,8 +968,8 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                 return;
             }
         } else {
-            if (vwm && (Math.abs(scrollElement.scrollLeft) < maxScrollShiftTolerated) ||
-                !vwm && (Math.abs(scrollElement.scrollTop) < maxScrollShiftTolerated)) {
+            if (vwm && (Math.abs(scrollElement.scrollLeft) < (maxScrollShiftTolerated - CSS_PIXEL_TOLERANCE)) ||
+                !vwm && (Math.abs(scrollElement.scrollTop) < (maxScrollShiftTolerated - CSS_PIXEL_TOLERANCE))) {
                 const newVal = vwm ?
                     (scrollElement.scrollLeft + (isRTL() ? -1 : 1) * win.document.documentElement.clientWidth) :
                     (scrollElement.scrollTop + win.document.documentElement.clientHeight);
@@ -1064,8 +1069,8 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                 return;
             }
         } else {
-            if (vwm && (Math.abs(scrollElement.scrollLeft) > 0) ||
-                !vwm && (Math.abs(scrollElement.scrollTop) > 0)) {
+            if (vwm && (Math.abs(scrollElement.scrollLeft) > CSS_PIXEL_TOLERANCE) ||
+                !vwm && (Math.abs(scrollElement.scrollTop) > CSS_PIXEL_TOLERANCE)) {
                 const newVal = vwm ?
                     (scrollElement.scrollLeft - (isRTL() ? -1 : 1) * win.document.documentElement.clientWidth) :
                     (scrollElement.scrollTop - win.document.documentElement.clientHeight);
@@ -1138,6 +1143,59 @@ function focusElement(element: Element) {
     }
 }
 
+const tempLinkTargetOutline = (element: Element, time: number, alt: boolean) => {
+    let skip = false;
+    const targets = win.document.querySelectorAll(`.${LINK_TARGET_CLASS}`);
+    targets.forEach((t) => {
+        if (alt && !t.classList.contains(LINK_TARGET_ALT_CLASS)) {
+            skip = true;
+            return;
+        }
+        // (t as HTMLElement).style.animationPlayState = "paused";
+        t.classList.remove(LINK_TARGET_CLASS);
+        t.classList.remove(LINK_TARGET_ALT_CLASS);
+    });
+    if (skip) {
+        return;
+    }
+
+    (element as HTMLElement).style.animation = "none";
+    // trigger layout to restart animation
+    // tslint:disable-next-line: no-unused-expression
+    void (element as HTMLElement).offsetWidth;
+    (element as HTMLElement).style.animation = "";
+
+    element.classList.add(LINK_TARGET_CLASS);
+    if (alt) {
+        element.classList.add(LINK_TARGET_ALT_CLASS);
+    }
+
+    // (element as HTMLElement).style.animationPlayState = "running";
+
+    // if (!(element as any)._TargetAnimationEnd) {
+    //     (element as any)._TargetAnimationEnd = (ev: Event) => {
+    //         debug("ANIMATION END");
+    //         (ev.target as HTMLElement).style.animationPlayState = "paused";
+    //     };
+    //     element.addEventListener("animationEnd", (element as any)._TargetAnimationEnd);
+    // }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((element as any)._timeoutTargetClass) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        clearTimeout((element as any)._timeoutTargetClass);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (element as any)._timeoutTargetClass = undefined;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (element as any)._timeoutTargetClass = setTimeout(() => {
+        debug("ANIMATION TIMEOUT REMOVE");
+        // (element as HTMLElement).style.animationPlayState = "paused";
+        element.classList.remove(LINK_TARGET_CLASS);
+        element.classList.remove(LINK_TARGET_ALT_CLASS);
+    }, time);
+};
+
 let _lastAnimState2: IPropertyAnimationState | undefined;
 const animationTime2 = 400;
 
@@ -1169,42 +1227,7 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
             }
         }
 
-        const targets = win.document.querySelectorAll(`.${LINK_TARGET_CLASS}`);
-        targets.forEach((t) => {
-            // (t as HTMLElement).style.animationPlayState = "paused";
-            t.classList.remove(LINK_TARGET_CLASS);
-        });
-
-        (element as HTMLElement).style.animation = "none";
-        // trigger layout to restart animation
-        // tslint:disable-next-line: no-unused-expression
-        void (element as HTMLElement).offsetWidth;
-        (element as HTMLElement).style.animation = "";
-
-        element.classList.add(LINK_TARGET_CLASS);
-        // (element as HTMLElement).style.animationPlayState = "running";
-
-        // if (!(element as any)._TargetAnimationEnd) {
-        //     (element as any)._TargetAnimationEnd = (ev: Event) => {
-        //         debug("ANIMATION END");
-        //         (ev.target as HTMLElement).style.animationPlayState = "paused";
-        //     };
-        //     element.addEventListener("animationEnd", (element as any)._TargetAnimationEnd);
-        // }
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((element as any)._timeoutTargetClass) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            clearTimeout((element as any)._timeoutTargetClass);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (element as any)._timeoutTargetClass = undefined;
-        }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (element as any)._timeoutTargetClass = setTimeout(() => {
-            debug("ANIMATION TIMEOUT REMOVE");
-            // (element as HTMLElement).style.animationPlayState = "paused";
-            element.classList.remove(LINK_TARGET_CLASS);
-        }, 2000);
+        tempLinkTargetOutline(element, 2000, false);
 
         if (!domRect) {
             focusElement(element);
@@ -1657,7 +1680,11 @@ function showHideContentMask(doHide: boolean, isFixedLayout: boolean | null) {
 }
 
 function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) {
-    scrollElementIntoView(el as HTMLElement, doFocus, animate, domRect);
+
+    const visible = win.READIUM2.isFixedLayout || isPaginated(win.document) || computeVisibility_(el as HTMLElement, domRect);
+    if (!visible) {
+        scrollElementIntoView(el as HTMLElement, doFocus, animate, domRect);
+    }
 
     if (win.READIUM2.locationHashOverride === (el as HTMLElement)) {
         return;
@@ -2055,16 +2082,21 @@ const onScrollRaw = () => {
         return;
     }
 
-    const el = win.READIUM2.locationHashOverride; // || win.READIUM2.hashElement
-    if (el && computeVisibility_(el, undefined)) {
-        debug("onScrollRaw VISIBLE SKIP");
-        return;
-    }
-
     // win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED)
     if (win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING)) {
         debug("onScrollRaw Media OVerlays PLAYING/PAUSED ... skip"); // also note that display:none pagebreaks may have sync MO!
         return;
+    }
+
+    if (!win.READIUM2.ttsClickEnabled &&
+        !win.document.documentElement.classList.contains(TTS_CLASS_PLAYING) &&
+        !win.document.documentElement.classList.contains(TTS_CLASS_PAUSED)) {
+
+        const el = win.READIUM2.locationHashOverride; // || win.READIUM2.hashElement
+        if (el && computeVisibility_(el, undefined)) {
+            debug("onScrollRaw VISIBLE SKIP");
+            return;
+        }
     }
 
     const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
@@ -3195,7 +3227,11 @@ const domDataFromPoint = (x: number, y: number): TDOMPointData => {
 // relative to fixed window top-left corner
 const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boolean) => {
 
+    debug("processXYRaw ENTRY");
+
+    // includes TTS!
     if (isPopupDialogOpen(win.document)) {
+        debug("processXYRaw isPopupDialogOpen SKIP");
         return;
     }
 
@@ -3270,9 +3306,22 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
             const visible = win.READIUM2.isFixedLayout ||
                 win.READIUM2.locationHashOverride === win.document.body ||
                 computeVisibility_(win.READIUM2.locationHashOverride, undefined);
+            // this logic exists because of TOC linking,
+            // to avoid reseting to first visible item ... but for page turns we need this!
             if (!visible) {
-
                 debug(".hashElement = 6");
+                // underscore special link will prioritise hashElement!
+                win.READIUM2.hashElement = userInteract ? domPointData.element : win.READIUM2.hashElement;
+                win.READIUM2.locationHashOverride = domPointData.element;
+            } else if (
+                win.READIUM2.hashElement !== win.READIUM2.locationHashOverride &&
+                (
+                win.READIUM2.ttsClickEnabled ||
+                win.document.documentElement.classList.contains(TTS_CLASS_PLAYING) ||
+                win.document.documentElement.classList.contains(TTS_CLASS_PAUSED)
+                )
+            ) {
+                debug(".hashElement = 8");
                 // underscore special link will prioritise hashElement!
                 win.READIUM2.hashElement = userInteract ? domPointData.element : win.READIUM2.hashElement;
                 win.READIUM2.locationHashOverride = domPointData.element;
@@ -3295,6 +3344,8 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
             el.setAttribute(readPosCssStylesAttr2, "processXYRaw");
         }
     }
+
+    debug("processXYRaw EXIT");
 };
 // const processXYDebounced = debounce((x: number, y: number, reverse: boolean, userInteract?: boolean) => {
 //     processXYRaw(x, y, reverse, userInteract);
@@ -3983,6 +4034,13 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
         mediaOverlaysClickRaw(win.READIUM2.locationHashOverride, userInteract ? true : false);
     }
 
+    if (
+        // !win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED) &&
+        !win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING)
+    ) {
+        tempLinkTargetOutline(win.READIUM2.locationHashOverride, 1000, true);
+    }
+
     if (win.READIUM2.DEBUG_VISUALS) {
         const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr4}]`);
         existings.forEach((existing) => {
@@ -4187,7 +4245,12 @@ if (!win.READIUM2.isAudio) {
                     // underscore special link will prioritise hashElement!
                     win.READIUM2.hashElement = targetEl;
                     win.READIUM2.locationHashOverride = targetEl;
-                    scrollElementIntoView(targetEl, false, true, undefined);
+
+                    const visible = win.READIUM2.isFixedLayout || isPaginated(win.document) || computeVisibility_(targetEl, undefined);
+                    if (!visible) {
+                        scrollElementIntoView(targetEl, false, true, undefined);
+                    }
+
                     scrollToHashDebounced.clear();
                     notifyReadingLocationRaw(false, true);
 
