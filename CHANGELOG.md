@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.2...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.14.3...develop
 
 Changes:
 * TODO
+
+# 1.14.3
+
+> Build environment: NodeJS `20.10.0`, NPM `10.2.5`
+
+Changes:
+* Fixed TTS and Media Overlays scrolling content / bad UX (also applies to text-only rendering). Now minimised viewport shifts and more reliable discovery of reading location (virtual click pointer into DOM "beginning" of visible viewport).
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.14.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.14.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.14.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.2...v1.14.3
 
 # 1.14.2
 
