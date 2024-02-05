@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.0...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.14.1...develop
 
 Changes:
 * TODO
+
+# 1.14.1
+
+> Build environment: NodeJS `20.10.0`, NPM `10.2.5`
+
+Changes:
+* Much improved support for Japanese Vertical Writing Mode and Right To Left direction
+* Fixed Media Overlays and TTS readaloud edge case bugs (failure to play or jumping back to begining) related to images without text, excluded elements like Ruby RT, unsynchronised text fragments, etc.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.14.1/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.14.1/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.14.1
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.0...v1.14.1
 
 # 1.14.0
 
