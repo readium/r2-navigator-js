@@ -67,7 +67,9 @@ function checkTtsStateRaw(wasStopped: boolean, wv: IReadiumElectronWebview) {
             _ttsAutoPlayTimeout = win.setTimeout(() => {
                 _ttsAutoPlayTimeout = undefined;
 
-                if (!_lastTTSWebView && wv.READIUM2.link?.Href) {
+                if (wv.READIUM2.link?.Href &&
+                    (!_lastTTSWebView ||
+                    (wasStopped && _lastTTSWebViewHref === wv.READIUM2.link?.Href))) {
 
                     _lastTTSWebView = wv;
                     _lastTTSWebViewHref = wv.READIUM2.link.Href;
