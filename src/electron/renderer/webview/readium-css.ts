@@ -17,6 +17,9 @@ import {
     POPOUTIMAGE_CONTAINER_ID, R2_MO_CLASS_PAUSED, R2_MO_CLASS_PLAYING, TTS_CLASS_PAUSED, TTS_CLASS_PLAYING,
 } from "../../common/styles";
 
+import { SKIP_LINK_ID } from "../../common/styles";
+import { ID_HIGHLIGHTS_CONTAINER } from "./highlight";
+
 const win = global.window as ReadiumElectronWebviewWindow;
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
@@ -243,6 +246,39 @@ export function computeVerticalRTL() {
             }
             if (prop && prop.indexOf("-rl") > 0) { // overrides direction above!
                 rtl = true;
+            }
+        }
+        let singleChild: Element | undefined;
+        let childEl = win.document.body.firstElementChild;
+        while (childEl) {
+            if (singleChild) {
+                singleChild = undefined;
+                break;
+            }
+            const id = childEl.id || childEl.getAttribute("id");
+            if (id === SKIP_LINK_ID || id === ID_HIGHLIGHTS_CONTAINER) {
+                continue;
+            }
+            singleChild = childEl;
+            childEl = childEl.nextElementSibling;
+        }
+        if (singleChild) {
+            const singleChildStyle = win.getComputedStyle(singleChild);
+            if (singleChildStyle) {
+                let prop = singleChildStyle.getPropertyValue("direction");
+                if (prop && prop.indexOf("rtl") >= 0) {
+                    rtl = true;
+                }
+                prop = singleChildStyle.getPropertyValue("writing-mode");
+                if (!prop) {
+                    prop = singleChildStyle.getPropertyValue("-epub-writing-mode");
+                }
+                if (prop && prop.indexOf("vertical") >= 0) {
+                    vertical = true;
+                }
+                if (prop && prop.indexOf("-rl") > 0) { // overrides direction above!
+                    rtl = true;
+                }
             }
         }
     }
