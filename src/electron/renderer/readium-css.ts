@@ -14,7 +14,7 @@ const win = global.window as ReadiumElectronBrowserWindow;
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-export function isRTL(/* link: Link | undefined */): boolean {
+export function isRTL_PackageMeta(/* link: Link | undefined */): boolean {
     // if (link && link.Properties) {
     //     if (link.Properties.Direction === "rtl") {
     //         return true;

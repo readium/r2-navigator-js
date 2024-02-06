@@ -192,14 +192,14 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
 
     previousElement.addEventListener("click", () => {
         const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-            direction: "LTR",
+            // direction: "LTR",
             go: "PREVIOUS",
         };
         ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
     });
     nextElement.addEventListener("click", () => {
         const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-            direction: "LTR",
+            // direction: "LTR",
             go: "NEXT",
         };
         ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
@@ -234,7 +234,7 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
             } else {
                 if (audioElement.currentTime >= audioElement.duration - 0.5) {
                     const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-                        direction: "LTR",
+                        // direction: "LTR",
                         go: "NEXT",
                     };
                     ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
@@ -364,7 +364,7 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
         playPauseElement.classList.remove("pause");
         notifyPlaybackLocation();
         const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-            direction: "LTR",
+            // direction: "LTR",
             go: "NEXT",
         };
         ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);

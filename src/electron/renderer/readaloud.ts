@@ -18,8 +18,7 @@ import {
     R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED, R2_EVENT_TTS_OVERLAY_ENABLE,
     R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_TTS_SENTENCE_DETECT_ENABLE, R2_EVENT_TTS_VOICE,
 } from "../common/events";
-import { getCurrentReadingLocation, navLeftOrRight } from "./location";
-import { isRTL } from "./readium-css";
+import { getCurrentReadingLocation, navPreviousOrNext } from "./location";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 // import * as debug_ from "debug";
@@ -149,7 +148,9 @@ export function ttsHandleIpcMessage(
         //     _ttsListener(TTSStateEnum.STOPPED);
         // }
         // const nextSpine =
-        navLeftOrRight(isRTL(), true, true);
+        //
+        // navLeftOrRight(isRTL_PackageMeta(), true, true);
+        navPreviousOrNext(false, true, true);
         // if (nextSpine) {
         //     setTimeout(() => {
         //         playTtsOnReadingLocation(nextSpine.Href);

@@ -282,19 +282,22 @@ win.document.addEventListener(
             return;
         }
 
+        const rtl = isRTL();
         if (deltaX < 0) {
             // navLeftOrRight(!rtl);
+            // navPreviousOrNext(rtl)
             const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-                direction: "LTR",
-                go: "NEXT",
+                // direction: rtl ? "RTL" : "LTR",
+                go: rtl ? "PREVIOUS" : "NEXT",
                 nav: true,
             };
             ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
         } else {
             // navLeftOrRight(rtl);
+            // navPreviousOrNext(!rtl)
             const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-                direction: "LTR",
-                go: "PREVIOUS",
+                // direction: rtl ? "RTL" : "LTR",
+                go: rtl ? "NEXT" : "PREVIOUS",
                 nav: true,
             };
             ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
@@ -963,7 +966,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     );
                 }
                 payload.go = "";
-                payload.direction = "";
+                // payload.direction = "";
                 ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
                 return;
             }
@@ -998,7 +1001,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     );
                 }
                 payload.go = "";
-                payload.direction = "";
+                // payload.direction = "";
                 ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
                 return;
             }
@@ -1064,7 +1067,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     );
                 }
                 payload.go = "";
-                payload.direction = "";
+                // payload.direction = "";
                 ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
                 return;
             }
@@ -1099,7 +1102,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                     );
                 }
                 payload.go = "";
-                payload.direction = "";
+                // payload.direction = "";
                 ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
                 return;
             }
@@ -2871,7 +2874,7 @@ function loaded(forced: boolean) {
                     !vwm && (scrollElementOffsetAbs >= maxScrollShiftTolerated)) {
 
                     const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-                        direction: "LTR",
+                        // direction: "LTR",
                         go: "NEXT",
                     };
                     ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
@@ -2882,7 +2885,7 @@ function loaded(forced: boolean) {
                     !vwm && (Math.abs(scrollElement.scrollTop) >= maxScrollShiftTolerated)) {
 
                     const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-                        direction: "LTR",
+                        // direction: "LTR",
                         go: "NEXT",
                     };
                     ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
@@ -2912,7 +2915,7 @@ function loaded(forced: boolean) {
                     !vwm && (scrollElementOffsetAbs <= 0)) {
 
                     const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-                        direction: "LTR",
+                        // direction: "LTR",
                         go: "PREVIOUS",
                     };
                     ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
@@ -2923,7 +2926,7 @@ function loaded(forced: boolean) {
                     !vwm && (Math.abs(scrollElement.scrollTop) <= 0)) {
 
                     const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-                        direction: "LTR",
+                        // direction: "LTR",
                         go: "PREVIOUS",
                     };
                     ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);

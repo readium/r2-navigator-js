@@ -455,8 +455,9 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
                 clipboardInterceptor(payload);
             }
         } else if (event.channel === R2_EVENT_PAGE_TURN_RES &&
-            (event.args[0] as IEventPayload_R2_EVENT_PAGE_TURN).go === "" &&
-            (event.args[0] as IEventPayload_R2_EVENT_PAGE_TURN).direction === "") {
+            (event.args[0] as IEventPayload_R2_EVENT_PAGE_TURN).go === ""
+            // && (event.args[0] as IEventPayload_R2_EVENT_PAGE_TURN).direction === ""
+        ) {
             checkTtsState(wv as IReadiumElectronWebview);
         } else if (!highlightsHandleIpcMessage(event.channel, event.args, webview) &&
             !ttsHandleIpcMessage(event.channel, event.args, webview) &&

@@ -49,7 +49,7 @@ import {
 import { getEpubReadingSystemInfo } from "./epubReadingSystem";
 import { mediaOverlaysInterrupt } from "./media-overlays";
 import {
-    adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, isRTL, obtainReadiumCss,
+    adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, isRTL_PackageMeta, obtainReadiumCss,
 } from "./readium-css";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
@@ -146,8 +146,9 @@ export function locationHandleIpcMessage(
     } else if (eventChannel === R2_EVENT_PAGE_TURN_RES) {
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_PAGE_TURN;
         if (payload.nav) {
-            const rtl = payload.direction === "LTR" && payload.go === "PREVIOUS" || payload.direction === "RTL" && payload.go === "NEXT";
-            navLeftOrRight(!rtl);
+            // const left = payload.direction === "LTR" && payload.go === "PREVIOUS" || payload.direction === "RTL" && payload.go === "NEXT";
+            // navLeftOrRight(left);
+            navPreviousOrNext(payload.go === "PREVIOUS");
             return true;
         }
 
@@ -157,7 +158,7 @@ export function locationHandleIpcMessage(
             return true;
         }
 
-        const doNothing = payload.go === "" && payload.direction === "";
+        const doNothing = payload.go === ""; // && payload.direction === "";
         if (doNothing) {
             return true;
         }
@@ -325,8 +326,8 @@ export function shiftWebview(webview: IReadiumElectronWebview, offset: number, b
     }
 }
 
-export function navLeftOrRight(
-    left: boolean,
+export function navPreviousOrNext(
+    goPREVIOUS: boolean,
     spineNav?: boolean,
     ignorePageSpreadHandling?: boolean,
     ): Link | undefined {
@@ -341,13 +342,8 @@ export function navLeftOrRight(
         return undefined;
     }
 
-    // metadata-level RTL
-    const rtl = isRTL();
-
-    // const goPrevious = left && !rtl || !left && rtl;
-    const goPREVIOUS = left ? !rtl : rtl;
-
     const loc = _lastSavedReadingLocation; // getCurrentReadingLocation()
+
     let href = loc ? loc.locator.href : undefined;
 
     if (!ignorePageSpreadHandling) {
@@ -381,16 +377,17 @@ export function navLeftOrRight(
             return undefined;
         }
 
-        if (IS_DEV) {
-            // document-level RTL
-            const rtl_ = loc ? (loc.docInfo && loc.docInfo.isRightToLeft) : rtl;
-            if (rtl_ !== rtl) {
-                debug(`RTL differ?! METADATA ${rtl} vs. DOCUMENT ${rtl_}`);
-            }
-        }
+        // if (IS_DEV) {
+        //     // document-level RTL
+        //     const rtl_ = loc ? (loc.docInfo && loc.docInfo.isRightToLeft) : rtl;
+        //     if (rtl_ !== rtl) {
+        //         debug(`RTL differ?! METADATA ${rtl} vs. DOCUMENT ${rtl_}`);
+        //     }
+        // }
 
         // array boundaries overflow are checked further down ...
-        const offset = (left ? -1 : 1) * (rtl ? -1 : 1);
+        // const offset = (left ? -1 : 1) * (rtl ? -1 : 1);
+        const offset = goPREVIOUS ? -1 : 1;
 
         const currentSpineIndex = publication.Spine.findIndex((link) => {
             return link.Href === href;
@@ -429,8 +426,10 @@ export function navLeftOrRight(
     } else {
         mediaOverlaysInterrupt();
 
+        // const rtl = isRTL_PackageMeta() || (loc?.docInfo?.isRightToLeft ? true : false);
+
         const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-            direction: rtl ? "RTL" : "LTR",
+            // direction: rtl ? "RTL" : "LTR",
             go: goPREVIOUS ? "PREVIOUS" : "NEXT",
         };
         const activeWebView = win.READIUM2.getFirstOrSecondWebView();
@@ -444,6 +443,21 @@ export function navLeftOrRight(
     }
 
     return undefined;
+}
+export function navLeftOrRight(
+    left: boolean,
+    spineNav?: boolean,
+    ignorePageSpreadHandling?: boolean,
+    ): Link | undefined {
+
+    const loc = _lastSavedReadingLocation; // getCurrentReadingLocation()
+
+    const rtl = isRTL_PackageMeta() || (loc?.docInfo?.isRightToLeft ? true : false);
+
+    // const goPrevious = left && !rtl || !left && rtl;
+    const goPREVIOUS = left ? !rtl : rtl;
+
+    return navPreviousOrNext(goPREVIOUS, spineNav, ignorePageSpreadHandling);
 }
 
 export function handleLink(
@@ -777,7 +791,9 @@ function loadLink(
         linkIndex >= 0 &&
         isFixedLayout(pubLink)) {
 
-        const rtl = isRTL();
+        // const loc = _lastSavedReadingLocation; // getCurrentReadingLocation()
+        // const rtl = isRTL_PackageMeta() || (loc?.docInfo?.isRightToLeft ? true : false);
+        const rtl = isRTL_PackageMeta();
 
         const publicationSpreadNone = publication.Metadata?.Rendition?.Spread === SpreadEnum.None;
         const slotOfFirstPageInSpread = rtl ? PageEnum.Right : PageEnum.Left;

@@ -22,8 +22,7 @@ import {
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_MEDIA_OVERLAY_CLICK,
     R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, R2_EVENT_MEDIA_OVERLAY_STARTSTOP, IEventPayload_R2_EVENT_READING_LOCATION,
 } from "../common/events";
-import { handleLinkUrl, navLeftOrRight } from "./location";
-import { isRTL } from "./readium-css";
+import { handleLinkUrl, navPreviousOrNext } from "./location";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 // export enum MediaOverlaysStateEnum {
@@ -984,8 +983,9 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
 
             mediaOverlaysStop(true);
             // metadata-level RTL
-            const rtl = isRTL();
-            navLeftOrRight(rtl, true, true);
+            // const rtl = isRTL_PackageMeta();
+            // navLeftOrRight(rtl, true, true);
+            navPreviousOrNext(false, true, true);
         }, 600); // was 2 seconds, but transition too slow (user thinks playback is stalled)
 
         mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
@@ -1397,8 +1397,9 @@ export function mediaOverlaysPrevious() {
             }
             mediaOverlaysStop(true);
             // metadata-level RTL
-            const rtl = isRTL();
-            navLeftOrRight(!rtl, true, true);
+            // const rtl = isRTL_PackageMeta();
+            // navLeftOrRight(!rtl, true, true);
+            navPreviousOrNext(true, true, true);
         } else {
             let switchDoc = false;
             if (_mediaOverlayTextAudioPair.Text && previousTextAudioPair.Text) {
@@ -1446,8 +1447,9 @@ export function mediaOverlaysPrevious() {
         }
         mediaOverlaysStop(true);
         // metadata-level RTL
-        const rtl = isRTL();
-        navLeftOrRight(!rtl, true, true);
+        // const rtl = isRTL_PackageMeta();
+        // navLeftOrRight(!rtl, true, true);
+        navPreviousOrNext(true, true, true);
         // if (IS_DEV) {
         //     debug("mediaOverlaysPrevious() - mediaOverlaysPlay()");
         // }
@@ -1476,8 +1478,9 @@ export function mediaOverlaysNext(escape?: boolean) {
             }
             mediaOverlaysStop(true);
             // metadata-level RTL
-            const rtl = isRTL();
-            navLeftOrRight(rtl, true, true);
+            // const rtl = isRTL_PackageMeta();
+            // navLeftOrRight(rtl, true, true);
+            navPreviousOrNext(false, true, true);
         } else {
             let switchDoc = false;
             if (_mediaOverlayTextAudioPair.Text && nextTextAudioPair.Text) {
@@ -1525,8 +1528,9 @@ export function mediaOverlaysNext(escape?: boolean) {
         }
         mediaOverlaysStop(true);
         // metadata-level RTL
-        const rtl = isRTL();
-        navLeftOrRight(rtl, true, true);
+        // const rtl = isRTL_PackageMeta();
+        // navLeftOrRight(rtl, true, true);
+        navPreviousOrNext(false, true, true);
         // if (IS_DEV) {
         //     debug("mediaOverlaysNext() - mediaOverlaysPlay()");
         // }
