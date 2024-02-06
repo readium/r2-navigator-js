@@ -452,14 +452,18 @@ export function navLeftOrRight(
 
     const loc = _lastSavedReadingLocation; // getCurrentReadingLocation()
 
-    // const rtl = isRTL_PackageMeta() || (loc?.docInfo?.isRightToLeft ? true : false);
-    const rtl =
-        loc?.docInfo?.isFixedLayout ?
-        isRTL_PackageMeta() :
+    const rtl = isRTL_PackageMeta() ||
         (typeof loc?.docInfo?.isRightToLeft !== "undefined" ?
             loc.docInfo.isRightToLeft :
             isRTL_PackageMeta()
         );
+    // const rtl =
+    //     loc?.docInfo?.isFixedLayout ?
+    //     isRTL_PackageMeta() :
+    //     (typeof loc?.docInfo?.isRightToLeft !== "undefined" ?
+    //         loc.docInfo.isRightToLeft :
+    //         isRTL_PackageMeta()
+    //     );
 
     // const goPrevious = left && !rtl || !left && rtl;
     const goPREVIOUS = left ? !rtl : rtl;
