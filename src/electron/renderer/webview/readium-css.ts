@@ -200,6 +200,7 @@ export function isRTL(): boolean {
 // https://github.com/readium/readium-css/blob/develop/docs/CSS16-internationalization.md
 // tslint:disable-next-line:max-line-length
 // https://github.com/readium/readium-css/blob/develop/docs/CSS12-user_prefs.md#user-settings-can-be-language-specific
+// https://developer.mozilla.org/en-US/docs/Web/CSS/writing-mode
 export function computeVerticalRTL() {
 
     if (!win.document || !win.document.documentElement) {
@@ -211,44 +212,37 @@ export function computeVerticalRTL() {
 
     const htmlStyle = win.getComputedStyle(win.document.documentElement);
     if (htmlStyle) {
-        let prop = htmlStyle.getPropertyValue("writing-mode");
+        let prop = htmlStyle.getPropertyValue("direction");
+        if (prop && prop.indexOf("rtl") >= 0) {
+            rtl = true;
+        }
+        prop = htmlStyle.getPropertyValue("writing-mode");
         if (!prop) {
             prop = htmlStyle.getPropertyValue("-epub-writing-mode");
         }
         if (prop && prop.indexOf("vertical") >= 0) {
             vertical = true;
         }
-        if (prop && prop.indexOf("-rl") > 0) {
+        if (prop && prop.indexOf("-rl") > 0) { // overrides direction above!
             rtl = true;
         }
-        if (!rtl) {
-            prop = htmlStyle.getPropertyValue("direction");
+    }
+    if (win.document.body) {
+        const bodyStyle = win.getComputedStyle(win.document.body);
+        if (bodyStyle) {
+            let prop = bodyStyle.getPropertyValue("direction");
             if (prop && prop.indexOf("rtl") >= 0) {
                 rtl = true;
             }
-        }
-    }
-    if ((!vertical || !rtl) && win.document.body) {
-        const bodyStyle = win.getComputedStyle(win.document.body);
-        if (bodyStyle) {
-            let prop: string;
-            if (!vertical) {
-                prop = bodyStyle.getPropertyValue("writing-mode");
-                if (!prop) {
-                    prop = bodyStyle.getPropertyValue("-epub-writing-mode");
-                }
-                if (prop && prop.indexOf("vertical") >= 0) {
-                    vertical = true;
-                }
-                if (prop && prop.indexOf("-rl") > 0) {
-                    rtl = true;
-                }
+            prop = bodyStyle.getPropertyValue("writing-mode");
+            if (!prop) {
+                prop = bodyStyle.getPropertyValue("-epub-writing-mode");
             }
-            if (!rtl) {
-                prop = bodyStyle.getPropertyValue("direction");
-                if (prop && prop.indexOf("rtl") >= 0) {
-                    rtl = true;
-                }
+            if (prop && prop.indexOf("vertical") >= 0) {
+                vertical = true;
+            }
+            if (prop && prop.indexOf("-rl") > 0) { // overrides direction above!
+                rtl = true;
             }
         }
     }
