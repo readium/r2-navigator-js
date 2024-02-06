@@ -2227,7 +2227,6 @@ function loaded(forced: boolean) {
     }
 
     win.document.documentElement.addEventListener("keydown", (ev: KeyboardEvent) => {
-
         if (win.document && win.document.documentElement) {
             win.document.documentElement.classList.add(ROOT_CLASS_KEYBOARD_INTERACT);
         }
@@ -2240,6 +2239,11 @@ function loaded(forced: boolean) {
             if (ev.target && elementCapturesKeyboardArrowKeys(ev.target as Element)) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (ev.target as any).r2_leftrightKeyboardTimeStamp = new Date();
+            }
+            // allow event up to win.document.addEventListener("keydown")
+            else {
+                ev.preventDefault();
+                // ev.stopPropagation();
             }
         }
     }, true);
