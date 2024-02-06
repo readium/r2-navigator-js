@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.3...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.14.4...develop
 
 Changes:
 * TODO
+
+# 1.14.4
+
+> Build environment: NodeJS `20.10.0`, NPM `10.2.5`
+
+Changes:
+* Fixed hyperlinks handling during TTS and Media Overlays
+* Fixed pagination visibility regression bug introduced in previous release
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.14.4/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.14.4/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.14.4
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.3...v1.14.4
 
 # 1.14.3
 
