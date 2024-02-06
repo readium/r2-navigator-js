@@ -422,7 +422,7 @@ if (IS_DEV) {
     });
 }
 
-function computeVisibility_(element: Element, domRect: DOMRect | undefined): boolean {
+function isVisible(element: Element, domRect: DOMRect | undefined): boolean {
     if (win.READIUM2.isFixedLayout) {
         return true;
     } else if (!win.document || !win.document.documentElement || !win.document.body) {
@@ -508,7 +508,7 @@ function computeVisibility_(element: Element, domRect: DOMRect | undefined): boo
         }
 
         // tslint:disable-next-line:max-line-length
-        // debug(`computeVisibility_ FALSE: clientRect TOP: ${rect.top} -- win.document.documentElement.clientHeight: ${win.document.documentElement.clientHeight}`);
+        // debug(`isVisible FALSE: clientRect TOP: ${rect.top} -- win.document.documentElement.clientHeight: ${win.document.documentElement.clientHeight}`);
         return false;
     }
 
@@ -535,10 +535,10 @@ function computeVisibility_(element: Element, domRect: DOMRect | undefined): boo
     }
 
     // tslint:disable-next-line:max-line-length
-    // debug(`computeVisibility_ FALSE: getScrollOffsetIntoView: ${scrollLeftPotentiallyExcessive} -- scrollElement.scrollLeft: ${currentOffset}`);
+    // debug(`isVisible FALSE: getScrollOffsetIntoView: ${scrollLeftPotentiallyExcessive} -- scrollElement.scrollLeft: ${currentOffset}`);
     return false;
 }
-function computeVisibility(location: LocatorLocations): boolean {
+function isVisible_(location: LocatorLocations): boolean {
 
     let visible = false;
     if (win.READIUM2.isAudio) {
@@ -558,7 +558,7 @@ function computeVisibility(location: LocatorLocations): boolean {
             debug(err);
         }
         if (selected) {
-            visible = computeVisibility_(selected, undefined); // TODO: domRect of DOM Range in LocatorExtended?
+            visible = isVisible(selected, undefined); // TODO: domRect of DOM Range in LocatorExtended?
         }
     }
     return visible;
@@ -567,7 +567,7 @@ function computeVisibility(location: LocatorLocations): boolean {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ipcRenderer.on(R2_EVENT_LOCATOR_VISIBLE, (_event: any, payload: IEventPayload_R2_EVENT_LOCATOR_VISIBLE) => {
 
-    payload.visible = computeVisibility(payload.location);
+    payload.visible = isVisible_(payload.location);
     ipcRenderer.sendToHost(R2_EVENT_LOCATOR_VISIBLE, payload);
 });
 
@@ -1681,8 +1681,10 @@ function showHideContentMask(doHide: boolean, isFixedLayout: boolean | null) {
 
 function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) {
 
-    const visible = win.READIUM2.isFixedLayout || isPaginated(win.document) || computeVisibility_(el as HTMLElement, domRect);
-    if (!visible) {
+    if (
+        // !isPaginated(win.document) &&
+        !isVisible(el as HTMLElement, domRect)) {
+
         scrollElementIntoView(el as HTMLElement, doFocus, animate, domRect);
     }
 
@@ -2093,7 +2095,7 @@ const onScrollRaw = () => {
         !win.document.documentElement.classList.contains(TTS_CLASS_PAUSED)) {
 
         const el = win.READIUM2.locationHashOverride; // || win.READIUM2.hashElement
-        if (el && computeVisibility_(el, undefined)) {
+        if (el && isVisible(el, undefined)) {
             debug("onScrollRaw VISIBLE SKIP");
             return;
         }
@@ -2191,9 +2193,9 @@ function loaded(forced: boolean) {
             //     //     win.READIUM2.hashElement === win.document.body) {
             //     //     visible = true;
             //     // } else if (win.READIUM2.locationHashOverride) {
-            //     //     visible = computeVisibility_(win.READIUM2.locationHashOverride);
+            //     //     visible = isVisible(win.READIUM2.locationHashOverride);
             //     // } else if (win.READIUM2.hashElement) {
-            //     //     visible = computeVisibility_(win.READIUM2.hashElement);
+            //     //     visible = isVisible(win.READIUM2.hashElement);
             //     // }
             //     // if (!visible) {
             //     //     debug("!visible (delayed layout pass?) => forcing second scrollToHashRaw()...");
@@ -3160,8 +3162,7 @@ function findFirstVisibleElement(rootElement: Element): Element | undefined {
     if (rootElement !== win.document.body &&
         rootElement !== win.document.documentElement) {
 
-        const visible = computeVisibility_(rootElement, undefined);
-        if (visible) {
+        if (isVisible(rootElement, undefined)) {
             return rootElement;
         }
     }
@@ -3247,7 +3248,9 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
             debug("|||||||||||||| cannot find visible element inside BODY / HTML????");
             domPointData.element = win.document.body;
         }
-    } else if (!userInteract && domPointData.element && !computeVisibility_(domPointData.element, undefined)) { // isPaginated(win.document)
+    } else if (!userInteract &&
+        domPointData.element && !isVisible(domPointData.element, undefined)) { // isPaginated(win.document)
+
         let next: Element | undefined = domPointData.element;
         let found: Element | undefined;
         while (next) {
@@ -3303,12 +3306,9 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
             win.READIUM2.hashElement = userInteract ? domPointData.element : win.READIUM2.hashElement;
             win.READIUM2.locationHashOverride = domPointData.element;
         } else {
-            const visible = win.READIUM2.isFixedLayout ||
-                win.READIUM2.locationHashOverride === win.document.body ||
-                computeVisibility_(win.READIUM2.locationHashOverride, undefined);
             // this logic exists because of TOC linking,
             // to avoid reseting to first visible item ... but for page turns we need this!
-            if (!visible) {
+            if (!isVisible(win.READIUM2.locationHashOverride, undefined)) {
                 debug(".hashElement = 6");
                 // underscore special link will prioritise hashElement!
                 win.READIUM2.hashElement = userInteract ? domPointData.element : win.READIUM2.hashElement;
@@ -3438,8 +3438,7 @@ export const computeProgressionData = (): IProgressionData => {
 
         if (isPaged) {
 
-            const visible = computeVisibility_(element, undefined);
-            if (visible) {
+            if (isVisible(element, undefined)) {
                 // because clientRect is based on visual rendering,
                 // which does not account for extra shift (CSS transform X-translate of the webview)
                 const curCol = extraShift ? (currentColumn - 1) : currentColumn;
@@ -4246,8 +4245,10 @@ if (!win.READIUM2.isAudio) {
                     win.READIUM2.hashElement = targetEl;
                     win.READIUM2.locationHashOverride = targetEl;
 
-                    const visible = win.READIUM2.isFixedLayout || isPaginated(win.document) || computeVisibility_(targetEl, undefined);
-                    if (!visible) {
+                    if (
+                        // !isPaginated(win.document) &&
+                        !isVisible(targetEl, undefined)) {
+
                         scrollElementIntoView(targetEl, false, true, undefined);
                     }
 
