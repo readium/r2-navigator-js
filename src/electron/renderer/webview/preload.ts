@@ -2400,6 +2400,10 @@ function loaded(forced: boolean) {
         debug(`!AUX __CLICK: ${ev.button} ...`);
         if (win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED) || win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING)) {
             debug("!AUX __CLICK skip because MO playing/paused");
+
+            ev.preventDefault();
+            ev.stopPropagation();
+
             return;
         }
 
@@ -2413,6 +2417,10 @@ function loaded(forced: boolean) {
 
             if (domPointData.element && win.READIUM2.ttsClickEnabled) {
                 debug("!AUX __CLICK domPointData.element && win.READIUM2.ttsClickEnabled");
+
+                ev.preventDefault();
+                ev.stopPropagation();
+
                 if (ev.altKey) {
                     ttsPlay(
                         win.READIUM2.ttsPlaybackRate,
@@ -2444,6 +2452,10 @@ function loaded(forced: boolean) {
 
         if (win.READIUM2.ttsClickEnabled || win.document.documentElement.classList.contains(TTS_CLASS_PAUSED) || win.document.documentElement.classList.contains(TTS_CLASS_PLAYING)) {
             debug("!AUX __CLICK skip because TTS playing/paused");
+
+            ev.preventDefault();
+            // ev.stopPropagation();
+
             return;
         }
 
