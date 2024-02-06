@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.4...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.14.5...develop
 
 Changes:
 * TODO
+
+# 1.14.5
+
+> Build environment: NodeJS `20.10.0`, NPM `10.2.5`
+
+Changes:
+* Right To Left fixes, mostly for mixed document directions in spine, and inconsistent direction between script and vertical writing mode (EPUB has package-level page-progression-direction in addition to document-level possible ways to declare direction, HTML attributes and CSS styles)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.14.5/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.14.5/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.14.5
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.4...v1.14.5
 
 # 1.14.4
 
