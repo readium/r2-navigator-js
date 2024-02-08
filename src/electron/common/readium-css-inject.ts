@@ -182,7 +182,18 @@ export function readiumCSSSet(
             }
         }
     }
-
+    if (!messageJson.urlRoot) {
+        const elBefore = documant.getElementById("ReadiumCSS-before");
+        if (elBefore) {
+            const elHref = elBefore.getAttribute("href");
+            if (elHref) {
+                const iHref = elHref.indexOf("/" + READIUM_CSS_URL_PATH);
+                if (iHref >= 0) {
+                    messageJson.urlRoot = elHref.substring(0, iHref);
+                }
+            }
+        }
+    }
     if (IS_DEV) {
         debug("_____ readiumCssJson.urlRoot (readiumCSSSet()): ", messageJson.urlRoot);
     }
@@ -235,8 +246,53 @@ export function readiumCSSSet(
         setCSS.paged = false; // force disabled column pagination (too many issues)
     }
 
+    if (docElement.hasAttribute("data-readiumcss")) {
+        let reset = false;
+
+        const isV = docElement.hasAttribute("data-rss-isVWM");
+        if (isV !== isVerticalWritingMode) {
+            reset = true;
+            if (isV) {
+                docElement.removeAttribute("data-rss-isVWM");
+            }
+            // else {
+            //     docElement.setAttribute("data-rss-isVWM", "true");
+            // }
+        }
+
+        const isR = docElement.hasAttribute("data-rss-isRTL");
+        if (isR !== isRTL) {
+            reset = true;
+            if (isR) {
+                docElement.removeAttribute("data-rss-isRTL");
+            }
+            // else {
+            //     docElement.setAttribute("data-rss-isRTL", "true");
+            // }
+        }
+
+        if (reset) {
+            docElement.removeAttribute("data-readiumcss");
+            removeAllCSS(documant);
+        }
+    }
+
     if (!docElement.hasAttribute("data-readiumcss")) {
         docElement.setAttribute("data-readiumcss", "yes");
+
+        if (isVerticalWritingMode) {
+            docElement.setAttribute("data-rss-isVWM", "true");
+        }
+        // else {
+        //     docElement.removeAttribute("data-rss-isVWM");
+        // }
+
+        if (isRTL) {
+            docElement.setAttribute("data-rss-isRTL", "true");
+        }
+        // else {
+        //     docElement.removeAttribute("data-rss-isRTL");
+        // }
 
         let needsDefaultCSS = true;
 
@@ -276,7 +332,26 @@ export function readiumCSSSet(
             }
         }
 
-        const urlRoot = messageJson.urlRoot + "/" + READIUM_CSS_URL_PATH + "/";
+        let isCJK = false;
+        let langAttr = documant.documentElement.getAttribute("lang");
+        if (!langAttr) {
+            langAttr = documant.documentElement.getAttribute("xml:lang");
+        }
+        if (!langAttr) {
+            langAttr = documant.documentElement.getAttributeNS("http://www.w3.org/XML/1998/", "lang");
+        }
+        if (langAttr &&
+            (langAttr === "ja" || langAttr.startsWith("ja-") ||
+            langAttr === "zh" || langAttr.startsWith("zh-") ||
+            langAttr === "ko" || langAttr.startsWith("ko-"))
+        ) {
+            isCJK = true;
+        }
+        const custom = isVerticalWritingMode && isCJK ?
+            "cjk-vertical/" : (isCJK ?
+                "cjk-horizontal/" : (isRTL ?
+                    "rtl/" : ""));
+        const urlRoot = messageJson.urlRoot + "/" + READIUM_CSS_URL_PATH + "/" + custom;
 
         appendCSS(documant, "before", urlRoot);
         if (needsDefaultCSS) {
@@ -792,6 +867,10 @@ export function removeCSS(documant: Document, mod: string) {
     const linkElement = documant.getElementById("ReadiumCSS-" + mod);
     if (linkElement && linkElement.parentNode) {
         linkElement.parentNode.removeChild(linkElement);
+    }
+    const styleElement = documant.getElementById("ReadiumCSS-" + mod + "-PATCH");
+    if (styleElement && styleElement.parentNode) {
+        styleElement.parentNode.removeChild(styleElement);
     }
 }
 
