@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.5...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.14.6...develop
 
 Changes:
 * TODO
+
+# 1.14.6
+
+> Build environment: NodeJS `20.10.0`, NPM `10.2.5`
+
+Changes:
+* Fix: ReadiumCSS body width/height extent bugs (background colour was cropped)
+* Fix: avoid scroll jump when navigating inside already loaded page
+* Added highlights margin indicators (alt click to trigger, but will be controlled via app in future updates, to implement a proper affordance model with special behaviour associated with collapsed margin highlights)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.14.6/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.14.6/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.14.6
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.5...v1.14.6
 
 # 1.14.5
 
