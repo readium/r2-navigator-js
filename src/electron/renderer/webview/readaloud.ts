@@ -488,7 +488,7 @@ function throttle(fn: (...argz: any[]) => any, time: number) {
                 if (lastCalled) {
                     const argos = lastCalled;
                     lastCalled = undefined;
-                    func(argos);
+                    func(...argos);
                     // setTimeout(() => {
                     // }, 0);
                 }
