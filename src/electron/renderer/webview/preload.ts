@@ -659,7 +659,14 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
         // unfortunately, does not sync CSS :target pseudo-class :(
         // win.history.replaceState({}, undefined, "#" + payload.hash);
     } else {
+        const scrollElement = getScrollingElement(win.document);
+        const scrollTop = scrollElement.scrollTop;
+        const scrollLeft = scrollElement.scrollLeft;
         win.location.href = "#";
+        setTimeout(() => {
+            scrollElement.scrollTop = scrollTop;
+            scrollElement.scrollLeft = scrollLeft;
+        }, 0);
         win.READIUM2.hashElement = null;
     }
 
@@ -1246,93 +1253,97 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
             const rect = domRect || element.getBoundingClientRect();
             // calculateMaxScrollShift()
 
-            const vwm = isVerticalWritingMode();
-            const scrollTopMax = vwm ?
-                (isRTL() ? -1 : 1) * (scrollElement.scrollWidth - win.document.documentElement.clientWidth) :
-                scrollElement.scrollHeight - win.document.documentElement.clientHeight;
-
-            let offset = vwm ?
-                scrollElement.scrollLeft + (rect.left - (win.document.documentElement.clientWidth / 2)) :
-                scrollElement.scrollTop + (rect.top - (win.document.documentElement.clientHeight / 2));
-
-            if (vwm && isRTL()) {
-                if (offset < scrollTopMax) {
-                    offset = scrollTopMax;
-                } else if (offset > 0) {
-                    offset = 0;
-                }
+            if (isVisible(element, domRect)) {
+                console.log("scrollElementIntoView already visible");
             } else {
-                if (offset > scrollTopMax) {
-                    offset = scrollTopMax;
-                } else if (offset < 0) {
-                    offset = 0;
-                }
-            }
+                const vwm = isVerticalWritingMode();
+                const scrollTopMax = vwm ?
+                    (isRTL() ? -1 : 1) * (scrollElement.scrollWidth - win.document.documentElement.clientWidth) :
+                    scrollElement.scrollHeight - win.document.documentElement.clientHeight;
 
-            const diff = Math.abs((vwm ? scrollElement.scrollLeft : scrollElement.scrollTop) - offset);
-            if (diff < 10) {
-                return; // prevents jittering
-            }
+                let offset = vwm ?
+                    scrollElement.scrollLeft + (rect.left - (win.document.documentElement.clientWidth / 2)) :
+                    scrollElement.scrollTop + (rect.top - (win.document.documentElement.clientHeight / 2));
 
-            const targetProp = vwm ? "scrollLeft" : "scrollTop";
-            if (animate) {
-                const reduceMotion = win.document.documentElement.classList.contains(ROOT_CLASS_REDUCE_MOTION);
-
-                if (_lastAnimState2 && _lastAnimState2.animating) {
-                    win.cancelAnimationFrame(_lastAnimState2.id);
-                    _lastAnimState2.object[_lastAnimState2.property] = _lastAnimState2.destVal;
-                }
-
-                // scrollElement.scrollTop = offset;
-                const targetObj = scrollElement;
-                if (reduceMotion) {
-                    _lastAnimState2 = undefined;
-                    targetObj[targetProp] = offset;
+                if (vwm && isRTL()) {
+                    if (offset < scrollTopMax) {
+                        offset = scrollTopMax;
+                    } else if (offset > 0) {
+                        offset = 0;
+                    }
                 } else {
-                    _ignoreScrollEvent = true;
-                    // _lastAnimState = undefined;
-                    // (targetObj as HTMLElement).style.transition = "";
-                    // (targetObj as HTMLElement).style.transform = "none";
-                    // (targetObj as HTMLElement).style.transition =
-                    //     `transform ${animationTime}ms ease-in-out 0s`;
-                    // (targetObj as HTMLElement).style.transform =
-                    //     isVerticalWritingMode() ?
-                    //     `translateY(${unit}px)` :
-                    //     `translateX(${(isRTL() ? -1 : 1) * unit}px)`;
-                    // setTimeout(() => {
-                    //     (targetObj as HTMLElement).style.transition = "";
-                    //     (targetObj as HTMLElement).style.transform = "none";
-                    //     targetObj[targetProp] = offset;
-                    // }, animationTime);
-                    _lastAnimState2 = animateProperty(
-                        win.cancelAnimationFrame,
-                        // undefined,
-                        (_cancelled: boolean) => {
-                            // debug(cancelled);
-                            _ignoreScrollEvent = false;
-                            onScrollDebounced();
-                        },
-                        targetProp,
-                        animationTime2,
-                        targetObj,
-                        offset,
-                        win.requestAnimationFrame,
-                        easings.easeInOutQuad,
-                    );
+                    if (offset > scrollTopMax) {
+                        offset = scrollTopMax;
+                    } else if (offset < 0) {
+                        offset = 0;
+                    }
                 }
-            } else {
-                scrollElement[targetProp] = offset;
-            }
 
-            // element.scrollIntoView({
-            //     // TypeScript lib.dom.d.ts difference in 3.2.1
-            //     // ScrollBehavior = "auto" | "instant" | "smooth" VS ScrollBehavior = "auto" | "smooth"
-            //     behavior: "auto",
-            //     // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
-            //     block: "center",
-            //     // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
-            //     inline: "nearest",
-            // } as ScrollIntoViewOptions);
+                const diff = Math.abs((vwm ? scrollElement.scrollLeft : scrollElement.scrollTop) - offset);
+                if (diff < 10) {
+                    return; // prevents jittering
+                }
+
+                const targetProp = vwm ? "scrollLeft" : "scrollTop";
+                if (animate) {
+                    const reduceMotion = win.document.documentElement.classList.contains(ROOT_CLASS_REDUCE_MOTION);
+
+                    if (_lastAnimState2 && _lastAnimState2.animating) {
+                        win.cancelAnimationFrame(_lastAnimState2.id);
+                        _lastAnimState2.object[_lastAnimState2.property] = _lastAnimState2.destVal;
+                    }
+
+                    // scrollElement.scrollTop = offset;
+                    const targetObj = scrollElement;
+                    if (reduceMotion) {
+                        _lastAnimState2 = undefined;
+                        targetObj[targetProp] = offset;
+                    } else {
+                        _ignoreScrollEvent = true;
+                        // _lastAnimState = undefined;
+                        // (targetObj as HTMLElement).style.transition = "";
+                        // (targetObj as HTMLElement).style.transform = "none";
+                        // (targetObj as HTMLElement).style.transition =
+                        //     `transform ${animationTime}ms ease-in-out 0s`;
+                        // (targetObj as HTMLElement).style.transform =
+                        //     isVerticalWritingMode() ?
+                        //     `translateY(${unit}px)` :
+                        //     `translateX(${(isRTL() ? -1 : 1) * unit}px)`;
+                        // setTimeout(() => {
+                        //     (targetObj as HTMLElement).style.transition = "";
+                        //     (targetObj as HTMLElement).style.transform = "none";
+                        //     targetObj[targetProp] = offset;
+                        // }, animationTime);
+                        _lastAnimState2 = animateProperty(
+                            win.cancelAnimationFrame,
+                            // undefined,
+                            (_cancelled: boolean) => {
+                                // debug(cancelled);
+                                _ignoreScrollEvent = false;
+                                onScrollDebounced();
+                            },
+                            targetProp,
+                            animationTime2,
+                            targetObj,
+                            offset,
+                            win.requestAnimationFrame,
+                            easings.easeInOutQuad,
+                        );
+                    }
+                } else {
+                    scrollElement[targetProp] = offset;
+                }
+
+                // element.scrollIntoView({
+                //     // TypeScript lib.dom.d.ts difference in 3.2.1
+                //     // ScrollBehavior = "auto" | "instant" | "smooth" VS ScrollBehavior = "auto" | "smooth"
+                //     behavior: "auto",
+                //     // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
+                //     block: "center",
+                //     // ScrollLogicalPosition = "start" | "center" | "end" | "nearest"
+                //     inline: "nearest",
+                // } as ScrollIntoViewOptions);
+            }
         }
     }, doFocus ? 100 : 0);
 }
