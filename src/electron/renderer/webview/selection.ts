@@ -71,7 +71,7 @@ export function clearCurrentSelection(win: ReadiumElectronWebviewWindow) {
 }
 
 export const collapseWhitespaces = (str: string) => {
-    return str.replace(/\n/g, " ").replace(/\s\s+/g, " ");
+    return str.replace(/[\r\n]/g, " ").replace(/\s\s+/g, " ");
 };
 
 export const cleanupStr = (str: string) => {
@@ -399,7 +399,7 @@ export function convertRange(
         let i = rawBefore.length - 1;
         let wasWhiteSpace = false;
         for (; i >= 0; i--) {
-            const isWhiteSpace = /[\n\s]/.test(rawBefore[i]);
+            const isWhiteSpace = /[\r\n\s]/.test(rawBefore[i]);
             if (isWhiteSpace && i !== 0 && i !== rawBefore.length - 1 && wasWhiteSpace) {
                 wasWhiteSpace = isWhiteSpace;
                 continue;
@@ -417,7 +417,7 @@ export function convertRange(
         let i = 0;
         let wasWhiteSpace = false;
         for (; i < rawAfter.length; i++) {
-            const isWhiteSpace = /[\n\s]/.test(rawAfter[i]);
+            const isWhiteSpace = /[\r\n\s]/.test(rawAfter[i]);
             if (isWhiteSpace && i !== 0 && i !== rawAfter.length - 1 && wasWhiteSpace) {
                 wasWhiteSpace = isWhiteSpace;
                 continue;

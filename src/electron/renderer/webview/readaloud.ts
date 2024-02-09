@@ -923,6 +923,7 @@ function updateTTSInfo(
         return undefined;
     }
 
+    // utteranceText is set from utterance.onboundary event callback
     const isWordBoundary = charIndex >= 0 && utteranceText;
 
     if (_dialogState.ttsOverlayEnabled &&
@@ -945,17 +946,26 @@ function updateTTSInfo(
         _dialogState.focusScrollRaw(ttsQueueItem.item.parentElement as HTMLElement, false, true, undefined); // domRect
     }
 
+    // console.log("--TTS utteranceText: [" + utteranceText + "]");
     const ttsQueueItemText = utteranceText ? utteranceText : getTtsQueueItemRefText(ttsQueueItem);
+    // console.log("--TTS ttsQueueItemText: [" + ttsQueueItemText + "]" + " -- [" + getTtsQueueItemRefText(ttsQueueItem) + "]");
+
+    if (!ttsQueueItemText.trim().length) {
+        // console.log("--TTS ttsQueueItemText EMPTY SKIP");
+        return "";
+    }
 
     let ttsQueueItemMarkup = normalizeHtmlText(ttsQueueItemText);
+    // console.log("--TTS ttsQueueItemMarkup: [" + ttsQueueItemMarkup + "]");
 
-    if (charIndex >= 0 && utteranceText) { // isWordBoundary
+    if (isWordBoundary) { // charIndex >= 0 && utteranceText
         // const start = utteranceText.slice(0, charIndex + 1).search(/\S+$/);
         // const right = utteranceText.slice(charIndex).search(/\s/);
         // const word = right < 0 ? utteranceText.slice(start) : utteranceText.slice(start, right + charIndex);
         // const end = start + word.length;
         // // debug(word);
         const word = utteranceText.substr(charIndex, charLength);
+        // console.log("--TTS word: [" + word + "]");
 
         if (_dialogState && _dialogState.ttsOverlayEnabled) {
             const prefix = `<span id="${TTS_ID_ACTIVE_WORD}">`;
@@ -966,8 +976,13 @@ function updateTTSInfo(
 
             const before = utteranceText.substr(0, charIndex);
             const after = utteranceText.substr(charIndex + charLength);
+            // console.log("--TTS before: [" + before + "]");
+            // console.log("--TTS after: [" + after + "]");
 
             const l = before.length + word.length + after.length;
+            // console.log("--TTS utteranceText.length: " + utteranceText.length);
+            // console.log("--TTS l: " + l);
+
             ttsQueueItemMarkup = (l === utteranceText.length) ?
                 `${normalizeHtmlText(before)}${prefix}${normalizeHtmlText(word)}${suffix}${normalizeHtmlText(after)}` :
                 normalizeHtmlText(utteranceText);
@@ -1092,7 +1107,9 @@ function updateTTSInfo(
             if (ttsQItem.item.lang) {
                 ttsQItemMarkupAttributes += ` lang="${ttsQItem.item.lang}" xml:lang="${ttsQItem.item.lang}" `;
             }
-            fullMarkup += `${imageMarkup}<div ${ttsQItemMarkupAttributes}>${ttsQItemMarkup}</div>`;
+            if (imageMarkup || ttsQItemMarkup?.trim().length) {
+                fullMarkup += `${imageMarkup}<div ${ttsQItemMarkupAttributes}>${ttsQItemMarkup}</div>`;
+            }
         }
 
         try {
@@ -1174,6 +1191,14 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
     highlights(true);
 
     const txtStr = updateTTSInfo(-1, -1, undefined);
+
+    if (txtStr === "") {
+        highlights(false);
+        ttsPlayQueueIndexDebounced(ttsQueueIndex + 1);
+        return;
+    }
+
+    // empty string is falsy!
     if (!txtStr) {
         ttsStop();
         return;

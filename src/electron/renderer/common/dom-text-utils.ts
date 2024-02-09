@@ -19,12 +19,18 @@ export function combineTextNodes(textNodes: Node[], skipNormalize?: boolean): st
     if (textNodes && textNodes.length) {
         let str = "";
         for (const textNode of textNodes) {
-            if (textNode.nodeValue) { // excludes purely-whitespace text nodes
-                // normalizeText() preserves prefix/suffix whitespace (collapsed to single)
+            let txt = textNode.nodeValue;
+            if (txt) { // does not exclude purely-whitespace text nodes
+                // normalizeText() preserves prefix/suffix whitespace (collapsed to single), no trim()
                 // if (str.length) {
                 //     str += " ";
                 // }
-                str += (skipNormalize ? textNode.nodeValue : normalizeText(textNode.nodeValue));
+                if (!txt.trim().length) {
+                    txt = " ";
+                    str += txt;
+                } else {
+                    str += (skipNormalize ? txt : normalizeText(txt));
+                }
             }
         }
         return str;
@@ -78,7 +84,7 @@ export function normalizeHtmlText(str: string): string {
 
 export function normalizeText(str: string): string {
     // tslint:disable-next-line:max-line-length
-    return normalizeHtmlText(str).replace(/\n/g, " ").replace(/\s\s+/g, " "); // no trim(), we collapse multiple whitespaces into single, preserving prefix and suffix (if any)
+    return normalizeHtmlText(str).replace(/[\r\n]/g, " ").replace(/\s\s+/g, " "); // no trim(), we collapse multiple whitespaces into single, preserving prefix and suffix (if any)
 }
 
 export interface ITtsQueueItem {
@@ -332,7 +338,7 @@ const computeEpubTypes = (childElement: Element) => {
 
 export function generateTtsQueue(rootElement: Element, splitSentences: boolean): ITtsQueueItem[] {
 
-    const ttsQueue: ITtsQueueItem[] = [];
+    let ttsQueue: ITtsQueueItem[] = [];
     const elementStack: Element[] = [];
 
     function processTextNode(textNode: Node) {
@@ -341,9 +347,15 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
             return;
         }
         // test for word regexp?  || !/\w/.test(textNode.nodeValue)
-        if (!textNode.nodeValue || !textNode.nodeValue.trim().length) {
+        if (!textNode.nodeValue) {
             return;
         }
+
+        // we need significant spaces between <span> etc.
+        // if (!textNode.nodeValue.trim().length) {
+        //     return;
+        // }
+
         const parentElement = elementStack[elementStack.length - 1];
         if (!parentElement) {
             return;
@@ -371,7 +383,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
             }
 
             current = {
-                combinedText: "", // filled in later (see trySplitTexts())
+                combinedText: "", // filled in later (see finalizeTextNodes())
                 combinedTextSentences: undefined, // filled in later, if text is further chunkable
                 combinedTextSentencesRangeBegin: undefined,
                 combinedTextSentencesRangeEnd: undefined,
@@ -833,6 +845,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
 
     processElement(rootElement);
 
+    // post-processTextNode()
     function finalizeTextNodes(ttsQueueItem: ITtsQueueItem) {
         if (!ttsQueueItem.textNodes || !ttsQueueItem.textNodes.length) {
             // img@alt can set combinedText (no text nodes)
@@ -844,6 +857,18 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
         }
 
         ttsQueueItem.combinedText = combineTextNodes(ttsQueueItem.textNodes, true).replace(/[\r\n]/g, " ");
+        // normalizeText ===
+        // normalizeHtmlText(str).replace(/[\r\n]/g, " ").replace(/\s\s+/g, " "); // no trim(), we collapse
+
+        // will be ejected with .filter()
+        if (!ttsQueueItem.combinedText.trim().length) {
+            ttsQueueItem.combinedText = "";
+            ttsQueueItem.combinedTextSentences = undefined;
+            return;
+        }
+
+        // console.log("--TTS ttsQueueItem.combinedText: [" + ttsQueueItem.combinedText + "]");
+
         // ttsQueueItem.combinedText = ttsQueueItem.combinedTextSentences ?
         //     combineTextNodes(ttsQueueItem.textNodes, false).trim() :
         //     combineTextNodes(ttsQueueItem.textNodes, true);
@@ -912,5 +937,8 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
         finalizeTextNodes(ttsQueueItem);
     }
 
+    ttsQueue = ttsQueue.filter((item) => {
+        return !!item.combinedText.length;
+    });
     return ttsQueue;
 }
