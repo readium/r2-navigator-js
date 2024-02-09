@@ -831,9 +831,54 @@ export const ttsCssStyles = `
 }
 `;
 
+export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
+export const CLASS_HIGHLIGHT_CURSOR1 = "R2_CLASS_HIGHLIGHT_CURSOR1";
+export const CLASS_HIGHLIGHT_CURSOR2 = "R2_CLASS_HIGHLIGHT_CURSOR2";
+export const CLASS_HIGHLIGHT_COMMON = "R2_CLASS_HIGHLIGHT_COMMON";
+
 export const ROOT_CLASS_INVISIBLE_MASK = "r2-visibility-mask-class";
 export const ROOT_CLASS_INVISIBLE_MASK_REMOVED = "r2-visibility-mask-removed-class";
+
 export const visibilityMaskCssStyles = `
+
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} .${CLASS_HIGHLIGHT_COMMON},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} .${CLASS_HIGHLIGHT_COMMON}
+{
+background-color: transparent !important;
+position: absolute !important;
+top: 0 !important;
+left: 0 !important;
+overflow: visible !important;
+margin: 0 !important;
+padding: 0 !important;
+border: 0 !important;
+box-sizing: border-box !important;
+pointer-events: none !important;
+}
+
+:root[style].${CLASS_HIGHLIGHT_CURSOR1},
+:root.${CLASS_HIGHLIGHT_CURSOR1}
+{
+    cursor: pointer !important;
+}
+
+:root[style].${CLASS_HIGHLIGHT_CURSOR2},
+:root.${CLASS_HIGHLIGHT_CURSOR2}
+{
+    cursor: crosshair !important;
+}
+
+
+" background-color: transparent !important; " +
+    "position: absolute !important; " +
+    "top: 0 !important; " +
+    "left: 0 !important; " +
+    "overflow: visible !important; " +
+    "margin: 0 !important; " +
+    "padding: 0 !important; " +
+    "border: 0 !important; " +
+    "box-sizing: border-box !important; " +
+    "pointer-events: none !important; ";
 
 /*
 bugfix: for some reason, "inherit" does not work in Chromium, so we patch ReadiumCSS here :(

@@ -57,6 +57,7 @@ import {
     ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_CLASS_PAUSED, TTS_CLASS_PLAYING, TTS_ID_SPEAKING_DOC_ELEMENT,
     WebViewSlotEnum, ZERO_TRANSFORM_CLASS, readPosCssStylesAttr1, readPosCssStylesAttr2,
     readPosCssStylesAttr3, readPosCssStylesAttr4,
+    ID_HIGHLIGHTS_CONTAINER,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector, FRAG_ID_CSS_SELECTOR } from "../common/cssselector2-3";
@@ -74,8 +75,8 @@ import { setupAudioBook } from "./audiobook";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
     CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN, CLASS_HIGHLIGHT_CONTAINER,
-    ID_HIGHLIGHTS_CONTAINER, createHighlights, destroyAllhighlights, destroyHighlight,
-    recreateAllHighlights,
+    createHighlights, destroyAllhighlights, destroyHighlight,
+    recreateAllHighlights, recreateAllHighlightsRaw,
 } from "./highlight";
 import { popoutImage } from "./popoutImages";
 import { popupFootNote } from "./popupFootNotes";
@@ -1401,7 +1402,7 @@ const scrollToHashRaw = (animate: boolean) => {
         return;
     }
 
-    recreateAllHighlights(win);
+    recreateAllHighlightsRaw(win);
 
     // if (win.READIUM2.isFixedLayout) {
     //     debug("scrollToHashRaw skipped, FXL");

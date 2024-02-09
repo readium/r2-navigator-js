@@ -17,8 +17,7 @@ import {
     POPOUTIMAGE_CONTAINER_ID, R2_MO_CLASS_PAUSED, R2_MO_CLASS_PLAYING, TTS_CLASS_PAUSED, TTS_CLASS_PLAYING,
 } from "../../common/styles";
 
-import { SKIP_LINK_ID } from "../../common/styles";
-import { ID_HIGHLIGHTS_CONTAINER } from "./highlight";
+import { SKIP_LINK_ID, ID_HIGHLIGHTS_CONTAINER } from "../../common/styles";
 
 const win = global.window as ReadiumElectronWebviewWindow;
 
