@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.8...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.14.9...develop
 
 Changes:
 * TODO
+
+# 1.14.9
+
+> Build environment: NodeJS `20.10.0`, NPM `10.2.5`
+
+Changes:
+* TTS readaloud improvement: click-on-text now plays instantly instead of pausing and expecting the user to click a second time to resume
+* TTS readaloud fix: significant whitespace handling, space between span elements sometimes wasn't preserved (mostly visible in the captions/simple view, but also underlying utterances sent to TTS engine)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.14.9/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.14.9/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.14.9
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.8...v1.14.9
 
 # 1.14.8
 
