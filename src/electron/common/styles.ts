@@ -868,18 +868,6 @@ pointer-events: none !important;
     cursor: crosshair !important;
 }
 
-
-" background-color: transparent !important; " +
-    "position: absolute !important; " +
-    "top: 0 !important; " +
-    "left: 0 !important; " +
-    "overflow: visible !important; " +
-    "margin: 0 !important; " +
-    "padding: 0 !important; " +
-    "border: 0 !important; " +
-    "box-sizing: border-box !important; " +
-    "pointer-events: none !important; ";
-
 /*
 bugfix: for some reason, "inherit" does not work in Chromium, so we patch ReadiumCSS here :(
 (was "text-align: var(--USER__textAlign);" on HTML root and "text-align: inherit !important;" on body etc.)
