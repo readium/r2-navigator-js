@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.7...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.14.8...develop
 
 Changes:
 * TODO
+
+# 1.14.8
+
+> Build environment: NodeJS `20.10.0`, NPM `10.2.5`
+
+Changes:
+* Improved highlights rendering engine: better performance (CSS class factorisation), better UX (less flickering, more visual contrast, mouse cursors for "proactive feedback" to announce the interactive lightweight affordances)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.14.8/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.14.8/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.14.8
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.7...v1.14.8
 
 # 1.14.7
 
