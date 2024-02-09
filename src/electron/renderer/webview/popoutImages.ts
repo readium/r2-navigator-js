@@ -464,7 +464,7 @@ export function popoutImage(
     //     (win as any).readiumClosePopupDialogs = () => { closePopupDialogs(win.document); };
     // }
 
-    function onDialogClosed(el: HTMLOrSVGElement | null) {
+    function onDialogClosed(_thiz: PopupDialog, el: HTMLOrSVGElement | null) {
         win.READIUM2.ignorekeyDownUpEvents = false;
 
         if (el) {

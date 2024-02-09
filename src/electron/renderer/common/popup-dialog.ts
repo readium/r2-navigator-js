@@ -165,11 +165,21 @@ function onKeyDown(this: PopupDialog, ev: KeyboardEvent) {
 //     }
 // }
 
+export interface IClickXY {
+    clickX: number;
+    clickY: number;
+}
+
 export class PopupDialog {
 
     public readonly role: string;
     public readonly dialog: IHTMLDialogElementWithPopup;
     public readonly doNotTrapKeyboardFocusTabIndexCycling: boolean;
+
+    public readonly clickCloseXY: IClickXY = {
+        clickX: -1,
+        clickY: -1,
+    };
 
     private readonly _onKeyUp: () => void;
     private readonly _onKeyDown: () => void;
@@ -182,7 +192,7 @@ export class PopupDialog {
         public readonly documant: Document,
         outerHTML: string,
         // id: string,
-        public readonly onDialogClosed: (el: HTMLOrSVGElement | null) => void,
+        public readonly onDialogClosed: (thiz: PopupDialog, el: HTMLOrSVGElement | null) => void,
         optionalCssClass?: string,
         doNotTrapKeyboardFocusTabIndexCycling?: boolean) {
 
@@ -368,6 +378,8 @@ export class PopupDialog {
             if (!inside) {
                 if (that.dialog.hasAttribute("open") || that.dialog.open) {
                     console.log("...DIALOG CLICK event => close()");
+                    that.clickCloseXY.clickX = ev.clientX;
+                    that.clickCloseXY.clickY = ev.clientY;
                     that.dialog.close();
                 }
             }
@@ -376,6 +388,11 @@ export class PopupDialog {
         this.dialog.addEventListener("close", (_ev) => {
             console.log("...DIALOG CLOSE event => hide()");
             that.hide();
+        });
+
+        this.dialog.addEventListener("open", (_ev) => {
+            this.clickCloseXY.clickX = -1;
+            this.clickCloseXY.clickY = -1;
         });
 
         this.documant = this.dialog.ownerDocument as Document;
@@ -407,6 +424,8 @@ export class PopupDialog {
 
     public show(toRefocus: Element | undefined) {
         console.log("...DIALOG show()");
+        this.clickCloseXY.clickX = -1;
+        this.clickCloseXY.clickY = -1;
 
         // if (this.shown) {
         //     return;
@@ -460,7 +479,7 @@ export class PopupDialog {
         this.documant.body.removeEventListener("keyup", this._onKeyUp, true);
         this.documant.body.removeEventListener("keydown", this._onKeyDown, true);
 
-        this.onDialogClosed(_focusedBeforeDialog);
+        this.onDialogClosed(this, _focusedBeforeDialog);
         _focusedBeforeDialog = null;
 
         // let the above occur even if not open!

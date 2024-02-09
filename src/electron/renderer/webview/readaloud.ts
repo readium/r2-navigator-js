@@ -1373,7 +1373,7 @@ function startTTSSession(
 
     const val = win.READIUM2.ttsOverlayEnabled ? ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable() : undefined;
 
-    function onDialogClosed(el: HTMLOrSVGElement | null) {
+    function onDialogClosed(thiz: PopupDialog, el: HTMLOrSVGElement | null) {
         ttsPause(true);
 
         if (_dialogState && _dialogState.focusScrollRaw) {
@@ -1394,6 +1394,60 @@ function startTTSSession(
         setTimeout(() => {
             resetState(false);
         }, 50);
+        setTimeout(() => {
+            if (thiz.clickCloseXY.clickX >= 0 && thiz.clickCloseXY.clickY >= 0) {
+                // const ev = win.document.createEvent("MouseEvents");
+                // ev.initMouseEvent(
+                //     "click", // typeArg
+                //     false, // canBubbleArg
+                //     false, // cancelableArg
+                //     win.document.defaultView as Window, // viewArg
+                //     0, // detailArg
+                //     thiz.clickCloseXY.clickX, // screenXArg
+                //     thiz.clickCloseXY.clickY, // screenYArg
+                //     thiz.clickCloseXY.clickX, // clientXArg
+                //     thiz.clickCloseXY.clickY, // clientYArg
+                //     false, // ctrlKeyArg
+                //     false, // altKeyArg
+                //     false, // shiftKeyArg
+                //     false, // metaKeyArg
+                //     0, // buttonArg
+                //     null, // relatedTargetArg
+                // );
+
+                const ev = new MouseEvent("click", {
+                    button: 0,
+                    buttons: 0,
+                    clientX: thiz.clickCloseXY.clickX,
+                    clientY: thiz.clickCloseXY.clickY,
+                    movementX: thiz.clickCloseXY.clickX,
+                    movementY: thiz.clickCloseXY.clickY,
+                    relatedTarget: null,
+                    screenX: thiz.clickCloseXY.clickX,
+                    screenY: thiz.clickCloseXY.clickY,
+
+                    altKey: false,
+                    ctrlKey: false,
+                    metaKey: false,
+                    modifierAltGraph: false,
+                    modifierCapsLock: false,
+                    modifierFn: false,
+                    modifierFnLock: false,
+                    modifierHyper: false,
+                    modifierNumLock: false,
+                    modifierScrollLock: false,
+                    modifierSuper: false,
+                    modifierSymbol: false,
+                    modifierSymbolLock: false,
+                    shiftKey: false,
+
+                    detail: 0,
+                    view: win.document.defaultView,
+                    which: 0,
+                });
+                win.document.dispatchEvent(ev);
+            }
+        }, 100);
     }
 
     // &#x21E0;

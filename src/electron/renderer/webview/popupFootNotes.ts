@@ -194,7 +194,7 @@ export async function popupFootNote(
 
     const val = ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable();
 
-    function onDialogClosed(el: HTMLOrSVGElement | null) {
+    function onDialogClosed(_thiz: PopupDialog, el: HTMLOrSVGElement | null) {
 
         if (el) {
             focusScrollRaw(el, true, true, undefined);
