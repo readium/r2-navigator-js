@@ -3927,6 +3927,8 @@ const findFollowingDescendantSiblingElementsWithID = (el: Element): string[] | u
         if (!_elementsWithID) {
             _elementsWithID = Array.from(win.document.querySelectorAll("*[id]"));
         }
+        const elHighlightsContainer = win.document.getElementById(ID_HIGHLIGHTS_CONTAINER);
+        const elPopupDialog = win.document.getElementById(POPUP_DIALOG_CLASS);
 
         // for (let i = _elementsWithID.length - 1; i >= 0; i--) {
         for (let i = 0; i < _elementsWithID.length; i++) {
@@ -3940,7 +3942,22 @@ const findFollowingDescendantSiblingElementsWithID = (el: Element): string[] | u
             // tslint:disable-next-line: no-bitwise
             if (// c === 0 ||
                 (c & Node.DOCUMENT_POSITION_FOLLOWING) || (c & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
-                followingElementIDs.push(id);
+                let doPush = true;
+                if (elHighlightsContainer) {
+                    const c1 = elHighlightsContainer.compareDocumentPosition(elementWithID);
+                    if (c1 === 0 || (c1 & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+                        doPush = false;
+                    }
+                }
+                if (elPopupDialog) {
+                    const c2 = elPopupDialog.compareDocumentPosition(elementWithID);
+                    if (c2 === 0 || (c2 & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+                        doPush = false;
+                    }
+                }
+                if (doPush) {
+                    followingElementIDs.push(id);
+                }
             }
         }
     }
