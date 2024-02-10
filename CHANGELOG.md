@@ -1,10 +1,31 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.9...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.14.10...develop
 
 Changes:
 * TODO
+
+# 1.14.10
+
+> Build environment: NodeJS `20.10.0`, NPM `10.2.5`
+
+Changes:
+* Fixed regression: goto progression percentage (click on Thorium's bottom bar) was broken due to async location.href hash # set and scroll reset
+* Fixed TTS readaloud dark / night mode highlights
+* Fixed TTS whitespace handling (offset highlights)
+* Improved TTS performance by passing native DOM Ranges to the highlighing engine instead of serialised format
+* Fixed collapsible highlight handling (should not affect TTS's own highlights, which are not tactile / interactive)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.14.10/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.14.10/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.14.10
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.9...v1.14.10
 
 # 1.14.9
 
