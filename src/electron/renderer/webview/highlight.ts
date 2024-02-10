@@ -558,7 +558,8 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
         // }
         return;
     }
-    if (foundElement.getAttribute("data-click")) {
+
+    if (foundHighlight.pointerInteraction || foundElement.getAttribute("data-click")) {
         if (isMouseMove) {
 
             if (changeCursor) {
@@ -810,13 +811,14 @@ export function createHighlights(
 
     const docFrag = documant.createDocumentFragment();
     for (const highDef of highDefs) {
-        if (!highDef.selectionInfo) {
+        if (!highDef.selectionInfo && !highDef.range) {
             highlights.push(null);
             continue;
         }
         const [high, div] = createHighlight(
             win,
             highDef.selectionInfo,
+            highDef.range,
             highDef.color,
             pointerInteraction,
             highDef.drawType,
@@ -835,9 +837,44 @@ export function createHighlights(
 
     return highlights;
 }
+
+const computeCFI = (node: Node): string | undefined => {
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+        if (node.parentNode) {
+            return computeCFI(node.parentNode);
+        }
+        return undefined;
+    }
+
+    let cfi = "";
+
+    let currentElement = node as Element;
+    while (currentElement.parentNode && currentElement.parentNode.nodeType === Node.ELEMENT_NODE) {
+        const currentElementParentChildren = (currentElement.parentNode as Element).children;
+        let currentElementIndex = -1;
+        for (let i = 0; i < currentElementParentChildren.length; i++) {
+            if (currentElement === currentElementParentChildren[i]) {
+                currentElementIndex = i;
+                break;
+            }
+        }
+        if (currentElementIndex >= 0) {
+            const cfiIndex = (currentElementIndex + 1) * 2;
+            cfi = cfiIndex +
+                (currentElement.id ? ("[" + currentElement.id + "]") : "") +
+                (cfi.length ? ("/" + cfi) : "");
+        }
+        currentElement = currentElement.parentNode as Element;
+    }
+
+    return "/" + cfi;
+};
+
 export function createHighlight(
     win: ReadiumElectronWebviewWindow,
-    selectionInfo: ISelectionInfo,
+    selectionInfo: ISelectionInfo | undefined,
+    range: Range | undefined,
     color: IColor | undefined,
     pointerInteraction: boolean,
     drawType: number | undefined,
@@ -849,7 +886,10 @@ export function createHighlight(
     // console.log("Chromium: " + process.versions["chrome"]);
 
     // tslint:disable-next-line:max-line-length
-    const uniqueStr = `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}`; // ${selectionInfo.rangeInfo.cfi} useless
+    const uniqueStr = selectionInfo ? `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}` : range ? `${range.startOffset}-${range.endOffset}-${computeCFI(range.startContainer)}-${computeCFI(range.endContainer)}` : "_RANGE_"; // ${selectionInfo.rangeInfo.cfi} useless
+
+    // console.log("RANGE uniqueStr: " + uniqueStr + " (( " + range?.toString());
+
     // const unique = Buffer.from(JSON.stringify(selectionInfo.rangeInfo, null, "")).toString("base64");
     // const unique = Buffer.from(uniqueStr).toString("base64");
     // const id = "R2_HIGHLIGHT_" + unique.replace(/\+/, "_").replace(/=/, "-").replace(/\//, ".");
@@ -864,7 +904,7 @@ export function createHighlight(
         win.document.getElementById(id)) {
 
         if (IS_DEV) {
-            console.log("HIGHLIGHT ID already exists, increment: " + id);
+            console.log("HIGHLIGHT ID already exists, increment: " + uniqueStr + " ==> " + id);
         }
         id = `${idBase}_${idIdx++}`;
     }
@@ -877,6 +917,7 @@ export function createHighlight(
         id,
         pointerInteraction,
         selectionInfo,
+        range,
     };
     _highlights.push(highlight);
 
@@ -893,7 +934,7 @@ function createHighlightDom(
     const documant = win.document;
     const scrollElement = getScrollingElement(documant);
 
-    const range = convertRangeInfo(documant, highlight.selectionInfo.rangeInfo);
+    const range = highlight.selectionInfo ? convertRangeInfo(documant, highlight.selectionInfo.rangeInfo) : highlight.range;
     if (!range) {
         return null;
     }
@@ -923,10 +964,15 @@ function createHighlightDom(
     if (highlight.pointerInteraction) {
         highlightParent.setAttribute("data-click", "1");
     }
-    if (USE_BLEND_MODE && !_drawMarginMarkers) {
+    if (USE_BLEND_MODE && (!_drawMarginMarkers || !highlight.pointerInteraction)) {
+
+        const styleAttr = win.document.documentElement.getAttribute("style");
+        const isNight = styleAttr ? styleAttr.indexOf("readium-night-on") > 0 : false;
+        // const isSepia = styleAttr ? styleAttr.indexOf("readium-sepia-on") > 0 : false;
+
         highlightParent.style.setProperty(
             "mix-blend-mode",
-            "multiply",
+            isNight ? "difference" : "multiply",
             "important");
 
         highlightParent.style.setProperty("opacity", `${opacity}`, "important");
@@ -1014,7 +1060,7 @@ function createHighlightDom(
     highlightBounding.style.setProperty("top", `${highlightBounding.rect.top * scale}px`, "important");
     highlightParent.append(highlightBounding);
 
-    if (_drawMarginMarkers) {
+    if (_drawMarginMarkers && highlight.pointerInteraction) {
         const MARGIN_MARKER_THICKNESS = 8;
         const MARGIN_MARKER_OFFSET = 2;
 

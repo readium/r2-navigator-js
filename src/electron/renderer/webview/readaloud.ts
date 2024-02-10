@@ -23,7 +23,7 @@ import {
     TTS_POPUP_DIALOG_CLASS,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
-import { uniqueCssSelector } from "../common/cssselector2-3";
+
 import {
     ITtsQueueItem, ITtsQueueItemReference, findTtsQueueItemIndex, generateTtsQueue,
     getTtsQueueItemRef, getTtsQueueItemRefText, getTtsQueueLength, normalizeHtmlText,
@@ -32,8 +32,11 @@ import { easings } from "../common/easings";
 import { IHTMLDialogElementWithPopup, PopupDialog, isPopupDialogOpen } from "../common/popup-dialog";
 import { createHighlights, destroyHighlight } from "./highlight";
 import { isRTL, clearImageZoomOutlineDebounced } from "./readium-css";
-import { convertRange } from "./selection";
+
 import { ReadiumElectronWebviewWindow } from "./state";
+
+// import { uniqueCssSelector } from "../common/cssselector2-3";
+// import { convertRange } from "./selection";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -452,26 +455,26 @@ export function ttsPreviewAndEventuallyPlayQueueIndex(n: number) {
     ttsPlayQueueIndexDebounced(n);
 }
 
-const _getCssSelectorOptions = {
-    className: (_str: string) => {
-        return true;
-    },
-    idName: (_str: string) => {
-        return true;
-    },
-    tagName: (_str: string) => {
-        return true;
-    },
-};
-function getCssSelector(element: Element): string {
-    try {
-        return uniqueCssSelector(element, win.document, _getCssSelectorOptions);
-    } catch (err) {
-        console.log("uniqueCssSelector:");
-        console.log(err);
-        return "";
-    }
-}
+// const _getCssSelectorOptions = {
+//     className: (_str: string) => {
+//         return true;
+//     },
+//     idName: (_str: string) => {
+//         return true;
+//     },
+//     tagName: (_str: string) => {
+//         return true;
+//     },
+// };
+// function getCssSelector(element: Element): string {
+//     try {
+//         return uniqueCssSelector(element, win.document, _getCssSelectorOptions);
+//     } catch (err) {
+//         console.log("uniqueCssSelector:");
+//         console.log(err);
+//         return "";
+//     }
+// }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function throttle(fn: (...argz: any[]) => any, time: number) {
@@ -513,6 +516,22 @@ const focusScrollImmediate = throttle((el: HTMLOrSVGElement, doFocus: boolean, a
     }
 }, 500);
 
+const isOnlyWhiteSpace = (str: string) => {
+    for (let i = 0; i < str.length; i++) {
+        if (str[i] !== " " &&
+            str[i] !== "\t" &&
+            str[i] !== "\n" &&
+            str[i] !== "\r"
+            // && !/\s/.test(str)
+        ) {
+            // console.log("isOnlyWhiteSpace FALSE: [[" + str + "]]");
+            return false;
+        }
+    }
+    // console.log("isOnlyWhiteSpace TRUE");
+    return true;
+};
+
 let _ttsQueueItemHighlightsSentence: Array<IHighlight | null> | undefined;
 let _ttsQueueItemHighlightsWord: Array<IHighlight | null> | undefined;
 
@@ -546,6 +565,7 @@ function wrapHighlightWord(
         ttsQueueItem.combinedTextSentencesRangeBegin &&
         ttsQueueItem.combinedTextSentencesRangeEnd &&
         ttsQueueItemRef.iSentence >= 0) {
+
         const sentOffset = ttsQueueItem.combinedTextSentencesRangeBegin[ttsQueueItemRef.iSentence];
         charIndexAdjusted += sentOffset;
         txtToCheck = ttsQueueItem.combinedTextSentences[ttsQueueItemRef.iSentence];
@@ -573,6 +593,23 @@ function wrapHighlightWord(
         // console.log(end - start);
     }
 
+    // console.log("...");
+    // console.log("++TTS 4 combinedText: [[" + ttsQueueItem.combinedText + "]]");
+    // console.log("++TTS 4: combinedTextSentences: [[" + JSON.stringify(ttsQueueItem.combinedTextSentences, null, 4) + "]]");
+    // console.log("...");
+    // for (const txtNode of ttsQueueItem.textNodes) {
+    //     console.log("++TTS 4 TXT A: [[" + txtNode.nodeValue + "]]");
+    // }
+    // console.log("...");
+    // for (const txtNode of ttsQueueItemRef.item.textNodes) {
+    //     console.log("++TTS 4 TXT B: [[" + txtNode.nodeValue + "]]");
+    // }
+    // console.log("...");
+    // console.log("++TTS 4 charIndex: " + charIndex);
+    // console.log("++TTS 4 charLength: " + charLength);
+    // console.log("++TTS 4 charIndexAdjusted: " + charIndexAdjusted);
+    // console.log("...");
+
     let acc = 0;
     let rangeStartNode: Node | undefined;
     let rangeStartOffset = -1;
@@ -583,7 +620,7 @@ function wrapHighlightWord(
         if (!txtNode.nodeValue && txtNode.nodeValue !== "") {
             continue;
         }
-        const l = txtNode.nodeValue.length;
+        const l = isOnlyWhiteSpace(txtNode.nodeValue) ? 1 : txtNode.nodeValue.length;
         acc += l;
         if (!rangeStartNode) {
             if (charIndexAdjusted < acc) {
@@ -613,15 +650,15 @@ function wrapHighlightWord(
             focusScrollImmediate(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect);
         }
 
-        const tuple = convertRange(
-            range,
-            getCssSelector,
-            (_node: Node) => ""); // computeElementCFI
-        if (!tuple) {
-            return;
-        }
-        const rangeInfo = tuple[0];
-        const textInfo = tuple[1];
+        // const tuple = convertRange(
+        //     range,
+        //     getCssSelector,
+        //     (_node: Node) => ""); // computeElementCFI
+        // if (!tuple) {
+        //     return;
+        // }
+        // const rangeInfo = tuple[0];
+        // const textInfo = tuple[1];
 
         const highlightDefinitions = [
             {
@@ -633,17 +670,19 @@ function wrapHighlightWord(
                 },
                 drawType: HighlightDrawTypeUnderline,
                 expand: 2,
-                selectionInfo: {
-                    rawBefore: textInfo.rawBefore,
-                    rawText: textInfo.rawText,
-                    rawAfter: textInfo.rawAfter,
+                selectionInfo: undefined,
+                range,
+                // selectionInfo: {
+                //     rawBefore: textInfo.rawBefore,
+                //     rawText: textInfo.rawText,
+                //     rawAfter: textInfo.rawAfter,
 
-                    cleanBefore: textInfo.cleanBefore,
-                    cleanText: textInfo.cleanText,
-                    cleanAfter: textInfo.cleanAfter,
+                //     cleanBefore: textInfo.cleanBefore,
+                //     cleanText: textInfo.cleanText,
+                //     cleanAfter: textInfo.cleanAfter,
 
-                    rangeInfo,
-                },
+                //     rangeInfo,
+                // },
             },
         ];
         _ttsQueueItemHighlightsWord = createHighlights(
@@ -653,6 +692,7 @@ function wrapHighlightWord(
         );
     }
 }
+
 function wrapHighlight(
     doHighlight: boolean,
     ttsQueueItemRef: ITtsQueueItemReference) {
@@ -684,6 +724,7 @@ function wrapHighlight(
 
         let range: Range | undefined;
         if (!ttsQueueItem.textNodes || !ttsQueueItem.textNodes.length) {
+            // console.log("++TTS 1");
             range = new Range();
             range.selectNode(ttsQueueItem.parentElement);
             // if (ttsQueueItem.parentElement.childNodes?.length) {
@@ -695,6 +736,18 @@ function wrapHighlight(
             ttsQueueItem.combinedTextSentencesRangeBegin &&
             ttsQueueItem.combinedTextSentencesRangeEnd &&
             ttsQueueItemRef.iSentence >= 0) {
+            // console.log("...");
+            // console.log("++TTS 2 combinedText: [[" + ttsQueueItem.combinedText + "]]");
+            // console.log("++TTS 2: combinedTextSentences: [[" + JSON.stringify(ttsQueueItem.combinedTextSentences, null, 4) + "]]");
+            // console.log("...");
+            // for (const txtNode of ttsQueueItem.textNodes) {
+            //     console.log("++TTS 2 TXT A: [[" + txtNode.nodeValue + "]]");
+            // }
+            // console.log("...");
+            // for (const txtNode of ttsQueueItemRef.item.textNodes) {
+            //     console.log("++TTS 2 TXT B: [[" + txtNode.nodeValue + "]]");
+            // }
+            // console.log("...");
 
             const sentBegin = ttsQueueItem.combinedTextSentencesRangeBegin[ttsQueueItemRef.iSentence];
             const sentEnd = ttsQueueItem.combinedTextSentencesRangeEnd[ttsQueueItemRef.iSentence];
@@ -708,7 +761,7 @@ function wrapHighlight(
                 if (!txtNode.nodeValue && txtNode.nodeValue !== "") {
                     continue;
                 }
-                const l = txtNode.nodeValue.length;
+                const l = isOnlyWhiteSpace(txtNode.nodeValue) ? 1 : txtNode.nodeValue.length;
                 acc += l;
                 if (!rangeStartNode) {
                     if (sentBegin < acc) {
@@ -733,6 +786,15 @@ function wrapHighlight(
                 range.setEnd(rangeEndNode, rangeEndOffset);
             }
         } else { // ttsQueueItem.combinedText
+            // console.log("...");
+            // console.log("++TTS 3 combinedText: [[" + ttsQueueItem.combinedText + "]]");
+            // console.log("...");
+            // console.log("++TTS 3: combinedTextSentences: [[" + JSON.stringify(ttsQueueItem.combinedTextSentences, null, 4) + "]]");
+            // console.log("...");
+            // for (const txtNode of ttsQueueItem.textNodes) {
+            //     console.log("++TTS 3 TXT: [[" + txtNode.nodeValue + "]]");
+            // }
+            // console.log("...");
 
             range = new Range(); // document.createRange()
 
@@ -740,13 +802,13 @@ function wrapHighlight(
             if (!firstTextNode.nodeValue && firstTextNode.nodeValue !== "") {
                 return;
             }
-            range.setStart(firstTextNode, 0);
+            range.setStart(firstTextNode, isOnlyWhiteSpace(firstTextNode.nodeValue) ? firstTextNode.nodeValue.length - 1 : 0);
 
             const lastTextNode = ttsQueueItem.textNodes[ttsQueueItem.textNodes.length - 1];
             if (!lastTextNode.nodeValue && lastTextNode.nodeValue !== "") {
                 return;
             }
-            range.setEnd(lastTextNode, lastTextNode.nodeValue.length);
+            range.setEnd(lastTextNode, isOnlyWhiteSpace(lastTextNode.nodeValue) ? 1 : lastTextNode.nodeValue.length);
         }
 
         if (range) {
@@ -757,15 +819,15 @@ function wrapHighlight(
                 focusScrollImmediate(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect);
             }
 
-            const tuple = convertRange(
-                range,
-                getCssSelector,
-                (_node: Node) => ""); // computeElementCFI
-            if (!tuple) {
-                return;
-            }
-            const rangeInfo = tuple[0];
-            const textInfo = tuple[1];
+            // const tuple = convertRange(
+            //     range,
+            //     getCssSelector,
+            //     (_node: Node) => ""); // computeElementCFI
+            // if (!tuple) {
+            //     return;
+            // }
+            // const rangeInfo = tuple[0];
+            // const textInfo = tuple[1];
 
             const highlightDefinitions = [
                 {
@@ -777,17 +839,19 @@ function wrapHighlight(
                     },
                     drawType: HighlightDrawTypeBackground,
                     expand: 4,
-                    selectionInfo: {
-                        rawBefore: textInfo.rawBefore,
-                        rawText: textInfo.rawText,
-                        rawAfter: textInfo.rawAfter,
+                    selectionInfo: undefined,
+                    range,
+                    // selectionInfo: {
+                    //     rawBefore: textInfo.rawBefore,
+                    //     rawText: textInfo.rawText,
+                    //     rawAfter: textInfo.rawAfter,
 
-                        cleanBefore: textInfo.cleanBefore,
-                        cleanText: textInfo.cleanText,
-                        cleanAfter: textInfo.cleanAfter,
+                    //     cleanBefore: textInfo.cleanBefore,
+                    //     cleanText: textInfo.cleanText,
+                    //     cleanAfter: textInfo.cleanAfter,
 
-                        rangeInfo,
-                    },
+                    //     rangeInfo,
+                    // },
                 },
             ];
             _ttsQueueItemHighlightsSentence = createHighlights(

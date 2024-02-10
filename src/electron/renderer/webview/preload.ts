@@ -685,11 +685,11 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
     if (delayScrollIntoView) {
         setTimeout(() => {
             debug("++++ scrollToHashRaw FROM DELAYED SCROLL_TO");
-            scrollToHashRaw(false);
+            scrollToHashRaw(false, true);
         }, 100);
     } else {
         debug("++++ scrollToHashRaw FROM SCROLL_TO");
-        scrollToHashRaw(false);
+        scrollToHashRaw(false, true);
     }
 });
 
@@ -1405,12 +1405,14 @@ function scrollIntoView(element: HTMLElement, domRect: DOMRect | undefined) {
     scrollElement.scrollLeft = scrollOffset;
 }
 
-const scrollToHashRaw = (animate: boolean) => {
+const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
     if (!win.document || !win.document.body || !win.document.documentElement) {
         return;
     }
 
-    recreateAllHighlightsRaw(win);
+    if (!skipRedraw) {
+        recreateAllHighlightsRaw(win);
+    }
 
     // if (win.READIUM2.isFixedLayout) {
     //     debug("scrollToHashRaw skipped, FXL");
@@ -4368,9 +4370,10 @@ if (!win.READIUM2.isAudio) {
             ] :
             payloadPing.highlightDefinitions;
 
+        const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI);
         for (const highlightDefinition of highlightDefinitions) {
             if (!highlightDefinition.selectionInfo) {
-                highlightDefinition.selectionInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI);
+                highlightDefinition.selectionInfo = selInfo;
             }
         }
         const highlights = createHighlights(

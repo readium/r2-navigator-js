@@ -19,7 +19,8 @@ export const HighlightDrawTypeStrikethrough = 2;
 
 export interface IHighlight {
     id: string;
-    selectionInfo: ISelectionInfo;
+    selectionInfo?: ISelectionInfo;
+    range?: Range,
     color: IColor;
     pointerInteraction: boolean;
 
@@ -31,6 +32,8 @@ export interface IHighlight {
 
 export interface IHighlightDefinition {
     selectionInfo: ISelectionInfo | undefined;
+    range?: Range,
+
     color: IColor | undefined;
 
     // 0 is full background (default), 1 is underline, 2 is strikethrough
