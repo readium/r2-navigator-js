@@ -670,7 +670,9 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
         const scrollTop = scrollElement.scrollTop;
         const scrollLeft = scrollElement.scrollLeft;
         win.location.href = "#";
+        delayScrollIntoView = true;
         setTimeout(() => {
+            debug("location HREF # hash, reset scroll left/top: ", scrollTop, scrollLeft);
             scrollElement.scrollTop = scrollTop;
             scrollElement.scrollLeft = scrollLeft;
         }, 0);
@@ -1556,7 +1558,7 @@ const scrollToHashRaw = (animate: boolean) => {
 
                     return;
                 }
-            } else if (gotoProgression) {
+            } else if (typeof gotoProgression !== "undefined") {
                 const { maxScrollShift } = calculateMaxScrollShift();
 
                 if (isPaged) {
@@ -1578,6 +1580,8 @@ const scrollToHashRaw = (animate: boolean) => {
 
                     const scrollOffsetPaged = (scrollOffsetPotentiallyExcessive < 0 ? -1 : 1) *
                         Math.min(Math.abs(scrollOffsetPotentiallyExcessive), maxScrollShift);
+
+                    debug("gotoProgression, set scroll left/top (paged): ", scrollOffsetPaged);
 
                     _ignoreScrollEvent = true;
                     if (vwm) {
@@ -1607,6 +1611,8 @@ const scrollToHashRaw = (animate: boolean) => {
                 // console.log(`DEBUGxx maxScrollShift: ${maxScrollShift}`);
                 // console.log(`DEBUGxx gotoProgression: ${gotoProgression}`);
                 // console.log(`DEBUGxx scrollOffset: ${scrollOffset}`);
+
+                debug("gotoProgression, set scroll left/top (scrolled): ", scrollOffset);
 
                 _ignoreScrollEvent = true;
                 if (vwm) {
