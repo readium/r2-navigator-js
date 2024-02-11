@@ -527,6 +527,7 @@ function createWebView(second?: boolean) {
             id: 2,
             link: undefined,
             readiumCss: undefined,
+            highlights: undefined,
         };
         _webview2.setAttribute("id", "r2_webview2");
         domSlidingViewport.appendChild(_webview2 as Node);
@@ -539,6 +540,7 @@ function createWebView(second?: boolean) {
             id: 1,
             link: undefined,
             readiumCss: undefined,
+            highlights: undefined,
         };
         _webview1.setAttribute("id", "r2_webview1");
         domSlidingViewport.appendChild(_webview1 as Node);

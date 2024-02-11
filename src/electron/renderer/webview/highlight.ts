@@ -726,6 +726,9 @@ function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow): HTMLEleme
 }
 
 export function hideAllhighlights(_documant: Document) {
+    if (IS_DEV) {
+        console.log("--HIGH WEBVIEW-- hideAllhighlights: " + _highlights.length);
+    }
     // for (const highlight of _highlights) {
     //     const highlightContainer = documant.getElementById(highlight.id);
     //     if (highlightContainer) {
@@ -740,6 +743,9 @@ export function hideAllhighlights(_documant: Document) {
 }
 
 export function destroyAllhighlights(documant: Document) {
+    if (IS_DEV) {
+        console.log("--HIGH WEBVIEW-- destroyAllhighlights: " + _highlights.length);
+    }
     // _highlights.forEach((highlight) => {
     //     destroyHighlight(highlight.id);
     // });
@@ -755,6 +761,9 @@ export function destroyAllhighlights(documant: Document) {
 }
 
 export function destroyHighlight(documant: Document, id: string) {
+    if (IS_DEV) {
+        console.log("--HIGH WEBVIEW-- destroyHighlight: " + id + " ... " + _highlights.length);
+    }
     let i = -1;
     const highlight = _highlights.find((h, j) => {
         i = j;
@@ -770,12 +779,38 @@ export function destroyHighlight(documant: Document, id: string) {
     }
 }
 
-export function recreateAllHighlightsRaw(win: ReadiumElectronWebviewWindow) {
+export function recreateAllHighlightsRaw(win: ReadiumElectronWebviewWindow, highlights?: IHighlight[]) {
+    if (IS_DEV) {
+        console.log("--HIGH WEBVIEW-- recreateAllHighlightsRaw: " + _highlights.length + " ==> " + highlights?.length);
+    }
+
     const documant = win.document;
+
+    if (highlights) {
+        if (_highlights.length) {
+            if (IS_DEV) {
+                console.log("--HIGH WEBVIEW-- recreateAllHighlightsRaw DESTROY OLD BEFORE RESTORE BACKUP: " + _highlights.length + " ==> " + highlights.length);
+            }
+            destroyAllhighlights(documant);
+        }
+        if (IS_DEV) {
+            console.log("--HIGH WEBVIEW-- recreateAllHighlightsRaw RESTORE BACKUP: " + _highlights.length + " ==> " + highlights.length);
+        }
+        _highlights.push(...highlights);
+    }
+
+    if (!documant.body) {
+        if (IS_DEV) {
+            console.log("--HIGH WEBVIEW-- NO BODY?! (retrying...): " + _highlights.length);
+        }
+        recreateAllHighlightsDebounced(win);
+        return;
+    }
+
     hideAllhighlights(documant);
 
     const bodyRect = getBoundingClientRectOfDocumentBody(win);
-    const bodyWidth = parseInt(win.getComputedStyle(win.document.body).width, 10);
+    const bodyWidth = parseInt(win.getComputedStyle(documant.body).width, 10);
 
     const docFrag = documant.createDocumentFragment();
     for (const highlight of _highlights) {
@@ -790,10 +825,16 @@ export function recreateAllHighlightsRaw(win: ReadiumElectronWebviewWindow) {
 }
 
 export const recreateAllHighlightsDebounced = debounce((win: ReadiumElectronWebviewWindow) => {
+    if (IS_DEV) {
+        console.log("--HIGH WEBVIEW-- recreateAllHighlightsDebounced: " + _highlights.length);
+    }
     recreateAllHighlightsRaw(win);
 }, 500);
 
 export function recreateAllHighlights(win: ReadiumElectronWebviewWindow) {
+    if (IS_DEV) {
+        console.log("--HIGH WEBVIEW-- recreateAllHighlights: " + _highlights.length);
+    }
     hideAllhighlights(win.document);
     recreateAllHighlightsDebounced(win);
 }
@@ -802,6 +843,9 @@ export function createHighlights(
     win: ReadiumElectronWebviewWindow,
     highDefs: IHighlightDefinition[],
     pointerInteraction: boolean): Array<IHighlight | null> {
+    if (IS_DEV) {
+        console.log("--HIGH WEBVIEW-- createHighlights: " + highDefs.length + " ... " + _highlights.length);
+    }
 
     const documant = win.document;
     const highlights: Array<IHighlight | null> = [];

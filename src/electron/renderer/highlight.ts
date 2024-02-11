@@ -44,6 +44,7 @@ export function highlightsClickListen(highlightsClickListener: (href: string, hi
     _highlightsClickListener = highlightsClickListener;
 }
 export function highlightsRemoveAll(href: string) {
+    console.log("--HIGH-- highlightsRemoveAll: " + href);
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
         if (activeWebView.READIUM2.link?.Href !== href) {
@@ -52,12 +53,14 @@ export function highlightsRemoveAll(href: string) {
 
         setTimeout(async () => {
             if (activeWebView.READIUM2?.DOMisReady) {
+                activeWebView.READIUM2.highlights = undefined;
                 await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE_ALL);
             }
         }, 0);
     }
 }
 export function highlightsRemove(href: string, highlightIDs: string[]) {
+    console.log("--HIGH-- highlightsRemove: " + href + " ==> " + highlightIDs.length);
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
         if (activeWebView.READIUM2.link?.Href !== href) {
@@ -69,6 +72,11 @@ export function highlightsRemove(href: string, highlightIDs: string[]) {
         };
         setTimeout(async () => {
             if (activeWebView.READIUM2?.DOMisReady) {
+                if (activeWebView.READIUM2.highlights) {
+                    activeWebView.READIUM2.highlights = activeWebView.READIUM2.highlights.filter((h) => {
+                        return !highlightIDs.includes(h.id);
+                    });
+                }
                 await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE, payload);
             }
         }, 0);
@@ -79,7 +87,7 @@ export async function highlightsCreate(
     highlightDefinitions: IHighlightDefinition[] | undefined):
     Promise<Array<IHighlight | null>> {
     return new Promise<Array<IHighlight | null>>((resolve, reject) => {
-
+        console.log("--HIGH-- highlightsCreate: " + href + " ==> " + highlightDefinitions?.length);
         const activeWebViews = win.READIUM2.getActiveWebViews();
         for (const activeWebView of activeWebViews) {
             if (activeWebView.READIUM2.link?.Href !== href) {
@@ -96,8 +104,13 @@ export async function highlightsCreate(
                     const payloadPong = event.args[0] as IEventPayload_R2_EVENT_HIGHLIGHT_CREATE;
                     webview.removeEventListener("ipc-message", cb);
                     if (!payloadPong.highlights) { // includes undefined and empty array
+                        // UNCHANGED webview.READIUM2.highlights = undefined;
                         reject("highlightCreate fail?!");
                     } else {
+                        if (!webview.READIUM2.highlights) {
+                            webview.READIUM2.highlights = [];
+                        }
+                        webview.READIUM2.highlights.push(...(payloadPong.highlights.filter((h) => !!h) as IHighlight[]));
                         resolve(payloadPong.highlights);
                     }
                 }

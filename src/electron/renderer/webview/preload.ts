@@ -67,6 +67,7 @@ import { closePopupDialogs, isPopupDialogOpen } from "../common/popup-dialog";
 import { getURLQueryParams } from "../common/querystring";
 import { IRect, getClientRectsNoOverlap_ } from "../common/rect-utils";
 import {
+    URL_PARAM_HIGHLIGHTS,
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
     URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_GOTO_DOM_RANGE, URL_PARAM_PREVIOUS,
     URL_PARAM_SECOND_WEBVIEW, URL_PARAM_WEBVIEW_SLOT,
@@ -2147,6 +2148,40 @@ function loaded(forced: boolean) {
         debug(">>> LOAD EVENT WAS FORCED!");
     } else {
         debug(">>> LOAD EVENT was not forced.");
+    }
+
+    if (win.READIUM2.urlQueryParams) {
+        // tslint:disable-next-line:no-string-literal
+        const b64Highlights = win.READIUM2.urlQueryParams[URL_PARAM_HIGHLIGHTS];
+        if (b64Highlights) {
+            setTimeout(async () => {
+
+                let jsonStr: string | undefined;
+                try {
+                    const buff = Buffer.from(b64Highlights, "base64");
+
+                    const cs = new DecompressionStream("gzip");
+                    const csWriter = cs.writable.getWriter();
+                    csWriter.write(buff); // .buffer
+                    csWriter.close();
+
+                    const buffer = Buffer.from(await new Response(cs.readable).arrayBuffer());
+                    // const buffer = await streamToBufferPromise(cs.readable as ReadableStream<any>);
+
+                    const jsonStr = new TextDecoder().decode(buffer); // buffer.toString("utf8");
+
+                    // console.log("--HIGH LOAD PARAM OUT--");
+                    // console.log(jsonStr);
+                    const highlights = JSON.parse(jsonStr);
+                    recreateAllHighlightsRaw(win, highlights);
+                } catch (err) {
+                    debug("################## HIGHLIGHTS PARSE ERROR?!");
+                    debug(b64Highlights);
+                    debug(err);
+                    debug(jsonStr);
+                }
+            }, 10);
+        }
     }
 
     if (win.READIUM2.isAudio) {

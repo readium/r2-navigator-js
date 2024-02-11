@@ -14,6 +14,7 @@ import {
 } from "../../common/events";
 import { WebViewSlotEnum } from "../../common/styles";
 import { IStringMap } from "../common/querystring";
+import { IHighlight } from "src/electron/common/highlight";
 
 export type TWindow = typeof window;
 
@@ -59,6 +60,8 @@ export interface IReadiumElectronWebviewState {
     forceRefresh?: boolean;
 
     readiumCss: IEventPayload_R2_EVENT_READIUMCSS | undefined;
+
+    highlights: IHighlight[] | undefined;
 
     DOMisReady?: boolean;
 }
