@@ -20,7 +20,7 @@ import {
     IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK, IEventPayload_R2_EVENT_CAPTIONS,
     IEventPayload_R2_EVENT_CLIPBOARD_COPY, IEventPayload_R2_EVENT_DEBUG_VISUALS,
     IEventPayload_R2_EVENT_FXL_CONFIGURE, IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
-    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, IEventPayload_R2_EVENT_LINK,
+    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE_ALL, IEventPayload_R2_EVENT_LINK,
     IEventPayload_R2_EVENT_LOCATOR_VISIBLE, IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK,
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP,
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE,
@@ -76,7 +76,7 @@ import { setupAudioBook } from "./audiobook";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
     CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN, CLASS_HIGHLIGHT_CONTAINER,
-    createHighlights, destroyAllhighlights, destroyHighlight,
+    createHighlights, destroyAllhighlights, destroyHighlight, destroyHighlightsGroup,
     recreateAllHighlights, recreateAllHighlightsRaw,
 } from "./highlight";
 import { popoutImage } from "./popoutImages";
@@ -2825,6 +2825,8 @@ function loaded(forced: boolean) {
             };
             ipcRenderer.sendToHost(R2_EVENT_FXL_CONFIGURE, payload);
         }
+
+        recreateAllHighlightsRaw(win);
     });
 
     const onResizeRaw = () => {
@@ -4401,7 +4403,8 @@ if (!win.READIUM2.isAudio) {
                     drawType: undefined,
                     expand: undefined,
                     selectionInfo: undefined,
-                } as IHighlightDefinition,
+                    group: undefined,
+                } satisfies IHighlightDefinition,
             ] :
             payloadPing.highlightDefinitions;
 
@@ -4431,7 +4434,13 @@ if (!win.READIUM2.isAudio) {
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ipcRenderer.on(R2_EVENT_HIGHLIGHT_REMOVE_ALL, (_event: any) => {
-        destroyAllhighlights(win.document);
+    ipcRenderer.on(R2_EVENT_HIGHLIGHT_REMOVE_ALL, (_event: any, payload: IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE_ALL) => {
+        if (payload.groups) {
+            for (const group of payload.groups) {
+                destroyHighlightsGroup(win.document, group);
+            }
+        } else {
+            destroyAllhighlights(win.document);
+        }
     });
 }

@@ -671,6 +671,7 @@ function wrapHighlightWord(
                 drawType: HighlightDrawTypeUnderline,
                 expand: 2,
                 selectionInfo: undefined,
+                group: "tts",
                 range,
                 // selectionInfo: {
                 //     rawBefore: textInfo.rawBefore,
@@ -840,6 +841,7 @@ function wrapHighlight(
                     drawType: HighlightDrawTypeBackground,
                     expand: 4,
                     selectionInfo: undefined,
+                    group: "tts",
                     range,
                     // selectionInfo: {
                     //     rawBefore: textInfo.rawBefore,

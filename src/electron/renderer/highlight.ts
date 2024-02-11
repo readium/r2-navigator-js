@@ -7,7 +7,7 @@
 
 import {
     IEventPayload_R2_EVENT_HIGHLIGHT_CLICK, IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
-    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_CLICK, R2_EVENT_HIGHLIGHT_CREATE,
+    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE_ALL, R2_EVENT_HIGHLIGHT_CLICK, R2_EVENT_HIGHLIGHT_CREATE,
     R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
 } from "../common/events";
 import { IHighlight, IHighlightDefinition } from "../common/highlight";
@@ -43,8 +43,8 @@ let _highlightsClickListener: ((href: string, highlight: IHighlight) => void) | 
 export function highlightsClickListen(highlightsClickListener: (href: string, highlight: IHighlight) => void) {
     _highlightsClickListener = highlightsClickListener;
 }
-export function highlightsRemoveAll(href: string) {
-    console.log("--HIGH-- highlightsRemoveAll: " + href);
+export function highlightsRemoveAll(href: string, groups: string[] | undefined) {
+    console.log("--HIGH-- highlightsRemoveAll: " + href + " ... " + JSON.stringify(groups));
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
         if (activeWebView.READIUM2.link?.Href !== href) {
@@ -53,8 +53,20 @@ export function highlightsRemoveAll(href: string) {
 
         setTimeout(async () => {
             if (activeWebView.READIUM2?.DOMisReady) {
-                activeWebView.READIUM2.highlights = undefined;
-                await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE_ALL);
+
+                const payload: IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE_ALL = {
+                    groups,
+                };
+                if (groups) {
+                    if (activeWebView.READIUM2.highlights) {
+                        activeWebView.READIUM2.highlights =  activeWebView.READIUM2.highlights.filter((h) => {
+                            return !h.group || !groups.includes(h.group);
+                        });
+                    }
+                } else {
+                    activeWebView.READIUM2.highlights = undefined;
+                }
+                await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE_ALL, payload);
             }
         }, 0);
     }

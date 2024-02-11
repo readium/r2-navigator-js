@@ -28,6 +28,8 @@ export interface IHighlight {
     drawType?: number;
 
     expand?: number;
+
+    group: string | undefined;
 }
 
 export interface IHighlightDefinition {
@@ -40,6 +42,8 @@ export interface IHighlightDefinition {
     drawType?: number;
 
     expand?: number;
+
+    group: string | undefined;
 }
 
 export function convertColorHexadecimalToRGBA(cssHex: string, alpha?: number): string | undefined {

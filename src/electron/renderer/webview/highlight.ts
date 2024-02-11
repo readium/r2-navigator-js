@@ -779,6 +779,31 @@ export function destroyHighlight(documant: Document, id: string) {
     }
 }
 
+export function destroyHighlightsGroup(documant: Document, group: string) {
+    if (IS_DEV) {
+        console.log("--HIGH WEBVIEW-- destroyHighlightsGroup: " + group + " ... " + _highlights.length);
+    }
+    while (true) {
+        let i = -1;
+        const highlight = _highlights.find((h, j) => {
+            i = j;
+            return h.group === group;
+        });
+        if (highlight) {
+            if (i >= 0 && i < _highlights.length) {
+                _highlights.splice(i, 1);
+            }
+
+            const highlightContainer = documant.getElementById(highlight.id);
+            if (highlightContainer) {
+                highlightContainer.remove();
+            }
+        } else {
+            break;
+        }
+    }
+}
+
 export function recreateAllHighlightsRaw(win: ReadiumElectronWebviewWindow, highlights?: IHighlight[]) {
     if (IS_DEV) {
         console.log("--HIGH WEBVIEW-- recreateAllHighlightsRaw: " + _highlights.length + " ==> " + highlights?.length);
@@ -867,6 +892,7 @@ export function createHighlights(
             pointerInteraction,
             highDef.drawType,
             highDef.expand,
+            highDef.group,
             bodyRect,
             bodyWidth);
         highlights.push(high);
@@ -923,6 +949,7 @@ export function createHighlight(
     pointerInteraction: boolean,
     drawType: number | undefined,
     expand: number | undefined,
+    group: string | undefined,
     bodyRect: DOMRect,
     bodyWidth: number): [IHighlight, HTMLDivElement | null] {
 
@@ -962,6 +989,7 @@ export function createHighlight(
         pointerInteraction,
         selectionInfo,
         range,
+        group,
     };
     _highlights.push(highlight);
 

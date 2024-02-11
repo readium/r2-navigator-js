@@ -349,6 +349,10 @@ export interface IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE {
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_HIGHLIGHT_REMOVE_ALL = "R2_EVENT_HIGHLIGHT_REMOVE_ALL";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE_ALL {
+    groups: string[] | undefined;
+}
 
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
