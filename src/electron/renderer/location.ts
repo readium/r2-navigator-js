@@ -1572,7 +1572,7 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
                     newActiveWebView.READIUM2.link = pubLink;
                     newActiveWebView.setAttribute("src", uriStr__);
                 }
-            }, win.READIUM2.ttsClickEnabled ? 500 : 10);
+            }, activeWebView.READIUM2.highlights ? 500 : win.READIUM2.ttsClickEnabled ? 100 : 10);
         } else {
             setTimeout(async () => {
                 const highlights = activeWebView.READIUM2.highlights;
@@ -1632,7 +1632,7 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
                 } else {
                     activeWebView.setAttribute("src", uriStr__);
                 }
-            }, win.READIUM2.ttsClickEnabled ? 500 : 10);
+            }, activeWebView.READIUM2.highlights ? 500 : win.READIUM2.ttsClickEnabled ? 100 : 10);
         }
     }
 
