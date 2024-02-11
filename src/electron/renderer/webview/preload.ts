@@ -3976,11 +3976,12 @@ const findFollowingDescendantSiblingElementsWithID = (el: Element): string[] | u
         followingElementIDs = [];
 
         if (!_elementsWithID) {
-            _elementsWithID = Array.from(win.document.querySelectorAll(`:not(#${ID_HIGHLIGHTS_CONTAINER}):not(#${POPUP_DIALOG_CLASS}):not(#${SKIP_LINK_ID}) *[id]:not(#${ID_HIGHLIGHTS_CONTAINER}):not(#${POPUP_DIALOG_CLASS}):not(#${SKIP_LINK_ID})`));
+            _elementsWithID = Array.from(win.document.querySelectorAll(`*:not(#${ID_HIGHLIGHTS_CONTAINER}):not(#${POPUP_DIALOG_CLASS}):not(#${SKIP_LINK_ID}) *[id]:not(#${ID_HIGHLIGHTS_CONTAINER}):not(#${POPUP_DIALOG_CLASS}):not(#${SKIP_LINK_ID})`));
         }
-        // const elHighlightsContainer = win.document.getElementById(ID_HIGHLIGHTS_CONTAINER);
-        // const elPopupDialog = win.document.getElementById(POPUP_DIALOG_CLASS);
-        // const elSkipLink = win.document.getElementById(SKIP_LINK_ID);
+
+        const elHighlightsContainer = win.document.getElementById(ID_HIGHLIGHTS_CONTAINER);
+        const elPopupDialog = win.document.getElementById(POPUP_DIALOG_CLASS);
+        const elSkipLink = win.document.getElementById(SKIP_LINK_ID);
 
         // for (let i = _elementsWithID.length - 1; i >= 0; i--) {
         for (let i = 0; i < _elementsWithID.length; i++) {
@@ -3994,29 +3995,31 @@ const findFollowingDescendantSiblingElementsWithID = (el: Element): string[] | u
             // tslint:disable-next-line: no-bitwise
             if (// c === 0 ||
                 (c & Node.DOCUMENT_POSITION_FOLLOWING) || (c & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
-                // let doPush = true;
-                // if (elHighlightsContainer) {
-                //     const c1 = elHighlightsContainer.compareDocumentPosition(elementWithID);
-                //     if (c1 === 0 || (c1 & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
-                //         doPush = false;
-                //     }
-                // }
-                // if (elPopupDialog) {
-                //     const c2 = elPopupDialog.compareDocumentPosition(elementWithID);
-                //     if (c2 === 0 || (c2 & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
-                //         doPush = false;
-                //     }
-                // }
-                // if (elSkipLink) {
-                //     const c3 = elSkipLink.compareDocumentPosition(elementWithID);
-                //     if (c3 === 0 || (c3 & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
-                //         doPush = false;
-                //     }
-                // }
-                // if (doPush) {
-                //     followingElementIDs.push(id);
-                // }
-                followingElementIDs.push(id);
+                let doPush = true;
+                if (elHighlightsContainer) {
+                    const c1 = elHighlightsContainer.compareDocumentPosition(elementWithID);
+                    if (c1 === 0 || (c1 & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+                        doPush = false;
+                        debug("findFollowingDescendantSiblingElementsWithID CSS selector failed? (highlights) " + id);
+                    }
+                }
+                if (elPopupDialog) {
+                    const c2 = elPopupDialog.compareDocumentPosition(elementWithID);
+                    if (c2 === 0 || (c2 & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+                        doPush = false;
+                        debug("findFollowingDescendantSiblingElementsWithID CSS selector failed? (popup dialog) " + id);
+                    }
+                }
+                if (elSkipLink) {
+                    const c3 = elSkipLink.compareDocumentPosition(elementWithID);
+                    if (c3 === 0 || (c3 & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+                        doPush = false;
+                        debug("findFollowingDescendantSiblingElementsWithID CSS selector failed? (skip link) " + id);
+                    }
+                }
+                if (doPush) {
+                    followingElementIDs.push(id);
+                }
             }
         }
     }
