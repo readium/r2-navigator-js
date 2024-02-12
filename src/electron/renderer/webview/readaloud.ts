@@ -9,7 +9,7 @@ import * as debounce from "debounce";
 import { ipcRenderer } from "electron";
 
 import {
-    R2_EVENT_TTS_DOC_END, R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED,
+    R2_EVENT_TTS_DOC_END, R2_EVENT_TTS_DOC_BACK, R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED,
 } from "../../common/events";
 import {
     HighlightDrawTypeBackground, HighlightDrawTypeUnderline, IHighlight,
@@ -418,6 +418,16 @@ export function ttsNext(skipSentences = false) {
                     _dialogState.ttsQueueItem.iSentence);
         }
         if (j >= _dialogState.ttsQueueLength || j < 0) {
+
+            ttsStop();
+            setTimeout(() => {
+                ipcRenderer.sendToHost(R2_EVENT_TTS_DOC_END);
+                // const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+                //     direction: "LTR",
+                //     go: "NEXT",
+                // };
+                // ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+            }, 400);
             return;
         }
         ttsPause(true);
@@ -435,6 +445,15 @@ export function ttsPrevious(skipSentences = false) {
             j = _dialogState.ttsQueueItem.iGlobal - _dialogState.ttsQueueItem.iSentence - 1;
         }
         if (j >= _dialogState.ttsQueueLength || j < 0) {
+            ttsStop();
+            setTimeout(() => {
+                ipcRenderer.sendToHost(R2_EVENT_TTS_DOC_BACK);
+                // const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+                //     direction: "LTR",
+                //     go: "NEXT",
+                // };
+                // ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+            }, 400);
             return;
         }
         ttsPause(true);

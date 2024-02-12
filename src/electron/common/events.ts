@@ -301,6 +301,10 @@ export const R2_EVENT_TTS_IS_PLAYING = "R2_EVENT_TTS_IS_PLAYING";
 // in RENDERER: webview.addEventListener("ipc-message")
 export const R2_EVENT_TTS_DOC_END = "R2_EVENT_TTS_DOC_END";
 
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_TTS_DOC_BACK = "R2_EVENT_TTS_DOC_BACK";
+
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_TTS_DO_NEXT = "R2_EVENT_TTS_DO_NEXT";
