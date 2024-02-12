@@ -4284,6 +4284,13 @@ if (!win.READIUM2.isAudio) {
             if (!payload.id) {
                 win.document.documentElement.classList.remove(R2_MO_CLASS_ACTIVE_PLAYBACK, activeClassPlayback);
             } else {
+                if (true || !payload.captionsMode) {
+                    clearCurrentSelection(win);
+                    if (isPopupDialogOpen(win.document)) {
+                        closePopupDialogs(win.document);
+                    }
+                }
+
                 win.document.documentElement.classList.add(activeClassPlayback);
 
                 const targetEl = win.document.getElementById(payload.id);
