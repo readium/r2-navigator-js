@@ -10,6 +10,8 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 import * as debug_ from "debug";
 import { ipcRenderer } from "electron";
 
+import { Link } from "@r2-shared-js/models/publication-link";
+
 import { mediaOverlaysInterrupt } from "./media-overlays";
 import { Locator } from "@r2-shared-js/models/locator";
 import { Publication } from "@r2-shared-js/models/publication";
@@ -194,12 +196,13 @@ ipcRenderer.on("accessibility-support-changed", (_e, accessibilitySupportEnabled
 function readiumCssApplyToWebview(
     loc: LocatorExtended | undefined,
     activeWebView: IReadiumElectronWebview,
+    pubLink: Link | undefined,
     rcss?: IEventPayload_R2_EVENT_READIUMCSS) {
 
     const actualReadiumCss = obtainReadiumCss(rcss);
     activeWebView.READIUM2.readiumCss = actualReadiumCss;
 
-    const payloadRcss = adjustReadiumCssJsonMessageForFixedLayout(activeWebView, actualReadiumCss);
+    const payloadRcss = adjustReadiumCssJsonMessageForFixedLayout(activeWebView, pubLink || activeWebView.READIUM2.link, actualReadiumCss);
 
     if (activeWebView.style.transform &&
         activeWebView.style.transform !== "none" &&
@@ -281,7 +284,7 @@ export function readiumCssOnOff(rcss?: IEventPayload_R2_EVENT_READIUMCSS) {
 
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
-        readiumCssApplyToWebview(loc, activeWebView, rcss);
+        readiumCssApplyToWebview(loc, activeWebView, undefined, rcss);
     }
 }
 export function readiumCssUpdate(rcss: IEventPayload_R2_EVENT_READIUMCSS) {

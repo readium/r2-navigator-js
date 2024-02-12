@@ -954,7 +954,7 @@ function loadLink(
         win.READIUM2.destroySecondWebView();
     }
 
-    const rcssJson = adjustReadiumCssJsonMessageForFixedLayout(activeWebView, actualReadiumCss);
+    const rcssJson = adjustReadiumCssJsonMessageForFixedLayout(activeWebView, pubLink || activeWebView?.READIUM2.link, actualReadiumCss);
 
     const rcssJsonstr = JSON.stringify(rcssJson, null, "");
     const rcssJsonstrBase64 = Buffer.from(rcssJsonstr).toString("base64");

@@ -69,6 +69,7 @@ export function obtainReadiumCss(rcss?: IEventPayload_R2_EVENT_READIUMCSS) {
 
 export function adjustReadiumCssJsonMessageForFixedLayout(
     webview: IReadiumElectronWebview | undefined,
+    pubLink: Link | undefined,
     rcss: IEventPayload_R2_EVENT_READIUMCSS,
 ): IEventPayload_R2_EVENT_READIUMCSS {
 
@@ -76,7 +77,8 @@ export function adjustReadiumCssJsonMessageForFixedLayout(
         return rcss;
     }
 
-    if (isFixedLayout(webview.READIUM2.link)) {
+    if (isFixedLayout(pubLink)) {
+
         return {
             fixedLayoutWebViewHeight: webview.clientHeight,
             fixedLayoutWebViewWidth: webview.clientWidth,
