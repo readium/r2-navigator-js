@@ -4100,12 +4100,15 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
     const headings = findPrecedingAncestorSiblingHeadings(win.READIUM2.locationHashOverride);
     const followingElementIDs = findFollowingDescendantSiblingElementsWithID(win.READIUM2.locationHashOverride);
 
-    const secondWebViewHref = win.READIUM2.urlQueryParams &&
+    let secondWebViewHref = win.READIUM2.urlQueryParams &&
         win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW] &&
         win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW].length > 1 &&
         win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW].startsWith("0") ?
         win.READIUM2.urlQueryParams[URL_PARAM_SECOND_WEBVIEW].substr(1) :
         undefined;
+    if (!secondWebViewHref) { // includes empty string
+        secondWebViewHref = undefined;
+    }
 
     win.READIUM2.locationHashOverrideInfo = {
         audioPlaybackInfo: undefined,

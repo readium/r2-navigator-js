@@ -248,7 +248,7 @@ export function locationHandleIpcMessage(
             //         }
             //     }
             // }
-            _saveReadingLocation(activeWebView.READIUM2.link.Href, payload);
+            _saveReadingLocation(activeWebView, payload);
         }
     } else if (eventChannel === R2_EVENT_LINK) {
         // debug("R2_EVENT_LINK (webview.addEventListener('ipc-message')");
@@ -1670,7 +1670,21 @@ export function getCurrentReadingLocation(): LocatorExtended | undefined {
     return _lastSavedReadingLocation;
 }
 let _readingLocationSaver: ((locator: LocatorExtended) => void) | undefined;
-const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_READING_LOCATION) => {
+const _saveReadingLocation = (activeWebView: IReadiumElectronWebview, locator: IEventPayload_R2_EVENT_READING_LOCATION) => {
+
+    const docHref = activeWebView.READIUM2.link?.Href;
+    if (!docHref) {
+        return;
+    }
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    let otherActive: IReadiumElectronWebview | undefined;
+    for (const active of activeWebViews) {
+        if (active === activeWebView) {
+            continue;
+        }
+        otherActive = active;
+        break;
+    }
 
     const publication = win.READIUM2.publication;
 
@@ -1734,7 +1748,7 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
             title: locator.title,
         },
         paginationInfo: locator.paginationInfo,
-        secondWebViewHref: locator.secondWebViewHref,
+        secondWebViewHref: locator.secondWebViewHref || otherActive?.READIUM2.link?.Href,
         selectionInfo: locator.selectionInfo,
         selectionIsNew: locator.selectionIsNew,
     };
