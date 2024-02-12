@@ -1518,8 +1518,8 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
             }
             return true;
         } else if (webviewNeedsHardRefresh) {
+            const highlights = activeWebView.READIUM2.link === pubLink ? activeWebView.READIUM2.highlights : undefined;
             setTimeout(async () => {
-                const highlights = activeWebView.READIUM2.highlights;
                 if (highlights) {
                     const jsonStr = JSON.stringify(highlights);
 
@@ -1554,6 +1554,7 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
                 }
 
                 const readiumCssBackup = activeWebView.READIUM2.readiumCss;
+                activeWebView.READIUM2.highlights = highlights;
                 if (secondWebView) {
                     if (!secondWebViewWasJustCreated) {
                         win.READIUM2.destroySecondWebView();
@@ -1572,10 +1573,10 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
                     newActiveWebView.READIUM2.link = pubLink;
                     newActiveWebView.setAttribute("src", uriStr__);
                 }
-            }, activeWebView.READIUM2.highlights ? 500 : win.READIUM2.ttsClickEnabled ? 100 : 10);
+            }, highlights ? 500 : win.READIUM2.ttsClickEnabled ? 100 : 10);
         } else {
+            const highlights = activeWebView.READIUM2.link === pubLink ? activeWebView.READIUM2.highlights : undefined;
             setTimeout(async () => {
-                const highlights = activeWebView.READIUM2.highlights;
                 if (highlights) {
                     const jsonStr = JSON.stringify(highlights);
 
@@ -1613,6 +1614,8 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
                     && activeWebView.READIUM2.link !== null;
                 activeWebView.READIUM2.link = pubLink;
 
+                activeWebView.READIUM2.highlights = highlights;
+
                 if (activeWebView.style.transform &&
                     activeWebView.style.transform !== "none" &&
                     !activeWebView.hasAttribute("data-wv-fxl")) {
@@ -1632,7 +1635,7 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
                 } else {
                     activeWebView.setAttribute("src", uriStr__);
                 }
-            }, activeWebView.READIUM2.highlights ? 500 : win.READIUM2.ttsClickEnabled ? 100 : 10);
+            }, highlights ? 500 : win.READIUM2.ttsClickEnabled ? 100 : 10);
         }
     }
 
