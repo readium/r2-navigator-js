@@ -783,10 +783,12 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                 }
                             }
                         } else if (childTagNameLow === "svg") {
+                            let done = false;
                             const altAttr = childElement.getAttribute("aria-label");
                             if (altAttr) {
                                 const txt = altAttr.trim();
                                 if (txt) {
+                                    done = true;
                                     const lang = getLanguage(childElement);
                                     const dir = undefined;
                                     ttsQueue.push({
@@ -807,6 +809,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                     if (svgChild.tagName?.toLowerCase() === "title") {
                                         const txt = svgChild.textContent?.trim();
                                         if (txt) {
+                                            done = true;
                                             const lang = getLanguage(svgChild);
                                             const dir = getDirection(svgChild);
                                             ttsQueue.push({
@@ -822,6 +825,43 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                             });
                                         }
                                         break;
+                                    }
+                                }
+                            }
+
+                            if (!done) {
+                                const iter = win.document.createNodeIterator(
+                                    childElement, // win.document.body
+                                    NodeFilter.SHOW_ELEMENT,
+                                    {
+                                        // tspan breaks words / sentences
+                                        acceptNode: (node) => node.nodeName.toLowerCase() === "text" ?
+                                        NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
+                                    },
+                                );
+                                let n: Node | null;
+                                while (n = iter.nextNode()) {
+                                    const el = n as Element;
+                                    try {
+                                        processElement(el);
+                                    } catch (err) {
+                                        console.log("SVG TTS error: ", err);
+                                        const txt = el.textContent?.trim();
+                                        if (txt) {
+                                            const lang = getLanguage(el);
+                                            const dir = getDirection(el);
+                                            ttsQueue.push({
+                                                combinedText: txt,
+                                                combinedTextSentences: undefined,
+                                                combinedTextSentencesRangeBegin: undefined,
+                                                combinedTextSentencesRangeEnd: undefined,
+                                                dir,
+                                                lang,
+                                                parentElement: el,
+                                                textNodes: [],
+                                                // isSkippable,
+                                            });
+                                        }
                                     }
                                 }
                             }
@@ -940,5 +980,8 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
     ttsQueue = ttsQueue.filter((item) => {
         return !!item.combinedText.length;
     });
+
+    // console.log("#### ttsQueue");
+    // consoleLogTtsQueue(ttsQueue);
     return ttsQueue;
 }
