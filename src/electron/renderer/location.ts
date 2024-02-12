@@ -1554,7 +1554,6 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
                 }
 
                 const readiumCssBackup = activeWebView.READIUM2.readiumCss;
-                activeWebView.READIUM2.highlights = highlights;
                 if (secondWebView) {
                     if (!secondWebViewWasJustCreated) {
                         win.READIUM2.destroySecondWebView();
