@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.10...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.14.11...develop
 
 Changes:
 * TODO
+
+# 1.14.11
+
+# > Build environment: NodeJS `20.11.0`, NPM `10.4.0`
+
+Changes:
+* TTS readloud in SVG (PDF-like) fixed-layout pages, based on inner 'text' elements (excluding 'tspan' fragmentation which breaks words and sentences), also fixed concurrent highlights rendering.
+* Highlights (e.g. search results) display correctly in fixed layout and reflowable hybrid publications, also fixed window resizing bug, also ensure highlights are backed-up and restored during webview refresh that does not involve the application's own state.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.14.11/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.14.11/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.14.11
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.10...v1.14.11
 
 # 1.14.10
 
