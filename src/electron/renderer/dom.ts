@@ -43,7 +43,7 @@ import {
     checkTtsState, ttsClickEnable, ttsHandleIpcMessage, ttsOverlayEnable, ttsPlaybackRate,
     ttsSentenceDetectionEnable, ttsSkippabilityEnable, ttsVoice,
 } from "./readaloud";
-import { adjustReadiumCssJsonMessageForFixedLayout, obtainReadiumCss } from "./readium-css";
+import { adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, obtainReadiumCss } from "./readium-css";
 import { soundtrackHandleIpcMessage } from "./soundtrack";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
@@ -110,7 +110,17 @@ win.addEventListener("resize", () => {
         return;
     }
 
-    if (win.READIUM2.publication?.Metadata?.Rendition?.Layout !== "fixed") {
+    let atLeastOneFXL = false;
+    const actives = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of actives) {
+        if (isFixedLayout(activeWebView.READIUM2?.link)) {
+            atLeastOneFXL = true;
+            break;
+        }
+    }
+    // win.READIUM2.publication?.Metadata?.Rendition?.Layout !== "fixed"
+    if (!atLeastOneFXL) {
+        debug("Window resize (TOP), !FXL SKIP ...");
         return;
     }
 
