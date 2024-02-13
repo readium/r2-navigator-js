@@ -4140,10 +4140,11 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
         text,
         title: _docTitle,
         userInteract: userInteract ? true : false,
+        followingElementIDs,
     };
-    if (followingElementIDs) {
-        win.READIUM2.locationHashOverrideInfo.followingElementIDs = followingElementIDs;
-    }
+    // if (followingElementIDs) {
+    //     win.READIUM2.locationHashOverrideInfo.followingElementIDs = followingElementIDs;
+    // }
 
     const payload: IEventPayload_R2_EVENT_READING_LOCATION = win.READIUM2.locationHashOverrideInfo;
     ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION, payload);
@@ -4408,12 +4409,7 @@ if (!win.READIUM2.isAudio) {
         if (payloadPing.highlightDefinitions &&
             payloadPing.highlightDefinitions.length === 1 &&
             payloadPing.highlightDefinitions[0].selectionInfo) {
-            const selection = win.getSelection();
-            if (selection) {
-                // selection.empty();
-                selection.removeAllRanges();
-                // selection.collapseToStart();
-            }
+            clearCurrentSelection(win);
         }
         const highlightDefinitions = !payloadPing.highlightDefinitions ?
             [

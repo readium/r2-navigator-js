@@ -7,6 +7,9 @@
 
 import { IRangeInfo, ISelectedTextInfo, ISelectionInfo } from "../../common/selection";
 import { ReadiumElectronWebviewWindow } from "./state";
+import { ipcRenderer } from "electron";
+
+import { R2_EVENT_READING_LOCATION_CLEAR_SELECTION } from "../../common/events";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -68,6 +71,14 @@ export function clearCurrentSelection(win: ReadiumElectronWebviewWindow) {
         return;
     }
     selection.removeAllRanges();
+    // selection.empty();
+    // selection.collapseToStart();
+
+    if (win.READIUM2.locationHashOverrideInfo?.selectionInfo) {
+        win.READIUM2.locationHashOverrideInfo.selectionInfo = undefined;
+    }
+
+    ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION_CLEAR_SELECTION);
 }
 
 export const collapseWhitespaces = (str: string) => {

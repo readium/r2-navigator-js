@@ -28,6 +28,7 @@ import {
     IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X,
     R2_EVENT_AUDIO_PLAYBACK_RATE, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN,
     R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
+    R2_EVENT_READING_LOCATION_CLEAR_SELECTION,
 } from "../common/events";
 import { IwidthHeight } from "../common/fxl";
 import { IPaginationInfo } from "../common/pagination";
@@ -204,6 +205,11 @@ export function locationHandleIpcMessage(
                 false,
                 activeWebView.READIUM2.readiumCss,
             );
+        }
+    } else if (eventChannel === R2_EVENT_READING_LOCATION_CLEAR_SELECTION) {
+        if (_lastSavedReadingLocation?.selectionInfo) {
+            _lastSavedReadingLocation.selectionInfo = undefined;
+            // no push (invoking registered listeneres), the app must pull the latest up to date state
         }
     } else if (eventChannel === R2_EVENT_READING_LOCATION) {
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_READING_LOCATION;
@@ -1757,11 +1763,11 @@ const _saveReadingLocation = (activeWebView: IReadiumElectronWebview, locator: I
         secondWebViewHref: locator.secondWebViewHref || otherActive?.READIUM2.link?.Href,
         selectionInfo: locator.selectionInfo,
         selectionIsNew: locator.selectionIsNew,
+        followingElementIDs: locator.followingElementIDs,
     };
-
-    if (locator.followingElementIDs) {
-        _lastSavedReadingLocation.followingElementIDs = locator.followingElementIDs;
-    }
+    // if (locator.followingElementIDs) {
+    //     _lastSavedReadingLocation.followingElementIDs = locator.followingElementIDs;
+    // }
 
     if (IS_DEV) {
         // debug(">->->", JSON.stringify(_lastSavedReadingLocation, null, "  "));
