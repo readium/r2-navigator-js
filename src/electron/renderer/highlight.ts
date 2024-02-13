@@ -9,6 +9,7 @@ import {
     IEventPayload_R2_EVENT_HIGHLIGHT_CLICK, IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
     IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE_ALL, R2_EVENT_HIGHLIGHT_CLICK, R2_EVENT_HIGHLIGHT_CREATE,
     R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
+    IEventPayload_R2_EVENT_HIGHLIGHT_DRAW_MARGIN, R2_EVENT_HIGHLIGHT_DRAW_MARGIN,
 } from "../common/events";
 import { IHighlight, IHighlightDefinition } from "../common/highlight";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
@@ -144,4 +145,20 @@ export async function highlightsCreate(
 
         reject("highlightsCreate - no webview match?!");
     });
+}
+
+export function highlightsDrawMargin(drawMargin: boolean | string[]) {
+    console.log("--HIGH-- highlightsDrawMargin: " + JSON.stringify(drawMargin, null, 4));
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        const payload: IEventPayload_R2_EVENT_HIGHLIGHT_DRAW_MARGIN = {
+            drawMargin,
+        };
+        setTimeout(async () => {
+            if (activeWebView.READIUM2?.DOMisReady) {
+                activeWebView.READIUM2.highlightsDrawMargin = drawMargin;
+                await activeWebView.send(R2_EVENT_HIGHLIGHT_DRAW_MARGIN, payload);
+            }
+        }, 0);
+    }
 }

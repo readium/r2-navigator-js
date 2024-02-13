@@ -41,7 +41,7 @@ import {
     R2_EVENT_SHOW, R2_EVENT_TTS_CLICK_ENABLE, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE,
     R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
     R2_EVENT_TTS_OVERLAY_ENABLE, R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_TTS_SENTENCE_DETECT_ENABLE,
-    R2_EVENT_TTS_VOICE, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP,
+    R2_EVENT_TTS_VOICE, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP, R2_EVENT_HIGHLIGHT_DRAW_MARGIN, IEventPayload_R2_EVENT_HIGHLIGHT_DRAW_MARGIN,
 } from "../../common/events";
 import { IHighlightDefinition } from "../../common/highlight";
 import { IPaginationInfo } from "../../common/pagination";
@@ -77,7 +77,7 @@ import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReading
 import {
     CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN, CLASS_HIGHLIGHT_CONTAINER,
     createHighlights, destroyAllhighlights, destroyHighlight, destroyHighlightsGroup,
-    recreateAllHighlights, recreateAllHighlightsRaw,
+    recreateAllHighlights, recreateAllHighlightsRaw, setDrawMargin,
 } from "./highlight";
 import { popoutImage } from "./popoutImages";
 import { popupFootNote } from "./popupFootNotes";
@@ -2150,6 +2150,10 @@ function loaded(forced: boolean) {
         debug(">>> LOAD EVENT was not forced.");
     }
 
+    _elementsWithID = undefined;
+    _allEpubPageBreaks = undefined;
+    _allHeadings = undefined;
+
     if (win.READIUM2.urlQueryParams) {
         // tslint:disable-next-line:no-string-literal
         const b64Highlights = win.READIUM2.urlQueryParams[URL_PARAM_HIGHLIGHTS];
@@ -2173,7 +2177,9 @@ function loaded(forced: boolean) {
                     // console.log("--HIGH LOAD PARAM OUT--");
                     // console.log(jsonStr);
                     const highlights = JSON.parse(jsonStr);
-                    recreateAllHighlightsRaw(win, highlights);
+
+                    setDrawMargin(win, highlights.margin);
+                    recreateAllHighlightsRaw(win, highlights.list);
                 } catch (err) {
                     debug("################## HIGHLIGHTS PARSE ERROR?!");
                     debug(b64Highlights);
@@ -4444,6 +4450,11 @@ if (!win.READIUM2.isAudio) {
         payload.highlightIDs.forEach((highlightID) => {
             destroyHighlight(win.document, highlightID);
         });
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ipcRenderer.on(R2_EVENT_HIGHLIGHT_DRAW_MARGIN, (_event: any, payload: IEventPayload_R2_EVENT_HIGHLIGHT_DRAW_MARGIN) => {
+        setDrawMargin(win, payload.drawMargin);
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

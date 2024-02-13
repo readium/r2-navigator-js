@@ -62,6 +62,7 @@ export interface IReadiumElectronWebviewState {
     readiumCss: IEventPayload_R2_EVENT_READIUMCSS | undefined;
 
     highlights: IHighlight[] | undefined;
+    highlightsDrawMargin: boolean | string[];
 
     DOMisReady?: boolean;
 }

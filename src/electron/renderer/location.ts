@@ -1521,7 +1521,10 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
             const highlights = activeWebView.READIUM2.link === pubLink ? activeWebView.READIUM2.highlights : undefined;
             setTimeout(async () => {
                 if (highlights) {
-                    const jsonStr = JSON.stringify(highlights);
+                    const jsonStr = JSON.stringify({
+                        margin: activeWebView.READIUM2.highlightsDrawMargin,
+                        list: highlights,
+                    });
 
                     // console.log("--HIGH LOAD PARAM IN--");
                     // console.log(jsonStr);
@@ -1577,7 +1580,10 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
             const highlights = activeWebView.READIUM2.link === pubLink ? activeWebView.READIUM2.highlights : undefined;
             setTimeout(async () => {
                 if (highlights) {
-                    const jsonStr = JSON.stringify(highlights);
+                    const jsonStr = JSON.stringify({
+                        margin: activeWebView.READIUM2.highlightsDrawMargin,
+                        list: highlights,
+                    });
 
                     // console.log("--HIGH LOAD PARAM IN--");
                     // console.log(jsonStr);

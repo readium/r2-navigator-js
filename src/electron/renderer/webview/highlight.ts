@@ -50,7 +50,22 @@ const DEFAULT_BACKGROUND_COLOR: IColor = {
 
 const _highlights: IHighlight[] = [];
 
-let _drawMarginMarkers = false;
+let _drawMargin: boolean | string[] = false;
+let _drawMarginPrevious: boolean | string[] = true; // ["search"];
+const drawMarginMarker = (h: IHighlight) => {
+    if (Array.isArray(_drawMargin)) {
+        if (h.group) {
+            return _drawMargin.includes(h.group);
+        }
+        return false;
+    }
+    return _drawMargin;
+};
+export const setDrawMargin = (win: ReadiumElectronWebviewWindow, drawMargin: boolean | string[]) => {
+    _drawMarginPrevious = _drawMargin;
+    _drawMargin = drawMargin;
+    recreateAllHighlightsRaw(win);
+};
 
 interface IAreaWithActiveFlag extends Element {
     active: boolean | undefined;
@@ -560,15 +575,17 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
     }
 
     if (foundHighlight.pointerInteraction || foundElement.getAttribute("data-click")) {
+        const doDrawMarginMarker = drawMarginMarker(foundHighlight);
+
         if (isMouseMove) {
 
             if (changeCursor) {
-                documant.documentElement.classList.add(_drawMarginMarkers ? CLASS_HIGHLIGHT_CURSOR1 : CLASS_HIGHLIGHT_CURSOR2);
+                documant.documentElement.classList.add(doDrawMarginMarker ? CLASS_HIGHLIGHT_CURSOR1 : CLASS_HIGHLIGHT_CURSOR2);
             }
 
-            if (!_drawMarginMarkers) {
+            if (!doDrawMarginMarker) {
 
-                if (_drawMarginMarkers) { // false (satisfies TS compiler in IDE :)
+                if (doDrawMarginMarker) { // false (satisfies TS compiler in IDE :)
 
                     const foundElementHighlightBounding = foundElement.querySelector(`.${CLASS_HIGHLIGHT_BOUNDING_AREA}`);
 
@@ -651,7 +668,9 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
             ev.stopPropagation();
             if (ev.altKey) {
                 // recreateAllHighlights(win);
-                _drawMarginMarkers = !_drawMarginMarkers;
+                const d = _drawMargin;
+                _drawMargin = _drawMarginPrevious;
+                _drawMarginPrevious = d;
                 recreateAllHighlightsRaw(win);
             } else {
                 const payload: IEventPayload_R2_EVENT_HIGHLIGHT_CLICK = {
@@ -822,6 +841,10 @@ export function recreateAllHighlightsRaw(win: ReadiumElectronWebviewWindow, high
             console.log("--HIGH WEBVIEW-- recreateAllHighlightsRaw RESTORE BACKUP: " + _highlights.length + " ==> " + highlights.length);
         }
         _highlights.push(...highlights);
+    }
+
+    if (!_highlights.length) {
+        return;
     }
 
     if (!documant.body) {
@@ -1036,7 +1059,7 @@ function createHighlightDom(
     if (highlight.pointerInteraction) {
         highlightParent.setAttribute("data-click", "1");
     }
-    if (USE_BLEND_MODE && (!_drawMarginMarkers || !highlight.pointerInteraction)) {
+    if (USE_BLEND_MODE && (!_drawMargin || !highlight.pointerInteraction)) {
 
         const styleAttr = win.document.documentElement.getAttribute("style");
         const isNight = styleAttr ? styleAttr.indexOf("readium-night-on") > 0 : false;
@@ -1132,7 +1155,7 @@ function createHighlightDom(
     highlightBounding.style.setProperty("top", `${highlightBounding.rect.top * scale}px`, "important");
     highlightParent.append(highlightBounding);
 
-    if (_drawMarginMarkers && highlight.pointerInteraction) {
+    if (_drawMargin && highlight.pointerInteraction) {
         const MARGIN_MARKER_THICKNESS = 18 / (win.READIUM2.isFixedLayout ? scale : 1);
         const MARGIN_MARKER_OFFSET = 4 / (win.READIUM2.isFixedLayout ? scale : 1);
 
@@ -1220,7 +1243,7 @@ function createHighlightDom(
         highlightBoundingMargin.style.setProperty("left", `${highlightBoundingMargin.rect.left * scale}px`, "important");
         highlightBoundingMargin.style.setProperty("top", `${highlightBoundingMargin.rect.top * scale}px`, "important");
         highlightParent.append(highlightBoundingMargin);
-    } else { // _drawMarginMarkers
+    } else { // _drawMargin
         for (const clientRect of clientRects) {
 
             if (useSVG) {
