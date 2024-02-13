@@ -64,6 +64,9 @@ const drawMarginMarker = (h: IHighlight) => {
 export const setDrawMargin = (win: ReadiumElectronWebviewWindow, drawMargin: boolean | string[]) => {
     // _drawMarginPrevious = _drawMargin;
     _drawMargin = drawMargin;
+    if (IS_DEV) {
+        console.log("--HIGH WEBVIEW-- _drawMargin: " + JSON.stringify(_drawMargin, null, 4));
+    }
     recreateAllHighlightsRaw(win);
 };
 
@@ -841,7 +844,7 @@ export function recreateAllHighlightsRaw(win: ReadiumElectronWebviewWindow, high
 
     const documant = win.document;
 
-    if (highlights) {
+    if (highlights?.length) {
         if (_highlights.length) {
             if (IS_DEV) {
                 console.log("--HIGH WEBVIEW-- recreateAllHighlightsRaw DESTROY OLD BEFORE RESTORE BACKUP: " + _highlights.length + " ==> " + highlights.length);
@@ -1053,6 +1056,8 @@ function createHighlightDom(
     const rtl = isRTL();
     const vertical = isVerticalWritingMode();
 
+    const doDrawMarginMarker = drawMarginMarker(highlight);
+
     // checkRangeFix(documant);
 
     // const highlightsContainer = ensureHighlightsContainer(win);
@@ -1070,7 +1075,7 @@ function createHighlightDom(
     if (highlight.pointerInteraction) {
         highlightParent.setAttribute("data-click", "1");
     }
-    if (USE_BLEND_MODE && (!_drawMargin || !highlight.pointerInteraction)) {
+    if (USE_BLEND_MODE && (!doDrawMarginMarker || !highlight.pointerInteraction)) {
 
         const styleAttr = win.document.documentElement.getAttribute("style");
         const isNight = styleAttr ? styleAttr.indexOf("readium-night-on") > 0 : false;
@@ -1166,7 +1171,7 @@ function createHighlightDom(
     highlightBounding.style.setProperty("top", `${highlightBounding.rect.top * scale}px`, "important");
     highlightParent.append(highlightBounding);
 
-    if (_drawMargin && highlight.pointerInteraction) {
+    if (doDrawMarginMarker && highlight.pointerInteraction) {
         const MARGIN_MARKER_THICKNESS = 18 / (win.READIUM2.isFixedLayout ? scale : 1);
         const MARGIN_MARKER_OFFSET = 4 / (win.READIUM2.isFixedLayout ? scale : 1);
 
@@ -1254,7 +1259,7 @@ function createHighlightDom(
         highlightBoundingMargin.style.setProperty("left", `${highlightBoundingMargin.rect.left * scale}px`, "important");
         highlightBoundingMargin.style.setProperty("top", `${highlightBoundingMargin.rect.top * scale}px`, "important");
         highlightParent.append(highlightBoundingMargin);
-    } else { // _drawMargin
+    } else { // doDrawMarginMarker
         for (const clientRect of clientRects) {
 
             if (useSVG) {
