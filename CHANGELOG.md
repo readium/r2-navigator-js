@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.11...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.14.12...develop
 
 Changes:
 * TODO
+
+# 1.14.12
+
+# > Build environment: NodeJS `20.11.0`, NPM `10.4.0`
+
+Changes:
+* TTS readaloud fix: now previous/next commands move to the respective preceding/following documents (only auto play was moving to the next spine item)
+* Numerous performance improvements and bugfixes in the highlights engine
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.14.12/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.14.12/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.14.12
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.11...v1.14.12
 
 # 1.14.11
 
