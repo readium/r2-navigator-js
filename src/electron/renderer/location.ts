@@ -1522,7 +1522,7 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
             setTimeout(async () => {
                 if (highlights) {
                     const jsonStr = JSON.stringify({
-                        margin: activeWebView.READIUM2.highlightsDrawMargin,
+                        margin: win.READIUM2.highlightsDrawMargin,
                         list: highlights,
                     });
 
@@ -1581,7 +1581,7 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
             setTimeout(async () => {
                 if (highlights) {
                     const jsonStr = JSON.stringify({
-                        margin: activeWebView.READIUM2.highlightsDrawMargin,
+                        margin: win.READIUM2.highlightsDrawMargin,
                         list: highlights,
                     });
 

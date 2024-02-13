@@ -541,7 +541,6 @@ function createWebView(second?: boolean) {
             link: undefined,
             readiumCss: undefined,
             highlights: undefined,
-            highlightsDrawMargin: false,
         };
         _webview2.setAttribute("id", "r2_webview2");
         domSlidingViewport.appendChild(_webview2 as Node);
@@ -555,7 +554,6 @@ function createWebView(second?: boolean) {
             link: undefined,
             readiumCss: undefined,
             highlights: undefined,
-            highlightsDrawMargin: false,
         };
         _webview1.setAttribute("id", "r2_webview1");
         domSlidingViewport.appendChild(_webview1 as Node);
@@ -661,6 +659,7 @@ export function installNavigatorDOM(
         ttsSkippabilityEnabled: false,
         ttsSentenceDetectionEnabled: true,
         ttsVoice: null,
+        highlightsDrawMargin: false,
     };
     ipcRenderer.send("accessibility-support-changed");
 

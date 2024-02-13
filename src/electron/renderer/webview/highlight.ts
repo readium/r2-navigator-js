@@ -51,7 +51,7 @@ const DEFAULT_BACKGROUND_COLOR: IColor = {
 const _highlights: IHighlight[] = [];
 
 let _drawMargin: boolean | string[] = false;
-let _drawMarginPrevious: boolean | string[] = true; // ["search"];
+// let _drawMarginPrevious: boolean | string[] = true; // ["search"];
 const drawMarginMarker = (h: IHighlight) => {
     if (Array.isArray(_drawMargin)) {
         if (h.group) {
@@ -62,7 +62,7 @@ const drawMarginMarker = (h: IHighlight) => {
     return _drawMargin;
 };
 export const setDrawMargin = (win: ReadiumElectronWebviewWindow, drawMargin: boolean | string[]) => {
-    _drawMarginPrevious = _drawMargin;
+    // _drawMarginPrevious = _drawMargin;
     _drawMargin = drawMargin;
     recreateAllHighlightsRaw(win);
 };
@@ -666,18 +666,29 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
         } else if (ev.type === "mouseup" || ev.type === "click") {
             ev.preventDefault();
             ev.stopPropagation();
-            if (ev.altKey) {
-                // recreateAllHighlights(win);
-                const d = _drawMargin;
-                _drawMargin = _drawMarginPrevious;
-                _drawMarginPrevious = d;
-                recreateAllHighlightsRaw(win);
-            } else {
-                const payload: IEventPayload_R2_EVENT_HIGHLIGHT_CLICK = {
-                    highlight: foundHighlight,
-                };
-                ipcRenderer.sendToHost(R2_EVENT_HIGHLIGHT_CLICK, payload);
-            }
+
+            // if (ev.altKey) {
+            //     // recreateAllHighlights(win);
+            //     const d = _drawMargin;
+            //     _drawMargin = _drawMarginPrevious;
+            //     _drawMarginPrevious = d;
+            //     recreateAllHighlightsRaw(win);
+            // } else {
+            const payload: IEventPayload_R2_EVENT_HIGHLIGHT_CLICK = {
+                highlight: foundHighlight,
+                event: {
+                    type: ev.type,
+                    button: ev.button,
+                    alt: ev.altKey,
+                    shift: ev.shiftKey,
+                    ctrl: ev.ctrlKey,
+                    meta: ev.metaKey,
+                    x: ev.clientX,
+                    y: ev.clientY,
+                },
+            };
+            ipcRenderer.sendToHost(R2_EVENT_HIGHLIGHT_CLICK, payload);
+            // }
         }
     }
 }

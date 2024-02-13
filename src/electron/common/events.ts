@@ -372,6 +372,16 @@ export const R2_EVENT_HIGHLIGHT_CLICK = "R2_EVENT_HIGHLIGHT_CLICK";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_HIGHLIGHT_CLICK {
     highlight: IHighlight;
+    event: {
+        type: string;
+        button: number;
+        alt: boolean;
+        shift: boolean;
+        ctrl: boolean;
+        meta: boolean;
+        x: number;
+        y: number;
+    };
 }
 
 // in WEBVIEW: ipcRenderer.sendToHost()

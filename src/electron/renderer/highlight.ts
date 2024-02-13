@@ -30,7 +30,7 @@ export function highlightsHandleIpcMessage(
         const activeWebView = eventCurrentTarget;
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_HIGHLIGHT_CLICK;
         if (_highlightsClickListener && activeWebView.READIUM2.link) {
-            _highlightsClickListener(activeWebView.READIUM2.link.Href, payload.highlight);
+            _highlightsClickListener(activeWebView.READIUM2.link.Href, payload.highlight, payload.event);
         }
         return true;
     } else if (eventChannel === R2_EVENT_HIGHLIGHT_CREATE) {
@@ -40,8 +40,8 @@ export function highlightsHandleIpcMessage(
     }
 }
 
-let _highlightsClickListener: ((href: string, highlight: IHighlight) => void) | undefined;
-export function highlightsClickListen(highlightsClickListener: (href: string, highlight: IHighlight) => void) {
+let _highlightsClickListener: ((href: string, highlight: IHighlight, event?: IEventPayload_R2_EVENT_HIGHLIGHT_CLICK["event"]) => void) | undefined;
+export function highlightsClickListen(highlightsClickListener: (href: string, highlight: IHighlight, event?: IEventPayload_R2_EVENT_HIGHLIGHT_CLICK["event"]) => void) {
     _highlightsClickListener = highlightsClickListener;
 }
 export function highlightsRemoveAll(href: string, groups: string[] | undefined) {
@@ -149,6 +149,7 @@ export async function highlightsCreate(
 
 export function highlightsDrawMargin(drawMargin: boolean | string[]) {
     console.log("--HIGH-- highlightsDrawMargin: " + JSON.stringify(drawMargin, null, 4));
+    win.READIUM2.highlightsDrawMargin = drawMargin;
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
         const payload: IEventPayload_R2_EVENT_HIGHLIGHT_DRAW_MARGIN = {
@@ -156,7 +157,6 @@ export function highlightsDrawMargin(drawMargin: boolean | string[]) {
         };
         setTimeout(async () => {
             if (activeWebView.READIUM2?.DOMisReady) {
-                activeWebView.READIUM2.highlightsDrawMargin = drawMargin;
                 await activeWebView.send(R2_EVENT_HIGHLIGHT_DRAW_MARGIN, payload);
             }
         }, 0);
