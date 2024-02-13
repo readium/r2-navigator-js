@@ -835,11 +835,11 @@ export function recreateAllHighlightsRaw(win: ReadiumElectronWebviewWindow, high
     hideAllhighlights(documant);
 
     const bodyRect = getBoundingClientRectOfDocumentBody(win);
-    const bodyWidth = parseInt(win.getComputedStyle(documant.body).width, 10);
+    const bodyComputedStyle = win.getComputedStyle(documant.body);
 
     const docFrag = documant.createDocumentFragment();
     for (const highlight of _highlights) {
-        const div = createHighlightDom(win, highlight, bodyRect, bodyWidth);
+        const div = createHighlightDom(win, highlight, bodyRect, bodyComputedStyle);
         if (div) {
             docFrag.append(div);
         }
@@ -876,7 +876,7 @@ export function createHighlights(
     const highlights: Array<IHighlight | null> = [];
 
     const bodyRect = getBoundingClientRectOfDocumentBody(win);
-    const bodyWidth = parseInt(win.getComputedStyle(win.document.body).width, 10);
+    const bodyComputedStyle = win.getComputedStyle(documant.body);
 
     const docFrag = documant.createDocumentFragment();
     for (const highDef of highDefs) {
@@ -894,7 +894,7 @@ export function createHighlights(
             highDef.expand,
             highDef.group,
             bodyRect,
-            bodyWidth);
+            bodyComputedStyle);
         highlights.push(high);
 
         if (div) {
@@ -951,7 +951,7 @@ export function createHighlight(
     expand: number | undefined,
     group: string | undefined,
     bodyRect: DOMRect,
-    bodyWidth: number): [IHighlight, HTMLDivElement | null] {
+    bodyComputedStyle: CSSStyleDeclaration): [IHighlight, HTMLDivElement | null] {
 
     // tslint:disable-next-line:no-string-literal
     // console.log("Chromium: " + process.versions["chrome"]);
@@ -993,7 +993,7 @@ export function createHighlight(
     };
     _highlights.push(highlight);
 
-    const div = createHighlightDom(win, highlight, bodyRect, bodyWidth);
+    const div = createHighlightDom(win, highlight, bodyRect, bodyComputedStyle);
     return [highlight, div];
 }
 
@@ -1001,7 +1001,7 @@ function createHighlightDom(
     win: ReadiumElectronWebviewWindow,
     highlight: IHighlight,
     bodyRect: DOMRect,
-    bodyWidth: number): HTMLDivElement | null {
+    bodyComputedStyle: CSSStyleDeclaration): HTMLDivElement | null {
 
     const documant = win.document;
     const scrollElement = getScrollingElement(documant);
@@ -1133,13 +1133,18 @@ function createHighlightDom(
     highlightParent.append(highlightBounding);
 
     if (_drawMarginMarkers && highlight.pointerInteraction) {
-        const MARGIN_MARKER_THICKNESS = 8;
-        const MARGIN_MARKER_OFFSET = 2;
+        const MARGIN_MARKER_THICKNESS = 18 / (win.READIUM2.isFixedLayout ? scale : 1);
+        const MARGIN_MARKER_OFFSET = 4 / (win.READIUM2.isFixedLayout ? scale : 1);
 
         const highlightBoundingMargin = documant.createElement("div") as IHTMLDivElementWithRect;
         highlightBoundingMargin.setAttribute("class", `${CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN} ${CLASS_HIGHLIGHT_COMMON}`);
+        const round = MARGIN_MARKER_THICKNESS / 2.5;
         highlightBoundingMargin.setAttribute("style",
-            `border-radius: ${MARGIN_MARKER_THICKNESS / 2}px;` +
+            // `border-radius: ${round}px;` +
+            `border-top-left-radius: ${vertical ? round : rtl ? 0 : round}px;` +
+            `border-top-right-radius: ${vertical ? round : !rtl ? 0 : round}px;` +
+            `border-bottom-right-radius: ${vertical ? 0 : !rtl ? 0 :round}px;` +
+            `border-bottom-left-radius: ${vertical ? 0 : rtl ? 0 :round}px;` +
             "background-color: " +
                 (USE_BLEND_MODE ?
                     // tslint:disable-next-line: max-line-length
@@ -1156,23 +1161,57 @@ function createHighlightDom(
         // highlightBoundingMargin.xOffset = xOffset;
         // highlightBoundingMargin.yOffset = yOffset;
 
-        const dim = scrollElement.clientWidth / (paginatedTwo ? 2 : 1);
-        const off = (dim - bodyWidth) / 2;
+        const bodyWidth = parseInt(bodyComputedStyle.width, 10);
+
+        const paginatedWidth = scrollElement.clientWidth / (paginatedTwo ? 2 : 1);
+
+        const paginatedOffset = (paginatedWidth - bodyWidth) / 2 +
+            parseInt(bodyComputedStyle.paddingLeft, 10) - MARGIN_MARKER_OFFSET - MARGIN_MARKER_THICKNESS;
 
         highlightBoundingMargin.rect = {
-            height: vertical ? MARGIN_MARKER_THICKNESS : rangeBoundingClientRect.height,
-            left: vertical ? (rangeBoundingClientRect.left - xOffset) : paginated ?
-            (
-                (rtl ? (dim - MARGIN_MARKER_THICKNESS - MARGIN_MARKER_OFFSET) : MARGIN_MARKER_OFFSET)
-                +
-                (rtl ? (-1 * off) : off)
-                +
-                Math.floor((rangeBoundingClientRect.left - xOffset) / dim) * dim
-            )
+            left:
+                // ----
+                vertical ?
+                (rangeBoundingClientRect.left - xOffset) :
+                // ----
+                paginated ?
+                (
+                    (rtl
+                    ?
+                    paginatedWidth - MARGIN_MARKER_THICKNESS // - MARGIN_MARKER_OFFSET
+                    :
+                    0 // MARGIN_MARKER_OFFSET
+                    )
+                    +
+                    (rtl
+                    ?
+                    -1 * paginatedOffset
+                    :
+                    paginatedOffset
+                    )
+                    +
+                    Math.floor((rangeBoundingClientRect.left - xOffset) / paginatedWidth) * paginatedWidth
+                )
+                :
+                // ---- scroll
+                (rtl
+                ?
+                MARGIN_MARKER_OFFSET + bodyRect.width - parseInt(bodyComputedStyle.paddingRight, 10)
+                :
+                win.READIUM2.isFixedLayout
+                ?
+                MARGIN_MARKER_OFFSET
+                :
+                parseInt(bodyComputedStyle.paddingLeft, 10) - MARGIN_MARKER_THICKNESS - MARGIN_MARKER_OFFSET
+                ),
+            top:
+            vertical
+            ?
+            parseInt(bodyComputedStyle.paddingTop, 10) - MARGIN_MARKER_THICKNESS - MARGIN_MARKER_OFFSET
             :
-            MARGIN_MARKER_OFFSET + (rtl ? bodyRect.width : 0),
-            top: vertical ? MARGIN_MARKER_OFFSET : (rangeBoundingClientRect.top - yOffset),
+            (rangeBoundingClientRect.top - yOffset),
             width: vertical ? rangeBoundingClientRect.width : MARGIN_MARKER_THICKNESS,
+            height: vertical ? MARGIN_MARKER_THICKNESS : rangeBoundingClientRect.height,
         };
         highlightBoundingMargin.style.setProperty("width", `${highlightBoundingMargin.rect.width * scale}px`, "important");
         highlightBoundingMargin.style.setProperty("height", `${highlightBoundingMargin.rect.height * scale}px`, "important");

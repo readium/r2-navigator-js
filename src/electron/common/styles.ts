@@ -966,11 +966,49 @@ We cannot completely disable "scroll" event (prevent default) because we need to
     min-height: 0 !important;
     max-height: none !important;
 }
+
+@media screen and (min-width: 35em) {
+    :root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}),
+    :root:not(.${ROOT_CLASS_FIXED_LAYOUT}) {
+        --RS__pageGutter: 50px !important;
+    }
+}
+
+@media screen and (min-width: 45em) {
+    :root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}),
+    :root:not(.${ROOT_CLASS_FIXED_LAYOUT}) {
+        --RS__pageGutter: 50px !important;
+    }
+}
+
+:root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body,
+:root:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body {
+    padding-top: 20px !important;
+    padding-bottom: 20px !important;
+    padding-left: 22px !important;
+    padding-right: 22px !important;
+}
+:root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body,
+:root:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body {
+    padding-top: 22px !important;
+    padding-bottom: 22px !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+}
+:root[style*="--USER__pageMargins"]:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body {
+    padding-left: calc(var(--RS__pageGutter) * var(--USER__pageMargins)) !important;
+    padding-right: calc(var(--RS__pageGutter) * var(--USER__pageMargins)) !important;
+}
+:root[style*="--USER__pageMargins"]:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body {
+    padding-top: calc(var(--RS__pageGutter) * var(--USER__pageMargins)) !important;
+    padding-bottom: calc(var(--RS__pageGutter) * var(--USER__pageMargins)) !important;
+}
+
 :root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body,
 :root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body {
     margin: 0 !important;
     margin: 0 auto !important;
-    padding: 20px !important;
+
     --RS__maxLineLength: 60em !important;
 
     height: inherit !important;
@@ -1006,8 +1044,6 @@ We cannot completely disable "scroll" event (prevent default) because we need to
 :root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body,
 :root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body {
     margin: 0 !important;
-    padding: 20px !important;
-    /* padding-bottom: 40px !important; */
 
     --RS__maxLineLength: 1000em !important;
 
