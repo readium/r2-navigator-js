@@ -850,6 +850,23 @@ const hover = true ? `.${CLASS_HIGHLIGHT_HOVER}` : "";
 
 export const visibilityMaskCssStyles = `
 
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not(${hover}):not(.${CLASS_HIGHLIGHT_MARGIN})[data-type="0"],
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not(${hover}):not(.${CLASS_HIGHLIGHT_MARGIN})[data-type="0"]
+{
+opacity: 0.5 !important;
+}
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN}[data-type="0"] > .${CLASS_HIGHLIGHT_AREA},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN}[data-type="0"] > .${CLASS_HIGHLIGHT_AREA}
+{
+opacity: 0.5 !important;
+}
+
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > .${CLASS_HIGHLIGHT_AREA},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > .${CLASS_HIGHLIGHT_AREA}
+{
+display: none !important;
+}
+
 :root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}:not(.${CLASS_HIGHLIGHT_MARGIN}) > .${CLASS_HIGHLIGHT_BOUNDING_AREA},
 :root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}:not(.${CLASS_HIGHLIGHT_MARGIN}) > .${CLASS_HIGHLIGHT_BOUNDING_AREA}
 {
@@ -1259,9 +1276,9 @@ export const targetCssStyles = `
 :root[style] *.${LINK_TARGET_CLASS}:not(.${LINK_TARGET_ALT_CLASS}),
 :root *.${LINK_TARGET_CLASS}:not(.${LINK_TARGET_ALT_CLASS})
 {
-    outline-color: green !important;
+    outline-color: gray !important;
     outline-style: solid !important;
-    outline-width: 2px !important;
+    outline-width: 1px !important;
     outline-offset: 2px !important;
 
     /*
