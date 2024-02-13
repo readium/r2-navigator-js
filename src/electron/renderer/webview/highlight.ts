@@ -23,14 +23,9 @@ import { getScrollingElement, isVerticalWritingMode, isTwoPageSpread } from "./r
 import { convertRangeInfo } from "./selection";
 import { ReadiumElectronWebviewWindow } from "./state";
 
-import { ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CURSOR1, CLASS_HIGHLIGHT_CURSOR2, CLASS_HIGHLIGHT_COMMON } from "../../common/styles";
+import { ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CURSOR1, CLASS_HIGHLIGHT_CURSOR2, CLASS_HIGHLIGHT_COMMON, CLASS_HIGHLIGHT_BOUNDING_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN } from "../../common/styles";
 
 import { isRTL } from "./readium-css";
-
-export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
-export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
-export const CLASS_HIGHLIGHT_BOUNDING_AREA = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA";
-export const CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -652,13 +647,7 @@ function createHighlightDom(
     const highlightParent = documant.createElement("div") as IHTMLDivElementWithRect;
     highlightParent.setAttribute("id", highlight.id);
     highlightParent.setAttribute("class", `${CLASS_HIGHLIGHT_CONTAINER} ${CLASS_HIGHLIGHT_COMMON}`);
-    highlightParent.setAttribute("style",
-        "width: 1px !important; " +
-        "height: 1px !important; ");
-    // highlightParent.style.setProperty(
-    //     "pointer-events",
-    //     "none",
-    //     "important");
+
     if (highlight.pointerInteraction) {
         highlightParent.setAttribute("data-click", "1");
     }
@@ -720,7 +709,7 @@ function createHighlightDom(
     // const roundedCorner = 3;
 
     const underlineThickness = 3;
-    const strikeThroughLineThickness = 3;
+    const strikeThroughLineThickness = 4;
 
     const rangeBoundingClientRect = range.getBoundingClientRect();
 
@@ -735,7 +724,6 @@ function createHighlightDom(
     //         "outline-offset: -1px !important;");
     // }
 
-    highlightBounding.style.setProperty("position", paginated ? "fixed" : "absolute", "important");
     highlightBounding.scale = scale;
     // highlightBounding.xOffset = xOffset;
     // highlightBounding.yOffset = yOffset;
@@ -770,7 +758,6 @@ function createHighlightDom(
             `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;`,
         );
 
-        highlightBoundingMargin.style.setProperty("position", paginated ? "fixed" : "absolute", "important");
         highlightBoundingMargin.scale = scale;
         // highlightBoundingMargin.xOffset = xOffset;
         // highlightBoundingMargin.yOffset = yOffset;
@@ -944,8 +931,7 @@ function createHighlightDom(
                     highlightAreaLine.setAttribute("style",
                         `background-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;`,
                     );
-                    highlightAreaLine.style.setProperty("transform", "translate3d(0px, 0px, 0px)", "important");
-                    highlightAreaLine.style.setProperty("position", paginated ? "fixed" : "absolute", "important");
+
                     highlightAreaLine.scale = scale;
                     // highlightAreaLine.xOffset = xOffset;
                     // highlightAreaLine.yOffset = yOffset;
@@ -955,12 +941,12 @@ function createHighlightDom(
                         top: clientRect.top - yOffset,
                         width: clientRect.width,
                     };
-                    highlightAreaLine.style.setProperty("width", `${highlightAreaLine.rect.width * scale}px`, "important");
-                    highlightAreaLine.style.setProperty("height", `${strikeThroughLineThickness * scale}px`, "important");
+                    highlightAreaLine.style.setProperty("width", `${(vertical ? strikeThroughLineThickness : highlightAreaLine.rect.width) * scale}px`, "important");
+                    highlightAreaLine.style.setProperty("height", `${(vertical ? highlightAreaLine.rect.height : strikeThroughLineThickness) * scale}px`, "important");
                     highlightAreaLine.style.setProperty("min-width", highlightAreaLine.style.width, "important");
                     highlightAreaLine.style.setProperty("min-height", highlightAreaLine.style.height, "important");
-                    highlightAreaLine.style.setProperty("left", `${highlightAreaLine.rect.left * scale}px`, "important");
-                    highlightAreaLine.style.setProperty("top", `${(highlightAreaLine.rect.top + (highlightAreaLine.rect.height / 2) - (strikeThroughLineThickness / 2)) * scale}px`, "important");
+                    highlightAreaLine.style.setProperty("left", `${(vertical ? (highlightAreaLine.rect.left + (highlightAreaLine.rect.width / 2) - (strikeThroughLineThickness / 2)) : highlightAreaLine.rect.left) * scale}px`, "important");
+                    highlightAreaLine.style.setProperty("top", `${(vertical ? highlightAreaLine.rect.top : (highlightAreaLine.rect.top + (highlightAreaLine.rect.height / 2) - (strikeThroughLineThickness / 2))) * scale}px`, "important");
 
                     highlightParent.append(highlightAreaLine);
                 } else {
@@ -993,8 +979,6 @@ function createHighlightDom(
                         )
                         ) + ` ${extra}`);
 
-                    highlightArea.style.setProperty("transform", "translate3d(0px, 0px, 0px)", "important");
-                    highlightArea.style.setProperty("position", paginated ? "fixed" : "absolute", "important");
                     highlightArea.scale = scale;
                     // highlightArea.xOffset = xOffset;
                     // highlightArea.yOffset = yOffset;

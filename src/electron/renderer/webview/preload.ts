@@ -55,6 +55,8 @@ import {
     R2_MO_CLASS_ACTIVE, R2_MO_CLASS_ACTIVE_PLAYBACK, R2_MO_CLASS_PAUSED, R2_MO_CLASS_PLAYING, R2_MO_CLASS_STOPPED, ROOT_CLASS_INVISIBLE_MASK,
     ROOT_CLASS_INVISIBLE_MASK_REMOVED, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_MATHJAX,
     ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_REDUCE_MOTION, SKIP_LINK_ID, TTS_CLASS_PAUSED, TTS_CLASS_PLAYING, TTS_ID_SPEAKING_DOC_ELEMENT,
+    CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_AREA,
+    CLASS_HIGHLIGHT_BOUNDING_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN,
     WebViewSlotEnum, ZERO_TRANSFORM_CLASS, readPosCssStylesAttr1, readPosCssStylesAttr2,
     readPosCssStylesAttr3, readPosCssStylesAttr4,
     ID_HIGHLIGHTS_CONTAINER,
@@ -75,7 +77,6 @@ import {
 import { setupAudioBook } from "./audiobook";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
-    CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA, CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN, CLASS_HIGHLIGHT_CONTAINER,
     createHighlights, destroyAllhighlights, destroyHighlight, destroyHighlightsGroup,
     recreateAllHighlights, recreateAllHighlightsRaw, setDrawMargin,
 } from "./highlight";
