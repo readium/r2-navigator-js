@@ -13,3 +13,6 @@ declare module "debug/src/common";
 
 declare module "cssesc";
 declare module "css.escape";
+
+declare module "@flatten-js/polygon-offset";
+// offset(polygon, value)
