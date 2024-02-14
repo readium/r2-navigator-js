@@ -23,7 +23,7 @@ import { getScrollingElement, isVerticalWritingMode, isTwoPageSpread } from "./r
 import { convertRangeInfo } from "./selection";
 import { ReadiumElectronWebviewWindow } from "./state";
 
-import { CLASS_HIGHLIGHT_CONTOUR, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_AREA, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CURSOR1, CLASS_HIGHLIGHT_CURSOR2, CLASS_HIGHLIGHT_COMMON, CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN, CLASS_HIGHLIGHT_MARGIN, CLASS_HIGHLIGHT_HOVER } from "../../common/styles";
+import { CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CURSOR2, CLASS_HIGHLIGHT_COMMON, CLASS_HIGHLIGHT_MARGIN, CLASS_HIGHLIGHT_HOVER } from "../../common/styles";
 
 import { isRTL } from "./readium-css";
 
@@ -33,6 +33,7 @@ Polygon,
 Box,
 BooleanOperations,
 Point,
+Face,
 // Edge,
 // Segment,
 } from "@flatten-js/core";
@@ -164,26 +165,28 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
     const xOffset = paginated ? (-scrollElement.scrollLeft) : bodyRect.left;
     const yOffset = paginated ? (-scrollElement.scrollTop) : bodyRect.top;
 
-    const testHit = (highlightFragment: Element) => {
-        const withRect = (highlightFragment as unknown) as IWithRect;
-        // console.log(`RECT: ${withRect.rect.left} | ${withRect.rect.top} // ${withRect.rect.width} | ${withRect.rect.height}`);
+    const scale = 1 / ((win.READIUM2 && win.READIUM2.isFixedLayout) ? win.READIUM2.fxlViewportScale : 1);
 
-        const left = withRect.rect.left + xOffset; // (paginated ? withRect.xOffset : xOffset);
-        const top = withRect.rect.top + yOffset; // (paginated ? withRect.yOffset : yOffset);
-        if (x >= left &&
-            x < (left + withRect.rect.width) &&
-            y >= top &&
-            y < (top + withRect.rect.height)
-            ) {
+    // const testHit = (highlightFragment: Element) => {
+    //     const withRect = (highlightFragment as unknown) as IWithRect;
+    //     // console.log(`RECT: ${withRect.rect.left} | ${withRect.rect.top} // ${withRect.rect.width} | ${withRect.rect.height}`);
 
-            return true;
-        }
-        return false;
-    };
+    //     const left = withRect.rect.left + xOffset; // (paginated ? withRect.xOffset : xOffset);
+    //     const top = withRect.rect.top + yOffset; // (paginated ? withRect.yOffset : yOffset);
+    //     if (x >= left &&
+    //         x < (left + withRect.rect.width) &&
+    //         y >= top &&
+    //         y < (top + withRect.rect.height)
+    //         ) {
+
+    //         return true;
+    //     }
+    //     return false;
+    // };
 
     // const useSVG = !(DEBUG_VISUALS || win.READIUM2.DEBUG_VISUALS) && USE_SVG;
 
-    let changeCursor = false;
+    let hit = false;
     let foundHighlight: IHighlight | undefined;
     let foundElement: IHTMLDivElementWithRect | undefined;
     // for (const highlight of _highlights) {
@@ -198,7 +201,6 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
             continue;
         }
 
-        let hit = false;
         let highlightFragment = highlightParent.firstElementChild;
         while (highlightFragment) {
             if (highlightFragment.namespaceURI === SVG_XML_NAMESPACE) {
@@ -212,25 +214,27 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                 //     svgRect = svgRect.nextElementSibling;
                 // }
                 const svg = highlightFragment as ISVGElementWithPolygon;
-                hit = svg.polygon.contains(new Point(x - xOffset, y - yOffset));
+                hit = svg.polygon.contains(new Point((x - xOffset) * scale, (y - yOffset) * scale));
                 if (hit) {
                     break;
                 }
-            } else if (highlightFragment.classList.contains(CLASS_HIGHLIGHT_AREA)) {
-
-                if (testHit(highlightFragment)) {
-                    changeCursor = true;
-                    hit = true;
-                    break;
-                }
-            } else if (highlightFragment.classList.contains(CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN)) {
-
-                if (testHit(highlightFragment)) {
-                    changeCursor = true;
-                    hit = true;
-                    break;
-                }
             }
+            // else if (highlightFragment.classList.contains(CLASS_HIGHLIGHT_AREA)) {
+
+            //     if (testHit(highlightFragment)) {
+            //         changeCursor = true;
+            //         hit = true;
+            //         break;
+            //     }
+            // }
+            // else if (highlightFragment.classList.contains(CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN)) {
+
+            //     if (testHit(highlightFragment)) {
+            //         changeCursor = true;
+            //         hit = true;
+            //         break;
+            //     }
+            // }
             highlightFragment = highlightFragment.nextElementSibling;
         }
 
@@ -241,57 +245,56 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
         }
     }
 
-    if (!foundHighlight || !foundElement) {
-
-        documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR1);
-        documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR2);
-
-        let highlightContainer = _highlightsContainer.firstElementChild;
-        while (highlightContainer) {
+    let highlightContainer = _highlightsContainer.firstElementChild;
+    while (highlightContainer) {
+        if (!foundElement || foundElement !== highlightContainer) {
             highlightContainer.classList.remove(CLASS_HIGHLIGHT_HOVER);
-
-            // const id = highlightContainer.id || highlightContainer.getAttribute("id");
-            // const highlight = id ? _highlights.find((h) => h.id === id) : undefined;
-            // const drawUnderline = highlight?.drawType === HighlightDrawTypeUnderline;
-            // const drawStrikeThrough = highlight?.drawType === HighlightDrawTypeStrikethrough;
-            // const doDrawMargin = highlight ? drawMargin(highlight) : false;
-
-            // if ((DEBUG_VISUALS || win.READIUM2.DEBUG_VISUALS)) {
-            //     let highlightContainerChild = highlightContainer.firstElementChild;
-            //     while (highlightContainerChild) {
-
-            //         if (highlightContainerChild.classList.contains(CLASS_HIGHLIGHT_BOUNDING_AREA)
-            //             && (highlightContainerChild as unknown as IAreaWithActiveFlag).active) {
-
-            //             (highlightContainerChild as unknown as IAreaWithActiveFlag).active = false;
-
-            //             (highlightContainerChild as HTMLElement).style.setProperty("outline", "none", "important");
-
-            //             (highlightContainerChild as HTMLElement).style.setProperty(
-            //                 "background-color",
-            //                 "transparent",
-            //                 "important");
-            //         }
-            //         highlightContainerChild = highlightContainerChild.nextElementSibling;
-            //     }
-            // }
-
-            highlightContainer = highlightContainer.nextElementSibling;
         }
 
+        // const id = highlightContainer.id || highlightContainer.getAttribute("id");
+        // const highlight = id ? _highlights.find((h) => h.id === id) : undefined;
+        // const drawUnderline = highlight?.drawType === HighlightDrawTypeUnderline;
+        // const drawStrikeThrough = highlight?.drawType === HighlightDrawTypeStrikethrough;
+        // const doDrawMargin = highlight ? drawMargin(highlight) : false;
+
+        // if ((DEBUG_VISUALS || win.READIUM2.DEBUG_VISUALS)) {
+        //     let highlightContainerChild = highlightContainer.firstElementChild;
+        //     while (highlightContainerChild) {
+
+        //         if (highlightContainerChild.classList.contains(CLASS_HIGHLIGHT_BOUNDING_AREA)
+        //             && (highlightContainerChild as unknown as IAreaWithActiveFlag).active) {
+
+        //             (highlightContainerChild as unknown as IAreaWithActiveFlag).active = false;
+
+        //             (highlightContainerChild as HTMLElement).style.setProperty("outline", "none", "important");
+
+        //             (highlightContainerChild as HTMLElement).style.setProperty(
+        //                 "background-color",
+        //                 "transparent",
+        //                 "important");
+        //         }
+        //         highlightContainerChild = highlightContainerChild.nextElementSibling;
+        //     }
+        // }
+
+        highlightContainer = highlightContainer.nextElementSibling;
+    }
+
+    if (!hit) { // !foundHighlight || !foundElement
+
+        // documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR1);
+        documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR2);
         return;
     }
 
-    if (foundHighlight.pointerInteraction) {
+    if (foundElement && foundHighlight?.pointerInteraction) {
 
         if (isMouseMove) {
-            const doDrawMargin = drawMargin(foundHighlight);
-
             foundElement.classList.add(CLASS_HIGHLIGHT_HOVER);
 
-            if (changeCursor) {
-                documant.documentElement.classList.add(doDrawMargin ? CLASS_HIGHLIGHT_CURSOR1 : CLASS_HIGHLIGHT_CURSOR2);
-            }
+            // const doDrawMargin = drawMargin(foundHighlight);
+            // documant.documentElement.classList.add(doDrawMargin ? CLASS_HIGHLIGHT_CURSOR1 : CLASS_HIGHLIGHT_CURSOR2);
+            documant.documentElement.classList.add(CLASS_HIGHLIGHT_CURSOR2);
 
         } else if (ev.type === "mouseup" || ev.type === "click") {
             ev.preventDefault();
@@ -644,7 +647,6 @@ function createHighlightDom(
     const drawStrikeThrough = highlight.drawType === HighlightDrawTypeStrikethrough; // && !(DEBUG_VISUALS || win.READIUM2.DEBUG_VISUALS);
 
     const paginated = isPaginated(documant);
-    const paginatedTwo = paginated && isTwoPageSpread();
 
     const rtl = isRTL();
     const vertical = isVerticalWritingMode();
@@ -722,12 +724,11 @@ function createHighlightDom(
     const underlineThickness = 3;
     const strikeThroughLineThickness = 4;
 
-    const rangeBoundingClientRect = range.getBoundingClientRect();
+    // const rangeBoundingClientRect = range.getBoundingClientRect();
 
     const bodyWidth = parseInt(bodyComputedStyle.width, 10);
-
+    const paginatedTwo = paginated && isTwoPageSpread();
     const paginatedWidth = scrollElement.clientWidth / (paginatedTwo ? 2 : 1);
-
     const paginatedOffset = (paginatedWidth - bodyWidth) / 2 + parseInt(bodyComputedStyle.paddingLeft, 10);
 
     const gap = 4;
@@ -860,29 +861,29 @@ function createHighlightDom(
                     Number((yy + hh).toPrecision(12)),
                 )));
 
-                if (!drawStrikeThrough) { // always FALSE :) (we use SVG instead)
+                // if (!drawStrikeThrough) { // always FALSE :) (we use SVG instead)
 
-                    const highlightAreaLine = documant.createElement("div") as IHTMLDivElementWithRect;
-                    highlightAreaLine.setAttribute("class", `${CLASS_HIGHLIGHT_AREA} ${CLASS_HIGHLIGHT_COMMON}`);
-                    highlightAreaLine.setAttribute("style",
-                        `background-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;`,
-                    );
+                //     const highlightAreaLine = documant.createElement("div") as IHTMLDivElementWithRect;
+                //     highlightAreaLine.setAttribute("class", `${CLASS_HIGHLIGHT_AREA} ${CLASS_HIGHLIGHT_COMMON}`);
+                //     highlightAreaLine.setAttribute("style",
+                //         `background-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;`,
+                //     );
 
-                    highlightAreaLine.scale = scale;
-                    // highlightAreaLine.xOffset = xOffset;
-                    // highlightAreaLine.yOffset = yOffset;
+                //     highlightAreaLine.scale = scale;
+                //     // highlightAreaLine.xOffset = xOffset;
+                //     // highlightAreaLine.yOffset = yOffset;
 
-                    highlightAreaLine.rect = rect;
+                //     highlightAreaLine.rect = rect;
 
-                    highlightAreaLine.style.setProperty("width", `${ww}px`, "important");
-                    highlightAreaLine.style.setProperty("height", `${hh}px`, "important");
-                    highlightAreaLine.style.setProperty("min-width", `${ww}px`, "important");
-                    highlightAreaLine.style.setProperty("min-height", `${hh}px`, "important");
-                    highlightAreaLine.style.setProperty("left", `${xx}px`, "important");
-                    highlightAreaLine.style.setProperty("top", `${yy}px`, "important");
+                //     highlightAreaLine.style.setProperty("width", `${ww}px`, "important");
+                //     highlightAreaLine.style.setProperty("height", `${hh}px`, "important");
+                //     highlightAreaLine.style.setProperty("min-width", `${ww}px`, "important");
+                //     highlightAreaLine.style.setProperty("min-height", `${hh}px`, "important");
+                //     highlightAreaLine.style.setProperty("left", `${xx}px`, "important");
+                //     highlightAreaLine.style.setProperty("top", `${yy}px`, "important");
 
-                    highlightParent.append(highlightAreaLine);
-                } // false
+                //     highlightParent.append(highlightAreaLine);
+                // } // false
             } else { // drawStrikeThrough
 
                 if (drawUnderline) {
@@ -906,50 +907,50 @@ function createHighlightDom(
                     )));
                 }
 
-                if (drawStrikeThrough) { // always FALSE :) (we use SVG instead)
-                    const highlightArea = documant.createElement("div") as IHTMLDivElementWithRect;
-                    highlightArea.setAttribute("class", `${CLASS_HIGHLIGHT_AREA} ${CLASS_HIGHLIGHT_COMMON}`);
-                    let extra = "";
-                    // if ((DEBUG_VISUALS || win.READIUM2.DEBUG_VISUALS)) {
-                    //     const rgb = Math.round(0xffffff * Math.random());
-                    //     // tslint:disable-next-line:no-bitwise
-                    //     const r = rgb >> 16;
-                    //     // tslint:disable-next-line:no-bitwise
-                    //     const g = rgb >> 8 & 255;
-                    //     // tslint:disable-next-line:no-bitwise
-                    //     const b = rgb & 255;
-                    //     extra = `outline-color: rgb(${r}, ${g}, ${b}); outline-style: solid; outline-width: 1px; outline-offset: -1px;`;
-                    //     // box-shadow: inset 0 0 0 1px #600;
-                    // } else
-                    if (drawUnderline) {
-                        const side = vertical ? "left" : "bottom"; // isRTL()?
-                        extra = `border-${side}: ${underlineThickness * scale}px solid ` +
-                            `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important`;
-                    }
-                    highlightArea.setAttribute("style",
-                        (drawUnderline ?
-                        "" : // background-color: transparent !important
-                        ( // `border-radius: ${roundedCorner}px !important; ` +
-                        "background-color: " +
-                            `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;`
-                        )
-                        ) + ` ${extra}`);
+                // if (drawStrikeThrough) { // always FALSE :) (we use SVG instead)
+                //     const highlightArea = documant.createElement("div") as IHTMLDivElementWithRect;
+                //     highlightArea.setAttribute("class", `${CLASS_HIGHLIGHT_AREA} ${CLASS_HIGHLIGHT_COMMON}`);
+                //     let extra = "";
+                //     // if ((DEBUG_VISUALS || win.READIUM2.DEBUG_VISUALS)) {
+                //     //     const rgb = Math.round(0xffffff * Math.random());
+                //     //     // tslint:disable-next-line:no-bitwise
+                //     //     const r = rgb >> 16;
+                //     //     // tslint:disable-next-line:no-bitwise
+                //     //     const g = rgb >> 8 & 255;
+                //     //     // tslint:disable-next-line:no-bitwise
+                //     //     const b = rgb & 255;
+                //     //     extra = `outline-color: rgb(${r}, ${g}, ${b}); outline-style: solid; outline-width: 1px; outline-offset: -1px;`;
+                //     //     // box-shadow: inset 0 0 0 1px #600;
+                //     // } else
+                //     if (drawUnderline) {
+                //         const side = vertical ? "left" : "bottom"; // isRTL()?
+                //         extra = `border-${side}: ${underlineThickness * scale}px solid ` +
+                //             `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important`;
+                //     }
+                //     highlightArea.setAttribute("style",
+                //         (drawUnderline ?
+                //         "" : // background-color: transparent !important
+                //         ( // `border-radius: ${roundedCorner}px !important; ` +
+                //         "background-color: " +
+                //             `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) !important;`
+                //         )
+                //         ) + ` ${extra}`);
 
-                    highlightArea.scale = scale;
-                    // highlightArea.xOffset = xOffset;
-                    // highlightArea.yOffset = yOffset;
+                //     highlightArea.scale = scale;
+                //     // highlightArea.xOffset = xOffset;
+                //     // highlightArea.yOffset = yOffset;
 
-                    highlightArea.rect = rect;
+                //     highlightArea.rect = rect;
 
-                    highlightArea.style.setProperty("width", `${w}px`, "important");
-                    highlightArea.style.setProperty("height", `${h}px`, "important");
-                    highlightArea.style.setProperty("min-width", `${w}px`, "important");
-                    highlightArea.style.setProperty("min-height", `${h}px`, "important");
-                    highlightArea.style.setProperty("left", `${x}px`, "important");
-                    highlightArea.style.setProperty("top", `${y}px`, "important");
+                //     highlightArea.style.setProperty("width", `${w}px`, "important");
+                //     highlightArea.style.setProperty("height", `${h}px`, "important");
+                //     highlightArea.style.setProperty("min-width", `${w}px`, "important");
+                //     highlightArea.style.setProperty("min-height", `${h}px`, "important");
+                //     highlightArea.style.setProperty("left", `${x}px`, "important");
+                //     highlightArea.style.setProperty("top", `${y}px`, "important");
 
-                    highlightParent.append(highlightArea);
-                } // false
+                //     highlightParent.append(highlightArea);
+                // } // false
             }
 
             polygonsWithGap.push(new Polygon(new Box(
@@ -983,19 +984,19 @@ function createHighlightDom(
         strokeWidth: 0,
         fillOpacity: 1,
         className: undefined,
-        r: 4,
+        // r: 4,
     }) + polygonCountour.svg({
         fill: "transparent",
         fillRule: "evenodd",
         stroke: "red",
         strokeWidth: 1,
         fillOpacity: 1,
-        r: 4,
+        // r: 4,
     });
 
     highlightParent.append(highlightAreaSVG);
 
-    // const boxes = Array.from(polys.edges).map((edge: Edge) => {
+    // const boxes = Array.from(polygon.edges).map((edge: Edge) => {
     //     const shape = edge.shape as Segment;
     //     const ps = shape.ps as Point;
     //     const pe = shape.pe as Point;
@@ -1010,9 +1011,76 @@ function createHighlightDom(
     // // box.width / box.height
 
     if (doDrawMargin && highlight.pointerInteraction) {
-        const MARGIN_MARKER_THICKNESS = 14 / (win.READIUM2.isFixedLayout ? scale : 1);
-        const MARGIN_MARKER_OFFSET = 6 / (win.READIUM2.isFixedLayout ? scale : 1);
+        const MARGIN_MARKER_THICKNESS = 14 * (win.READIUM2.isFixedLayout ? scale : 1);
+        const MARGIN_MARKER_OFFSET = 6 * (win.READIUM2.isFixedLayout ? scale : 1);
+        const paginatedOffset_ = paginatedOffset - MARGIN_MARKER_OFFSET - MARGIN_MARKER_THICKNESS;
 
+        const polygonCountourMarginBoxes = Array.from(polygonCountour.faces).map((face: Face) => {
+            const b = face.box;
+            const left =
+                // ----
+                vertical ?
+                b.xmin :
+                // ----
+                paginated ?
+                (
+                    (rtl
+                    ?
+                    paginatedWidth - MARGIN_MARKER_THICKNESS // - MARGIN_MARKER_OFFSET
+                    :
+                    0 // MARGIN_MARKER_OFFSET
+                    )
+                    +
+                    (rtl
+                    ?
+                    -1 * paginatedOffset_
+                    :
+                    paginatedOffset_
+                    )
+                    +
+                    Math.floor((b.xmin) / paginatedWidth) * paginatedWidth
+                )
+                :
+                // ---- scroll
+                (rtl
+                ?
+                MARGIN_MARKER_OFFSET + bodyRect.width - parseInt(bodyComputedStyle.paddingRight, 10)
+                :
+                win.READIUM2.isFixedLayout
+                ?
+                MARGIN_MARKER_OFFSET
+                :
+                parseInt(bodyComputedStyle.paddingLeft, 10) - MARGIN_MARKER_THICKNESS - MARGIN_MARKER_OFFSET
+                );
+            const top =
+                vertical
+                ?
+                parseInt(bodyComputedStyle.paddingTop, 10) - MARGIN_MARKER_THICKNESS - MARGIN_MARKER_OFFSET
+                :
+                b.ymin;
+            const width = vertical ? b.width : MARGIN_MARKER_THICKNESS;
+            const height = vertical ? MARGIN_MARKER_THICKNESS : b.height;
+
+            return new Box(left, top, left + width, top + height);
+        });
+        const polygonCountourMarginUnionPoly = polygonCountourMarginBoxes.reduce((previous, current) => unify(previous, new Polygon(current)), new Polygon());
+
+        const highlightMarginSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
+        highlightMarginSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON} ${CLASS_HIGHLIGHT_CONTOUR_MARGIN}`);
+        highlightMarginSVG.polygon = polygonCountourMarginUnionPoly;
+        highlightMarginSVG.innerHTML = polygonCountourMarginUnionPoly.svg({
+            fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+            fillRule: "evenodd",
+            stroke: "transparent",
+            strokeWidth: 0,
+            fillOpacity: 1,
+            className: undefined,
+            // r: 4,
+        });
+
+        highlightParent.append(highlightMarginSVG);
+
+        /*
         const highlightBoundingMargin = documant.createElement("div") as IHTMLDivElementWithRect;
         highlightBoundingMargin.setAttribute("class", `${CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN} ${CLASS_HIGHLIGHT_COMMON}`);
 
@@ -1086,6 +1154,7 @@ function createHighlightDom(
         highlightBoundingMargin.style.setProperty("left", `${highlightBoundingMargin.rect.left * scale}px`, "important");
         highlightBoundingMargin.style.setProperty("top", `${highlightBoundingMargin.rect.top * scale}px`, "important");
         highlightParent.append(highlightBoundingMargin);
+        */
     }
 
     // if (useSVG && highlightAreaSVGDocFrag) {
