@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.12...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.14.13...develop
 
 Changes:
 * TODO
+
+# 1.14.13
+
+# > Build environment: NodeJS `20.11.0`, NPM `10.4.0`
+
+Changes:
+* SVG rendering in the highlights engine to work around performance issues and problems with annotations crossing over page boundaries (bounding boxes).
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.14.13/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.14.13/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.14.13
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.12...v1.14.13
 
 # 1.14.12
 
