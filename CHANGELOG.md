@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.14...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.14.15...develop
 
 Changes:
 * TODO
+
+# 1.14.15
+
+# > Build environment: NodeJS `20.11.0`, NPM `10.4.0`
+
+Changes:
+* Highlights rendering engine fixes and optimisations: polygon holes and bounding boxes in margin indicators
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.14.15/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.14.15/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.14.15
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.14...v1.14.15
 
 # 1.14.14
 
