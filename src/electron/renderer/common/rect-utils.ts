@@ -8,6 +8,15 @@
 const VERBOSE = false;
 const IS_DEV = VERBOSE &&
     (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+const LOG_PREFIX = "RECTs -- ";
+
+const logRect = (rect: IRect) => {
+    const LOG_PREFIX_LOCAL = "logRect ~~ ";
+
+    if (IS_DEV) {
+        console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + `TOP:${rect.top} BOTTOM:${rect.bottom} LEFT:${rect.left} RIGHT:${rect.right} WIDTH:${rect.width} HEIGHT:${rect.height}`);
+    }
+};
 
 // interface DOMRect extends DOMRectReadOnly {
 //     height: number;
@@ -36,17 +45,18 @@ export interface IRect extends IRectSimple {
 
 export function getClientRectsNoOverlap(
     range: Range,
-    doNotMergeHorizontallyAlignedRects: boolean,
+    doNotMergeAlignedRects: boolean,
+    vertical: boolean,
     expand?: number): IRect[] {
 
     const rangeClientRects = range.getClientRects(); // Array.from(range.getClientRects());
-    return getClientRectsNoOverlap_(rangeClientRects, doNotMergeHorizontallyAlignedRects, expand);
+    return getClientRectsNoOverlap_(rangeClientRects, doNotMergeAlignedRects, vertical, expand);
 }
 
-// tslint:disable-next-line:max-line-length
 export function getClientRectsNoOverlap_(
     clientRects: DOMRectList, // ClientRectList
-    doNotMergeHorizontallyAlignedRects: boolean,
+    doNotMergeAlignedRects: boolean,
+    vertical: boolean,
     expand?: number): IRect[] {
 
     const originalRects: IRect[] = [];
@@ -60,15 +70,23 @@ export function getClientRectsNoOverlap_(
             width: rangeClientRect.width,
         });
     }
-    return getClientRectsNoOverlap__(originalRects, doNotMergeHorizontallyAlignedRects, expand);
+    return getClientRectsNoOverlap__(originalRects, doNotMergeAlignedRects, vertical, expand);
 }
 
-// tslint:disable-next-line:max-line-length
 export function getClientRectsNoOverlap__(
     originalRects: IRect[],
-    doNotMergeHorizontallyAlignedRects: boolean,
+    doNotMergeAlignedRects: boolean,
+    vertical: boolean,
     expand?: number): IRect[] {
+    const LOG_PREFIX_LOCAL = "getClientRectsNoOverlap__ ~~ ";
 
+    if (IS_DEV) {
+        console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "original number of rects = " + originalRects.length);
+    }
+
+    if (IS_DEV) {
+        console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "expand = " + expand);
+    }
     const ex = expand ? expand : 0;
     if (ex) {
         for (const rect of originalRects) {
@@ -82,10 +100,24 @@ export function getClientRectsNoOverlap__(
     }
 
     const tolerance = 1;
+    if (IS_DEV) {
+        console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "tolerance = " + tolerance);
+    }
 
-    const mergedRects = mergeTouchingRects(originalRects, tolerance, doNotMergeHorizontallyAlignedRects);
-    const noContainedRects = removeContainedRects(mergedRects, tolerance);
+    const mergedRects = mergeTouchingRects(originalRects, tolerance, doNotMergeAlignedRects, vertical);
+    if (IS_DEV) {
+        console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "after [mergeTouchingRects], number of rects = " + mergedRects.length);
+    }
+
+    const noContainedRects = removeContainedRects(mergedRects, tolerance, doNotMergeAlignedRects, vertical);
+    if (IS_DEV) {
+        console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "after [removeContainedRects], number of rects = " + noContainedRects.length);
+    }
+
     const newRects = replaceOverlapingRects(noContainedRects);
+    if (IS_DEV) {
+        console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "after [replaceOverlapingRects], number of rects = " + newRects.length);
+    }
 
     const minArea = 2 * 2;
     for (let j = newRects.length - 1; j >= 0; j--) {
@@ -97,12 +129,12 @@ export function getClientRectsNoOverlap__(
         if (!bigEnough) {
             if (newRects.length > 1) {
                 if (IS_DEV) {
-                    console.log("CLIENT RECT: remove small");
+                    console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "removed small");
                 }
                 newRects.splice(j, 1);
-            } else {
+            } else { // newRects.length === 1
                 if (IS_DEV) {
-                    console.log("CLIENT RECT: remove small, but keep otherwise empty!");
+                    console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "removed all smalls, but must keep last small one otherwise array empty!");
                 }
                 break;
             }
@@ -114,7 +146,10 @@ export function getClientRectsNoOverlap__(
     }
 
     if (IS_DEV) {
-        console.log(`CLIENT RECT: reduced ${originalRects.length} --> ${newRects.length}`);
+        console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + `total reduction ${originalRects.length} --> ${newRects.length}`);
+        for (const r of newRects) {
+            logRect(r);
+        }
     }
     return newRects;
 }
@@ -267,45 +302,75 @@ export function rectsTouchOrOverlap(rect1: IRect, rect2: IRect, tolerance: numbe
     );
 }
 
-// tslint:disable-next-line:max-line-length
-export function mergeTouchingRects(rects: IRect[], tolerance: number, doNotMergeHorizontallyAlignedRects: boolean): IRect[] {
+export function mergeTouchingRects(rects: IRect[], tolerance: number, doNotMergeAlignedRects: boolean, vertical: boolean): IRect[] {
+    const LOG_PREFIX_LOCAL = "mergeTouchingRects ~~ ";
+
     for (let i = 0; i < rects.length; i++) {
         for (let j = i + 1; j < rects.length; j++) {
             const rect1 = rects[i];
             const rect2 = rects[j];
             if (rect1 === rect2) {
                 if (IS_DEV) {
-                    console.log("mergeTouchingRects rect1 === rect2 ??!");
+                    console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "rect1 === rect2 ??!");
                 }
                 continue;
             }
 
+            // horizontally-stacked lines of characters in vertical flowing text
+            // |=================||======================|
+            // |        1        ||           2          |
+            // |=================||======================|
             const rectsLineUpVertically =
                 almostEqual(rect1.top, rect2.top, tolerance) &&
                 almostEqual(rect1.bottom, rect2.bottom, tolerance);
+            const mergeAllowedForVerticallyLinedUpRects = !doNotMergeAlignedRects || !vertical;
 
+            // vertically-stacked lines of characters in horizontal flowing text
+            // |=================|
+            // |        1        |
+            // |=================|
+            // |=================|
+            // |                 |
+            // |        2        |
+            // |                 |
+            // |=================|
             const rectsLineUpHorizontally =
                 almostEqual(rect1.left, rect2.left, tolerance) &&
                 almostEqual(rect1.right, rect2.right, tolerance);
+            const mergeAllowedForHorizontallyLinedUpRects = !doNotMergeAlignedRects || vertical;
 
-            const horizontalAllowed = !doNotMergeHorizontallyAlignedRects;
-            // tslint:disable-next-line:max-line-length
-            const aligned = (rectsLineUpHorizontally && horizontalAllowed) || (rectsLineUpVertically && !rectsLineUpHorizontally);
+            const doMerge =
+                // do not merge same rects (other containment operation elsewhere)
+                (
+                (rectsLineUpVertically && !rectsLineUpHorizontally)
+                ||
+                (!rectsLineUpVertically && rectsLineUpHorizontally)
+                )
+                &&
+                (
+                (rectsLineUpHorizontally && mergeAllowedForHorizontallyLinedUpRects)
+                ||
+                (rectsLineUpVertically && mergeAllowedForVerticallyLinedUpRects)
+                )
+                &&
+                rectsTouchOrOverlap(rect1, rect2, tolerance);
 
-            const canMerge = aligned && rectsTouchOrOverlap(rect1, rect2, tolerance);
-
-            if (canMerge) {
-                if (IS_DEV) {
-                    // tslint:disable-next-line:max-line-length
-                    console.log(`CLIENT RECT: merging two into one, VERTICAL: ${rectsLineUpVertically} HORIZONTAL: ${rectsLineUpHorizontally} (${doNotMergeHorizontallyAlignedRects})`);
-                }
+            if (doMerge) {
                 const newRects = rects.filter((rect) => {
                     return rect !== rect1 && rect !== rect2;
                 });
-                const replacementClientRect = getBoundingRect(rect1, rect2);
-                newRects.push(replacementClientRect);
+                const boundingRect = getBoundingRect(rect1, rect2);
+                newRects.push(boundingRect);
 
-                return mergeTouchingRects(newRects, tolerance, doNotMergeHorizontallyAlignedRects);
+                if (IS_DEV) {
+                    console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + `merged ${rects.length} ==> ${newRects.length}, VERTICAL ALIGN: ${rectsLineUpVertically} HORIZONTAL ALIGN: ${rectsLineUpHorizontally} (DO NOT MERGE: ${doNotMergeAlignedRects}, VERTICAL: ${vertical}) `);
+                    logRect(rect1);
+                    console.log("+");
+                    logRect(rect2);
+                    console.log("=");
+                    logRect(boundingRect);
+                }
+                return mergeTouchingRects(newRects, tolerance, doNotMergeAlignedRects, vertical);
             }
         }
     }
@@ -314,60 +379,80 @@ export function mergeTouchingRects(rects: IRect[], tolerance: number, doNotMerge
 }
 
 export function replaceOverlapingRects(rects: IRect[]): IRect[] {
+    const LOG_PREFIX_LOCAL = "replaceOverlapingRects ~~ ";
+
     for (let i = 0; i < rects.length; i++) {
         for (let j = i + 1; j < rects.length; j++) {
             const rect1 = rects[i];
             const rect2 = rects[j];
             if (rect1 === rect2) {
                 if (IS_DEV) {
-                    console.log("replaceOverlapingRects rect1 === rect2 ??!");
+                    console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "rect1 === rect2 ??!");
                 }
                 continue;
             }
 
-            if (rectsTouchOrOverlap(rect1, rect2, -1)) { // negative tolerance for strict overlap test
+            if (!rectsTouchOrOverlap(rect1, rect2, -1)) { // negative tolerance for strict overlap test
+                continue;
+            }
 
-                let toAdd: IRect[] = [];
-                let toRemove: IRect;
-                let toPreserve: IRect;
+            let toAdd: IRect[] = [];
+            let toRemove: IRect;
+            let toPreserve: IRect;
 
-                // rect1 - rect2
-                const subtractRects1 = rectSubtract(rect1, rect2); // discard #1, keep #2, add returned rects
-                if (subtractRects1.length === 1) {
+            let n = 0;
+
+            // rect1 - rect2
+            const subtractRects1 = rectSubtract(rect1, rect2); // discard #1, keep #2, add returned rects
+            if (subtractRects1.length === 1) {
+                n = 1;
+                toAdd = subtractRects1;
+                toRemove = rect1;
+                toPreserve = rect2;
+            } else {
+                // rect2 - rect1
+                const subtractRects2 = rectSubtract(rect2, rect1); // discard #2, keep #1, add returned rects
+                if (subtractRects1.length < subtractRects2.length) {
+                    n = 2;
                     toAdd = subtractRects1;
                     toRemove = rect1;
                     toPreserve = rect2;
                 } else {
-                    // rect2 - rect1
-                    const subtractRects2 = rectSubtract(rect2, rect1); // discard #2, keep #1, add returned rects
-                    if (subtractRects1.length < subtractRects2.length) {
-                        toAdd = subtractRects1;
-                        toRemove = rect1;
-                        toPreserve = rect2;
-                    } else {
-                        toAdd = subtractRects2;
-                        toRemove = rect2;
-                        toPreserve = rect1;
-                    }
+                    n = 3;
+                    toAdd = subtractRects2;
+                    toRemove = rect2;
+                    toPreserve = rect1;
                 }
-
-                if (IS_DEV) {
-                    const toCheck = [];
-                    toCheck.push(toPreserve);
-                    Array.prototype.push.apply(toCheck, toAdd);
-                    checkOverlaps(toCheck);
-                }
-
-                if (IS_DEV) {
-                    console.log(`CLIENT RECT: overlap, cut one rect into ${toAdd.length}`);
-                }
-                const newRects = rects.filter((rect) => {
-                    return rect !== toRemove;
-                });
-                Array.prototype.push.apply(newRects, toAdd);
-
-                return replaceOverlapingRects(newRects);
             }
+
+            if (IS_DEV) {
+                console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + `overlap ${n} ADD: ${toAdd.length}`);
+                for (const r of toAdd) {
+                    logRect(r);
+                }
+                console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + `overlap ${n} REMOVE:`);
+                logRect(toRemove);
+                console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + `overlap ${n} KEEP:`);
+                logRect(toPreserve);
+            }
+
+            if (IS_DEV) {
+                const toCheck = [];
+                toCheck.push(toPreserve);
+                toCheck.push(...toAdd);
+                checkOverlaps(toCheck);
+            }
+
+            const newRects = rects.filter((rect) => {
+                return rect !== toRemove;
+            });
+            newRects.push(...toAdd);
+
+            if (IS_DEV) {
+                console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + `overlap removed: ${rects.length} ==> ${newRects.length}`);
+            }
+
+            return replaceOverlapingRects(newRects);
         }
     }
 
@@ -382,7 +467,8 @@ export function getRectOverlapY(rect1: IRect, rect2: IRect) {
     return Math.max(0, Math.min(rect1.bottom, rect2.bottom) - Math.max(rect1.top, rect2.top));
 }
 
-export function removeContainedRects(rects: IRect[], tolerance: number): IRect[] {
+export function removeContainedRects(rects: IRect[], tolerance: number, doNotMergeAlignedRects: boolean, vertical: boolean): IRect[] {
+    const LOG_PREFIX_LOCAL = "removeContainedRects ~~ ";
 
     const rectsToKeep = new Set(rects);
 
@@ -390,7 +476,8 @@ export function removeContainedRects(rects: IRect[], tolerance: number): IRect[]
         const bigEnough = rect.width > 1 && rect.height > 1;
         if (!bigEnough) {
             if (IS_DEV) {
-                console.log("CLIENT RECT: remove tiny");
+                console.log(LOG_PREFIX + "removed tiny:");
+                logRect(rect);
             }
             rectsToKeep.delete(rect);
             continue;
@@ -399,16 +486,82 @@ export function removeContainedRects(rects: IRect[], tolerance: number): IRect[]
             if (rect === possiblyContainingRect) {
                 continue;
             }
-            if (!rectsToKeep.has(possiblyContainingRect)) {
+            if (!rectsToKeep.has(possiblyContainingRect) || !rectsToKeep.has(rect)) {
                 continue;
             }
-            if (rectContains(possiblyContainingRect, rect, tolerance)) {
+            if (!rectContains(possiblyContainingRect, rect, tolerance)) {
+                continue;
+            }
+
+            // horizontally-stacked lines of characters in vertical flowing text
+            // |=================||======================|
+            // |        1        ||           2          |
+            // |=================||======================|
+            const rectsLineUpVertically =
+                almostEqual(possiblyContainingRect.top, rect.top, tolerance) &&
+                almostEqual(possiblyContainingRect.bottom, rect.bottom, tolerance);
+            const mergeAllowedForVerticallyLinedUpRects = !doNotMergeAlignedRects || !vertical;
+
+            // vertically-stacked lines of characters in horizontal flowing text
+            // |=================|
+            // |        1        |
+            // |=================|
+            // |=================|
+            // |                 |
+            // |        2        |
+            // |                 |
+            // |=================|
+            const rectsLineUpHorizontally =
+                almostEqual(possiblyContainingRect.left, rect.left, tolerance) &&
+                almostEqual(possiblyContainingRect.right, rect.right, tolerance);
+            const mergeAllowedForHorizontallyLinedUpRects = !doNotMergeAlignedRects || vertical;
+
+            if (rectsLineUpVertically && rectsLineUpHorizontally) {
+                // if same rects, definitely eliminate one
                 if (IS_DEV) {
-                    console.log("CLIENT RECT: remove contained");
+                    console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "[identical] removed container (keep contained):");
+                    logRect(rect);
+                    logRect(possiblyContainingRect);
+                }
+                rectsToKeep.delete(possiblyContainingRect);
+                // break;
+                continue;
+            } else if (rectsLineUpVertically || rectsLineUpHorizontally) {
+                const doMerge =
+                    (rectsLineUpHorizontally && mergeAllowedForHorizontallyLinedUpRects)
+                    ||
+                    (rectsLineUpVertically && mergeAllowedForVerticallyLinedUpRects)
+                    ;
+                if (!doMerge) {
+                    continue;
+                }
+                if (IS_DEV) {
+                    console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "[aligned] removed container (keep contained):");
+                    logRect(rect);
+                    logRect(possiblyContainingRect);
+                }
+                rectsToKeep.delete(possiblyContainingRect);
+                // break;
+                continue;
+            }
+
+            if (doNotMergeAlignedRects) {
+                if (IS_DEV) {
+                    console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "[merge no] removed container (keep contained):");
+                    logRect(possiblyContainingRect);
+                    logRect(rect);
+                }
+                rectsToKeep.delete(possiblyContainingRect);
+            } else {
+                if (IS_DEV) {
+                    console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "[merge yes] removed contained (keep container):");
+                    logRect(rect);
+                    logRect(possiblyContainingRect);
                 }
                 rectsToKeep.delete(rect);
-                break;
             }
+            // break;
+            continue;
         }
     }
 
@@ -416,6 +569,7 @@ export function removeContainedRects(rects: IRect[], tolerance: number): IRect[]
 }
 
 export function checkOverlaps(rects: IRect[]) {
+    const LOG_PREFIX_LOCAL = "checkOverlaps ~~ ";
 
     const stillOverlapingRects: IRect[] = [];
 
@@ -424,8 +578,9 @@ export function checkOverlaps(rects: IRect[]) {
             if (rect1 === rect2) {
                 continue;
             }
-            const has1 = stillOverlapingRects.indexOf(rect1) >= 0;
-            const has2 = stillOverlapingRects.indexOf(rect2) >= 0;
+
+            const has1 = stillOverlapingRects.includes(rect1);
+            const has2 = stillOverlapingRects.includes(rect2);
             if (!has1 || !has2) {
                 if (rectsTouchOrOverlap(rect1, rect2, -1)) { // negative tolerance for strict overlap test
 
@@ -436,27 +591,26 @@ export function checkOverlaps(rects: IRect[]) {
                         stillOverlapingRects.push(rect2);
                     }
 
-                    console.log("CLIENT RECT: overlap ---");
-                    // tslint:disable-next-line:max-line-length
-                    console.log(`#1 TOP:${rect1.top} BOTTOM:${rect1.bottom} LEFT:${rect1.left} RIGHT:${rect1.right} WIDTH:${rect1.width} HEIGHT:${rect1.height}`);
-                    // tslint:disable-next-line:max-line-length
-                    console.log(`#2 TOP:${rect2.top} BOTTOM:${rect2.bottom} LEFT:${rect2.left} RIGHT:${rect2.right} WIDTH:${rect2.width} HEIGHT:${rect2.height}`);
+                    console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "RECT 1:");
+                    logRect(rect1);
+
+                    console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "RECT 2:");
+                    logRect(rect2);
 
                     const xOverlap = getRectOverlapX(rect1, rect2);
-                    console.log(`xOverlap: ${xOverlap}`);
+                    console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + `X overlap: ${xOverlap}`);
 
                     const yOverlap = getRectOverlapY(rect1, rect2);
-                    console.log(`yOverlap: ${yOverlap}`);
+                    console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + `Y overlap: ${yOverlap}`);
                 }
             }
         }
     }
+
     if (stillOverlapingRects.length) {
-        console.log(`CLIENT RECT: overlaps ${stillOverlapingRects.length}`);
-        // for (const rect of stillOverlapingRects) {
-        // tslint:disable-next-line:max-line-length
-        //     console.log(`CLIENT RECT: remaining overlaps TOP:${rect.top} BOTTOM:${rect.bottom} LEFT:${rect.left} RIGHT:${rect.right} WIDTH:${rect.width} HEIGHT:${rect.height}`);
-        // }
+        if (IS_DEV) {
+            console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + `still overlaping = ${stillOverlapingRects.length}`);
+        }
     }
 }
 
@@ -481,13 +635,13 @@ export function checkOverlaps(rects: IRect[]) {
 
 //     let getBoundingClientRect = range.getClientRects().length > 1;
 //     let getClientRects = getBoundingClientRect;
-//     console.log("BUG 1: " + getClientRects);
+//     console.log(LOG_PREFIX + "BUG 1: " + getClientRects);
 
 //     if (!getClientRects) {
 //         range.setEnd(t2, 1);
 //         getBoundingClientRect = range.getClientRects().length === 2;
 //         getClientRects = getBoundingClientRect;
-//         console.log("BUG 2: " + getClientRects);
+//         console.log(LOG_PREFIX + "BUG 2: " + getClientRects);
 //     }
 
 //     if (!getBoundingClientRect) {
@@ -496,7 +650,7 @@ export function checkOverlaps(rects: IRect[]) {
 //         range.setEnd(range.startContainer, range.startOffset);
 //         const boundingRect = range.getBoundingClientRect();
 //         getBoundingClientRect = boundingRect.top === 0 && boundingRect.left === 0;
-//         console.log("BUG 3: " + getBoundingClientRect);
+//         console.log(LOG_PREFIX + "BUG 3: " + getBoundingClientRect);
 //     }
 
 //     documant.body.removeChild(p);

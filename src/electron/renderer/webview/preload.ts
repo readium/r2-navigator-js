@@ -3542,7 +3542,7 @@ export const computeProgressionData = (): IProgressionData => {
                         (rect.top >= columnDimension ? scrollElement.scrollWidth : 0);
                 } else {
                     const boundingRect = element.getBoundingClientRect();
-                    const clientRects = getClientRectsNoOverlap_(element.getClientRects(), false);
+                    const clientRects = getClientRectsNoOverlap_(element.getClientRects(), false, vwm);
                     let rectangle: IRect | undefined;
                     for (const rect of clientRects) {
                         if (!rectangle) {

@@ -832,14 +832,14 @@ export const ttsCssStyles = `
 `;
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
-// export const CLASS_HIGHLIGHT_CURSOR1 = "R2_CLASS_HIGHLIGHT_CURSOR1";
-export const CLASS_HIGHLIGHT_CURSOR2 = "R2_CLASS_HIGHLIGHT_CURSOR2";
 export const CLASS_HIGHLIGHT_COMMON = "R2_CLASS_HIGHLIGHT_COMMON";
 export const CLASS_HIGHLIGHT_CONTOUR = "R2_CLASS_HIGHLIGHT_CONTOUR";
 export const CLASS_HIGHLIGHT_CONTOUR_MARGIN = "R2_CLASS_HIGHLIGHT_CONTOUR_MARGIN";
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
 export const CLASS_HIGHLIGHT_MARGIN = "R2_CLASS_HIGHLIGHT_MARGIN";
 export const CLASS_HIGHLIGHT_HOVER = "R2_CLASS_HIGHLIGHT_HOVER";
+export const CLASS_HIGHLIGHT_CURSOR2 = "R2_CLASS_HIGHLIGHT_CURSOR2";
+// export const CLASS_HIGHLIGHT_CURSOR1 = "R2_CLASS_HIGHLIGHT_CURSOR1";
 // export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
 // export const CLASS_HIGHLIGHT_BOUNDING_AREA = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA";
 // export const CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN";
@@ -972,25 +972,25 @@ export const visibilityMaskCssStyles = `
 display: none !important;
 }
 
-:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}:not(.${CLASS_HIGHLIGHT_MARGIN}) > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(2),
-:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}:not(.${CLASS_HIGHLIGHT_MARGIN}) > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(2)
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}:not(.${CLASS_HIGHLIGHT_MARGIN}) > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:last-child,
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}:not(.${CLASS_HIGHLIGHT_MARGIN}) > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:last-child
 {
 stroke: #555555 !important;
 /* stroke-width: 2 !important; */
 }
-:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(2),
-:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(2)
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:last-child,
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:last-child
 {
 stroke: #555555 !important;
 /* stroke-width: 2 !important; */
 }
 
-:root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}:not(.${CLASS_HIGHLIGHT_MARGIN}) > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(2)
+:root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}:not(.${CLASS_HIGHLIGHT_MARGIN}) > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:last-child
 {
 stroke: yellow !important;
 /* stroke-width: 2 !important; */
 }
-:root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(2)
+:root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:last-child
 {
 stroke: yellow !important;
 /* stroke-width: 2 !important; */
