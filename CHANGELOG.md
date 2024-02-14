@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.13...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.14.14...develop
 
 Changes:
 * TODO
+
+# 1.14.14
+
+# > Build environment: NodeJS `20.11.0`, NPM `10.4.0`
+
+Changes:
+* Highlights rendering engine fixes: outline stroke was redundant, opacity was inconsistent
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.14.14/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.14.14/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.14.14
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.13...v1.14.14
 
 # 1.14.13
 
