@@ -849,7 +849,7 @@ function createHighlightDom(
         const MARGIN_MARKER_OFFSET = 6 * (win.READIUM2.isFixedLayout ? scale : 1);
         const paginatedOffset_ = paginatedOffset - MARGIN_MARKER_OFFSET - MARGIN_MARKER_THICKNESS;
 
-        let boundingRect: IRect | undefined;
+        let boundingRect: IRect | IRect[] | undefined;
         const polygonCountourMarginRects = Array.from(polygonCountourUnionPoly.faces).map((face: Face) => {
             const b = face.box;
             const left =
@@ -896,7 +896,8 @@ function createHighlightDom(
             const width = vertical ? b.width : MARGIN_MARKER_THICKNESS;
             const height = vertical ? MARGIN_MARKER_THICKNESS : b.height;
 
-            const extra = paginated ? 2 : 0; // to union-join small gaps (despite a predictably rectangular bounding box, we cannot use it instead of a union polygon in paginated mode due to crossing over page boundaries, resulting in gigantic bounding box)
+            const extra = 0;
+            // const extra = paginated ? 2 : 0; // useful to union-join small gaps, but here we are able to compute groups of bounding boxes so that in column-paginated mode when crossing over page boundaries there is no gigantic bounding box.
 
             const r: IRect = {
                 left: left - (vertical ? extra : 0),
@@ -907,46 +908,62 @@ function createHighlightDom(
                 height: height + extra * 2,
             };
 
-            boundingRect = boundingRect ? getBoundingRect(boundingRect, r) : r;
+            boundingRect = boundingRect ? getBoundingRect(boundingRect as IRect, r) : r;
 
             return r;
         });
 
-        let useFastBoundingRect = true;
+        const useFastBoundingRect = true; // we never union-join the polygons, instead we group possible rectangle bounding boxes together to allow fragmentation across page boundaries
         let polygonMarginUnionPoly: Polygon | undefined;
         if (paginated) {
             const tolerance = 1;
-            let refX: number | undefined;
+            const groups: Array<{
+                x: number,
+                boxes: IRect[],
+            }> = [];
             for (const r of polygonCountourMarginRects) {
-                if (typeof refX === "undefined") {
-                    refX = r.left;
-                    continue;
-                }
+                const group = groups.find((g) => {
+                    return !(r.left < (g.x - tolerance) || r.left > (g.x + tolerance));
+                });
 
-                if (r.left < (refX - tolerance) || r.left > (refX + tolerance)) {
-                    useFastBoundingRect = false;
-                    break;
+                if (!group) {
+                    groups.push({
+                        x: r.left,
+                        boxes: [r],
+                    });
+                } else {
+                    group.boxes?.push(r);
                 }
             }
 
-            if (!useFastBoundingRect) {
-                polygonMarginUnionPoly = polygonCountourMarginRects.reduce((previous, r) => unify(previous, new Polygon(new Box(r.left, r.top, r.right, r.bottom))), new Polygon());
+            // console.log("XX RECTS: " + polygonCountourMarginRects.length);
+            // console.log(JSON.stringify(polygonCountourMarginRects, null, 4));
+            // console.log("XX GROUPS: " + groups.length);
+            // groups.forEach((g) => console.log(JSON.stringify(g.boxes, null, 4)));
 
-                // Array.from(polygonMarginUnionPoly.faces).forEach((face: Face) => {
-                //     if (face.orientation() !== ORIENTATION.CCW) {
-                //         if (IS_DEV) {
-                //             console.log("--HIGH WEBVIEW-- removing polygon clockwise face / inner hole (margin))");
-                //         }
-                //         (polygonMarginUnionPoly as Polygon).deleteFace(face);
-                //     }
-                // });
+            boundingRect = groups.map<IRect>((g) => {
+                return g.boxes.reduce((prev, cur) => {
+                    if (prev === cur) {
+                        return cur;
+                    }
+                    return getBoundingRect(prev, cur);
+                }, g.boxes[0]);
+            });
+            if (boundingRect.length === 1) {
+                boundingRect = boundingRect[0];
             }
         }
 
         if (useFastBoundingRect) {
             if (boundingRect) {
                 polygonMarginUnionPoly = new Polygon();
-                polygonMarginUnionPoly.addFace(new Box(boundingRect.left, boundingRect.top, boundingRect.right, boundingRect.bottom));
+                if (Array.isArray(boundingRect)) {
+                    for (const b of boundingRect) {
+                        polygonMarginUnionPoly.addFace(new Box(b.left, b.top, b.right, b.bottom));
+                    }
+                } else {
+                    polygonMarginUnionPoly.addFace(new Box(boundingRect.left, boundingRect.top, boundingRect.right, boundingRect.bottom));
+                }
             } else {
                 const poly = new Polygon();
                 for (const r of polygonCountourMarginRects) {
@@ -955,6 +972,17 @@ function createHighlightDom(
                 polygonMarginUnionPoly = new Polygon();
                 polygonMarginUnionPoly.addFace(poly.box);
             }
+        } else {
+            polygonMarginUnionPoly = polygonCountourMarginRects.reduce((previous, r) => unify(previous, new Polygon(new Box(r.left, r.top, r.right, r.bottom))), new Polygon());
+
+            // Array.from(polygonMarginUnionPoly.faces).forEach((face: Face) => {
+            //     if (face.orientation() !== ORIENTATION.CCW) {
+            //         if (IS_DEV) {
+            //             console.log("--HIGH WEBVIEW-- removing polygon clockwise face / inner hole (margin))");
+            //         }
+            //         (polygonMarginUnionPoly as Polygon).deleteFace(face);
+            //     }
+            // });
         }
 
         const highlightMarginSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
@@ -963,10 +991,10 @@ function createHighlightDom(
         highlightMarginSVG.innerHTML = (polygonMarginUnionPoly as Polygon).svg({
             fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
             fillRule: "evenodd",
-            // stroke: "transparent",
-            // strokeWidth: 0,
-            stroke: "magenta",
-            strokeWidth: 1,
+            stroke: "transparent",
+            strokeWidth: 0,
+            // stroke: "magenta",
+            // strokeWidth: 1,
             fillOpacity: 1,
             className: undefined,
             // r: 4,
