@@ -988,7 +988,7 @@ function createHighlightDom(
     }) + polygonCountour.svg({
         fill: "transparent",
         fillRule: "evenodd",
-        stroke: "red",
+        stroke: "transparent",
         strokeWidth: 1,
         fillOpacity: 1,
         // r: 4,

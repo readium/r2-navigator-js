@@ -838,9 +838,9 @@ export const CLASS_HIGHLIGHT_COMMON = "R2_CLASS_HIGHLIGHT_COMMON";
 export const CLASS_HIGHLIGHT_CONTOUR = "R2_CLASS_HIGHLIGHT_CONTOUR";
 export const CLASS_HIGHLIGHT_CONTOUR_MARGIN = "R2_CLASS_HIGHLIGHT_CONTOUR_MARGIN";
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
-export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
 export const CLASS_HIGHLIGHT_MARGIN = "R2_CLASS_HIGHLIGHT_MARGIN";
 export const CLASS_HIGHLIGHT_HOVER = "R2_CLASS_HIGHLIGHT_HOVER";
+// export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
 // export const CLASS_HIGHLIGHT_BOUNDING_AREA = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA";
 // export const CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN";
 
@@ -911,14 +911,12 @@ outline-offset: 1px !important;
 cursor: pointer !important;
 }
 */
-export const visibilityMaskCssStyles = `
 /*
 :root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(1),
 :root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(1)
 {
 fill: blue !important;
 }
-*/
 :root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(2),
 :root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(2)
 {
@@ -928,26 +926,46 @@ stroke: #dddddd !important;
 {
 stroke: #aaaaaa !important;
 }
+*/
+/*
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN}[data-type="0"] > .${CLASS_HIGHLIGHT_AREA},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN}[data-type="0"] > .${CLASS_HIGHLIGHT_AREA},
+*/
+/*
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > .${CLASS_HIGHLIGHT_AREA},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > .${CLASS_HIGHLIGHT_AREA},
+*/
+/*
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_AREA},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_AREA},
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR}
+{
+transform: translate3d(0px, 0px, 0px) !important;
+}
+*/
 
+/*
+https://developer.mozilla.org/en-US/docs/Web/CSS/overflow
+hidden
+    Overflow content is clipped at the element's padding box. There are no scroll bars, and the clipped content is not visible (i.e., clipped content is hidden), but the content still exists. User agents do not add scroll bars and also do not allow users to view the content outside the clipped region by actions such as dragging on a touch screen or using the scroll wheel on a mouse. The content can be scrolled programmatically (for example, by setting the value of the scrollLeft property or the scrollTo() method), in which case the element box is a scroll container.
+clip
+    Overflow content is clipped at the element's overflow clip edge that is defined using the overflow-clip-margin property. As a result, content overflows the element's padding box by the <length> value of overflow-clip-margin or by 0px if not set. Overflow content outside the clipped region is not visible, user agents do not add a scroll bar, and programmatic scrolling is also not supported. No new formatting context is created. To establish a formatting context, use overflow: clip along with display: flow-root. The element box is not a scroll container.
+*/
+/*
 :root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not(${hover}):not(.${CLASS_HIGHLIGHT_MARGIN})[data-type="0"],
 :root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not(${hover}):not(.${CLASS_HIGHLIGHT_MARGIN})[data-type="0"]
 {
 opacity: 0.5 !important;
 }
-/*
-:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN}[data-type="0"] > .${CLASS_HIGHLIGHT_AREA},
-:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN}[data-type="0"] > .${CLASS_HIGHLIGHT_AREA},
-*/
 :root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN}[data-type="0"] > svg.${CLASS_HIGHLIGHT_CONTOUR},
 :root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN}[data-type="0"] > svg.${CLASS_HIGHLIGHT_CONTOUR}
 {
 opacity: 0.5 !important;
 }
-
-/*
-:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > .${CLASS_HIGHLIGHT_AREA},
-:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > .${CLASS_HIGHLIGHT_AREA},
 */
+export const visibilityMaskCssStyles = `
+
 :root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > svg.${CLASS_HIGHLIGHT_CONTOUR},
 :root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > svg.${CLASS_HIGHLIGHT_CONTOUR}
 {
@@ -970,12 +988,12 @@ stroke: #555555 !important;
 :root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}:not(.${CLASS_HIGHLIGHT_MARGIN}) > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(2)
 {
 stroke: yellow !important;
-stroke-width: 2 !important;
+/* stroke-width: 2 !important; */
 }
 :root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(2)
 {
 stroke: yellow !important;
-stroke-width: 2 !important;
+/* stroke-width: 2 !important; */
 }
 
 :root[style].${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR},
@@ -993,16 +1011,6 @@ position: fixed !important;
 {
 position: absolute !important;
 }
-
-/*
-:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_AREA},
-:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_AREA},
-:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR},
-:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR}
-{
-transform: translate3d(0px, 0px, 0px) !important;
-}
-*/
 
 :root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER},
 :root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}
@@ -1059,13 +1067,6 @@ no new stacking context, otherwise massive performance degradation with CSS Colu
 :root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) {
     overflow: visible !important;
 }
-/*
-https://developer.mozilla.org/en-US/docs/Web/CSS/overflow
-hidden
-    Overflow content is clipped at the element's padding box. There are no scroll bars, and the clipped content is not visible (i.e., clipped content is hidden), but the content still exists. User agents do not add scroll bars and also do not allow users to view the content outside the clipped region by actions such as dragging on a touch screen or using the scroll wheel on a mouse. The content can be scrolled programmatically (for example, by setting the value of the scrollLeft property or the scrollTo() method), in which case the element box is a scroll container.
-clip
-    Overflow content is clipped at the element's overflow clip edge that is defined using the overflow-clip-margin property. As a result, content overflows the element's padding box by the <length> value of overflow-clip-margin or by 0px if not set. Overflow content outside the clipped region is not visible, user agents do not add a scroll bar, and programmatic scrolling is also not supported. No new formatting context is created. To establish a formatting context, use overflow: clip along with display: flow-root. The element box is not a scroll container.
-*/
 :root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body,
 :root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body {
     /*
