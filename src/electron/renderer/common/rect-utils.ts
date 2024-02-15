@@ -5,7 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-const VERBOSE = false;
+export const VERBOSE = false;
 const IS_DEV = VERBOSE &&
     (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 const LOG_PREFIX = "RECTs -- ";
@@ -99,7 +99,29 @@ export function getClientRectsNoOverlap__(
         }
     }
 
-    const tolerance = 1;
+    // horizontal boxes
+    const rectsLandscapeAspectRatio = originalRects.filter((r) => {
+        return r.width >= r.height;
+    });
+    // vertical boxes
+    const rectsPortraitAspectRatio = originalRects.filter((r) => {
+        return r.width < r.height;
+    });
+
+    // negative value, first less than second (r1 < r2)
+    const sortFunc = (r1: IRect, r2: IRect) => {
+        const areaR1 = r1.width * r1.height;
+        const areaR2 = r2.width * r2.height;
+        return areaR1 < areaR2 ? -1 : areaR1 === areaR2 ? 0 : 1;
+    };
+
+    // in-place sort
+    rectsLandscapeAspectRatio.sort(sortFunc);
+    rectsPortraitAspectRatio.sort(sortFunc);
+
+    originalRects = vertical ? rectsPortraitAspectRatio.concat(rectsLandscapeAspectRatio) : rectsLandscapeAspectRatio.concat(rectsPortraitAspectRatio);
+
+    const tolerance = 3;
     if (IS_DEV) {
         console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "tolerance = " + tolerance);
     }
@@ -114,7 +136,7 @@ export function getClientRectsNoOverlap__(
         console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "after [removeContainedRects], number of rects = " + noContainedRects.length);
     }
 
-    const newRects = replaceOverlapingRects(noContainedRects);
+    const newRects = replaceOverlapingRects(noContainedRects, doNotMergeAlignedRects, vertical);
     if (IS_DEV) {
         console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + "after [replaceOverlapingRects], number of rects = " + newRects.length);
     }
@@ -378,8 +400,12 @@ export function mergeTouchingRects(rects: IRect[], tolerance: number, doNotMerge
     return rects;
 }
 
-export function replaceOverlapingRects(rects: IRect[]): IRect[] {
+export function replaceOverlapingRects(rects: IRect[], doNotMergeAlignedRects: boolean, vertical: boolean): IRect[] {
     const LOG_PREFIX_LOCAL = "replaceOverlapingRects ~~ ";
+
+    if (doNotMergeAlignedRects) {
+        return rects;
+    }
 
     for (let i = 0; i < rects.length; i++) {
         for (let j = i + 1; j < rects.length; j++) {
@@ -395,6 +421,29 @@ export function replaceOverlapingRects(rects: IRect[]): IRect[] {
             if (!rectsTouchOrOverlap(rect1, rect2, -1)) { // negative tolerance for strict overlap test
                 continue;
             }
+
+            // horizontally-stacked lines of characters in vertical flowing text
+            // |=================||======================|
+            // |        1        ||           2          |
+            // |=================||======================|
+            // const rectsLineUpVertically =
+            //     almostEqual(possiblyContainingRect.top, rect.top, tolerance) &&
+            //     almostEqual(possiblyContainingRect.bottom, rect.bottom, tolerance);
+            // const mergeAllowedForVerticallyLinedUpRects = !doNotMergeAlignedRects || !vertical;
+
+            // vertically-stacked lines of characters in horizontal flowing text
+            // |=================|
+            // |        1        |
+            // |=================|
+            // |=================|
+            // |                 |
+            // |        2        |
+            // |                 |
+            // |=================|
+            // const rectsLineUpHorizontally =
+            //     almostEqual(possiblyContainingRect.left, rect.left, tolerance) &&
+            //     almostEqual(possiblyContainingRect.right, rect.right, tolerance);
+            // const mergeAllowedForHorizontallyLinedUpRects = !doNotMergeAlignedRects || vertical;
 
             let toAdd: IRect[] = [];
             let toRemove: IRect;
@@ -452,7 +501,7 @@ export function replaceOverlapingRects(rects: IRect[]): IRect[] {
                 console.log(LOG_PREFIX + LOG_PREFIX_LOCAL + `overlap removed: ${rects.length} ==> ${newRects.length}`);
             }
 
-            return replaceOverlapingRects(newRects);
+            return replaceOverlapingRects(newRects, doNotMergeAlignedRects, vertical);
         }
     }
 

@@ -18,7 +18,7 @@ import {
 } from "../../common/highlight";
 import { isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";
-import { IRectSimple, getClientRectsNoOverlap_, getBoundingRect, IRect } from "../common/rect-utils";
+import { VERBOSE, IRectSimple, getClientRectsNoOverlap_, getBoundingRect, IRect } from "../common/rect-utils";
 import { getScrollingElement, isVerticalWritingMode, isTwoPageSpread } from "./readium-css";
 import { convertRangeInfo } from "./selection";
 import { ReadiumElectronWebviewWindow } from "./state";
@@ -41,6 +41,8 @@ ORIENTATION,
 const { unify } = BooleanOperations;
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+
+const DEBUG_RECTS = IS_DEV && VERBOSE;
 
 //     const rgb = Math.round(0xffffff * Math.random());
 //     // tslint:disable-next-line:no-bitwise
@@ -652,7 +654,7 @@ function createHighlightDom(
 
     const rangeClientRects = range.getClientRects();
     const clientRects =
-        // doNotMergeHorizontallyAlignedRects ? rangeClientRects :
+        (DEBUG_RECTS && drawStrikeThrough) ? rangeClientRects :
         getClientRectsNoOverlap_(rangeClientRects, doNotMergeHorizontallyAlignedRects, vertical, highlight.expand ? highlight.expand : 0);
 
     // let highlightAreaSVGDocFrag: DocumentFragment | undefined;
@@ -700,10 +702,39 @@ function createHighlightDom(
         // ));
 
         if (drawStrikeThrough) {
-            const ww = (vertical ? strikeThroughLineThickness : rect.width) * scale;
-            const hh = (vertical ? rect.height : strikeThroughLineThickness) * scale;
-            const xx = (vertical ? (rect.left + (rect.width / 2) - (strikeThroughLineThickness / 2)) : rect.left) * scale;
-            const yy = (vertical ? rect.top : (rect.top + (rect.height / 2) - (strikeThroughLineThickness / 2))) * scale;
+
+            const thickness = DEBUG_RECTS ? (vertical ? rect.width : rect.height) : strikeThroughLineThickness;
+            const ww = (vertical ? thickness : rect.width) * scale;
+            const hh = (vertical ? rect.height : thickness) * scale;
+            const xx =
+            (
+            vertical
+            ?
+            (
+                DEBUG_RECTS
+                ?
+                rect.left
+                :
+                (rect.left + (rect.width / 2) - (thickness / 2))
+            )
+            :
+            rect.left
+            ) * scale;
+
+            const yy =
+            (
+            vertical
+            ?
+            rect.top
+            :
+            (
+                DEBUG_RECTS
+                ?
+                rect.top
+                :
+                (rect.top + (rect.height / 2) - (thickness / 2))
+            )
+            ) * scale;
 
             boxesNoGapExpanded.push(new Box(
                 Number((xx).toPrecision(12)),
@@ -714,11 +745,39 @@ function createHighlightDom(
 
         } else { // drawStrikeThrough
 
+            const thickness = DEBUG_RECTS ? (vertical ? rect.width : rect.height) : underlineThickness;
             if (drawUnderline) {
-                const ww = (vertical ? underlineThickness : rect.width) * scale;
-                const hh = (vertical ? rect.height : underlineThickness) * scale;
-                const xx = (vertical ? (rect.left - (underlineThickness / 2)) : rect.left) * scale;
-                const yy = (vertical ? rect.top : (rect.top + rect.height - (underlineThickness / 2))) * scale;
+                const ww = (vertical ? thickness : rect.width) * scale;
+                const hh = (vertical ? rect.height : thickness) * scale;
+                const xx =
+                (
+                vertical
+                ?
+                (
+                    DEBUG_RECTS
+                    ?
+                    rect.left
+                    :
+                    (rect.left - (thickness / 2))
+                )
+                :
+                rect.left
+                ) * scale;
+
+                const yy =
+                (
+                vertical
+                ?
+                rect.top
+                :
+                (
+                    DEBUG_RECTS
+                    ?
+                    rect.top
+                    :
+                    (rect.top + rect.height - (thickness / 2))
+                )
+                ) * scale;
 
                 boxesNoGapExpanded.push(new Box(
                     Number((xx).toPrecision(12)),
@@ -750,7 +809,7 @@ function createHighlightDom(
 
     let polygonSurface: Polygon | Polygon[] | undefined;
     if (doNotMergeHorizontallyAlignedRects) {
-        const singleSVGPath = true;
+        const singleSVGPath = !DEBUG_RECTS;
         if (singleSVGPath) {
             polygonSurface = new Polygon();
             for (const box of boxesNoGapExpanded) {
@@ -796,10 +855,10 @@ function createHighlightDom(
     ?
     polygonSurface.reduce((prev, cur) => {
         return prev + cur.svg({
-            fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+            fill: DEBUG_RECTS ? "pink" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
             fillRule: "evenodd",
-            stroke: "transparent",
-            strokeWidth: 0,
+            stroke: DEBUG_RECTS ? "magenta" : "transparent",
+            strokeWidth: DEBUG_RECTS ? 1 : 0,
             fillOpacity: 1,
             className: undefined,
             // r: 4,
@@ -807,10 +866,10 @@ function createHighlightDom(
     }, "")
     :
     polygonSurface.svg({
-        fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+        fill: DEBUG_RECTS ? "yellow" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
         fillRule: "evenodd",
-        stroke: "transparent",
-        strokeWidth: 0,
+        stroke: DEBUG_RECTS ? "green" : "transparent",
+        strokeWidth: DEBUG_RECTS ? 1 : 0,
         fillOpacity: 1,
         className: undefined,
         // r: 4,
@@ -820,8 +879,8 @@ function createHighlightDom(
     polygonCountourUnionPoly.svg({
         fill: "transparent",
         fillRule: "evenodd",
-        stroke: "transparent",
-        strokeWidth: 1,
+        stroke: DEBUG_RECTS ? "red" : "transparent",
+        strokeWidth: DEBUG_RECTS ? 1 : 1,
         fillOpacity: 1,
         className: undefined,
         // r: 4,
