@@ -18,7 +18,7 @@ import {
 } from "../../common/highlight";
 import { isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";
-import { VERBOSE, IRectSimple, getClientRectsNoOverlap_, getBoundingRect, IRect } from "../common/rect-utils";
+import { VERBOSE, IRectSimple, getClientRectsNoOverlap, getBoundingRect, IRect, getTextClientRects, DOMRectListToArray } from "../common/rect-utils";
 import { getScrollingElement, isVerticalWritingMode, isTwoPageSpread } from "./readium-css";
 import { convertRangeInfo } from "./selection";
 import { ReadiumElectronWebviewWindow } from "./state";
@@ -42,7 +42,8 @@ const { unify } = BooleanOperations;
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-const DEBUG_RECTS = IS_DEV && VERBOSE;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(window as any).DEBUG_RECTS = IS_DEV && VERBOSE;
 
 //     const rgb = Math.round(0xffffff * Math.random());
 //     // tslint:disable-next-line:no-bitwise
@@ -580,6 +581,9 @@ function createHighlightDom(
     bodyRect: DOMRect,
     bodyComputedStyle: CSSStyleDeclaration): HTMLDivElement | null {
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const DEBUG_RECTS = (window as any).DEBUG_RECTS;
+
     const documant = win.document;
     const scrollElement = getScrollingElement(documant);
 
@@ -652,10 +656,98 @@ function createHighlightDom(
 
     const doNotMergeHorizontallyAlignedRects = drawUnderline || drawStrikeThrough;
 
-    const rangeClientRects = range.getClientRects();
-    const clientRects =
-        (DEBUG_RECTS && drawStrikeThrough) ? rangeClientRects :
-        getClientRectsNoOverlap_(rangeClientRects, doNotMergeHorizontallyAlignedRects, vertical, highlight.expand ? highlight.expand : 0);
+    let clientRects: IRect[] | undefined;
+
+    const rangeClientRects = DOMRectListToArray(range.getClientRects());
+
+    if (doNotMergeHorizontallyAlignedRects) {
+        // non-solid highlight (underline or strikethrough), cannot merge and reduce/simplify client rectangles much due to importance of line-level decoration (must preserve horizontal/vertical line heights)
+
+        const textClientRects = getTextClientRects(range);
+        const textReducedClientRects = getClientRectsNoOverlap(textClientRects, true, vertical, highlight.expand ? highlight.expand : 0);
+
+        clientRects = (DEBUG_RECTS && drawStrikeThrough) ? textClientRects : textReducedClientRects;
+
+        // const rangeReducedClientRects = getClientRectsNoOverlap(rangeClientRects, false, vertical, 0);
+
+        // // const rangeUnionPolygon = rangeReducedClientRects.reduce((previous, current) => unify(previous, new Polygon(new Box(current.left, current.top, current.left + current.width, current.top + current.height))), new Polygon());
+
+        // // Array.from(rangeUnionPolygon.faces).forEach((face: Face) => {
+        // //     if (face.orientation() !== ORIENTATION.CCW) {
+        // //         if (IS_DEV) {
+        // //             console.log("--HIGH WEBVIEW-- removing polygon clockwise face / inner hole (text range))");
+        // //         }
+        // //         polygonCountourUnionPoly.deleteFace(face);
+        // //     }
+        // // });
+
+        // const textReducedClientRectsToKeep: IRect[] = [];
+        // textReducedClientRectsToKeep.push(...textReducedClientRects);
+
+        // for (const rect of textReducedClientRects) {
+        //     console.log("__RECT__ text :: " + `TOP:${rect.top} BOTTOM:${rect.bottom} LEFT:${rect.left} RIGHT:${rect.right} WIDTH:${rect.width} HEIGHT:${rect.height}`);
+
+        //     let intersections: IRect[] | undefined;
+        //     for (const rectRange of rangeReducedClientRects) {
+        //         console.log("__RECT__ range :: " + `TOP:${rect.top} BOTTOM:${rect.bottom} LEFT:${rect.left} RIGHT:${rect.right} WIDTH:${rect.width} HEIGHT:${rect.height}`);
+        //         const rectIntersection = rectIntersect(rect, rectRange);
+        //         const hasIntersection = rectIntersection.width > 0 || rectIntersection.height > 0;
+        //         if (!hasIntersection) {
+        //             console.log("__RECT__ no intersect");
+        //             continue;
+        //         }
+        //         console.log("__RECT__ intersect :: " + `TOP:${rectIntersection.top} BOTTOM:${rectIntersection.bottom} LEFT:${rectIntersection.left} RIGHT:${rectIntersection.right} WIDTH:${rectIntersection.width} HEIGHT:${rectIntersection.height}`);
+        //         if (!intersections) {
+        //             intersections = [];
+        //         }
+        //         intersections.push(rectIntersection);
+        //     }
+
+        //     if (!intersections?.length) {
+        //         console.log("__RECT__ zero intersect, eject rect");
+        //         textReducedClientRectsToKeep.splice(textReducedClientRectsToKeep.indexOf(rect), 1);
+        //     } else {
+        //         const intersectionsBoundingBox = intersections.reduce((previous, current) => {
+        //             if (current === previous) {
+        //                 return current;
+        //             }
+        //             return getBoundingRect(previous, current);
+        //         }, intersections[0]);
+
+        //         console.log("__RECT__ intersect bounds :: " + `TOP:${intersectionsBoundingBox.top} BOTTOM:${intersectionsBoundingBox.bottom} LEFT:${intersectionsBoundingBox.left} RIGHT:${intersectionsBoundingBox.right} WIDTH:${intersectionsBoundingBox.width} HEIGHT:${intersectionsBoundingBox.height}`);
+
+        //         if (!rectSame(intersectionsBoundingBox, rect, 2)) {
+        //             console.log("__RECT__ rect different than intersect bounds, replace");
+        //             textReducedClientRectsToKeep.splice(textReducedClientRectsToKeep.indexOf(rect), 1, intersectionsBoundingBox);
+        //         }
+        //     }
+
+        //     // const rectPolygon = new Polygon(new Box(rect.left, rect.top, rect.left + rect.width, rect.top + rect.height));
+
+        //     // const poly = intersect(rangeUnionPolygon, rectPolygon);
+        //     // const b = poly.box; // shortcut, but we could check polygon faces too
+
+        //     // if (rect.left !== b.xmin || rect.top !== b.ymin || rect.right !== b.xmax || rect.bottom !== b.ymax) {
+        //     //     console.log("__RECT__ before" + `TOP:${rect.top} BOTTOM:${rect.bottom} LEFT:${rect.left} RIGHT:${rect.right} WIDTH:${rect.width} HEIGHT:${rect.height}`);
+
+        //     //     rect.left = b.xmin;
+        //     //     rect.top = b.ymin;
+        //     //     rect.right = b.xmax;
+        //     //     rect.bottom = b.ymax;
+        //     //     rect.width = b.width;
+        //     //     rect.height = b.height;
+
+        //     //     console.log("__RECT__ after" + `TOP:${rect.top} BOTTOM:${rect.bottom} LEFT:${rect.left} RIGHT:${rect.right} WIDTH:${rect.width} HEIGHT:${rect.height}`);
+        //     // }
+        // }
+
+        // console.log("__RECT__ :: " + textClientRects.length + " ===> " + textReducedClientRectsToKeep.length);
+
+        // clientRects = (DEBUG_RECTS && drawStrikeThrough) ? textClientRects : textReducedClientRectsToKeep;
+    } else {
+        // solid highlight, can merge and reduce/simplify client rectangles as much as possible
+        clientRects = getClientRectsNoOverlap(rangeClientRects, false, vertical, highlight.expand ? highlight.expand : 0);
+    }
 
     // let highlightAreaSVGDocFrag: DocumentFragment | undefined;
     // const roundedCorner = 3;

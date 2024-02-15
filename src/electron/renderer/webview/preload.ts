@@ -67,7 +67,7 @@ import { normalizeText } from "../common/dom-text-utils";
 import { easings } from "../common/easings";
 import { closePopupDialogs, isPopupDialogOpen } from "../common/popup-dialog";
 import { getURLQueryParams } from "../common/querystring";
-import { IRect, getClientRectsNoOverlap_ } from "../common/rect-utils";
+import { IRect, getClientRectsNoOverlap, DOMRectListToArray } from "../common/rect-utils";
 import {
     URL_PARAM_HIGHLIGHTS,
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
@@ -3542,7 +3542,7 @@ export const computeProgressionData = (): IProgressionData => {
                         (rect.top >= columnDimension ? scrollElement.scrollWidth : 0);
                 } else {
                     const boundingRect = element.getBoundingClientRect();
-                    const clientRects = getClientRectsNoOverlap_(element.getClientRects(), false, vwm);
+                    const clientRects = getClientRectsNoOverlap(DOMRectListToArray(element.getClientRects()), false, vwm);
                     let rectangle: IRect | undefined;
                     for (const rect of clientRects) {
                         if (!rectangle) {
