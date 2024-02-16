@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.16...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.14.17...develop
 
 Changes:
 * TODO
+
+# 1.14.17
+
+# > Build environment: NodeJS `20.11.0`, NPM `10.4.0`
+
+Changes:
+* Adds support for character-level bookmarking / reading location, prevents page jumps in paginated mode when referencing a partially-visible DOM element at the beginning of the page spread (fixes search results highlights, and annotations too).
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.14.17/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.14.17/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.14.17
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.16...v1.14.17
 
 # 1.14.16
 
