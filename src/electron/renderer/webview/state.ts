@@ -27,6 +27,11 @@ export interface IReadiumElectronWebviewWindowState {
     locationHashOverride: Element | undefined;
     locationHashOverrideInfo: IEventPayload_R2_EVENT_READING_LOCATION | undefined;
 
+    lastClickedTextChar: {
+        textNode: Node,
+        textNodeOffset: number,
+    } | undefined;
+
     isAudio: boolean;
     ignorekeyDownUpEvents: boolean;
 

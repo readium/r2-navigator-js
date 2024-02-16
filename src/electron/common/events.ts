@@ -5,7 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
+import { Locator, LocatorLocations } from "./locator";
 
 import { IAudioPlaybackInfo } from "./audiobook";
 import { IDocInfo } from "./document";

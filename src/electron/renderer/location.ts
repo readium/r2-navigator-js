@@ -14,7 +14,7 @@ import { URL } from "url";
 
 import { FRAG_ID_CSS_SELECTOR } from "./common/cssselector2-3";
 
-import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
+import { Locator, LocatorLocations } from "../common/locator";
 import { PageEnum, Properties, SpreadEnum } from "@r2-shared-js/models/metadata-properties";
 import { Link } from "@r2-shared-js/models/publication-link";
 import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
@@ -33,7 +33,7 @@ import {
 import { IwidthHeight } from "../common/fxl";
 import { IPaginationInfo } from "../common/pagination";
 import { READIUM2_BASEURL_ID, readiumCssTransformHtml } from "../common/readium-css-inject";
-import { IRangeInfo, ISelectionInfo } from "../common/selection";
+import { ISelectionInfo } from "../common/selection";
 import {
     READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl, convertHttpUrlToCustomScheme,
 } from "../common/sessions";
@@ -529,8 +529,9 @@ export function handleLinkUrl(
 export function handleLinkLocator(
     location: Locator | undefined,
     rcss?: IEventPayload_R2_EVENT_READIUMCSS,
-    rangeInfo?: IRangeInfo,
 ) {
+    const rangeInfo = location?.locations?.rangeInfo;
+
     const publication = win.READIUM2.publication;
     const publicationURL = win.READIUM2.publicationURL;
 
@@ -1747,6 +1748,8 @@ const _saveReadingLocation = (activeWebView: IReadiumElectronWebview, locator: I
         locator: {
             href: docHref,
             locations: {
+                rangeInfo: locator.locations.rangeInfo ?
+                    locator.locations.rangeInfo : undefined,
                 cfi: locator.locations.cfi ?
                     locator.locations.cfi : undefined,
                 cssSelector: locator.locations.cssSelector ?

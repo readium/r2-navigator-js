@@ -13,7 +13,7 @@ import { ipcRenderer } from "electron";
 import { Link } from "@r2-shared-js/models/publication-link";
 
 import { mediaOverlaysInterrupt } from "./media-overlays";
-import { Locator } from "@r2-shared-js/models/locator";
+import { Locator } from "../common/locator";
 import { Publication } from "@r2-shared-js/models/publication";
 
 import { CONTEXT_MENU_SETUP } from "../common/context-menu";

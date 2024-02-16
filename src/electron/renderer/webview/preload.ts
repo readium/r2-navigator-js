@@ -10,7 +10,9 @@ import * as debug_ from "debug";
 import { ipcRenderer } from "electron";
 import { isFocusable } from "tabbable";
 
-import { LocatorLocations, LocatorText } from "@r2-shared-js/models/locator";
+import { IRangeInfo } from "../../common/selection";
+
+import { LocatorLocations, LocatorText } from "../../common/locator";
 
 import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
 
@@ -90,7 +92,7 @@ import {
     computeVerticalRTL, getScrollingElement, isRTL, isTwoPageSpread, isVerticalWritingMode,
     readiumCSS, clearImageZoomOutlineDebounced, clearImageZoomOutline,
 } from "./readium-css";
-import { clearCurrentSelection, convertRangeInfo, getCurrentSelectionInfo } from "./selection";
+import { clearCurrentSelection, convertRangeInfo, getCurrentSelectionInfo, convertRange } from "./selection";
 import { ReadiumElectronWebviewWindow } from "./state";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
@@ -116,6 +118,7 @@ const INJECTED_LINK_TXT = "__";
 const win = global.window as ReadiumElectronWebviewWindow;
 
 win.READIUM2 = {
+    lastClickedTextChar: undefined,
     DEBUG_VISUALS: false,
     // dialogs = [],
     fxlViewportHeight: 0,
@@ -3296,7 +3299,7 @@ const domDataFromPoint = (x: number, y: number): TDOMPointData => {
                         domPointData.element = c as Element;
                     } else if (c.nodeType === Node.TEXT_NODE && range.startOffset > 0) { // hack (weird image click bug)
                         c = domPointData.element.childNodes[range.startOffset - 1];
-                        if (c.nodeType === Node.ELEMENT_NODE) {
+                        if (c?.nodeType === Node.ELEMENT_NODE) {
                             domPointData.element = c as Element;
                         }
                     }
@@ -3304,8 +3307,12 @@ const domDataFromPoint = (x: number, y: number): TDOMPointData => {
             } else if (node.nodeType === Node.TEXT_NODE) {
                 domPointData.textNode = node;
                 domPointData.textNodeOffset = range.startOffset;
+
                 if (node.parentNode && node.parentNode.nodeType === Node.ELEMENT_NODE) {
                     domPointData.element = node.parentNode as Element;
+                }
+                if (!domPointData.element && node.parentElement) {
+                    domPointData.element = node.parentElement;
                 }
             }
         }
@@ -3323,6 +3330,10 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
     if (isPopupDialogOpen(win.document)) {
         debug("processXYRaw isPopupDialogOpen SKIP");
         return;
+    }
+
+    if (userInteract) {
+        win.READIUM2.lastClickedTextChar = undefined;
     }
 
     const domPointData = domDataFromPoint(x, y);
@@ -3391,6 +3402,30 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
             win.READIUM2.locationHashOverride === win.document.documentElement) {
 
             debug(".hashElement = 5 ", userInteract);
+
+            if (userInteract && domPointData.textNode?.nodeValue?.length && domPointData.textNodeOffset >= 0 && domPointData.textNodeOffset <= domPointData.textNode.nodeValue.length) { // can be greater than length!
+                // debug("processXYRaw CLICK/MOUSE_UP TEXT NODE: " + domPointData.textNode.nodeValue);
+
+                win.READIUM2.lastClickedTextChar = {
+                    textNode: domPointData.textNode,
+                    textNodeOffset: domPointData.textNodeOffset,
+                };
+
+                // const selection = win.getSelection();
+                // if (selection) {
+                //     // debug("processXYRaw SELECTION, TEXT NODE OFFSET: " + domPointData.textNodeOffset + " // " + domPointData.textNode.nodeValue.length);
+
+                //     selection.removeAllRanges();
+                //     // selection.empty();
+                //     // selection.collapseToStart();
+                //     const range = win.document.createRange();
+                //     const startOffset = domPointData.textNodeOffset >= domPointData.textNode.nodeValue.length ? domPointData.textNodeOffset - 1 : domPointData.textNodeOffset;
+                //     range.setStart(domPointData.textNode, startOffset);
+                //     range.setEnd(domPointData.textNode, startOffset + 1);
+                //     selection.addRange(range);
+                // }
+            }
+
             // underscore special link will prioritise hashElement!
             win.READIUM2.hashElement = userInteract ? domPointData.element : win.READIUM2.hashElement;
             win.READIUM2.locationHashOverride = domPointData.element;
@@ -4117,6 +4152,20 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
         secondWebViewHref = undefined;
     }
 
+    let rangeInfo: IRangeInfo | undefined;
+    if (win.READIUM2.lastClickedTextChar && win.READIUM2.lastClickedTextChar.textNode?.nodeValue?.length) {
+        const range = win.document.createRange();
+        const startOffset = win.READIUM2.lastClickedTextChar.textNodeOffset >= win.READIUM2.lastClickedTextChar.textNode.nodeValue.length ? win.READIUM2.lastClickedTextChar.textNodeOffset - 1 : win.READIUM2.lastClickedTextChar.textNodeOffset;
+        range.setStart(win.READIUM2.lastClickedTextChar.textNode, startOffset);
+        range.setEnd(win.READIUM2.lastClickedTextChar.textNode, startOffset + 1);
+
+        const tuple = convertRange(range, getCssSelector, computeCFI);
+        if (tuple) {
+            rangeInfo = tuple[0];
+            // const textInfo = tuple[1];
+        }
+    }
+
     win.READIUM2.locationHashOverrideInfo = {
         audioPlaybackInfo: undefined,
         docInfo: {
@@ -4133,6 +4182,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
             cssSelector,
             position: undefined, // calculated in host index.js renderer, where publication object is available
             progression,
+            rangeInfo,
         },
         paginationInfo: pinfo,
         secondWebViewHref,
