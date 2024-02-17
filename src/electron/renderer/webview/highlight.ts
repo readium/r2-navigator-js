@@ -13,8 +13,9 @@ import {
     IEventPayload_R2_EVENT_HIGHLIGHT_CLICK, R2_EVENT_HIGHLIGHT_CLICK,
 } from "../../common/events";
 import {
-    HighlightDrawTypeStrikethrough, HighlightDrawTypeUnderline, IColor, IHighlight,
+    HighlightDrawTypeStrikethrough, HighlightDrawTypeUnderline, HighlightDrawTypeOutline, IColor, IHighlight,
     IHighlightDefinition,
+    HighlightDrawTypeBackground,
 } from "../../common/highlight";
 import { isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";
@@ -27,18 +28,458 @@ import { CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN, ID_HIGHLIGHTS_
 
 import { isRTL } from "./readium-css";
 
-// import offset from "@flatten-js/polygon-offset";
 import {
 Polygon,
 Box,
 BooleanOperations,
 Point,
 Face,
+Segment,
+Vector,
+Arc,
 ORIENTATION,
-// Edge,
-// Segment,
+CCW, // true
+CW, // false
+Utils,
+Edge,
+// PolygonEdge,
 } from "@flatten-js/core";
-const { unify } = BooleanOperations;
+const { unify, subtract } = BooleanOperations;
+
+const BASE_ORIENTATION = ORIENTATION.CCW; // -1
+// const BASE_ORIENTATION_INVERSE = ORIENTATION.CW; // 1
+
+const USE_SEGMENT_JOINS_NOT_ARCS = false;
+// import offset from "@flatten-js/polygon-offset";
+// Number((x).toPrecision(12))
+// https://github.com/alexbol99/flatten-offset/issues/17#issuecomment-1949934684
+function arcSE(center: Point, start: Point, end: Point, counterClockwise: boolean): Arc {
+    const startAngle = Number((new Vector(center, start).slope).toPrecision(12));
+    let endAngle = Number((new Vector(center, end).slope).toPrecision(12));
+
+    if (Utils.EQ(startAngle, endAngle)) {
+        console.log("--POLYGON ARC ORIENTATION CCW/CW inverse");
+        endAngle += 2 * Math.PI;
+        counterClockwise = !counterClockwise;
+    }
+
+    const r = Number((new Vector(center, start).length).toPrecision(12));;
+
+    return new Arc(center, r, startAngle, endAngle, counterClockwise); // default is CCW / true
+}
+
+function offset_(polygon: Polygon, off: number, useSegmentJoinsNotArcs: boolean) {
+
+    const postponeFinalUnify = off > 0; // Utils.GT(off, 0);
+    let polygonAccumulator = postponeFinalUnify ? undefined : polygon.clone();
+
+    for (const f of polygon.faces) {
+        const face = f as Face;
+        for (const edge of face.edges) {
+            if (edge.isSegment()) {
+                const polygonEdge = new Polygon();
+
+                const segment = edge.shape as Segment;
+
+                const v_seg = new Vector(segment.end.x - segment.start.x, segment.end.y - segment.start.y);
+                const v_seg_unit = v_seg.normalize();
+
+                // console.log("--POLYGON SEGMENT LENGTH: " + v_seg.length);
+
+                const absOffset = Math.abs(off);
+                const v_left = v_seg_unit.rotate90CCW().multiply(absOffset);
+                const v_right = v_seg_unit.rotate90CW().multiply(absOffset);
+
+                const seg_left = segment.translate(v_left).reverse();
+                const seg_right = segment.translate(v_right);
+
+                const seg_left_ = new Segment(new Point(Number((seg_left.start.x).toPrecision(12)), Number((seg_left.start.y).toPrecision(12))), new Point(Number((seg_left.end.x).toPrecision(12)), Number((seg_left.end.y).toPrecision(12))));
+
+                const seg_right_ = new Segment(new Point(Number((seg_right.start.x).toPrecision(12)), Number((seg_right.start.y).toPrecision(12))), new Point(Number((seg_right.end.x).toPrecision(12)), Number((seg_right.end.y).toPrecision(12))));
+
+                const orientation = BASE_ORIENTATION === ORIENTATION.CCW ? CCW : CW;
+                const cap1 = arcSE(segment.start, seg_left_.end, seg_right_.start, orientation);
+                const cap2 = arcSE(segment.end, seg_right_.end, seg_left_.start, orientation);
+
+                const cap1_ =
+                    useSegmentJoinsNotArcs
+                    ?
+                    new Segment(seg_left_.end, seg_right_.start)
+                    :
+                    cap1;
+                    // new Arc(new Point(Number((cap1.center.x).toPrecision(12)), Number((cap1.center.y).toPrecision(12))), Number((cap1.r).toPrecision(12)), Number((cap1.startAngle).toPrecision(12)), Number((cap1.endAngle).toPrecision(12)), cap1.counterClockwise)
+                const cap2_ =
+                    useSegmentJoinsNotArcs
+                    ?
+                    new Segment(seg_right_.end, seg_left_.start)
+                    :
+                    cap2;
+                    // new Arc(new Point(Number((cap2.center.x).toPrecision(12)), Number((cap2.center.y).toPrecision(12))), Number((cap2.r).toPrecision(12)), Number((cap2.startAngle).toPrecision(12)), Number((cap2.endAngle).toPrecision(12)), cap2.counterClockwise)
+
+                const face = polygonEdge.addFace([
+                    seg_left_,
+                    cap1_,
+                    seg_right_,
+                    cap2_,
+                ]);
+                if (face.orientation() !== BASE_ORIENTATION) {
+                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 1");
+                    face.reverse();
+                }
+                // console.log("--POLYGON FACE AREA: " + face.area());
+
+                if (!(polygonAccumulator || polygonEdge).faces.size) {
+                    console.log("--################# POLYGON BEFORE unify/substract HAS NO FACES!! " + (polygonAccumulator || polygonEdge).faces.size);
+                }
+
+                if (off > 0) { // Utils.GT(off, 0)
+                    polygonAccumulator = polygonAccumulator ? unify(polygonAccumulator, polygonEdge) : polygonEdge;
+                } else {
+                    polygonAccumulator = polygonAccumulator ? subtract(polygonAccumulator, polygonEdge) : polygonEdge;
+                }
+
+                if (!(polygonAccumulator || polygonEdge).faces.size) {
+                    console.log("--################# POLYGON AFTER unify/substract HAS NO FACES!! " + (polygonAccumulator || polygonEdge).faces.size);
+
+                    if (!useSegmentJoinsNotArcs) {
+                        console.log("--##### POLYGON AFTER unify/substract try again without arc, only segment joiners ...");
+                        return offset_(polygon, off, true);
+                    }
+                } else {
+                    console.log("--################# POLYGON AFTER unify/substract FACES: " + (polygonAccumulator || polygonEdge).edges.size + " /// " + (polygonAccumulator || polygonEdge).faces.size);
+                }
+
+                for (const f of polygonAccumulator.faces) {
+                    const face = f as Face;
+                    if (face.edges.length < 4) {
+                        console.log("-------- POLYGON FACE EDGES not at least 4??!");
+                        if (!useSegmentJoinsNotArcs) {
+                            console.log("--##### POLYGON AFTER unify/substract try again without arc, only segment joiners ...");
+                            return offset_(polygon, off, true);
+                        }
+                    }
+
+                    if (face.orientation() !== BASE_ORIENTATION) {
+                        console.log("-------- POLYGON FACE ORIENTATION");
+                        // face.reverse();
+                    }
+                }
+            } else {
+                // offsetEdge = offsetArc(segment, w);
+                console.log("!!!!!!!! POLYGON ARC??!");
+                // process.exit(0);
+                return polygon;
+            }
+        }
+    }
+
+    Array.from((polygonAccumulator ? polygonAccumulator : polygon).faces).forEach((face: Face) => {
+        if (face.orientation() !== BASE_ORIENTATION) {
+            if (IS_DEV) {
+                console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (offset poly 1))");
+            }
+            if (polygonAccumulator) {
+                polygonAccumulator.deleteFace(face);
+                // face.reverse();
+            }
+        }
+    });
+
+    if (polygonAccumulator && postponeFinalUnify) {
+        polygonAccumulator = unify(polygonAccumulator, polygon);
+    }
+
+    Array.from((polygonAccumulator ? polygonAccumulator : polygon).faces).forEach((face: Face) => {
+        if (face.orientation() !== BASE_ORIENTATION) {
+            if (IS_DEV) {
+                console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (offset poly 2))");
+            }
+            if (polygonAccumulator) {
+                polygonAccumulator.deleteFace(face);
+                // face.reverse();
+            }
+        }
+    });
+
+    if (polygonAccumulator) {
+        if (!polygonAccumulator.faces.size) {
+            console.log("--################# POLYGON INTERMEDIARY HAS NO FACES!! " + polygonAccumulator.faces.size);
+        }
+
+        const minLength = Math.abs(off) + 1;
+        let nSegments = 0;
+        let nArcs = 0;
+        let total = 0;
+        console.log("--====}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}");
+        for (const e of polygonAccumulator.edges) {
+            const edge = e as Edge;
+            if (edge.isSegment()) {
+                nSegments++;
+                const segment = edge.shape as Segment;
+                const l = segment.length;
+                if (Utils.LE(l, minLength)) {
+                    total++;
+                    console.log("--POLYGON SEGMENT small LENGTH: " + l + "(" + off + ")");
+                } else {
+                    console.log("--POLYGON SEGMENT ok LENGTH: " + l + "(" + off + ")");
+                }
+            } else if (edge.isArc()) {
+                nArcs++;
+                console.log("--POLYGON ARC");
+            }
+        }
+        console.log("--====");
+        console.log("--==== POLYGON SEGMENT small TOTAL 1: " + total);
+        console.log("--==== POLYGON SEGMENT small SEGMENTS 1: " + nSegments);
+        console.log("--==== POLYGON SEGMENT small ARCS 1: " + nArcs);
+        total = 0;
+        nSegments = 0;
+        nArcs = 0;
+        console.log("--====}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}");
+        for (const f of polygonAccumulator.faces) {
+            const face = f as Face;
+            for (const e of face.edges) {
+                const edge = e as Edge;
+                if (edge.isSegment()) {
+                    nSegments++;
+                    const segment = edge.shape as Segment;
+                    const l = segment.length;
+                    if (Utils.LE(l, minLength)) {
+                        total++;
+                        console.log("--POLYGON SEGMENT small LENGTH: " + l + "(" + off + ")");
+                    } else {
+                        console.log("--POLYGON SEGMENT ok LENGTH: " + l + "(" + off + ")");
+                    }
+                } else if (edge.isArc()) {
+                    nArcs++;
+                    console.log("--POLYGON ARC");
+                }
+            }
+        }
+        console.log("--====");
+        console.log("--==== POLYGON SEGMENT small TOTAL 2: " + total);
+        console.log("--==== POLYGON SEGMENT small SEGMENTS 2: " + nSegments);
+        console.log("--==== POLYGON SEGMENT small ARCS 2: " + nArcs);
+        total = 0;
+        nSegments = 0;
+        nArcs = 0;
+        console.log("--====}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}");
+        for (const f of polygonAccumulator.faces) {
+            const face = f as Face;
+            let edge = face.first;
+            while (edge) {
+                if (edge.isSegment()) {
+                    nSegments++;
+                    const segment = edge.shape as Segment;
+                    const l = segment.length;
+                    if (Utils.LE(l, minLength)) {
+                        total++;
+                        console.log("--POLYGON SEGMENT small LENGTH: " + l + "(" + off + ")");
+                    } else {
+                        console.log("--POLYGON SEGMENT ok LENGTH: " + l + "(" + off + ")");
+                    }
+                } else if (edge.isArc()) {
+                    nArcs++;
+                    console.log("--POLYGON ARC");
+                }
+                if (edge == face.last) {
+                    break;
+                }
+                edge = edge.next;
+            }
+        }
+        console.log("--====");
+        console.log("--==== POLYGON SEGMENT small TOTAL 3: " + total);
+        console.log("--==== POLYGON SEGMENT small SEGMENTS 3: " + nSegments);
+        console.log("--==== POLYGON SEGMENT small ARCS 3: " + nArcs);
+
+        console.log("--====}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}");
+
+        const faces: Face[] = Array.from(polygonAccumulator.faces);
+        for (const f of faces) {
+            const face = f as Face;
+            console.log("~~~~ POLY FACE");
+
+            const edges = Array.from(face.edges);
+            const edgeShapes = edges.map((edge) => edge.shape);
+            let chainedEdgeShapes: Array<Segment | Arc> = [];
+
+            while (edgeShapes.length) {
+                console.log("~~~~ POLY EDGE SHAPE");
+
+                if (!chainedEdgeShapes.length) {
+                    const last = edgeShapes.pop()!;
+                    chainedEdgeShapes.push(last);
+                    continue;
+                }
+
+                // peek not pop
+                const lastInChain = chainedEdgeShapes[chainedEdgeShapes.length - 1];
+
+                const lastInChainStartPoint = (lastInChain as Arc).breakToFunctional ? (lastInChain as Arc).start : (lastInChain as Segment).start;
+
+                const lastInChainEndPoint = (lastInChain as Arc).breakToFunctional ? (lastInChain as Arc).end : (lastInChain as Segment).end;
+
+                const shapesBefore: Array<Segment | Arc> = [];
+                const shapesAfter: Array<Segment | Arc> = [];
+                for (const edgeShape of edgeShapes) {
+
+                    const edgeShapeStartPoint = (edgeShape as Arc).breakToFunctional ? (edgeShape as Arc).start : (edgeShape as Segment).start;
+
+                    const edgeShapeEndPoint = (edgeShape as Arc).breakToFunctional ? (edgeShape as Arc).end : (edgeShape as Segment).end;
+
+                    if (Utils.EQ(lastInChainStartPoint.x, edgeShapeEndPoint.x) && Utils.EQ(lastInChainStartPoint.y, edgeShapeEndPoint.y)) {
+                        shapesBefore.push(edgeShape);
+                    }
+
+                    if (Utils.EQ(lastInChainEndPoint.x, edgeShapeStartPoint.x) && Utils.EQ(lastInChainEndPoint.y, edgeShapeStartPoint.y)) {
+                        shapesAfter.push(edgeShape);
+                    }
+                }
+
+                // FAIL, should be a closed shape
+                //  || shapesBefore.length === 0
+                if (shapesBefore.length > 1 || shapesAfter.length > 1 || shapesAfter.length === 0) {
+                    console.log("~~~~ POLY SHAPES BEFORE/AFTER ABORT: " + shapesBefore.length + " ... " + shapesAfter.length);
+
+                    chainedEdgeShapes = [];
+                    // chainedEdgeShapes = edges.map((edge) => edge.shape);
+                    break;
+                }
+
+                const startPoint = (shapesAfter[0] as Arc).breakToFunctional ? (shapesAfter[0] as Arc).start : (shapesAfter[0] as Segment).start;
+                const endPoint = (shapesAfter[0] as Arc).breakToFunctional ? (shapesAfter[0] as Arc).end : (shapesAfter[0] as Segment).end;
+                console.log("*** SEGMENT/ARC --- START: (" + startPoint.x + ", " + startPoint.y + ") END: (" + endPoint.x + ", " + endPoint.y + ")");
+
+                edgeShapes.splice(edgeShapes.indexOf(shapesAfter[0]), 1);
+                chainedEdgeShapes.push(shapesAfter[0]);
+
+                if (chainedEdgeShapes.length === edges.length) {
+
+                    // const edgeShapeStartPoint = (shapesAfter[0] as Arc).breakToFunctional ? (shapesAfter[0] as Arc).start : (shapesAfter[0] as Segment).start;
+
+                    const edgeShapeEndPoint = (shapesAfter[0] as Arc).breakToFunctional ? (shapesAfter[0] as Arc).end : (shapesAfter[0] as Segment).end;
+
+                    const firstInChainStartPoint = (chainedEdgeShapes[0] as Arc).breakToFunctional ? (chainedEdgeShapes[0] as Arc).start : (chainedEdgeShapes[0] as Segment).start;
+
+                    // const firstInChainEndPoint = (chainedEdgeShapes[0] as Arc).breakToFunctional ? (chainedEdgeShapes[0] as Arc).end : (chainedEdgeShapes[0] as Segment).end;
+
+                    // FAIL, should be a closed shape
+                    if (!Utils.EQ(firstInChainStartPoint.x, edgeShapeEndPoint.x) || !Utils.EQ(firstInChainStartPoint.y, edgeShapeEndPoint.y)) {
+                        console.log("~~~~ POLY SHAPES TAIL/HEAD ABORT");
+
+                        chainedEdgeShapes = [];
+                        // chainedEdgeShapes = edges.map((edge) => edge.shape);
+                        break;
+                    }
+                }
+            }
+            // if (chainedEdgeShapes.length !== edges.length) {
+            //     chainedEdgeShapes = edges.map((edge) => edge.shape);
+            // }
+
+            let previousSmallSegment: Segment | undefined;
+            const newEdgeShapes: Array<Segment | Arc> = [];
+            let hasChanged = false;
+
+            // guaranteed chain loop
+            for (const edgeShape of chainedEdgeShapes) {
+                if (!(edgeShape as Arc).breakToFunctional) {
+                    const segment = edgeShape as Segment;
+                    const l = segment.length;
+
+                    if (Utils.LE(l, minLength)) {
+                        console.log("--POLYGON SEGMENT small LENGTH: " + l + "(" + off + ")");
+
+                        if (previousSmallSegment) {
+                            console.log("-->>>> POLYGON SEGMENT small will merge :) ...");
+                            hasChanged = true;
+                            newEdgeShapes.pop();
+                            newEdgeShapes.push(new Segment(new Point(previousSmallSegment.start.x, previousSmallSegment.start.y), new Point(segment.end.x, segment.end.y)));
+                        } else {
+                            if (newEdgeShapes.length && chainedEdgeShapes.indexOf(edgeShape) === chainedEdgeShapes.length - 1 && !(newEdgeShapes[0] as Arc).breakToFunctional && Utils.LE((newEdgeShapes[0] as Segment).length, minLength)) {
+                                console.log("-->>>> POLYGON SEGMENT small (tail/head link) will merge :) ...");
+                                hasChanged = true;
+                                newEdgeShapes.splice(0, 1);
+                                if (newEdgeShapes.length) {
+                                    newEdgeShapes.push(new Segment(new Point(newEdgeShapes[0].start.x, newEdgeShapes[0].start.y), new Point(segment.end.x, segment.end.y)));
+                                }
+                            } else {
+                                previousSmallSegment = segment;
+                                newEdgeShapes.push(segment);
+                            }
+                        }
+                    } else {
+                        console.log("--POLYGON SEGMENT ok LENGTH: " + l + "(" + off + ")");
+
+                        previousSmallSegment = undefined;
+                        newEdgeShapes.push(segment);
+                    }
+                } else {
+                    console.log("--POLYGON ARC");
+                    previousSmallSegment = undefined;
+                    newEdgeShapes.push(edgeShape as Arc);
+                }
+            }
+            if (hasChanged) {
+                console.log("-->>>> POLYGON SEGMENT small merged :)");
+                polygonAccumulator.deleteFace(face);
+                polygonAccumulator.addFace(newEdgeShapes);
+                // polygonAccumulator.recreateFaces();
+            }
+        }
+    }
+
+    let resPoly = polygonAccumulator ? polygonAccumulator : polygon;
+
+    if (!resPoly.faces.size) {
+        console.log("--################# POLYGON INTERMEDIARY HAS NO FACES!! " + resPoly.faces.size);
+        if (polygonAccumulator) {
+            console.log("--################# FALLBACK TO SINGLE FACE POLY (BEFORE SUBSTRACT/UNIFY): " + polygon.faces.size);
+            resPoly = polygon;
+        }
+    }
+
+    return resPoly;
+}
+
+function offset(originaPolygon: Polygon, off: number, useSegmentJoinsNotArcs: boolean = USE_SEGMENT_JOINS_NOT_ARCS) {
+    off = Number((off).toPrecision(12));
+
+    if (Utils.EQ_0(off)) {
+        return originaPolygon;
+    }
+
+    const singleFacePolygons: Polygon[] = [];
+    for (const f of originaPolygon.faces) {
+        const face = f as Face;
+        const poly = new Polygon();
+        poly.addFace(face.edges.map((edge) => edge.shape));
+        singleFacePolygons.push(poly);
+    }
+
+    const singlePolygon = new Polygon();
+
+    for (const polygon of singleFacePolygons) {
+        const resPoly = offset_(polygon, off, useSegmentJoinsNotArcs);
+
+        for (const f of resPoly.faces) {
+            const face = f as Face;
+            singlePolygon.addFace(face.edges.map(((edge) => edge.shape)));
+        }
+    }
+
+    if (!singlePolygon.faces.size) {
+        console.log("--##### POLYGON OFFSET HAS NO FACES!! " + singlePolygon.faces.size);
+
+        if (!useSegmentJoinsNotArcs) {
+            console.log("--##### POLYGON OFFSET try again without arc, only segment joiners ...");
+            return offset(originaPolygon, off, true);
+        }
+    }
+
+    return singlePolygon;
+}
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -592,8 +1033,10 @@ function createHighlightDom(
         return null;
     }
 
+    const drawBackground = highlight.drawType === HighlightDrawTypeBackground;
     const drawUnderline = highlight.drawType === HighlightDrawTypeUnderline;
     const drawStrikeThrough = highlight.drawType === HighlightDrawTypeStrikethrough;
+    const drawOutline = highlight.drawType === HighlightDrawTypeOutline;
 
     const paginated = isPaginated(documant);
 
@@ -673,9 +1116,9 @@ function createHighlightDom(
         // // const rangeUnionPolygon = rangeReducedClientRects.reduce((previous, current) => unify(previous, new Polygon(new Box(current.left, current.top, current.left + current.width, current.top + current.height))), new Polygon());
 
         // // Array.from(rangeUnionPolygon.faces).forEach((face: Face) => {
-        // //     if (face.orientation() !== ORIENTATION.CCW) {
+        // //     if (face.orientation() !== BASE_ORIENTATION) {
         // //         if (IS_DEV) {
-        // //             console.log("--HIGH WEBVIEW-- removing polygon clockwise face / inner hole (text range))");
+        // //             console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (text range))");
         // //         }
         // //         polygonCountourUnionPoly.deleteFace(face);
         // //     }
@@ -763,6 +1206,8 @@ function createHighlightDom(
     const paginatedOffset = (paginatedWidth - bodyWidth) / 2 + parseInt(bodyComputedStyle.paddingLeft, 10);
 
     const gap = 2;
+    const gapX = ((drawOutline || drawBackground) ? gap : 0);
+
     const boxesNoGapExpanded = [];
     const boxesGapExpanded = [];
 
@@ -829,10 +1274,10 @@ function createHighlightDom(
             ) * scale;
 
             boxesNoGapExpanded.push(new Box(
-                Number((xx).toPrecision(12)),
-                Number((yy).toPrecision(12)),
-                Number((xx + ww).toPrecision(12)),
-                Number((yy + hh).toPrecision(12)),
+                Number((xx - gapX).toPrecision(12)),
+                Number((yy - gapX).toPrecision(12)),
+                Number((xx + ww + gapX).toPrecision(12)),
+                Number((yy + hh + gapX).toPrecision(12)),
             ));
 
         } else { // drawStrikeThrough
@@ -872,28 +1317,36 @@ function createHighlightDom(
                 ) * scale;
 
                 boxesNoGapExpanded.push(new Box(
-                    Number((xx).toPrecision(12)),
-                    Number((yy).toPrecision(12)),
-                    Number((xx + ww).toPrecision(12)),
-                    Number((yy + hh).toPrecision(12)),
+                    Number((xx - gapX).toPrecision(12)),
+                    Number((yy - gapX).toPrecision(12)),
+                    Number((xx + ww + gapX).toPrecision(12)),
+                    Number((yy + hh + gapX).toPrecision(12)),
                 ));
             } else {
                 boxesNoGapExpanded.push(new Box(
-                    Number((x).toPrecision(12)),
-                    Number((y).toPrecision(12)),
-                    Number((x + w).toPrecision(12)),
-                    Number((y + h).toPrecision(12)),
+                    Number((x - gapX).toPrecision(12)),
+                    Number((y - gapX).toPrecision(12)),
+                    Number((x + w + gapX).toPrecision(12)),
+                    Number((y + h + gapX).toPrecision(12)),
                 ));
             }
         }
     }
 
-    const polygonCountourUnionPoly = boxesGapExpanded.reduce((previous, current) => unify(previous, new Polygon(current)), new Polygon());
+    const polygonCountourUnionPoly = boxesGapExpanded.reduce((previousPolygon, currentBox) => {
+        const p = new Polygon();
+        const f = p.addFace(currentBox);
+        if (f.orientation() !== BASE_ORIENTATION) {
+            console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 2");
+            f.reverse();
+        }
+        return unify(previousPolygon, p);
+    }, new Polygon());
 
     Array.from(polygonCountourUnionPoly.faces).forEach((face: Face) => {
-        if (face.orientation() !== ORIENTATION.CCW) {
+        if (face.orientation() !== BASE_ORIENTATION) {
             if (IS_DEV) {
-                console.log("--HIGH WEBVIEW-- removing polygon clockwise face / inner hole (contour))");
+                console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (contour))");
             }
             polygonCountourUnionPoly.deleteFace(face);
         }
@@ -905,30 +1358,109 @@ function createHighlightDom(
         if (singleSVGPath) {
             polygonSurface = new Polygon();
             for (const box of boxesNoGapExpanded) {
-                polygonSurface.addFace(box);
+                const f = polygonSurface.addFace(box);
+                if (f.orientation() !== BASE_ORIENTATION) {
+                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 3");
+                    f.reverse();
+                }
             }
         } else {
             polygonSurface = [];
             for (const box of boxesNoGapExpanded) {
                 const poly = new Polygon();
-                poly.addFace(box);
+                const f = poly.addFace(box);
+                if (f.orientation() !== BASE_ORIENTATION) {
+                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 4");
+                    f.reverse();
+                }
                 polygonSurface.push(poly);
             }
         }
     } else {
-        polygonSurface = boxesNoGapExpanded.reduce((previous, current) => unify(previous, new Polygon(current)), new Polygon());
+        polygonSurface = boxesNoGapExpanded.reduce((previousPolygon, currentBox) => {
+            const p = new Polygon();
+            const f = p.addFace(currentBox);
+            if (f.orientation() !== BASE_ORIENTATION) {
+                console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 5");
+                f.reverse();
+            }
+            return unify(previousPolygon, p);
+        }, new Polygon());
 
         Array.from(polygonSurface.faces).forEach((face: Face) => {
-            if (face.orientation() !== ORIENTATION.CCW) {
+            if (face.orientation() !== BASE_ORIENTATION) {
                 if (IS_DEV) {
-                    console.log("--HIGH WEBVIEW-- removing polygon clockwise face / inner hole (surface))");
+                    console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (surface))");
                 }
                 (polygonSurface as Polygon).deleteFace(face);
             }
         });
-    }
 
-    // const offsetPolygon = offset(polygonCountour, -gap);
+        if (drawOutline || drawBackground) {
+
+            console.log("--==========--==========--==========--==========--==========--==========");
+            console.log("--POLY FACES BEFORE ...");
+            for (const f of polygonSurface.faces) {
+                const face = f as Face;
+                console.log("--................--................--................");
+                console.log("--POLY FACE: " + (face.orientation() === ORIENTATION.CCW ? "CCW" : face.orientation() === ORIENTATION.CW ? "CW" : "ORIENTATION.NOT_ORIENTABLE" ));
+
+                for (const edge of face.edges) {
+                    console.log("--POLY EDGE");
+                    if (edge.isSegment()) {
+                        console.log("--POLY SEGMENT...");
+                        const segment = edge.shape as Segment;
+                        const pointStart = segment.start;
+                        const pointEnd = segment.end;
+                        console.log("--POLY SEGMENT START x, y: " + pointStart.x + ", " + pointStart.y);
+                        console.log("--POLY SEGMENT END x, y: " + pointEnd.x + ", " + pointEnd.y);
+                    } else if (edge.isArc()) {
+                        console.log("--POLY ARC...");
+                        const arc = edge.shape as Arc;
+
+                        console.log("--POLY ARC: " + arc.start.x + ", " + arc.start.y);
+                        console.log("--POLY ARC: " + arc.end.x + ", " + arc.end.y);
+                        console.log("--POLY ARC: " + arc.length + " / " + arc.sweep);
+                        // console.log("--POLY ARC: " + arc.ps.x + ", " + arc.ps.y + " (" + arc.r + ") " + "[" + arc.startAngle + ", " + arc.endAngle + "]");
+                    }
+                }
+            }
+
+            try {
+                polygonSurface = offset(polygonSurface, -(gap + gap/2));
+            } catch (e) {
+                console.log(e);
+            }
+
+            console.log("--==========--==========--==========--==========--==========--==========");
+            console.log("--POLY FACES AFTER ...");
+            for (const f of polygonSurface.faces) {
+                const face = f as Face;
+                console.log("--................--................--................");
+                console.log("--POLY FACE: " + (face.orientation() === ORIENTATION.CCW ? "CCW" : face.orientation() === ORIENTATION.CW ? "CW" : "ORIENTATION.NOT_ORIENTABLE" ));
+
+                for (const edge of face.edges) {
+                    console.log("--POLY EDGE");
+                    if (edge.isSegment()) {
+                        console.log("--POLY SEGMENT...");
+                        const segment = edge.shape as Segment;
+                        const pointStart = segment.start;
+                        const pointEnd = segment.end;
+                        console.log("--POLY SEGMENT START x, y: " + pointStart.x + ", " + pointStart.y);
+                        console.log("--POLY SEGMENT END x, y: " + pointEnd.x + ", " + pointEnd.y);
+                    } else if (edge.isArc()) {
+                        console.log("--POLY ARC...");
+                        const arc = edge.shape as Arc;
+
+                        console.log("--POLY ARC: " + arc.start.x + ", " + arc.start.y);
+                        console.log("--POLY ARC: " + arc.end.x + ", " + arc.end.y);
+                        console.log("--POLY ARC: " + arc.length + " / " + arc.sweep);
+                        // console.log("--POLY ARC: " + arc.ps.x + ", " + arc.ps.y + " (" + arc.r + ") " + "[" + arc.startAngle + ", " + arc.endAngle + "]");
+                    }
+                }
+            }
+        }
+    }
 
     // const highlightAreaSVGDocFrag = documant.createDocumentFragment();
     // highlightAreaSVGDocFrag.appendChild(highlightAreaSVGRect);
@@ -945,12 +1477,12 @@ function createHighlightDom(
     (
     Array.isArray(polygonSurface)
     ?
-    polygonSurface.reduce((prev, cur) => {
-        return prev + cur.svg({
-            fill: DEBUG_RECTS ? "pink" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+    polygonSurface.reduce((prevSVGPath, currentPolygon) => {
+        return prevSVGPath + currentPolygon.svg({
+            fill: DEBUG_RECTS ? "pink" : drawOutline ? "transparent" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
             fillRule: "evenodd",
-            stroke: DEBUG_RECTS ? "magenta" : "transparent",
-            strokeWidth: DEBUG_RECTS ? 1 : 0,
+            stroke: DEBUG_RECTS ? "magenta" : drawOutline ? `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` : "transparent",
+            strokeWidth: DEBUG_RECTS ? 1 : drawOutline ? 2 : 0,
             fillOpacity: 1,
             className: undefined,
             // r: 4,
@@ -958,10 +1490,10 @@ function createHighlightDom(
     }, "")
     :
     polygonSurface.svg({
-        fill: DEBUG_RECTS ? "yellow" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+        fill: DEBUG_RECTS ? "yellow" : drawOutline ? "transparent" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
         fillRule: "evenodd",
-        stroke: DEBUG_RECTS ? "green" : "transparent",
-        strokeWidth: DEBUG_RECTS ? 1 : 0,
+        stroke: DEBUG_RECTS ? "green" : drawOutline ? `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` : "transparent",
+        strokeWidth: DEBUG_RECTS ? 1 : drawOutline ? 2 : 0,
         fillOpacity: 1,
         className: undefined,
         // r: 4,
@@ -981,27 +1513,16 @@ function createHighlightDom(
 
     highlightParent.append(highlightAreaSVG);
 
-    // const boxes = Array.from(polygon.edges).map((edge: Edge) => {
-    //     const shape = edge.shape as Segment;
-    //     const ps = shape.ps as Point;
-    //     const pe = shape.pe as Point;
-    //     return new Box(
-    //         Math.min(ps.x, pe.x),
-    //         Math.min(ps.y, pe.y),
-    //         Math.max(ps.x, pe.x),
-    //         Math.max(ps.y, pe.y),
-    //     );
-    // });
-    // // box.xmin / box.ymin
-    // // box.width / box.height
-
     if (doDrawMargin && highlight.pointerInteraction) {
         const MARGIN_MARKER_THICKNESS = 14 * (win.READIUM2.isFixedLayout ? scale : 1);
         const MARGIN_MARKER_OFFSET = 6 * (win.READIUM2.isFixedLayout ? scale : 1);
         const paginatedOffset_ = paginatedOffset - MARGIN_MARKER_OFFSET - MARGIN_MARKER_THICKNESS;
 
         let boundingRect: IRect | IRect[] | undefined;
-        const polygonCountourMarginRects = Array.from(polygonCountourUnionPoly.faces).map((face: Face) => {
+        const polygonCountourMarginRects: IRect[] = [];
+        for (const f of polygonCountourUnionPoly.faces) {
+            const face = f as Face;
+
             const b = face.box;
             const left =
                 // ----
@@ -1061,8 +1582,8 @@ function createHighlightDom(
 
             boundingRect = boundingRect ? getBoundingRect(boundingRect as IRect, r) : r;
 
-            return r;
-        });
+            polygonCountourMarginRects.push(r);
+        }
 
         const useFastBoundingRect = true; // we never union-join the polygons, instead we group possible rectangle bounding boxes together to allow fragmentation across page boundaries
         let polygonMarginUnionPoly: Polygon | undefined;
@@ -1110,26 +1631,51 @@ function createHighlightDom(
                 polygonMarginUnionPoly = new Polygon();
                 if (Array.isArray(boundingRect)) {
                     for (const b of boundingRect) {
-                        polygonMarginUnionPoly.addFace(new Box(b.left, b.top, b.right, b.bottom));
+                        const f = polygonMarginUnionPoly.addFace(new Box(b.left, b.top, b.right, b.bottom));
+                        if (f.orientation() !== BASE_ORIENTATION) {
+                            console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 6");
+                            f.reverse();
+                        }
                     }
                 } else {
-                    polygonMarginUnionPoly.addFace(new Box(boundingRect.left, boundingRect.top, boundingRect.right, boundingRect.bottom));
+                    const f = polygonMarginUnionPoly.addFace(new Box(boundingRect.left, boundingRect.top, boundingRect.right, boundingRect.bottom));
+                    if (f.orientation() !== BASE_ORIENTATION) {
+                        console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 7");
+                        f.reverse();
+                    }
                 }
             } else {
                 const poly = new Polygon();
                 for (const r of polygonCountourMarginRects) {
-                    poly.addFace(new Box(r.left, r.top, r.right, r.bottom));
+                    const f = poly.addFace(new Box(r.left, r.top, r.right, r.bottom));
+                    if (f.orientation() !== BASE_ORIENTATION) {
+                        console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 8");
+                        f.reverse();
+                    }
                 }
                 polygonMarginUnionPoly = new Polygon();
-                polygonMarginUnionPoly.addFace(poly.box);
+                const f = polygonMarginUnionPoly.addFace(poly.box);
+                if (f.orientation() !== BASE_ORIENTATION) {
+                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 9");
+                    f.reverse();
+                }
             }
         } else {
-            polygonMarginUnionPoly = polygonCountourMarginRects.reduce((previous, r) => unify(previous, new Polygon(new Box(r.left, r.top, r.right, r.bottom))), new Polygon());
+            polygonMarginUnionPoly = polygonCountourMarginRects.reduce((previousPolygon, r) => {
+                const b = new Box(r.left, r.top, r.right, r.bottom);
+                const p = new Polygon();
+                const f = p.addFace(b);
+                if (f.orientation() !== BASE_ORIENTATION) {
+                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 10");
+                    f.reverse();
+                }
+                return unify(previousPolygon, p);
+            }, new Polygon());
 
             // Array.from(polygonMarginUnionPoly.faces).forEach((face: Face) => {
-            //     if (face.orientation() !== ORIENTATION.CCW) {
+            //     if (face.orientation() !== BASE_ORIENTATION) {
             //         if (IS_DEV) {
-            //             console.log("--HIGH WEBVIEW-- removing polygon clockwise face / inner hole (margin))");
+            //             console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (margin))");
             //         }
             //         (polygonMarginUnionPoly as Polygon).deleteFace(face);
             //     }
@@ -1138,8 +1684,8 @@ function createHighlightDom(
 
         const highlightMarginSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
         highlightMarginSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON} ${CLASS_HIGHLIGHT_CONTOUR_MARGIN}`);
-        highlightMarginSVG.polygon = polygonMarginUnionPoly as Polygon;
-        highlightMarginSVG.innerHTML = (polygonMarginUnionPoly as Polygon).svg({
+        highlightMarginSVG.polygon = polygonMarginUnionPoly;
+        highlightMarginSVG.innerHTML = polygonMarginUnionPoly.svg({
             fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
             fillRule: "evenodd",
             stroke: "transparent",

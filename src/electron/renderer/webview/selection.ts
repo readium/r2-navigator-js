@@ -105,6 +105,7 @@ export function getCurrentSelectionInfo(
         return undefined;
     }
 
+    // rawText is in fact already clean! (Selection API does it)
     const rawText = selection.toString();
     const cleanText = collapseWhitespaces(rawText);
     if (cleanText.length === 0) {

@@ -14,5 +14,9 @@ declare module "debug/src/common";
 declare module "cssesc";
 declare module "css.escape";
 
-declare module "@flatten-js/polygon-offset";
-// offset(polygon, value)
+declare module "@flatten-js/polygon-offset" {
+    import {
+        type Polygon,
+    } from "@flatten-js/core";
+    export default function offset(poly: Polygon, offset: number): Polygon;
+}

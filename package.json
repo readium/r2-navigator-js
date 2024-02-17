@@ -46,6 +46,7 @@
   "homepage": "https://github.com/readium/r2-navigator-js",
   "dependencies": {
     "@flatten-js/core": "^1.4.8",
+    "@flatten-js/polygon-offset": "^1.1.4",
     "@xmldom/xmldom": "^0.8.10",
     "css.escape": "^1.5.1",
     "cssesc": "^3.0.0",
