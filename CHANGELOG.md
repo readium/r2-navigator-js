@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.17...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.14.18...develop
 
 Changes:
 * TODO
+
+# 1.14.18
+
+# > Build environment: NodeJS `20.11.0`, NPM `10.4.0`
+
+Changes:
+* Highlights / visual annotations rendering engine: now with outline/border decoration (other drawing types are: solid/block/background, underline, strikethrough/crossed-over)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.14.18/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.14.18/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.14.18
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.17...v1.14.18
 
 # 1.14.17
 
