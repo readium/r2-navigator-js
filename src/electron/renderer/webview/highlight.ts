@@ -46,6 +46,361 @@ Edge,
 } from "@flatten-js/core";
 const { unify, subtract } = BooleanOperations;
 
+const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(window as any).DEBUG_RECTS = IS_DEV && VERBOSE;
+
+const cleanupPolygon = (polygonAccumulator: Polygon, off: number) => {
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const DEBUG_RECTS = (window as any).DEBUG_RECTS;
+
+    const minLength = Math.abs(off) + 1;
+    let nSegments = 0;
+    let nArcs = 0;
+    let total = 0;
+    if (DEBUG_RECTS) {
+        console.log("--====}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}");
+    }
+    for (const e of polygonAccumulator.edges) {
+        const edge = e as Edge;
+        if (edge.isSegment()) {
+            nSegments++;
+            const segment = edge.shape as Segment;
+            const l = segment.length;
+            if (Utils.LE(l, minLength)) {
+                total++;
+                if (DEBUG_RECTS) {
+                    console.log("--POLYGON SEGMENT small LENGTH: " + l + "(" + off + ")");
+                }
+            } else {
+                if (DEBUG_RECTS) {
+                    console.log("--POLYGON SEGMENT ok LENGTH: " + l + "(" + off + ")");
+                }
+            }
+        } else if (edge.isArc()) {
+            nArcs++;
+            if (DEBUG_RECTS) {
+                console.log("--POLYGON ARC");
+            }
+        }
+    }
+    if (DEBUG_RECTS) {
+        console.log("--====");
+        console.log("--==== POLYGON SEGMENT small TOTAL 1: " + total);
+        console.log("--==== POLYGON SEGMENT small SEGMENTS 1: " + nSegments);
+        console.log("--==== POLYGON SEGMENT small ARCS 1: " + nArcs);
+    }
+    total = 0;
+    nSegments = 0;
+    nArcs = 0;
+    if (DEBUG_RECTS) {
+        console.log("--====}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}");
+    }
+    for (const f of polygonAccumulator.faces) {
+        const face = f as Face;
+        for (const e of face.edges) {
+            const edge = e as Edge;
+            if (edge.isSegment()) {
+                nSegments++;
+                const segment = edge.shape as Segment;
+                const l = segment.length;
+                if (Utils.LE(l, minLength)) {
+                    total++;
+                    if (DEBUG_RECTS) {
+                        console.log("--POLYGON SEGMENT small LENGTH: " + l + "(" + off + ")");
+                    }
+                } else {
+                    if (DEBUG_RECTS) {
+                        console.log("--POLYGON SEGMENT ok LENGTH: " + l + "(" + off + ")");
+                    }
+                }
+            } else if (edge.isArc()) {
+                nArcs++;
+                if (DEBUG_RECTS) {
+                    console.log("--POLYGON ARC");
+                }
+            }
+        }
+    }
+    if (DEBUG_RECTS) {
+        console.log("--====");
+        console.log("--==== POLYGON SEGMENT small TOTAL 2: " + total);
+        console.log("--==== POLYGON SEGMENT small SEGMENTS 2: " + nSegments);
+        console.log("--==== POLYGON SEGMENT small ARCS 2: " + nArcs);
+    }
+    total = 0;
+    nSegments = 0;
+    nArcs = 0;
+    if (DEBUG_RECTS) {
+        console.log("--====}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}");
+    }
+    for (const f of polygonAccumulator.faces) {
+        const face = f as Face;
+        let edge = face.first;
+        while (edge) {
+            if (edge.isSegment()) {
+                nSegments++;
+                const segment = edge.shape as Segment;
+                const l = segment.length;
+                if (Utils.LE(l, minLength)) {
+                    total++;
+                    if (DEBUG_RECTS) {
+                        console.log("--POLYGON SEGMENT small LENGTH: " + l + "(" + off + ")");
+                    }
+                } else {
+                    if (DEBUG_RECTS) {
+                        console.log("--POLYGON SEGMENT ok LENGTH: " + l + "(" + off + ")");
+                    }
+                }
+            } else if (edge.isArc()) {
+                nArcs++;
+                if (DEBUG_RECTS) {
+                    console.log("--POLYGON ARC");
+                }
+            }
+            if (edge == face.last) {
+                break;
+            }
+            edge = edge.next;
+        }
+    }
+    if (DEBUG_RECTS) {
+        console.log("--====");
+        console.log("--==== POLYGON SEGMENT small TOTAL 3: " + total);
+        console.log("--==== POLYGON SEGMENT small SEGMENTS 3: " + nSegments);
+        console.log("--==== POLYGON SEGMENT small ARCS 3: " + nArcs);
+
+        console.log("--====}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}");
+    }
+
+    const faces: Face[] = Array.from(polygonAccumulator.faces);
+    for (const f of faces) {
+        const face = f as Face;
+        if (DEBUG_RECTS) {
+            console.log("~~~~ POLY FACE");
+        }
+
+        const edges = Array.from(face.edges);
+        const edgeShapes = edges.map((edge) => edge.shape);
+        let chainedEdgeShapes: Array<Segment | Arc> = [];
+
+        while (edgeShapes.length) {
+            if (DEBUG_RECTS) {
+                console.log("~~~~ POLY EDGE SHAPE");
+            }
+
+            if (!chainedEdgeShapes.length) {
+                const last = edgeShapes.pop()!;
+                chainedEdgeShapes.push(last);
+                continue;
+            }
+
+            // peek not pop
+            const lastInChain = chainedEdgeShapes[chainedEdgeShapes.length - 1];
+
+            const lastInChainStartPoint = (lastInChain as Arc).breakToFunctional ? (lastInChain as Arc).start : (lastInChain as Segment).start;
+
+            const lastInChainEndPoint = (lastInChain as Arc).breakToFunctional ? (lastInChain as Arc).end : (lastInChain as Segment).end;
+
+            const shapesBefore: Array<Segment | Arc> = [];
+            const shapesAfter: Array<Segment | Arc> = [];
+            for (const edgeShape of edgeShapes) {
+
+                const edgeShapeStartPoint = (edgeShape as Arc).breakToFunctional ? (edgeShape as Arc).start : (edgeShape as Segment).start;
+
+                const edgeShapeEndPoint = (edgeShape as Arc).breakToFunctional ? (edgeShape as Arc).end : (edgeShape as Segment).end;
+
+                if (Utils.EQ(lastInChainStartPoint.x, edgeShapeEndPoint.x) && Utils.EQ(lastInChainStartPoint.y, edgeShapeEndPoint.y)) {
+                    shapesBefore.push(edgeShape);
+                }
+
+                if (Utils.EQ(lastInChainEndPoint.x, edgeShapeStartPoint.x) && Utils.EQ(lastInChainEndPoint.y, edgeShapeStartPoint.y)) {
+                    shapesAfter.push(edgeShape);
+                }
+            }
+
+            // FAIL, should be a closed shape
+            //  || shapesBefore.length === 0
+            if (shapesBefore.length > 1 || shapesAfter.length > 1 || shapesAfter.length === 0) {
+                if (DEBUG_RECTS) {
+                    console.log("~~~~ POLY SHAPES BEFORE/AFTER ABORT: " + shapesBefore.length + " ... " + shapesAfter.length);
+                }
+
+                chainedEdgeShapes = [];
+                // chainedEdgeShapes = edges.map((edge) => edge.shape);
+                break;
+            }
+
+            const startPoint = (shapesAfter[0] as Arc).breakToFunctional ? (shapesAfter[0] as Arc).start : (shapesAfter[0] as Segment).start;
+            const endPoint = (shapesAfter[0] as Arc).breakToFunctional ? (shapesAfter[0] as Arc).end : (shapesAfter[0] as Segment).end;
+            if (DEBUG_RECTS) {
+                console.log("*** SEGMENT/ARC --- START: (" + startPoint.x + ", " + startPoint.y + ") END: (" + endPoint.x + ", " + endPoint.y + ")");
+            }
+
+            edgeShapes.splice(edgeShapes.indexOf(shapesAfter[0]), 1);
+            chainedEdgeShapes.push(shapesAfter[0]);
+
+            if (chainedEdgeShapes.length === edges.length) {
+
+                // const edgeShapeStartPoint = (shapesAfter[0] as Arc).breakToFunctional ? (shapesAfter[0] as Arc).start : (shapesAfter[0] as Segment).start;
+
+                const edgeShapeEndPoint = (shapesAfter[0] as Arc).breakToFunctional ? (shapesAfter[0] as Arc).end : (shapesAfter[0] as Segment).end;
+
+                const firstInChainStartPoint = (chainedEdgeShapes[0] as Arc).breakToFunctional ? (chainedEdgeShapes[0] as Arc).start : (chainedEdgeShapes[0] as Segment).start;
+
+                // const firstInChainEndPoint = (chainedEdgeShapes[0] as Arc).breakToFunctional ? (chainedEdgeShapes[0] as Arc).end : (chainedEdgeShapes[0] as Segment).end;
+
+                // FAIL, should be a closed shape
+                if (!Utils.EQ(firstInChainStartPoint.x, edgeShapeEndPoint.x) || !Utils.EQ(firstInChainStartPoint.y, edgeShapeEndPoint.y)) {
+                    if (DEBUG_RECTS) {
+                        console.log("~~~~ POLY SHAPES TAIL/HEAD ABORT");
+                    }
+
+                    chainedEdgeShapes = [];
+                    // chainedEdgeShapes = edges.map((edge) => edge.shape);
+                    break;
+                }
+            }
+        }
+        // if (chainedEdgeShapes.length !== edges.length) {
+        //     chainedEdgeShapes = edges.map((edge) => edge.shape);
+        // }
+
+        let previousSegment: Segment | undefined;
+        let previousSmallSegment: Segment | undefined;
+        const newEdgeShapes: Array<Segment | Arc> = [];
+        let hasChanged = false;
+
+        // guaranteed chain loop
+        for (const edgeShape of chainedEdgeShapes) {
+            if (!(edgeShape as Arc).breakToFunctional) {
+                const segment = edgeShape as Segment;
+
+                const l = segment.length;
+
+                if (DEBUG_RECTS) {
+                    console.log("--POLYGON SLOPES: " + previousSegment?.slope + " vs. " + segment.slope);
+                }
+                if (previousSegment && Utils.EQ(previousSegment.slope, segment.slope)) {
+                    if (DEBUG_RECTS) {
+                        console.log("--POLYGON SLOPE EQUAL ... merge :)");
+                    }
+                    hasChanged = true;
+                    newEdgeShapes.pop();
+                    const seg = new Segment(new Point(previousSegment.start.x, previousSegment.start.y), new Point(segment.end.x, segment.end.y));
+                    newEdgeShapes.push(seg);
+                    previousSmallSegment = undefined;
+                    previousSegment = seg;
+
+                    if (chainedEdgeShapes.indexOf(edgeShape) === chainedEdgeShapes.length - 1 && !(newEdgeShapes[0] as Arc).breakToFunctional && Utils.EQ((newEdgeShapes[0] as Segment).slope, seg.slope)) {
+                        if (DEBUG_RECTS) {
+                            console.log("--POLYGON SLOPE EQUAL (tail/head link) 1... merge :)");
+                        }
+                        hasChanged = true;
+                        newEdgeShapes.splice(0, 1);
+                        const seg2 = new Segment(new Point(newEdgeShapes[0].start.x, newEdgeShapes[0].start.y), new Point(seg.end.x, seg.end.y));
+                        newEdgeShapes.push(seg2);
+                        previousSmallSegment = undefined;
+                        previousSegment = seg2;
+                    }
+                } else if (newEdgeShapes.length && chainedEdgeShapes.indexOf(edgeShape) === chainedEdgeShapes.length - 1 && !(newEdgeShapes[0] as Arc).breakToFunctional && Utils.EQ((newEdgeShapes[0] as Segment).slope, segment.slope)) {
+                    if (DEBUG_RECTS) {
+                        console.log("--POLYGON SLOPE EQUAL (tail/head link) 2... merge :)");
+                    }
+                    hasChanged = true;
+                    newEdgeShapes.splice(0, 1);
+                    const seg = new Segment(new Point(newEdgeShapes[0].start.x, newEdgeShapes[0].start.y), new Point(segment.end.x, segment.end.y));
+                    newEdgeShapes.push(seg);
+                    previousSmallSegment = undefined;
+                    previousSegment = seg;
+                } else if (Utils.LE(l, minLength)) {
+                    if (DEBUG_RECTS) {
+                        console.log("--POLYGON SEGMENT small LENGTH: " + l + "(" + off + ")");
+                    }
+
+                    if (previousSmallSegment) {
+                        if (DEBUG_RECTS) {
+                            console.log("-->>>> POLYGON SEGMENT small will merge :) ...");
+                        }
+                        hasChanged = true;
+                        newEdgeShapes.pop();
+                        const seg = new Segment(new Point(previousSmallSegment.start.x, previousSmallSegment.start.y), new Point(segment.end.x, segment.end.y));
+                        newEdgeShapes.push(seg);
+                        previousSmallSegment = undefined;
+                        previousSegment = seg;
+                    } else if (newEdgeShapes.length && chainedEdgeShapes.indexOf(edgeShape) === chainedEdgeShapes.length - 1 && !(newEdgeShapes[0] as Arc).breakToFunctional && Utils.LE((newEdgeShapes[0] as Segment).length, minLength)) {
+                        if (DEBUG_RECTS) {
+                            console.log("-->>>> POLYGON SEGMENT small (tail/head link) will merge :) ...");
+                        }
+                        hasChanged = true;
+                        newEdgeShapes.splice(0, 1);
+                        const seg = new Segment(new Point(newEdgeShapes[0].start.x, newEdgeShapes[0].start.y), new Point(segment.end.x, segment.end.y));;
+                        newEdgeShapes.push(seg);
+                        previousSmallSegment = undefined;
+                        previousSegment = seg;
+                    } else {
+                        newEdgeShapes.push(segment);
+                        previousSmallSegment = segment;
+                        previousSegment = segment;
+                    }
+                } else {
+                    if (DEBUG_RECTS) {
+                        console.log("--POLYGON SEGMENT ok LENGTH: " + l + "(" + off + ")");
+                    }
+
+                    previousSmallSegment = undefined;
+                    newEdgeShapes.push(segment);
+                    previousSegment = segment;
+                }
+            } else {
+                if (DEBUG_RECTS) {
+                    console.log("--POLYGON ARC");
+                }
+                previousSmallSegment = undefined;
+                previousSegment = undefined;
+                newEdgeShapes.push(edgeShape as Arc);
+            }
+        }
+
+        if (hasChanged) {
+            if (DEBUG_RECTS) {
+                console.log("-->>>> POLYGON face changed :)");
+            }
+            polygonAccumulator.deleteFace(face);
+            polygonAccumulator.addFace(newEdgeShapes);
+            // polygonAccumulator.recreateFaces();
+        }
+    }
+};
+
+const addEdgePoints = (polygon: Polygon, offset: number) => {
+
+    const boxes: Box[] = [];
+    for (const f of polygon.faces) {
+        const face = f as Face;
+        for (const edge of face.edges) {
+            if (edge.isSegment()) {
+                const segment = edge.shape as Segment;
+                const bStart = new Box(segment.start.x - offset, segment.start.y - offset, segment.start.x + offset * 2, segment.start.y + offset * 2);
+                boxes.push(bStart);
+                const bEnd = new Box(segment.end.x - offset, segment.end.y - offset, segment.end.x + offset * 2, segment.end.y + offset * 2);
+                boxes.push(bEnd);
+            } else {
+                const arc = edge.shape as Arc;
+                const bStart = new Box(arc.start.x - offset, arc.start.y - offset, arc.start.x + offset * 2, arc.start.y + offset * 2);
+                boxes.push(bStart);
+                const bEnd = new Box(arc.end.x - offset, arc.end.y - offset, arc.end.x + offset * 2, arc.end.y + offset * 2);
+                boxes.push(bEnd);
+            }
+        }
+    }
+    for (const box of boxes) {
+        polygon.addFace(box);
+    }
+};
+
 const BASE_ORIENTATION = ORIENTATION.CCW; // -1
 // const BASE_ORIENTATION_INVERSE = ORIENTATION.CW; // 1
 
@@ -54,11 +409,17 @@ const USE_SEGMENT_JOINS_NOT_ARCS = false;
 // Number((x).toPrecision(12))
 // https://github.com/alexbol99/flatten-offset/issues/17#issuecomment-1949934684
 function arcSE(center: Point, start: Point, end: Point, counterClockwise: boolean): Arc {
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const DEBUG_RECTS = (window as any).DEBUG_RECTS;
+
     const startAngle = Number((new Vector(center, start).slope).toPrecision(12));
     let endAngle = Number((new Vector(center, end).slope).toPrecision(12));
 
     if (Utils.EQ(startAngle, endAngle)) {
-        console.log("--POLYGON ARC ORIENTATION CCW/CW inverse");
+        if (DEBUG_RECTS) {
+            console.log("--POLYGON ARC ORIENTATION CCW/CW inverse");
+        }
         endAngle += 2 * Math.PI;
         counterClockwise = !counterClockwise;
     }
@@ -69,6 +430,9 @@ function arcSE(center: Point, start: Point, end: Point, counterClockwise: boolea
 }
 
 function offset_(polygon: Polygon, off: number, useSegmentJoinsNotArcs: boolean) {
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const DEBUG_RECTS = (window as any).DEBUG_RECTS;
 
     const postponeFinalUnify = off > 0; // Utils.GT(off, 0);
     let polygonAccumulator = postponeFinalUnify ? undefined : polygon.clone();
@@ -123,13 +487,19 @@ function offset_(polygon: Polygon, off: number, useSegmentJoinsNotArcs: boolean)
                     cap2_,
                 ]);
                 if (face.orientation() !== BASE_ORIENTATION) {
-                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 1");
+                    if (DEBUG_RECTS) {
+                        console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 1");
+                    }
                     face.reverse();
                 }
+
                 // console.log("--POLYGON FACE AREA: " + face.area());
 
                 if (!(polygonAccumulator || polygonEdge).faces.size) {
-                    console.log("--################# POLYGON BEFORE unify/substract HAS NO FACES!! " + (polygonAccumulator || polygonEdge).faces.size);
+
+                    if (DEBUG_RECTS) {
+                        console.log("--################# POLYGON BEFORE unify/substract HAS NO FACES!! " + (polygonAccumulator || polygonEdge).faces.size);
+                    }
                 }
 
                 if (off > 0) { // Utils.GT(off, 0)
@@ -139,28 +509,40 @@ function offset_(polygon: Polygon, off: number, useSegmentJoinsNotArcs: boolean)
                 }
 
                 if (!(polygonAccumulator || polygonEdge).faces.size) {
-                    console.log("--################# POLYGON AFTER unify/substract HAS NO FACES!! " + (polygonAccumulator || polygonEdge).faces.size);
+                    if (DEBUG_RECTS) {
+                        console.log("--################# POLYGON AFTER unify/substract HAS NO FACES!! " + (polygonAccumulator || polygonEdge).faces.size);
+                    }
 
                     if (!useSegmentJoinsNotArcs) {
-                        console.log("--##### POLYGON AFTER unify/substract try again without arc, only segment joiners ...");
+                        if (DEBUG_RECTS) {
+                            console.log("--##### POLYGON AFTER unify/substract try again without arc, only segment joiners ...");
+                        }
                         return offset_(polygon, off, true);
                     }
                 } else {
-                    console.log("--################# POLYGON AFTER unify/substract FACES: " + (polygonAccumulator || polygonEdge).edges.size + " /// " + (polygonAccumulator || polygonEdge).faces.size);
+                    if (DEBUG_RECTS) {
+                        console.log("--################# POLYGON AFTER unify/substract FACES: " + (polygonAccumulator || polygonEdge).edges.size + " /// " + (polygonAccumulator || polygonEdge).faces.size);
+                    }
                 }
 
                 for (const f of polygonAccumulator.faces) {
                     const face = f as Face;
                     if (face.edges.length < 4) {
-                        console.log("-------- POLYGON FACE EDGES not at least 4??!");
+                        if (DEBUG_RECTS) {
+                            console.log("-------- POLYGON FACE EDGES not at least 4??!");
+                        }
                         if (!useSegmentJoinsNotArcs) {
-                            console.log("--##### POLYGON AFTER unify/substract try again without arc, only segment joiners ...");
+                            if (DEBUG_RECTS) {
+                                console.log("--##### POLYGON AFTER unify/substract try again without arc, only segment joiners ...");
+                            }
                             return offset_(polygon, off, true);
                         }
                     }
 
                     if (face.orientation() !== BASE_ORIENTATION) {
-                        console.log("-------- POLYGON FACE ORIENTATION");
+                        if (DEBUG_RECTS) {
+                            console.log("-------- POLYGON FACE ORIENTATION");
+                        }
                         // face.reverse();
                     }
                 }
@@ -175,7 +557,7 @@ function offset_(polygon: Polygon, off: number, useSegmentJoinsNotArcs: boolean)
 
     Array.from((polygonAccumulator ? polygonAccumulator : polygon).faces).forEach((face: Face) => {
         if (face.orientation() !== BASE_ORIENTATION) {
-            if (IS_DEV) {
+            if (DEBUG_RECTS) {
                 console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (offset poly 1))");
             }
             if (polygonAccumulator) {
@@ -191,7 +573,7 @@ function offset_(polygon: Polygon, off: number, useSegmentJoinsNotArcs: boolean)
 
     Array.from((polygonAccumulator ? polygonAccumulator : polygon).faces).forEach((face: Face) => {
         if (face.orientation() !== BASE_ORIENTATION) {
-            if (IS_DEV) {
+            if (DEBUG_RECTS) {
                 console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (offset poly 2))");
             }
             if (polygonAccumulator) {
@@ -203,239 +585,24 @@ function offset_(polygon: Polygon, off: number, useSegmentJoinsNotArcs: boolean)
 
     if (polygonAccumulator) {
         if (!polygonAccumulator.faces.size) {
-            console.log("--################# POLYGON INTERMEDIARY HAS NO FACES!! " + polygonAccumulator.faces.size);
-        }
-
-        const minLength = Math.abs(off) + 1;
-        let nSegments = 0;
-        let nArcs = 0;
-        let total = 0;
-        console.log("--====}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}");
-        for (const e of polygonAccumulator.edges) {
-            const edge = e as Edge;
-            if (edge.isSegment()) {
-                nSegments++;
-                const segment = edge.shape as Segment;
-                const l = segment.length;
-                if (Utils.LE(l, minLength)) {
-                    total++;
-                    console.log("--POLYGON SEGMENT small LENGTH: " + l + "(" + off + ")");
-                } else {
-                    console.log("--POLYGON SEGMENT ok LENGTH: " + l + "(" + off + ")");
-                }
-            } else if (edge.isArc()) {
-                nArcs++;
-                console.log("--POLYGON ARC");
+            if (DEBUG_RECTS) {
+                console.log("--################# POLYGON INTERMEDIARY HAS NO FACES!! " + polygonAccumulator.faces.size);
             }
         }
-        console.log("--====");
-        console.log("--==== POLYGON SEGMENT small TOTAL 1: " + total);
-        console.log("--==== POLYGON SEGMENT small SEGMENTS 1: " + nSegments);
-        console.log("--==== POLYGON SEGMENT small ARCS 1: " + nArcs);
-        total = 0;
-        nSegments = 0;
-        nArcs = 0;
-        console.log("--====}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}");
-        for (const f of polygonAccumulator.faces) {
-            const face = f as Face;
-            for (const e of face.edges) {
-                const edge = e as Edge;
-                if (edge.isSegment()) {
-                    nSegments++;
-                    const segment = edge.shape as Segment;
-                    const l = segment.length;
-                    if (Utils.LE(l, minLength)) {
-                        total++;
-                        console.log("--POLYGON SEGMENT small LENGTH: " + l + "(" + off + ")");
-                    } else {
-                        console.log("--POLYGON SEGMENT ok LENGTH: " + l + "(" + off + ")");
-                    }
-                } else if (edge.isArc()) {
-                    nArcs++;
-                    console.log("--POLYGON ARC");
-                }
-            }
-        }
-        console.log("--====");
-        console.log("--==== POLYGON SEGMENT small TOTAL 2: " + total);
-        console.log("--==== POLYGON SEGMENT small SEGMENTS 2: " + nSegments);
-        console.log("--==== POLYGON SEGMENT small ARCS 2: " + nArcs);
-        total = 0;
-        nSegments = 0;
-        nArcs = 0;
-        console.log("--====}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}");
-        for (const f of polygonAccumulator.faces) {
-            const face = f as Face;
-            let edge = face.first;
-            while (edge) {
-                if (edge.isSegment()) {
-                    nSegments++;
-                    const segment = edge.shape as Segment;
-                    const l = segment.length;
-                    if (Utils.LE(l, minLength)) {
-                        total++;
-                        console.log("--POLYGON SEGMENT small LENGTH: " + l + "(" + off + ")");
-                    } else {
-                        console.log("--POLYGON SEGMENT ok LENGTH: " + l + "(" + off + ")");
-                    }
-                } else if (edge.isArc()) {
-                    nArcs++;
-                    console.log("--POLYGON ARC");
-                }
-                if (edge == face.last) {
-                    break;
-                }
-                edge = edge.next;
-            }
-        }
-        console.log("--====");
-        console.log("--==== POLYGON SEGMENT small TOTAL 3: " + total);
-        console.log("--==== POLYGON SEGMENT small SEGMENTS 3: " + nSegments);
-        console.log("--==== POLYGON SEGMENT small ARCS 3: " + nArcs);
 
-        console.log("--====}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}");
-
-        const faces: Face[] = Array.from(polygonAccumulator.faces);
-        for (const f of faces) {
-            const face = f as Face;
-            console.log("~~~~ POLY FACE");
-
-            const edges = Array.from(face.edges);
-            const edgeShapes = edges.map((edge) => edge.shape);
-            let chainedEdgeShapes: Array<Segment | Arc> = [];
-
-            while (edgeShapes.length) {
-                console.log("~~~~ POLY EDGE SHAPE");
-
-                if (!chainedEdgeShapes.length) {
-                    const last = edgeShapes.pop()!;
-                    chainedEdgeShapes.push(last);
-                    continue;
-                }
-
-                // peek not pop
-                const lastInChain = chainedEdgeShapes[chainedEdgeShapes.length - 1];
-
-                const lastInChainStartPoint = (lastInChain as Arc).breakToFunctional ? (lastInChain as Arc).start : (lastInChain as Segment).start;
-
-                const lastInChainEndPoint = (lastInChain as Arc).breakToFunctional ? (lastInChain as Arc).end : (lastInChain as Segment).end;
-
-                const shapesBefore: Array<Segment | Arc> = [];
-                const shapesAfter: Array<Segment | Arc> = [];
-                for (const edgeShape of edgeShapes) {
-
-                    const edgeShapeStartPoint = (edgeShape as Arc).breakToFunctional ? (edgeShape as Arc).start : (edgeShape as Segment).start;
-
-                    const edgeShapeEndPoint = (edgeShape as Arc).breakToFunctional ? (edgeShape as Arc).end : (edgeShape as Segment).end;
-
-                    if (Utils.EQ(lastInChainStartPoint.x, edgeShapeEndPoint.x) && Utils.EQ(lastInChainStartPoint.y, edgeShapeEndPoint.y)) {
-                        shapesBefore.push(edgeShape);
-                    }
-
-                    if (Utils.EQ(lastInChainEndPoint.x, edgeShapeStartPoint.x) && Utils.EQ(lastInChainEndPoint.y, edgeShapeStartPoint.y)) {
-                        shapesAfter.push(edgeShape);
-                    }
-                }
-
-                // FAIL, should be a closed shape
-                //  || shapesBefore.length === 0
-                if (shapesBefore.length > 1 || shapesAfter.length > 1 || shapesAfter.length === 0) {
-                    console.log("~~~~ POLY SHAPES BEFORE/AFTER ABORT: " + shapesBefore.length + " ... " + shapesAfter.length);
-
-                    chainedEdgeShapes = [];
-                    // chainedEdgeShapes = edges.map((edge) => edge.shape);
-                    break;
-                }
-
-                const startPoint = (shapesAfter[0] as Arc).breakToFunctional ? (shapesAfter[0] as Arc).start : (shapesAfter[0] as Segment).start;
-                const endPoint = (shapesAfter[0] as Arc).breakToFunctional ? (shapesAfter[0] as Arc).end : (shapesAfter[0] as Segment).end;
-                console.log("*** SEGMENT/ARC --- START: (" + startPoint.x + ", " + startPoint.y + ") END: (" + endPoint.x + ", " + endPoint.y + ")");
-
-                edgeShapes.splice(edgeShapes.indexOf(shapesAfter[0]), 1);
-                chainedEdgeShapes.push(shapesAfter[0]);
-
-                if (chainedEdgeShapes.length === edges.length) {
-
-                    // const edgeShapeStartPoint = (shapesAfter[0] as Arc).breakToFunctional ? (shapesAfter[0] as Arc).start : (shapesAfter[0] as Segment).start;
-
-                    const edgeShapeEndPoint = (shapesAfter[0] as Arc).breakToFunctional ? (shapesAfter[0] as Arc).end : (shapesAfter[0] as Segment).end;
-
-                    const firstInChainStartPoint = (chainedEdgeShapes[0] as Arc).breakToFunctional ? (chainedEdgeShapes[0] as Arc).start : (chainedEdgeShapes[0] as Segment).start;
-
-                    // const firstInChainEndPoint = (chainedEdgeShapes[0] as Arc).breakToFunctional ? (chainedEdgeShapes[0] as Arc).end : (chainedEdgeShapes[0] as Segment).end;
-
-                    // FAIL, should be a closed shape
-                    if (!Utils.EQ(firstInChainStartPoint.x, edgeShapeEndPoint.x) || !Utils.EQ(firstInChainStartPoint.y, edgeShapeEndPoint.y)) {
-                        console.log("~~~~ POLY SHAPES TAIL/HEAD ABORT");
-
-                        chainedEdgeShapes = [];
-                        // chainedEdgeShapes = edges.map((edge) => edge.shape);
-                        break;
-                    }
-                }
-            }
-            // if (chainedEdgeShapes.length !== edges.length) {
-            //     chainedEdgeShapes = edges.map((edge) => edge.shape);
-            // }
-
-            let previousSmallSegment: Segment | undefined;
-            const newEdgeShapes: Array<Segment | Arc> = [];
-            let hasChanged = false;
-
-            // guaranteed chain loop
-            for (const edgeShape of chainedEdgeShapes) {
-                if (!(edgeShape as Arc).breakToFunctional) {
-                    const segment = edgeShape as Segment;
-                    const l = segment.length;
-
-                    if (Utils.LE(l, minLength)) {
-                        console.log("--POLYGON SEGMENT small LENGTH: " + l + "(" + off + ")");
-
-                        if (previousSmallSegment) {
-                            console.log("-->>>> POLYGON SEGMENT small will merge :) ...");
-                            hasChanged = true;
-                            newEdgeShapes.pop();
-                            newEdgeShapes.push(new Segment(new Point(previousSmallSegment.start.x, previousSmallSegment.start.y), new Point(segment.end.x, segment.end.y)));
-                        } else {
-                            if (newEdgeShapes.length && chainedEdgeShapes.indexOf(edgeShape) === chainedEdgeShapes.length - 1 && !(newEdgeShapes[0] as Arc).breakToFunctional && Utils.LE((newEdgeShapes[0] as Segment).length, minLength)) {
-                                console.log("-->>>> POLYGON SEGMENT small (tail/head link) will merge :) ...");
-                                hasChanged = true;
-                                newEdgeShapes.splice(0, 1);
-                                if (newEdgeShapes.length) {
-                                    newEdgeShapes.push(new Segment(new Point(newEdgeShapes[0].start.x, newEdgeShapes[0].start.y), new Point(segment.end.x, segment.end.y)));
-                                }
-                            } else {
-                                previousSmallSegment = segment;
-                                newEdgeShapes.push(segment);
-                            }
-                        }
-                    } else {
-                        console.log("--POLYGON SEGMENT ok LENGTH: " + l + "(" + off + ")");
-
-                        previousSmallSegment = undefined;
-                        newEdgeShapes.push(segment);
-                    }
-                } else {
-                    console.log("--POLYGON ARC");
-                    previousSmallSegment = undefined;
-                    newEdgeShapes.push(edgeShape as Arc);
-                }
-            }
-            if (hasChanged) {
-                console.log("-->>>> POLYGON SEGMENT small merged :)");
-                polygonAccumulator.deleteFace(face);
-                polygonAccumulator.addFace(newEdgeShapes);
-                // polygonAccumulator.recreateFaces();
-            }
-        }
+        cleanupPolygon(polygonAccumulator, off);
     }
 
     let resPoly = polygonAccumulator ? polygonAccumulator : polygon;
 
     if (!resPoly.faces.size) {
-        console.log("--################# POLYGON INTERMEDIARY HAS NO FACES!! " + resPoly.faces.size);
+        if (DEBUG_RECTS) {
+            console.log("--################# POLYGON INTERMEDIARY HAS NO FACES!! " + resPoly.faces.size);
+        }
         if (polygonAccumulator) {
-            console.log("--################# FALLBACK TO SINGLE FACE POLY (BEFORE SUBSTRACT/UNIFY): " + polygon.faces.size);
+            if (DEBUG_RECTS) {
+                console.log("--################# FALLBACK TO SINGLE FACE POLY (BEFORE SUBSTRACT/UNIFY): " + polygon.faces.size);
+            }
             resPoly = polygon;
         }
     }
@@ -444,6 +611,10 @@ function offset_(polygon: Polygon, off: number, useSegmentJoinsNotArcs: boolean)
 }
 
 function offset(originaPolygon: Polygon, off: number, useSegmentJoinsNotArcs: boolean = USE_SEGMENT_JOINS_NOT_ARCS) {
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const DEBUG_RECTS = (window as any).DEBUG_RECTS;
+
     off = Number((off).toPrecision(12));
 
     if (Utils.EQ_0(off)) {
@@ -470,21 +641,20 @@ function offset(originaPolygon: Polygon, off: number, useSegmentJoinsNotArcs: bo
     }
 
     if (!singlePolygon.faces.size) {
-        console.log("--##### POLYGON OFFSET HAS NO FACES!! " + singlePolygon.faces.size);
+        if (DEBUG_RECTS) {
+            console.log("--##### POLYGON OFFSET HAS NO FACES!! " + singlePolygon.faces.size);
+        }
 
         if (!useSegmentJoinsNotArcs) {
-            console.log("--##### POLYGON OFFSET try again without arc, only segment joiners ...");
+            if (DEBUG_RECTS) {
+                console.log("--##### POLYGON OFFSET try again without arc, only segment joiners ...");
+            }
             return offset(originaPolygon, off, true);
         }
     }
 
     return singlePolygon;
 }
-
-const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(window as any).DEBUG_RECTS = IS_DEV && VERBOSE;
 
 //     const rgb = Math.round(0xffffff * Math.random());
 //     // tslint:disable-next-line:no-bitwise
@@ -1117,7 +1287,7 @@ function createHighlightDom(
 
         // // Array.from(rangeUnionPolygon.faces).forEach((face: Face) => {
         // //     if (face.orientation() !== BASE_ORIENTATION) {
-        // //         if (IS_DEV) {
+        // //         if (DEBUG_RECTS) {
         // //             console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (text range))");
         // //         }
         // //         polygonCountourUnionPoly.deleteFace(face);
@@ -1345,12 +1515,13 @@ function createHighlightDom(
 
     Array.from(polygonCountourUnionPoly.faces).forEach((face: Face) => {
         if (face.orientation() !== BASE_ORIENTATION) {
-            if (IS_DEV) {
+            if (DEBUG_RECTS) {
                 console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (contour))");
             }
             polygonCountourUnionPoly.deleteFace(face);
         }
     });
+    cleanupPolygon(polygonCountourUnionPoly, gap);
 
     let polygonSurface: Polygon | Polygon[] | undefined;
     if (doNotMergeHorizontallyAlignedRects) {
@@ -1389,7 +1560,7 @@ function createHighlightDom(
 
         Array.from(polygonSurface.faces).forEach((face: Face) => {
             if (face.orientation() !== BASE_ORIENTATION) {
-                if (IS_DEV) {
+                if (DEBUG_RECTS) {
                     console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (surface))");
                 }
                 (polygonSurface as Polygon).deleteFace(face);
@@ -1398,30 +1569,43 @@ function createHighlightDom(
 
         if (drawOutline || drawBackground) {
 
-            console.log("--==========--==========--==========--==========--==========--==========");
-            console.log("--POLY FACES BEFORE ...");
+            if (DEBUG_RECTS) {
+                console.log("--==========--==========--==========--==========--==========--==========");
+                console.log("--POLY FACES BEFORE ...");
+            }
             for (const f of polygonSurface.faces) {
                 const face = f as Face;
-                console.log("--................--................--................");
-                console.log("--POLY FACE: " + (face.orientation() === ORIENTATION.CCW ? "CCW" : face.orientation() === ORIENTATION.CW ? "CW" : "ORIENTATION.NOT_ORIENTABLE" ));
-
+                if (DEBUG_RECTS) {
+                    console.log("--................--................--................");
+                    console.log("--POLY FACE: " + (face.orientation() === ORIENTATION.CCW ? "CCW" : face.orientation() === ORIENTATION.CW ? "CW" : "ORIENTATION.NOT_ORIENTABLE" ));
+                }
                 for (const edge of face.edges) {
-                    console.log("--POLY EDGE");
+                    if (DEBUG_RECTS) {
+                        console.log("--POLY EDGE");
+                    }
                     if (edge.isSegment()) {
-                        console.log("--POLY SEGMENT...");
+                        if (DEBUG_RECTS) {
+                            console.log("--POLY SEGMENT...");
+                        }
                         const segment = edge.shape as Segment;
                         const pointStart = segment.start;
                         const pointEnd = segment.end;
-                        console.log("--POLY SEGMENT START x, y: " + pointStart.x + ", " + pointStart.y);
-                        console.log("--POLY SEGMENT END x, y: " + pointEnd.x + ", " + pointEnd.y);
+                        if (DEBUG_RECTS) {
+                            console.log("--POLY SEGMENT START x, y: " + pointStart.x + ", " + pointStart.y);
+                            console.log("--POLY SEGMENT END x, y: " + pointEnd.x + ", " + pointEnd.y);
+                        }
                     } else if (edge.isArc()) {
-                        console.log("--POLY ARC...");
+                        if (DEBUG_RECTS) {
+                            console.log("--POLY ARC...");
+                        }
                         const arc = edge.shape as Arc;
 
-                        console.log("--POLY ARC: " + arc.start.x + ", " + arc.start.y);
-                        console.log("--POLY ARC: " + arc.end.x + ", " + arc.end.y);
-                        console.log("--POLY ARC: " + arc.length + " / " + arc.sweep);
-                        // console.log("--POLY ARC: " + arc.ps.x + ", " + arc.ps.y + " (" + arc.r + ") " + "[" + arc.startAngle + ", " + arc.endAngle + "]");
+                        if (DEBUG_RECTS) {
+                            console.log("--POLY ARC: " + arc.start.x + ", " + arc.start.y);
+                            console.log("--POLY ARC: " + arc.end.x + ", " + arc.end.y);
+                            console.log("--POLY ARC: " + arc.length + " / " + arc.sweep);
+                            // console.log("--POLY ARC: " + arc.ps.x + ", " + arc.ps.y + " (" + arc.r + ") " + "[" + arc.startAngle + ", " + arc.endAngle + "]");
+                        }
                     }
                 }
             }
@@ -1432,33 +1616,59 @@ function createHighlightDom(
                 console.log(e);
             }
 
-            console.log("--==========--==========--==========--==========--==========--==========");
-            console.log("--POLY FACES AFTER ...");
+            if (DEBUG_RECTS) {
+                console.log("--==========--==========--==========--==========--==========--==========");
+                console.log("--POLY FACES AFTER ...");
+            }
             for (const f of polygonSurface.faces) {
                 const face = f as Face;
-                console.log("--................--................--................");
-                console.log("--POLY FACE: " + (face.orientation() === ORIENTATION.CCW ? "CCW" : face.orientation() === ORIENTATION.CW ? "CW" : "ORIENTATION.NOT_ORIENTABLE" ));
+                if (DEBUG_RECTS) {
+                    console.log("--................--................--................");
+                    console.log("--POLY FACE: " + (face.orientation() === ORIENTATION.CCW ? "CCW" : face.orientation() === ORIENTATION.CW ? "CW" : "ORIENTATION.NOT_ORIENTABLE" ));
+                }
 
                 for (const edge of face.edges) {
-                    console.log("--POLY EDGE");
+                    if (DEBUG_RECTS) {
+                        console.log("--POLY EDGE");
+                    }
                     if (edge.isSegment()) {
-                        console.log("--POLY SEGMENT...");
+                        if (DEBUG_RECTS) {
+                            console.log("--POLY SEGMENT...");
+                        }
                         const segment = edge.shape as Segment;
                         const pointStart = segment.start;
                         const pointEnd = segment.end;
-                        console.log("--POLY SEGMENT START x, y: " + pointStart.x + ", " + pointStart.y);
-                        console.log("--POLY SEGMENT END x, y: " + pointEnd.x + ", " + pointEnd.y);
+                        if (DEBUG_RECTS) {
+                            console.log("--POLY SEGMENT START x, y: " + pointStart.x + ", " + pointStart.y);
+                            console.log("--POLY SEGMENT END x, y: " + pointEnd.x + ", " + pointEnd.y);
+                        }
                     } else if (edge.isArc()) {
-                        console.log("--POLY ARC...");
+                        if (DEBUG_RECTS) {
+                            console.log("--POLY ARC...");
+                        }
                         const arc = edge.shape as Arc;
 
-                        console.log("--POLY ARC: " + arc.start.x + ", " + arc.start.y);
-                        console.log("--POLY ARC: " + arc.end.x + ", " + arc.end.y);
-                        console.log("--POLY ARC: " + arc.length + " / " + arc.sweep);
-                        // console.log("--POLY ARC: " + arc.ps.x + ", " + arc.ps.y + " (" + arc.r + ") " + "[" + arc.startAngle + ", " + arc.endAngle + "]");
+                        if (DEBUG_RECTS) {
+                            console.log("--POLY ARC: " + arc.start.x + ", " + arc.start.y);
+                            console.log("--POLY ARC: " + arc.end.x + ", " + arc.end.y);
+                            console.log("--POLY ARC: " + arc.length + " / " + arc.sweep);
+                            // console.log("--POLY ARC: " + arc.ps.x + ", " + arc.ps.y + " (" + arc.r + ") " + "[" + arc.startAngle + ", " + arc.endAngle + "]");
+                        }
                     }
                 }
             }
+        }
+    }
+
+    if (DEBUG_RECTS) {
+        addEdgePoints(polygonCountourUnionPoly, 1);
+
+        if (Array.isArray(polygonSurface)) {
+            for (const poly of polygonSurface) {
+                addEdgePoints(poly, 1);
+            }
+        } else {
+            addEdgePoints(polygonSurface, 1);
         }
     }
 
@@ -1674,7 +1884,7 @@ function createHighlightDom(
 
             // Array.from(polygonMarginUnionPoly.faces).forEach((face: Face) => {
             //     if (face.orientation() !== BASE_ORIENTATION) {
-            //         if (IS_DEV) {
+            //         if (DEBUG_RECTS) {
             //             console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (margin))");
             //         }
             //         (polygonMarginUnionPoly as Polygon).deleteFace(face);
