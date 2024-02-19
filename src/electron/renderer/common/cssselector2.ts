@@ -9,7 +9,6 @@
 
 import * as cssesc from "cssesc";
 
-export const FRAG_ID_CSS_SELECTOR = "r2-css-selector_";
 
 interface CSSNode {
     name: string;
@@ -214,7 +213,7 @@ function tagName(input: Element): CSSNode | null {
     const name = input.tagName.toLowerCase();
     if (config.tagName(name)) {
         return {
-            name,
+            name: name.replace(/^(.+:)(.+)$/, "*|$2"), // "div" ==> "div", "m:math" ==> "*|math", "svg:a" ==> "*|a" (which unfortunately matches HTML "a" without XML namespace too! ... that's a shortcoming of the web's querySelector() API)  https://www.w3.org/TR/selectors-api/#namespace-prefix-needs-to-be-resolved
             penalty: 2,
         };
     }

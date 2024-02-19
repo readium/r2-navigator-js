@@ -656,6 +656,7 @@ function offset(originaPolygon: Polygon, off: number, useSegmentJoinsNotArcs: bo
     return singlePolygon;
 }
 
+// https://chromium.googlesource.com/devtools/devtools-frontend/+/refs/heads/main/front_end/core/common/ColorUtils.ts
 //     const rgb = Math.round(0xffffff * Math.random());
 //     // tslint:disable-next-line:no-bitwise
 //     const r = rgb >> 16;

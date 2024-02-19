@@ -8,7 +8,7 @@
 import { split } from "sentence-splitter";
 
 import { SKIP_LINK_ID } from "../../common/styles";
-import { uniqueCssSelector } from "../common/cssselector2-3";
+import { uniqueCssSelector } from "../common/cssselector3";
 import { ReadiumElectronWebviewWindow } from "../webview/state";
 
 // const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
@@ -110,7 +110,11 @@ export function consoleLogTtsQueueItem(i: ITtsQueueItem) {
     console.log("<<----");
     console.log(i.dir);
     console.log(i.lang);
-    const cssSelector = uniqueCssSelector(i.parentElement, i.parentElement.ownerDocument as Document);
+    const cssSelector = uniqueCssSelector(i.parentElement, i.parentElement.ownerDocument as Document, {
+        // allow long CSS selectors with many steps, deep DOM element paths => minimise runtime querySelectorAll() calls to verify unicity in optimize() function (sacrifice memory footprint in locators for runtime efficiency and human readbility / debugging, better than CFI)
+        // seedMinLength: 1000,
+        // optimizedMinLength: 1001,
+    });
     console.log(cssSelector);
     console.log(i.parentElement.tagName);
     console.log(i.combinedText);

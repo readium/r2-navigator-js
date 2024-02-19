@@ -64,7 +64,8 @@ import {
     ID_HIGHLIGHTS_CONTAINER,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
-import { uniqueCssSelector, FRAG_ID_CSS_SELECTOR } from "../common/cssselector2-3";
+import { uniqueCssSelector } from "../common/cssselector3";
+
 import { normalizeText } from "../common/dom-text-utils";
 import { easings } from "../common/easings";
 import { closePopupDialogs, isPopupDialogOpen } from "../common/popup-dialog";
@@ -75,6 +76,7 @@ import {
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
     URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_GOTO_DOM_RANGE, URL_PARAM_PREVIOUS,
     URL_PARAM_SECOND_WEBVIEW, URL_PARAM_WEBVIEW_SLOT,
+    FRAG_ID_CSS_SELECTOR,
 } from "../common/url-params";
 import { setupAudioBook } from "./audiobook";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
@@ -3748,6 +3750,9 @@ export const computeCFI = (node: Node): string | undefined => {
 };
 
 const _getCssSelectorOptions = {
+    // allow long CSS selectors with many steps, deep DOM element paths => minimise runtime querySelectorAll() calls to verify unicity in optimize() function (sacrifice memory footprint in locators for runtime efficiency and human readbility / debugging, better than CFI)
+    // seedMinLength: 1000,
+    // optimizedMinLength: 1001,
     className: (str: string) => {
         if (_blacklistIdClassForCssSelectors.indexOf(str) >= 0) {
             return false;
