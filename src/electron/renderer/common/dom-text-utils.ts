@@ -417,7 +417,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
             if (el.getAttribute("id") === SKIP_LINK_ID) {
                 return true;
             }
-            if (el.tagName?.toLowerCase() === "rt") { // ruby child
+            if (el.tagName?.toLowerCase() === "rt" || el.tagName?.toLowerCase() === "rp") { // ruby child
                 return true;
             }
 
