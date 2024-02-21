@@ -134,6 +134,44 @@ export function isDocRTL(documant: Document): boolean {
     return rtl;
 }
 
+const isDocJapanese = (documant: Document) => {
+
+    let isJA = false;
+    let langAttr = documant.documentElement.getAttribute("lang");
+    if (!langAttr) {
+        langAttr = documant.documentElement.getAttribute("xml:lang");
+    }
+    if (!langAttr) {
+        langAttr = documant.documentElement.getAttributeNS("http://www.w3.org/XML/1998/", "lang");
+    }
+    if (langAttr &&
+        (langAttr === "ja" || langAttr.startsWith("ja-"))
+    ) {
+        isJA = true;
+    }
+    return isJA;
+};
+
+export const isDocCJK = (documant: Document) => {
+
+    let isCJK = false;
+    let langAttr = documant.documentElement.getAttribute("lang");
+    if (!langAttr) {
+        langAttr = documant.documentElement.getAttribute("xml:lang");
+    }
+    if (!langAttr) {
+        langAttr = documant.documentElement.getAttributeNS("http://www.w3.org/XML/1998/", "lang");
+    }
+    if (langAttr &&
+        (langAttr === "ja" || langAttr.startsWith("ja-") ||
+        langAttr === "zh" || langAttr.startsWith("zh-") ||
+        langAttr === "ko" || langAttr.startsWith("ko-"))
+    ) {
+        isCJK = true;
+    }
+    return isCJK;
+};
+
 export function isPaginated(documant: Document): boolean {
     return documant && documant.documentElement &&
         documant.documentElement.classList.contains(CLASS_PAGINATED);
@@ -332,21 +370,7 @@ export function readiumCSSSet(
             }
         }
 
-        let isCJK = false;
-        let langAttr = documant.documentElement.getAttribute("lang");
-        if (!langAttr) {
-            langAttr = documant.documentElement.getAttribute("xml:lang");
-        }
-        if (!langAttr) {
-            langAttr = documant.documentElement.getAttributeNS("http://www.w3.org/XML/1998/", "lang");
-        }
-        if (langAttr &&
-            (langAttr === "ja" || langAttr.startsWith("ja-") ||
-            langAttr === "zh" || langAttr.startsWith("zh-") ||
-            langAttr === "ko" || langAttr.startsWith("ko-"))
-        ) {
-            isCJK = true;
-        }
+        const isCJK = isDocCJK(documant);
         const custom = isVerticalWritingMode && isCJK ?
             "cjk-vertical/" : (isCJK ?
                 "cjk-horizontal/" : (isRTL ?
@@ -520,14 +544,22 @@ export function readiumCSSSet(
         docElement.style.removeProperty("--USER__paraSpacing");
     }
 
-    const isCJK = false; // TODO, lang tag?
+    const isCJK = isDocCJK(documant);
     if (isVerticalWritingMode || (isRTL || isCJK)) {
 
         docElement.style.removeProperty("--USER__bodyHyphens");
 
         docElement.style.removeProperty("--USER__wordSpacing");
 
-        docElement.style.removeProperty("--USER__letterSpacing");
+        if (isDocJapanese(documant)) {
+            if (setCSS.letterSpacing && setCSS.letterSpacing.trim() !== "0") {
+                docElement.style.setProperty("--USER__letterSpacing", setCSS.letterSpacing);
+            } else {
+                docElement.style.removeProperty("--USER__letterSpacing");
+            }
+        } else {
+            docElement.style.removeProperty("--USER__letterSpacing");
+        }
 
         if (isVerticalWritingMode || isCJK) {
             if (isVerticalWritingMode) {
@@ -856,7 +888,25 @@ export function appendCSS(documant: Document, mod: string, urlRoot: string) {
         const styleElement = documant.createElement("style");
         styleElement.setAttribute("id", idz + "-PATCH");
         styleElement.setAttribute("type", "text/css");
-        styleElement.appendChild(documant.createTextNode("audio[controls] { width: revert !important; height: revert !important; }"));
+        styleElement.appendChild(documant.createTextNode(`
+audio[controls] {
+    width: revert !important; height: revert !important;
+}
+
+/* exception for Japanese, ReadiumCSS normally recommends disabling CSS letter-spacing for CJK in general */
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) h1,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) h2,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) h3,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) h4,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) h5,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) h6,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) p,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) li,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) div {
+    letter-spacing: var(--USER__letterSpacing);
+    font-variant: none;
+}
+`));
         documant.head.insertBefore(styleElement, firstElementChild);
     } else {
         documant.head.appendChild(linkElement);
