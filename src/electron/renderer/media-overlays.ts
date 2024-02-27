@@ -188,7 +188,7 @@ async function playMediaOverlays(
         // }
     }
     if (moTextAudioPair) {
-        if (moTextAudioPair.Audio) {
+        if (moTextAudioPair.Audio || moTextAudioPair.Video) {
             if (IS_DEV) {
                 debug("playMediaOverlays() - playMediaOverlaysAudio()");
             }
@@ -204,6 +204,12 @@ async function playMediaOverlays(
 }
 
 const ontimeupdate = async (ev: Event) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (_currentAudioElement && (_currentAudioElement as any).__draggable && (_currentAudioElement as any).__hidden) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (_currentAudioElement as any).__hidden = false;
+        _currentAudioElement.style.display = "block";
+    }
     const currentAudioElement = ev.currentTarget as HTMLAudioElement;
     if (_currentAudioEnd && currentAudioElement.currentTime >= (_currentAudioEnd - 0.05)) {
 
@@ -233,6 +239,70 @@ const ensureOnTimeUpdate = (remove: boolean) => {
     }
 };
 
+function ensureVideoFrameDraggable() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!_currentAudioElement || (_currentAudioElement as any).__draggable) {
+        return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (_currentAudioElement as any).__draggable = true;
+
+    let moveDiv: HTMLDivElement | undefined;
+
+    let pos1 = 0;
+    let pos2 = 0;
+    let pos3 = 0;
+    let pos4 = 0;
+
+    _currentAudioElement.addEventListener("mousedown", elMouseDown, true);
+
+    function elMouseDown(e: MouseEvent) {
+        if (!_currentAudioElement) {
+            docMouseUp();
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+
+        if (moveDiv?.parentNode) {
+            moveDiv.parentNode.removeChild(moveDiv);
+            moveDiv = undefined;
+        }
+        moveDiv = document.createElement("div");
+        moveDiv.setAttribute("style", "display: block; position: absolute; padding: 0; margin: 0; left: 0; top: 0; right: 0; bottom: 0; z-index: 9998; cursor: move; opacity: 0.4; background-color: black;");
+        document.body.insertBefore(moveDiv, _currentAudioElement);
+
+        document.body.addEventListener("mouseup", docMouseUp, true);
+        document.body.addEventListener("mousemove", docMouseMove, true);
+    }
+
+    function docMouseMove(e: MouseEvent) {
+        if (!_currentAudioElement) {
+            docMouseUp();
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        _currentAudioElement.style.top = (_currentAudioElement.offsetTop - pos2) + "px";
+        _currentAudioElement.style.left = (_currentAudioElement.offsetLeft - pos1) + "px";
+    }
+
+    function docMouseUp() {
+        if (moveDiv?.parentNode) {
+            moveDiv.parentNode.removeChild(moveDiv);
+            moveDiv = undefined;
+        }
+        document.body.removeEventListener("mouseup", docMouseUp, true);
+        document.body.removeEventListener("mousemove", docMouseMove, true);
+    }
+}
+
 async function playMediaOverlaysAudio(
     moTextAudioPair: MediaOverlayNode,
     begin: number | undefined,
@@ -248,7 +318,7 @@ async function playMediaOverlaysAudio(
     _mediaOverlayTextAudioPair = moTextAudioPair;
     _mediaOverlayTextId = undefined;
 
-    if (!moTextAudioPair.Audio) {
+    if (!moTextAudioPair.Audio && !moTextAudioPair.Video) {
 
         if (IS_DEV) {
             debug("playMediaOverlaysAudio - !moTextAudioPair.Audio => mediaOverlaysNext()");
@@ -265,7 +335,7 @@ async function playMediaOverlaysAudio(
     // }
 
     // const url = publicationURL + "/../" + moTextAudioPair.Audio;
-    const urlObjFull = new URL(moTextAudioPair.Audio, publicationURL);
+    const urlObjFull = new URL(moTextAudioPair.Audio || moTextAudioPair.Video, publicationURL);
     const urlFull = urlObjFull.toString();
 
     const urlObjNoQuery = new URL(urlFull);
@@ -389,8 +459,13 @@ async function playMediaOverlaysAudio(
                 _currentAudioElement.parentNode.removeChild(_currentAudioElement);
             }
         }
-        _currentAudioElement = document.createElement("audio"); // no controls => should be invisible
-        _currentAudioElement.setAttribute("style", "display: none");
+        _currentAudioElement = document.createElement(moTextAudioPair.Video ? "video" : "audio"); // no controls => should be invisible
+        if (moTextAudioPair.Video) {
+            _currentAudioElement.setAttribute("style", "display: block; position: absolute; padding: 0; margin: 0; left: 10px; top: 10px; width: auto; height: auto; z-index: 9999; cursor: move; border: 2px solid black;");
+            ensureVideoFrameDraggable();
+        } else {
+            _currentAudioElement.setAttribute("style", "display: none");
+        }
         _currentAudioElement.setAttribute("id", AUDIO_MO_ID);
         // _currentAudioElement.setAttribute("loop", "loop");
         // _currentAudioElement.setAttribute("autoplay", "autoplay");
@@ -1343,6 +1418,22 @@ export function mediaOverlaysStop(stayActive?: boolean) {
     if (!_mediaOverlayActive) {
         _lastClickedNotification = undefined;
         mediaOverlaysStateSet(MediaOverlaysStateEnum_.STOPPED);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (_currentAudioElement && (_currentAudioElement as any).__draggable) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (_currentAudioElement as any).__hidden = true;
+            _currentAudioElement.style.display = "none";
+        }
+        // if (_currentAudioElement) {
+        //     ensureOnTimeUpdate(true);
+        //     // _currentAudioElement.pause();
+        //     _currentAudioElement.setAttribute("src", "");
+        //     if (_currentAudioElement.parentNode) {
+        //         _currentAudioElement.parentNode.removeChild(_currentAudioElement);
+        //     }
+        //     _currentAudioElement = undefined;
+        // }
     }
 }
 
