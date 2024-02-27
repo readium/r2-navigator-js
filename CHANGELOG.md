@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.14.19...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.15.0...develop
 
 Changes:
 * TODO
+
+# 1.15.0
+
+# > Build environment: NodeJS `20.11.0`, NPM `10.4.0`
+
+Changes:
+* WBR Word Break Opportunity for Japanese text, alternative to word-space-transform:ideographic-space CSS, using custom DOM element instead so word-space CSS property can be used as normal from ReadiumCSS
+* NPM package updates (Electron29 + Node20)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.15.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.15.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.15.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.14.19...v1.15.0
 
 # 1.14.19
 
