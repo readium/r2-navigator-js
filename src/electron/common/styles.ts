@@ -965,6 +965,18 @@ opacity: 0.5 !important;
 }
 */
 export const visibilityMaskCssStyles = `
+r2-wbr,
+wbr {
+display: none;
+}
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"] r2-wbr,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"] wbr {
+display: inherit;
+}
+r2-wbr::before,
+wbr::before {
+content: ' ';
+}
 
 :root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > svg.${CLASS_HIGHLIGHT_CONTOUR},
 :root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > svg.${CLASS_HIGHLIGHT_CONTOUR}

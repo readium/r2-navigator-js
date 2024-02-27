@@ -549,15 +549,19 @@ export function readiumCSSSet(
 
         docElement.style.removeProperty("--USER__bodyHyphens");
 
-        docElement.style.removeProperty("--USER__wordSpacing");
-
         if (isDocJapanese(documant)) {
+            if (setCSS.wordSpacing && setCSS.wordSpacing.trim() !== "0") {
+                docElement.style.setProperty("--USER__wordSpacing", setCSS.wordSpacing);
+            } else {
+                docElement.style.removeProperty("--USER__wordSpacing");
+            }
             if (setCSS.letterSpacing && setCSS.letterSpacing.trim() !== "0") {
                 docElement.style.setProperty("--USER__letterSpacing", setCSS.letterSpacing);
             } else {
                 docElement.style.removeProperty("--USER__letterSpacing");
             }
         } else {
+            docElement.style.removeProperty("--USER__wordSpacing");
             docElement.style.removeProperty("--USER__letterSpacing");
         }
 
@@ -893,7 +897,8 @@ audio[controls] {
     width: revert !important; height: revert !important;
 }
 
-/* exception for Japanese, ReadiumCSS normally recommends disabling CSS letter-spacing for CJK in general */
+/* exception for Japanese, ReadiumCSS normally recommends disabling CSS letter/word-spacing for CJK in general */
+
 :root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) h1,
 :root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) h2,
 :root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) h3,
@@ -905,6 +910,18 @@ audio[controls] {
 :root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) div {
     letter-spacing: var(--USER__letterSpacing);
     font-variant: none;
+}
+
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) h1,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) h2,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) h3,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) h4,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) h5,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) h6,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) p,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) li,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) div {
+    word-spacing: var(--USER__wordSpacing);
 }
 `));
         documant.head.insertBefore(styleElement, firstElementChild);
