@@ -310,9 +310,6 @@ function ensureVideoFrameDraggable() {
             e.preventDefault();
             e.stopPropagation();
 
-            console.log(_mouseDownX, e.clientX);
-            console.log(_mouseDownY, e.clientY);
-
             if (!_currentAudioElement || !document.pictureInPictureEnabled) {
                 return;
             }
@@ -756,13 +753,17 @@ async function playMediaOverlaysAudio(
 
         const onpause = async (_ev: Event) => {
             debug("onpause");
-            // mediaOverlaysStateSet(MediaOverlaysStateEnum_.PAUSED);
+            if (_mediaOverlaysState !== MediaOverlaysStateEnum_.PAUSED && _mediaOverlaysState !== MediaOverlaysStateEnum_.STOPPED) {
+                mediaOverlaysStateSet(MediaOverlaysStateEnum_.PAUSED);
+            }
         };
         _currentAudioElement.addEventListener("pause", onpause);
 
         const onplay = async (_ev: Event) => {
             debug("onplay");
-            // mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
+            if (_mediaOverlaysState !== MediaOverlaysStateEnum_.PLAYING) {
+                mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
+            }
         };
         _currentAudioElement.addEventListener("play", onplay);
 
