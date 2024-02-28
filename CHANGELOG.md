@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.15.2...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.15.3...develop
 
 Changes:
 * TODO
+
+# 1.15.3
+
+# > Build environment: NodeJS `20.11.0`, NPM `10.4.0`
+
+Changes:
+* TTS readaloud fix: Japanese Ruby superscript RT/RP must not be highlighted (orange underline forbidden, yellow background ok). This logic generally applies to annotation highlights too (when not solid background or outline, i.e. underline and strikethrough), but as this is currently an early prototype preview in Thorium we label this change as mostly a TTS fix.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.15.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.15.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.15.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.15.2...v1.15.3
 
 # 1.15.2
 
