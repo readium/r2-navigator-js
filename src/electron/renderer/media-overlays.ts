@@ -253,8 +253,83 @@ function ensureVideoFrameDraggable() {
     let pos2 = 0;
     let pos3 = 0;
     let pos4 = 0;
+    let mouseDownX = 0;
+    let mouseDownY = 0;
 
-    _currentAudioElement.addEventListener("mousedown", elMouseDown, true);
+    if (document.pictureInPictureEnabled) {
+        _currentAudioElement.addEventListener("enterpictureinpicture", async () => {
+            if (!_currentAudioElement) {
+                return;
+            }
+            _currentAudioElement.style.opacity = "0.2";
+            _currentAudioElement.style.width = "1px";
+            _currentAudioElement.style.height = "1px";
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (_currentAudioElement as any).__previousStyleTop = _currentAudioElement.style.top;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (_currentAudioElement as any).__previousStyleLeft = _currentAudioElement.style.left;
+            _currentAudioElement.style.top = "0px";
+            _currentAudioElement.style.left = "0px";
+        });
+
+        _currentAudioElement.addEventListener("leavepictureinpicture", async () => {
+            if (!_currentAudioElement) {
+                return;
+            }
+            _currentAudioElement.style.opacity = "1";
+            _currentAudioElement.style.width = "auto";
+            _currentAudioElement.style.height = "auto";
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if ((_currentAudioElement as any).__previousStyleTop) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                _currentAudioElement.style.top = (_currentAudioElement as any).__previousStyleTop;
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if ((_currentAudioElement as any).__previousStyleLeft) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                _currentAudioElement.style.left = (_currentAudioElement as any).__previousStyleLeft;
+            }
+        });
+
+        // _currentAudioElement.addEventListener("click", async () => {
+        // }, true);
+    }
+
+    _currentAudioElement.addEventListener("mousedown", elMouseDown);
+    _currentAudioElement.addEventListener("mouseup", elMouseUp);
+
+    async function elMouseUp(e: MouseEvent) {
+            const _mouseDownX = mouseDownX;
+            const _mouseDownY = mouseDownY;
+            mouseDownX = 0;
+            mouseDownY = 0;
+            if (!_currentAudioElement) {
+                docMouseUp();
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+
+            console.log(_mouseDownX, e.clientX);
+            console.log(_mouseDownY, e.clientY);
+
+            if (!_currentAudioElement || !document.pictureInPictureEnabled) {
+                return;
+            }
+
+            // CLICK
+            if (Math.abs(_mouseDownX - e.clientX) <= 4 && Math.abs(_mouseDownY - e.clientY) <= 4) {
+                try {
+                    if (_currentAudioElement !== document.pictureInPictureElement) {
+                        await (_currentAudioElement as HTMLVideoElement).requestPictureInPicture();
+                    } else {
+                        await document.exitPictureInPicture();
+                    }
+                } catch (err) {
+                    console.log("VIDEO PiP Error:", err);
+                }
+            }
+    };
 
     function elMouseDown(e: MouseEvent) {
         if (!_currentAudioElement) {
@@ -263,6 +338,10 @@ function ensureVideoFrameDraggable() {
         }
         e.preventDefault();
         e.stopPropagation();
+
+        mouseDownX = e.clientX;
+        mouseDownY = e.clientY;
+
         pos3 = e.clientX;
         pos4 = e.clientY;
 
@@ -293,7 +372,11 @@ function ensureVideoFrameDraggable() {
         _currentAudioElement.style.left = (_currentAudioElement.offsetLeft - pos1) + "px";
     }
 
-    function docMouseUp() {
+    function docMouseUp(e: MouseEvent | undefined = undefined) {
+        if (e) {
+            e.preventDefault();
+            // e.stopPropagation();
+        }
         if (moveDiv?.parentNode) {
             moveDiv.parentNode.removeChild(moveDiv);
             moveDiv = undefined;
@@ -462,6 +545,10 @@ async function playMediaOverlaysAudio(
         _currentAudioElement = document.createElement(moTextAudioPair.Video ? "video" : "audio"); // no controls => should be invisible
         if (moTextAudioPair.Video) {
             _currentAudioElement.setAttribute("style", "display: block; position: absolute; padding: 0; margin: 0; left: 10px; top: 10px; width: auto; height: auto; z-index: 9999; cursor: move; border: 2px solid black;");
+            // _currentAudioElement.setAttribute("controls", "true");
+            _currentAudioElement.setAttribute("disableremoteplayback", "true");
+            _currentAudioElement.setAttribute("controlsList", "nofullscreen nodownload noremoteplayback noplaybackrate");
+            // _currentAudioElement.setAttribute("disablePictureInPicture", "false");
             ensureVideoFrameDraggable();
         } else {
             _currentAudioElement.setAttribute("style", "display: none");
@@ -1421,9 +1508,22 @@ export function mediaOverlaysStop(stayActive?: boolean) {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (_currentAudioElement && (_currentAudioElement as any).__draggable) {
+
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (_currentAudioElement as any).__hidden = true;
             _currentAudioElement.style.display = "none";
+
+            if (document.pictureInPictureEnabled) {
+                if (_currentAudioElement === document.pictureInPictureElement) {
+                    setTimeout(async () =>{
+                        try {
+                            await document.exitPictureInPicture();
+                        } catch (err) {
+                            console.log("VIDEO PiP Error:", err);
+                        }
+                    }, 100);
+                }
+            }
         }
         // if (_currentAudioElement) {
         //     ensureOnTimeUpdate(true);
