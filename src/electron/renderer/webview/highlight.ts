@@ -1187,6 +1187,7 @@ export function createHighlight(
     return [highlight, div];
 }
 
+const JAPANESE_RUBY_TO_SKIP = ["rt", "rp"];
 function createHighlightDom(
     win: ReadiumElectronWebviewWindow,
     highlight: IHighlight,
@@ -1277,7 +1278,10 @@ function createHighlightDom(
     if (doNotMergeHorizontallyAlignedRects) {
         // non-solid highlight (underline or strikethrough), cannot merge and reduce/simplify client rectangles much due to importance of line-level decoration (must preserve horizontal/vertical line heights)
 
-        const textClientRects = getTextClientRects(range);
+        // Japanese Ruby ... ugly hack, TODO extract logic elsewhere!? TODO only TTS? (annotations and search could be problematic if only Ruby RT/RP match? ... but search already excludes Ruby, and mouse text selection makes it hard/impossible to select Ruby upperscript, so...)
+        // highlight.group === "tts" ? JAPANESE_RUBY_TO_SKIP : undefined
+        const textClientRects = getTextClientRects(range, JAPANESE_RUBY_TO_SKIP);
+
         const textReducedClientRects = getClientRectsNoOverlap(textClientRects, true, vertical, highlight.expand ? highlight.expand : 0);
 
         clientRects = (DEBUG_RECTS && drawStrikeThrough) ? textClientRects : textReducedClientRects;

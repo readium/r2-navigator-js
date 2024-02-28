@@ -58,7 +58,7 @@ export function DOMRectListToArray(domRects: DOMRectList): IRect[] {
     return rects;
 }
 
-export function getTextClientRects(range: Range): IRect[] {
+export function getTextClientRects(range: Range, elementNamesToSkip?: string[]): IRect[] {
     // return range.getClientRects();
 
     const doc = range.commonAncestorContainer.ownerDocument;
@@ -71,9 +71,16 @@ export function getTextClientRects(range: Range): IRect[] {
         NodeFilter.SHOW_TEXT,
         {
             acceptNode: (node: Node) => { // Text -- node.nodeType === Node.TEXT_NODE
-                return node.nodeType === Node.TEXT_NODE && range.intersectsNode(node)
-                    ? NodeFilter.FILTER_ACCEPT
-                    : NodeFilter.FILTER_REJECT;
+                if (node.nodeType === Node.TEXT_NODE && range.intersectsNode(node)) {
+                    if (!elementNamesToSkip) {
+                        return NodeFilter.FILTER_ACCEPT;
+                    }
+                    const parentName = node.parentElement?.nodeName.toLowerCase();
+                    if (!parentName || !elementNamesToSkip.includes(parentName)) {
+                        return NodeFilter.FILTER_ACCEPT;
+                    }
+                }
+                return NodeFilter.FILTER_REJECT;
             },
         },
     );
