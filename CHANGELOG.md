@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.15.1...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.15.2...develop
 
 Changes:
 * TODO
+
+# 1.15.2
+
+# > Build environment: NodeJS `20.11.0`, NPM `10.4.0`
+
+Changes:
+* Improved the prototype EPUB3 Media Overlays sign language video player by allowing the user to detach the video frame overlay into its own system window (simply by clicking on it), which can then be moved and resized outside of Thorium's own window bounds.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.15.2/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.15.2/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.15.2
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.15.1...v1.15.2
 
 # 1.15.1
 
