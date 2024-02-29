@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.15.3...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.15.4...develop
 
 Changes:
 * TODO
+
+# 1.15.4
+
+# > Build environment: NodeJS `20.11.0`, NPM `10.4.0`
+
+Changes:
+* New option to disable / hide Japanese Ruby superscript text
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.15.4/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.15.4/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.15.4
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.15.3...v1.15.4
 
 # 1.15.3
 
