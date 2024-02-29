@@ -15,7 +15,7 @@ import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from ".
 import {
     CLASS_VWM,
     CLASS_PAGINATED, ROOT_CLASS_FIXED_LAYOUT, ROOT_CLASS_INVISIBLE_MASK,
-    ROOT_CLASS_INVISIBLE_MASK_REMOVED, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
+    ROOT_CLASS_INVISIBLE_MASK_REMOVED, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_NO_RUBY,
     ROOT_CLASS_REDUCE_MOTION, WebViewSlotEnum, audioCssStyles, focusCssStyles, footnotesCssStyles,
     mediaOverlaysCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles,
     targetCssStyles, ttsCssStyles, visibilityMaskCssStyles,
@@ -248,6 +248,7 @@ export function readiumCSSSet(
     if (!setCSS) {
 
         docElement.classList.remove(ROOT_CLASS_NO_FOOTNOTES);
+        docElement.classList.remove(ROOT_CLASS_NO_RUBY);
 
         docElement.removeAttribute("data-readiumcss");
         removeAllCSS(documant);
@@ -388,6 +389,12 @@ export function readiumCSSSet(
         debug("---- setCSS -----");
         debug(setCSS);
         debug("-----");
+    }
+
+    if (setCSS.noRuby) {
+        docElement.classList.add(ROOT_CLASS_NO_RUBY);
+    } else {
+        docElement.classList.remove(ROOT_CLASS_NO_RUBY);
     }
 
     if (setCSS.noFootnotes) {

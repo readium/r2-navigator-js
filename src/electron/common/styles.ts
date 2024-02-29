@@ -27,6 +27,7 @@ export const ROOT_CLASS_MATHJAX = "r2-mathjax";
 
 export const ROOT_CLASS_FIXED_LAYOUT = "r2-fixed-layout";
 export const ROOT_CLASS_NO_FOOTNOTES = "r2-no-popup-foonotes";
+export const ROOT_CLASS_NO_RUBY = "r2-no-ruby";
 export const FOOTNOTES_CONTAINER_CLASS = "r2-footnote-container";
 export const FOOTNOTES_CLOSE_BUTTON_CLASS = "r2-footnote-close";
 export const FOOTNOTE_FORCE_SHOW = "r2-footnote-force-show";
@@ -965,6 +966,15 @@ opacity: 0.5 !important;
 }
 */
 export const visibilityMaskCssStyles = `
+
+:root[style].${ROOT_CLASS_NO_RUBY} > body rt,
+:root.${ROOT_CLASS_NO_RUBY} > body rt,
+:root[style].${ROOT_CLASS_NO_RUBY} > body rp,
+:root.${ROOT_CLASS_NO_RUBY} > body rp
+{
+display: none;
+}
+
 r2-wbr,
 wbr {
 display: none;
