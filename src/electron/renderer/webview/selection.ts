@@ -704,6 +704,7 @@ function getChildTextNodeCfiIndex(element: Element, child: Text): number {
 // }
 
 //  https://github.com/webmodules/range-normalize/pull/2
+// https://github.com/apache/incubator-annotator/blob/main/packages/dom/src/normalize-range.ts
 //  "Normalizes" the DOM Range instance, such that slight variations in the start
 //  and end containers end up being normalized to the same "base" representation.
 //  The aim is to always have `startContainer` and `endContainer` pointing to
