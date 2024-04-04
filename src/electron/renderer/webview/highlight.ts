@@ -65,7 +65,7 @@ const cleanupPolygon = (polygonAccumulator: Polygon, off: number) => {
     }
     for (const e of polygonAccumulator.edges) {
         const edge = e as Edge;
-        if (edge.isSegment()) {
+        if (edge.isSegment) {
             nSegments++;
             const segment = edge.shape as Segment;
             const l = segment.length;
@@ -79,7 +79,7 @@ const cleanupPolygon = (polygonAccumulator: Polygon, off: number) => {
                     console.log("--POLYGON SEGMENT ok LENGTH: " + l + "(" + off + ")");
                 }
             }
-        } else if (edge.isArc()) {
+        } else if (edge.isArc) {
             nArcs++;
             if (DEBUG_RECTS) {
                 console.log("--POLYGON ARC");
@@ -102,7 +102,7 @@ const cleanupPolygon = (polygonAccumulator: Polygon, off: number) => {
         const face = f as Face;
         for (const e of face.edges) {
             const edge = e as Edge;
-            if (edge.isSegment()) {
+            if (edge.isSegment) {
                 nSegments++;
                 const segment = edge.shape as Segment;
                 const l = segment.length;
@@ -116,7 +116,7 @@ const cleanupPolygon = (polygonAccumulator: Polygon, off: number) => {
                         console.log("--POLYGON SEGMENT ok LENGTH: " + l + "(" + off + ")");
                     }
                 }
-            } else if (edge.isArc()) {
+            } else if (edge.isArc) {
                 nArcs++;
                 if (DEBUG_RECTS) {
                     console.log("--POLYGON ARC");
@@ -140,7 +140,7 @@ const cleanupPolygon = (polygonAccumulator: Polygon, off: number) => {
         const face = f as Face;
         let edge = face.first;
         while (edge) {
-            if (edge.isSegment()) {
+            if (edge.isSegment) {
                 nSegments++;
                 const segment = edge.shape as Segment;
                 const l = segment.length;
@@ -154,7 +154,7 @@ const cleanupPolygon = (polygonAccumulator: Polygon, off: number) => {
                         console.log("--POLYGON SEGMENT ok LENGTH: " + l + "(" + off + ")");
                     }
                 }
-            } else if (edge.isArc()) {
+            } else if (edge.isArc) {
                 nArcs++;
                 if (DEBUG_RECTS) {
                     console.log("--POLYGON ARC");
@@ -381,7 +381,7 @@ const addEdgePoints = (polygon: Polygon, offset: number) => {
     for (const f of polygon.faces) {
         const face = f as Face;
         for (const edge of face.edges) {
-            if (edge.isSegment()) {
+            if (edge.isSegment) {
                 const segment = edge.shape as Segment;
                 const bStart = new Box(segment.start.x - offset, segment.start.y - offset, segment.start.x + offset * 2, segment.start.y + offset * 2);
                 boxes.push(bStart);
@@ -440,7 +440,7 @@ function offset_(polygon: Polygon, off: number, useSegmentJoinsNotArcs: boolean)
     for (const f of polygon.faces) {
         const face = f as Face;
         for (const edge of face.edges) {
-            if (edge.isSegment()) {
+            if (edge.isSegment) {
                 const polygonEdge = new Polygon();
 
                 const segment = edge.shape as Segment;
@@ -1588,7 +1588,7 @@ function createHighlightDom(
                     if (DEBUG_RECTS) {
                         console.log("--POLY EDGE");
                     }
-                    if (edge.isSegment()) {
+                    if (edge.isSegment) {
                         if (DEBUG_RECTS) {
                             console.log("--POLY SEGMENT...");
                         }
@@ -1599,7 +1599,7 @@ function createHighlightDom(
                             console.log("--POLY SEGMENT START x, y: " + pointStart.x + ", " + pointStart.y);
                             console.log("--POLY SEGMENT END x, y: " + pointEnd.x + ", " + pointEnd.y);
                         }
-                    } else if (edge.isArc()) {
+                    } else if (edge.isArc) {
                         if (DEBUG_RECTS) {
                             console.log("--POLY ARC...");
                         }
@@ -1636,7 +1636,7 @@ function createHighlightDom(
                     if (DEBUG_RECTS) {
                         console.log("--POLY EDGE");
                     }
-                    if (edge.isSegment()) {
+                    if (edge.isSegment) {
                         if (DEBUG_RECTS) {
                             console.log("--POLY SEGMENT...");
                         }
@@ -1647,7 +1647,7 @@ function createHighlightDom(
                             console.log("--POLY SEGMENT START x, y: " + pointStart.x + ", " + pointStart.y);
                             console.log("--POLY SEGMENT END x, y: " + pointEnd.x + ", " + pointEnd.y);
                         }
-                    } else if (edge.isArc()) {
+                    } else if (edge.isArc) {
                         if (DEBUG_RECTS) {
                             console.log("--POLY ARC...");
                         }

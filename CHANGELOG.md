@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.15.4...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.15.5...develop
 
 Changes:
 * TODO
+
+# 1.15.5
+
+# > Build environment: NodeJS `20.12.0`, NPM `10.5.0`
+
+Changes:
+* NPM package updates, breaking change in the polygon lib (API getters)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.15.5/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.15.5/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.15.5
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.15.4...v1.15.5
 
 # 1.15.4
 
