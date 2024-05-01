@@ -27,6 +27,10 @@ export interface IReadiumCSS {
 
     backgroundColor: string | undefined;
     textColor: string | undefined;
+    selectionBackgroundColor: string | undefined;
+    selectionTextColor: string | undefined;
+    linkColor: string | undefined;
+    linkVisitedColor: string | undefined;
 
     ligatures: ligaturesEnum | undefined;
 
@@ -95,8 +99,6 @@ export enum fontEnum {
 export const readiumCSSDefaults = {
     a11yNormalize: false,
 
-    backgroundColor: undefined,
-
     bodyHyphens: bodyHyphensEnum.auto,
 
     colCount: colCountEnum.auto,
@@ -149,6 +151,13 @@ export const readiumCSSDefaults = {
     textAlign: textAlignEnum.start,
 
     textColor: undefined,
+    backgroundColor: undefined,
+
+    selectionBackgroundColor: undefined,
+    selectionTextColor: undefined,
+
+    linkColor: undefined,
+    linkVisitedColor: undefined,
 
     // 1 | 1.067 | 1.125 | 1.2 | 1.25 | 1.333 | 1.414 | 1.5 | 1.618
     typeScale: undefined, // or 1.2

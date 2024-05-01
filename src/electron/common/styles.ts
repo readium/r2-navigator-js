@@ -1427,7 +1427,7 @@ export const selectionCssStyles = `
     will-change: scroll-position;
     transform: translateX(0px);
 }
-
+/*
 :root[style] ::selection,
 :root ::selection {
 background: rgb(155, 179, 240) !important;
@@ -1438,6 +1438,7 @@ color: black !important;
 background: rgb(100, 122, 177) !important;
 color: white !important;
 }
+*/
 `;
 
 export const scrollBarCssStyles = `

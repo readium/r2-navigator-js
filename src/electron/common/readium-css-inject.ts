@@ -638,14 +638,38 @@ export function readiumCSSSet(
     }
 
     if (setCSS.backgroundColor) {
-        docElement.style.setProperty("--USER__backgroundColor", setCSS.backgroundColor);
+        docElement.style.setProperty(setCSS.sepia || setCSS.night ? "--RS__backgroundColor" : "--USER__backgroundColor", setCSS.backgroundColor);
     } else {
         docElement.style.removeProperty("--USER__backgroundColor");
+        docElement.style.removeProperty("--RS__backgroundColor");
     }
     if (setCSS.textColor) {
-        docElement.style.setProperty("--USER__textColor", setCSS.textColor);
+        docElement.style.setProperty(setCSS.sepia || setCSS.night ? "--RS__textColor" : "--USER__textColor", setCSS.textColor);
     } else {
         docElement.style.removeProperty("--USER__textColor");
+        docElement.style.removeProperty("--RS__textColor");
+    }
+
+    if (setCSS.selectionBackgroundColor) {
+        docElement.style.setProperty("--RS__selectionBackgroundColor", setCSS.selectionBackgroundColor);
+    } else {
+        docElement.style.removeProperty("--RS__selectionBackgroundColor");
+    }
+    if (setCSS.selectionTextColor) {
+        docElement.style.setProperty("--RS__selectionTextColor", setCSS.selectionTextColor);
+    } else {
+        docElement.style.removeProperty("--RS__selectionTextColor");
+    }
+
+    if (setCSS.linkColor) {
+        docElement.style.setProperty("--RS__linkColor", setCSS.linkColor);
+    } else {
+        docElement.style.removeProperty("--RS__linkColor");
+    }
+    if (setCSS.linkVisitedColor) {
+        docElement.style.setProperty("--RS__visitedColor", setCSS.linkVisitedColor);
+    } else {
+        docElement.style.removeProperty("--RS__visitedColor");
     }
 }
 
