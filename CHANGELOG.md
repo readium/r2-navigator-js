@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.15.5...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.15.6...develop
 
 Changes:
 * TODO
+
+# 1.15.6
+
+# > Build environment: NodeJS `20.12.2`, NPM `10.7.0`
+
+Changes:
+* NPM package updates, Electron 30
+* Added ReadiumCSS custom selection and link colors (theme handling)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.15.6/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.15.6/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.15.6
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.15.5...v1.15.6
 
 # 1.15.5
 
