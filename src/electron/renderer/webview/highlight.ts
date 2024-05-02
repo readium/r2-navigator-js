@@ -24,7 +24,7 @@ import { getScrollingElement, isVerticalWritingMode, isTwoPageSpread } from "./r
 import { convertRangeInfo } from "./selection";
 import { ReadiumElectronWebviewWindow } from "./state";
 
-import { CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CURSOR2, CLASS_HIGHLIGHT_COMMON, CLASS_HIGHLIGHT_MARGIN, CLASS_HIGHLIGHT_HOVER } from "../../common/styles";
+import { CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CURSOR2, CLASS_HIGHLIGHT_COMMON, CLASS_HIGHLIGHT_MARGIN, CLASS_HIGHLIGHT_HOVER, CLASS_HIGHLIGHT_BEHIND } from "../../common/styles";
 
 import { isRTL } from "./readium-css";
 
@@ -1205,7 +1205,7 @@ function createHighlightDom(
         return null;
     }
 
-    const drawBackground = highlight.drawType === HighlightDrawTypeBackground;
+    const drawBackground = !highlight.drawType || highlight.drawType === HighlightDrawTypeBackground;
     const drawUnderline = highlight.drawType === HighlightDrawTypeUnderline;
     const drawStrikeThrough = highlight.drawType === HighlightDrawTypeStrikethrough;
     const drawOutline = highlight.drawType === HighlightDrawTypeOutline;
@@ -1224,7 +1224,7 @@ function createHighlightDom(
     const highlightParent = documant.createElement("div") as IHTMLDivElementWithRect;
     highlightParent.setAttribute("id", highlight.id);
     highlightParent.setAttribute("class", `${CLASS_HIGHLIGHT_CONTAINER} ${CLASS_HIGHLIGHT_COMMON}`);
-    highlightParent.setAttribute("data-type", `${highlight.drawType}`);
+    highlightParent.setAttribute("data-type", `${highlight.drawType || HighlightDrawTypeBackground}`);
     if (highlight.group) {
         highlightParent.setAttribute("data-group", highlight.group);
     }
@@ -1233,14 +1233,25 @@ function createHighlightDom(
         highlightParent.classList.add(CLASS_HIGHLIGHT_MARGIN);
     }
 
-    const styleAttr = win.document.documentElement.getAttribute("style");
-    const isNight = styleAttr ? styleAttr.indexOf("readium-night-on") > 0 : false;
+    // const styleAttr = win.document.documentElement.getAttribute("style");
+    // const isNight = styleAttr ? styleAttr.indexOf("readium-night-on") > 0 : false;
     // const isSepia = styleAttr ? styleAttr.indexOf("readium-sepia-on") > 0 : false;
 
-    highlightParent.style.setProperty(
-        "mix-blend-mode",
-        isNight ? "hard-light" : "multiply",
-        "important");
+    // export const HighlightDrawTypeBackground = 0;
+    // export const HighlightDrawTypeUnderline = 1;
+    // export const HighlightDrawTypeStrikethrough = 2;
+    // export const HighlightDrawTypeOutline = 3;
+    if (!highlight.drawType || highlight.drawType === HighlightDrawTypeBackground) {
+        // highlightParent.style.setProperty(
+        //     "mix-blend-mode",
+        //     // isNight ? "hard-light" :
+        //     "multiply",
+        //     "important");
+        // highlightParent.style.setProperty(
+        //     "z-index",
+        //     "-1");
+        highlightParent.classList.add(CLASS_HIGHLIGHT_BEHIND);
+    }
 
     // const docStyle = (documant.defaultView as Window).getComputedStyle(documant.documentElement);
     // const bodyStyle = (documant.defaultView as Window).getComputedStyle(documant.body);
