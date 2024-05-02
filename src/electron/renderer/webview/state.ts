@@ -92,6 +92,8 @@ export interface IReadiumElectronBrowserWindow {
     ttsPlaybackRate: number;
     ttsVoice: SpeechSynthesisVoice | null;
 
+    stealFocusDisabled: boolean;
+
     // see fxlZoomPercent
     fixedLayoutZoomPercent: number;
 

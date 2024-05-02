@@ -248,6 +248,10 @@ function readiumCssApplyToWebview(
     }
 }
 
+export function stealFocusDisable(doDisable: boolean) {
+    win.READIUM2.stealFocusDisabled = doDisable;
+}
+
 const _fixedLayoutZoomPercentTimers: {
     [id: string]: number | undefined;
 } = {};
@@ -377,17 +381,21 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
         if (event.channel === R2_EVENT_MEDIA_OVERLAY_INTERRUPT) {
             mediaOverlaysInterrupt();
         } else if (event.channel === R2_EVENT_KEYBOARD_FOCUS_REQUEST) {
-            debug("KEYBOARD FOCUS REQUEST (2) ", webview.id, win.document.activeElement?.id);
+            const skip = win.READIUM2?.stealFocusDisabled;
 
-            if (win.document.activeElement && (win.document.activeElement as HTMLElement).blur) {
-                (win.document.activeElement as HTMLElement).blur();
-            }
+            debug("KEYBOARD FOCUS REQUEST (2) ", webview.id, win.document.activeElement?.id, skip);
 
-            const iframe = webview.shadowRoot?.querySelector("iframe");
-            if (iframe) {
-                iframe.focus();
-            } else {
-                webview.focus();
+            if (!skip) {
+                if (win.document.activeElement && (win.document.activeElement as HTMLElement).blur) {
+                    (win.document.activeElement as HTMLElement).blur();
+                }
+
+                const iframe = webview.shadowRoot?.querySelector("iframe");
+                if (iframe) {
+                    iframe.focus();
+                } else {
+                    webview.focus();
+                }
             }
 
             // win.blur();
@@ -660,6 +668,7 @@ export function installNavigatorDOM(
         ttsSentenceDetectionEnabled: true,
         ttsVoice: null,
         highlightsDrawMargin: false,
+        stealFocusDisabled: false,
     };
     ipcRenderer.send("accessibility-support-changed");
 
