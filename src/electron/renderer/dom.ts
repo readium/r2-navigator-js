@@ -256,12 +256,14 @@ const _fixedLayoutZoomPercentTimers: {
     [id: string]: number | undefined;
 } = {};
 export function fixedLayoutZoomPercent(zoomPercent: number) {
+    // READIUM2 object created in installNavigatorDOM, no need to check here
+    // if (!win.READIUM2) {
+    //     return;
+    // }
 
     win.READIUM2.domSlidingViewport.style.overflow = zoomPercent === 0 ? "hidden" : "auto";
 
-    if (win.READIUM2) {
-        win.READIUM2.fixedLayoutZoomPercent = zoomPercent;
-    }
+    win.READIUM2.fixedLayoutZoomPercent = zoomPercent;
 
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
