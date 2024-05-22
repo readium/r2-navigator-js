@@ -1208,6 +1208,11 @@ We cannot completely disable "scroll" event (prevent default) because we need to
     max-height: none !important;
 }
 
+:root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}),
+:root:not(.${ROOT_CLASS_FIXED_LAYOUT}) {
+    --RS__pageGutter: 50px !important;
+}
+
 @media screen and (min-width: 35em) {
     :root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}),
     :root:not(.${ROOT_CLASS_FIXED_LAYOUT}) {
@@ -1226,15 +1231,15 @@ We cannot completely disable "scroll" event (prevent default) because we need to
 :root:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body {
     padding-top: 20px !important;
     padding-bottom: 20px !important;
-    padding-left: 22px !important;
-    padding-right: 22px !important;
+    padding-left: 50px !important;
+    padding-right: 50px !important;
 }
 :root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body,
 :root:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body {
     padding-top: 22px !important;
     padding-bottom: 22px !important;
-    padding-left: 20px !important;
-    padding-right: 20px !important;
+    padding-left: 50px !important;
+    padding-right: 50px !important;
 }
 :root[style*="--USER__pageMargins"]:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body {
     padding-left: calc(var(--RS__pageGutter) * var(--USER__pageMargins)) !important;
