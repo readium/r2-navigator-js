@@ -172,6 +172,9 @@ export async function popupFootNote(
     // htmltxt = htmltxt.replace(/id=["'][^"']+["']/, `id="${id_}"`);
     htmltxt = htmltxt.replace(/id=["']([^"']+)["']/g, "idvoid=\"$1\""); // remove duplicate IDs
 
+    // CSS display:none
+    // htmltxt = htmltxt.replace(/<a ... (role=["'][^"']*doc-backlink[^"']*["'] .... <\/a>)/g, "<!-- removed backlink -->"); // remove backlinks
+
     // tslint:disable-next-line:max-line-length
     htmltxt = `<div id="${id_}" class="${FOOTNOTES_CONTAINER_CLASS} ${CSS_CLASS_NO_FOCUS_OUTLINE}" tabindex="0" autofocus="autofocus">${htmltxt}</div>`;
 
