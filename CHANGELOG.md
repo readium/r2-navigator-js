@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.15.7...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.15.8...develop
 
 Changes:
 * TODO
+
+# 1.15.8
+
+# > Build environment: NodeJS `20.12.2`, NPM `10.7.0`
+
+Changes:
+* Footnotes backlinks are now hidden
+* Fixed incorrect default content margins
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.15.8/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.15.8/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.15.8
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.15.7...v1.15.8
 
 # 1.15.7
 
