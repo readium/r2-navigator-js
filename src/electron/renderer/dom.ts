@@ -249,7 +249,9 @@ function readiumCssApplyToWebview(
 }
 
 export function stealFocusDisable(doDisable: boolean) {
-    win.READIUM2.stealFocusDisabled = doDisable;
+    if (win.READIUM2) {
+        win.READIUM2.stealFocusDisabled = doDisable;
+    }
 }
 
 const _fixedLayoutZoomPercentTimers: {
