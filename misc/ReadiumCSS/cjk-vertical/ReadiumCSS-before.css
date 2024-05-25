@@ -175,10 +175,10 @@ math {
   --RS__lineHeightCompensation: 1.167;
 
   /* Extra variables for Japanese font-stacks as we may want to reuse them for user settings + default */
-  --RS__serif-ja: "ＭＳ Ｐ明朝", "MS PMincho", "Hiragino Mincho Pro", "ヒラギノ明朝 Pro W3", "游明朝", "YuMincho", "ＭＳ 明朝", "MS Mincho", "Hiragino Mincho ProN", serif;
-  --RS__sans-serif-ja: "ＭＳ Ｐゴシック", "MS PGothic", "Hiragino Kaku Gothic Pro W3", "ヒラギノ角ゴ Pro W3", "Hiragino Sans GB", "ヒラギノ角ゴシック W3", "游ゴシック", "YuGothic", "ＭＳ ゴシック", "MS Gothic", "Hiragino Sans", sans-serif;
-  --RS__serif-ja-v: "ＭＳ 明朝", "MS Mincho", "Hiragino Mincho Pro", "ヒラギノ明朝 Pro W3", "游明朝", "YuMincho", "ＭＳ Ｐ明朝", "MS PMincho", "Hiragino Mincho ProN", serif;
-  --RS__sans-serif-ja-v: "ＭＳ ゴシック", "MS Gothic", "Hiragino Kaku Gothic Pro W3", "ヒラギノ角ゴ Pro W3", "Hiragino Sans GB", "ヒラギノ角ゴシック W3", "游ゴシック", "YuGothic", "ＭＳ Ｐゴシック", "MS PGothic", "Hiragino Sans", sans-serif;
+  --RS__serif-ja: "Hiragino Mincho ProN", "BIZ UDPMincho", "Yu Mincho", "MS PMincho", serif;
+  --RS__sans-serif-ja: "Hiragino Kaku Gothic ProN", "Hiragino Sans W3", "Hiragino Sans", "BIZ UDPGothic", "Yu Gothic", "MS PGothic", sans-serif;
+  --RS__serif-ja-v: "Hiragino Mincho ProN", "BIZ UDMincho", "Yu Mincho", "MS Mincho", serif;
+  --RS__sans-serif-ja-v: "Hiragino Kaku Gothic ProN", "Hiragino Sans W3", "Hiragino Sans", "BIZ UDGothic", "Yu Gothic", "MS Gothic", sans-serif;  
 }
 
 :lang(km) {

@@ -29,9 +29,11 @@
        local("ヒラギノ明朝 Pro W3"),
        local("游明朝"),
        local("YuMincho"),
+       local("Yu Mincho")
        local("ＭＳ 明朝"),
        local("MS Mincho"),
-       local("Hiragino Mincho ProN");
+       local("Hiragino Mincho ProN"),
+       local("BIZ UDPMincho");
 }
 
 @font-face {
@@ -44,9 +46,11 @@
        local("ヒラギノ角ゴシック W3"),
        local("游ゴシック"),
        local("YuGothic"),
+       local("Yu Gothic"),
        local("ＭＳ ゴシック"),
        local("MS Gothic"),
-       local("Hiragino Sans");
+       local("Hiragino Sans"),
+       local("BIZ UDPGothic");
 }
 
 /* 縦組み用 (vertical writing) */
@@ -59,9 +63,11 @@
        local("ヒラギノ明朝 Pro W3"),
        local("游明朝"),
        local("YuMincho"),
+       local("Yu Mincho"),
        local("ＭＳ Ｐ明朝"),
        local("MS PMincho"),
-       local("Hiragino Mincho ProN");
+       local("Hiragino Mincho ProN"),
+       local("BIZ UDMincho");
 }
 
 @font-face {
@@ -74,7 +80,9 @@
        local("ヒラギノ角ゴシック W3"),
        local("游ゴシック"),
        local("YuGothic"),
+       local("Yu Gothic"),
        local("ＭＳ Ｐゴシック"),
        local("MS PGothic"),
-       local("Hiragino Sans");
+       local("Hiragino Sans"),
+       local("BIZ UDGothic");
 }
