@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.15.8...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.15.9...develop
 
 Changes:
 * TODO
+
+# 1.15.9
+
+# > Build environment: NodeJS `20.12.2`, NPM `10.8.1`
+
+Changes:
+* fix: steal focus disabled boolean, code guard for global function call when navigator is not instantiated yet (e.g. Thorium Divina and PDF)
+* fix: Japanese font stack (see ReadiumCSS https://github.com/readium/readium-css/pull/146)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.15.9/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.15.9/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.15.9
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.15.8...v1.15.9
 
 # 1.15.8
 
