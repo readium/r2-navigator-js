@@ -243,7 +243,11 @@ function readiumCssApplyToWebview(
 
         setTimeout(() => {
             debug("readiumCssOnOff -> handleLinkLocator");
+            stealFocusDisable(true);
             handleLinkLocator(loc.locator, actualReadiumCss);
+            setTimeout(() => {
+                stealFocusDisable(false);
+            }, 200);
         }, 60);
     }
 }

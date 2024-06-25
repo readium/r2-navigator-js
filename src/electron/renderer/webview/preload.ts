@@ -1142,21 +1142,34 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
     }, 100);
 });
 
-function focusElement(element: Element) {
+function focusElement(element: Element, preventScroll: boolean) {
 
-    if (element === win.document.body) {
+    // const tabbables = lazyTabbables();
+    if (element === win.document.body || !isFocusable(element as HTMLElement)) {
         const attr = (element as HTMLElement).getAttribute("tabindex");
         if (!attr) {
             (element as HTMLElement).setAttribute("tabindex", "-1");
             (element as HTMLElement).classList.add(CSS_CLASS_NO_FOCUS_OUTLINE);
             if (IS_DEV) {
-                debug("tabindex -1 set BODY (focusable):");
+                debug("tabindex -1 set (focusable):");
                 debug(getCssSelector(element));
             }
         }
+    }
+
+    if (element === win.document.body) {
+        // const attr = (element as HTMLElement).getAttribute("tabindex");
+        // if (!attr) {
+        //     (element as HTMLElement).setAttribute("tabindex", "-1");
+        //     (element as HTMLElement).classList.add(CSS_CLASS_NO_FOCUS_OUTLINE);
+        //     if (IS_DEV) {
+        //         debug("tabindex -1 set BODY (focusable):");
+        //         debug(getCssSelector(element));
+        //     }
+        // }
         (element as HTMLElement).focus({preventScroll: true});
     } else {
-        (element as HTMLElement).focus();
+        (element as HTMLElement).focus({preventScroll});
     }
 
     // win.blur();
@@ -1240,24 +1253,9 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
     }
 
     if (doFocus) {
-        // const tabbables = lazyTabbables();
-        if (!domRect && !isFocusable(element as HTMLElement)) {
-            const attr = (element as HTMLElement).getAttribute("tabindex");
-            if (!attr) {
-                (element as HTMLElement).setAttribute("tabindex", "-1");
-                (element as HTMLElement).classList.add(CSS_CLASS_NO_FOCUS_OUTLINE);
-                if (IS_DEV) {
-                    debug("tabindex -1 set (focusable):");
-                    debug(getCssSelector(element));
-                }
-            }
-        }
-
         tempLinkTargetOutline(element, 2000, false);
 
-        if (!domRect) {
-            focusElement(element);
-        }
+        focusElement(element, !!domRect);
     }
 
     setTimeout(() => {
@@ -1361,7 +1359,10 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
                 // } as ScrollIntoViewOptions);
             }
         }
-    }, doFocus ? 100 : 0);
+    },
+    // doFocus ? 100 : 0
+    0,
+    );
 }
 
 // TODO: vertical writing mode
@@ -1604,7 +1605,7 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
 
                     win.READIUM2.locationHashOverride = win.document.body;
                     resetLocationHashOverrideInfo();
-                    focusElement(win.READIUM2.locationHashOverride);
+                    focusElement(win.READIUM2.locationHashOverride, false);
 
                     const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
                     processXYRaw(x, 0, false);
@@ -1635,7 +1636,7 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
 
                 win.READIUM2.locationHashOverride = win.document.body;
                 resetLocationHashOverrideInfo();
-                focusElement(win.READIUM2.locationHashOverride);
+                focusElement(win.READIUM2.locationHashOverride, false);
 
                 // maxScrollShift === scrollElement.scrollWidth - win.document.documentElement.clientWidth
                 // * gotoProgression ?
@@ -1658,7 +1659,7 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
 
         win.READIUM2.locationHashOverride = win.document.body;
         resetLocationHashOverrideInfo();
-        focusElement(win.READIUM2.locationHashOverride);
+        focusElement(win.READIUM2.locationHashOverride, false);
 
         debug("processXYRaw BODY");
         const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
