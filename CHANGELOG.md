@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.15.9...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.15.10...develop
 
 Changes:
 * TODO
+
+# 1.15.10
+
+# > Build environment: NodeJS `20.12.2`, NPM `10.8.1`
+
+Changes:
+* fix: ReadiumCSS override was aggressively affecting GUI chrome injected in documents (generic div styling)
+* fix: keyboard focus handling (notably, ReadiumCSS setter was restoring reading location with focus steal)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.15.10/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.15.10/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.15.10
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.15.9...v1.15.10
 
 # 1.15.9
 
