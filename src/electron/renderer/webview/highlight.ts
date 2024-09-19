@@ -1252,8 +1252,24 @@ function createHighlightDom(
         const cssHighlightID = `highlight_${strRGB}`;
         const styleElement = win.document.getElementById("Readium2-" + strRGB);
         if (!styleElement) {
+            // window.CSS.registerProperty({
+            //     name: `--${strRGB}`,
+            //     syntax: "<color>",
+            //     inherits: true,
+            //     initialValue: "transparent",
+            // });
             appendCSSInline(win.document, strRGB,
 // :root > body#body, :root[style] > body#body { background-color: magenta !important; }
+
+// @property --${strRGB} {
+// syntax: "<color>";
+// inherits: true;
+// initial-value: transparent;
+// }
+
+// would prefer to use CSS properties but worked in Electron 30, broke in 31 and 32!
+// :root { --${strRGB}: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}); }
+
 // text-decoration
 // text-shadow
 // -webkit-text-stroke-color
@@ -1265,17 +1281,10 @@ https://lea.verou.me/blog/2024/contrast-color
 https://blackorwhite.lloydk.ca
 */
 
-@property --${strRGB} {
-syntax: "<color>";
-inherits: true;
-initial-value: transparent;
-}
-
 ::highlight(${cssHighlightID}) {
-    --${strRGB}: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
-    background-color: var(--${strRGB});
+    background-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
 
-    color: red;
+    color: white;
     text-shadow: 0 0 .05em black, 0 0 .05em black, 0 0 .05em black, 0 0 .05em black;
 }
 
@@ -1283,19 +1292,10 @@ initial-value: transparent;
 @supports (color: oklch(from red l c h)) {
 
     ::highlight(${cssHighlightID}) {
-        --${strRGB}: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
-        background-color: var(--${strRGB});
+        background-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
 
-        --l-threshold: 0.7;
-        --l: clamp(0, (var(--l-threshold, 0.623) / l - 1) * infinity, 1);
-
-        -y-threshold: 0.36;
-        --y: clamp(0, (var(--y-threshold) / y - 1) * infinity, 1);
-
-        color: oklch(from var(--${strRGB}) var(--l) 0 h);
-        /*
-        color: color(from var(--${strRGB}) xyz-d65 var(--y) var(--y) var(--y));
-        */
+        color: oklch(from rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) clamp(0, (0.7 / l - 1) * infinity, 1) c h);
+        colorxxx: color(from rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) xyz-d65 clamp(0, (0.36 / y - 1) * infinity, 1) clamp(0, (0.36 / y - 1) * infinity, 1) clamp(0, (0.36 / y - 1) * infinity, 1));
 
         text-shadow: none;
     }
@@ -1304,10 +1304,9 @@ initial-value: transparent;
 @supports (color: contrast-color(red)) {
 
     ::highlight(${cssHighlightID}) {
-        --${strRGB}: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
-        background-color: var(--${strRGB});
+        background-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
 
-        color: contrast-color(var(--${strRGB}));
+        color: contrast-color(rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}));
         text-shadow: none;
     }
 }
