@@ -17,7 +17,7 @@ import {
     IHighlightDefinition,
     HighlightDrawTypeBackground,
 } from "../../common/highlight";
-import { isPaginated } from "../../common/readium-css-inject";
+import { appendCSSInline, isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";
 import { VERBOSE, IRectSimple, getClientRectsNoOverlap, getBoundingRect, IRect, getTextClientRects, DOMRectListToArray } from "../common/rect-utils";
 import { getScrollingElement, isVerticalWritingMode, isTwoPageSpread } from "./readium-css";
@@ -50,6 +50,8 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).DEBUG_RECTS = IS_DEV && VERBOSE;
+
+const ENABLE_CSS_HIGHLIGHTS = true;
 
 const cleanupPolygon = (polygonAccumulator: Polygon, off: number) => {
 
@@ -933,6 +935,10 @@ export function hideAllhighlights(_documant: Document) {
         console.log("--HIGH WEBVIEW-- hideAllhighlights: " + _highlights.length);
     }
 
+    if (ENABLE_CSS_HIGHLIGHTS && CSS.highlights) {
+        CSS.highlights.clear();
+    }
+
     if (_highlightsContainer) {
         _highlightsContainer.remove();
         _highlightsContainer = null;
@@ -965,6 +971,16 @@ export function destroyHighlight(documant: Document, id: string) {
     if (highlightContainer) {
         highlightContainer.remove();
     }
+
+    if (highlight && ENABLE_CSS_HIGHLIGHTS && CSS.highlights && highlight.range && highlight.color && (!highlight.drawType || highlight.drawType === HighlightDrawTypeBackground)) {
+        const strRGB = `R${highlight.color.red}G${highlight.color.green}B${highlight.color.blue}`;
+        const cssHighlightID = `highlight_${strRGB}`;
+
+        const cssHighlight = CSS.highlights.get(cssHighlightID);
+        if (cssHighlight && cssHighlight.has(highlight.range)) {
+            cssHighlight.delete(highlight.range);
+        }
+    }
 }
 
 export function destroyHighlightsGroup(documant: Document, group: string) {
@@ -985,6 +1001,16 @@ export function destroyHighlightsGroup(documant: Document, group: string) {
             const highlightContainer = documant.getElementById(highlight.id);
             if (highlightContainer) {
                 highlightContainer.remove();
+            }
+
+            if (ENABLE_CSS_HIGHLIGHTS && CSS.highlights && highlight.range && highlight.color && (!highlight.drawType || highlight.drawType === HighlightDrawTypeBackground)) {
+                const strRGB = `R${highlight.color.red}G${highlight.color.green}B${highlight.color.blue}`;
+                const cssHighlightID = `highlight_${strRGB}`;
+
+                const cssHighlight = CSS.highlights.get(cssHighlightID);
+                if (cssHighlight && cssHighlight.has(highlight.range)) {
+                    cssHighlight.delete(highlight.range);
+                }
             }
         } else {
             break;
@@ -1148,6 +1174,8 @@ export function createHighlight(
     // tslint:disable-next-line:no-string-literal
     // console.log("Chromium: " + process.versions["chrome"]);
 
+    // range = range ? range : selectionInfo ? convertRangeInfo(win.document, selectionInfo.rangeInfo) : undefined;
+
     const uniqueStr = selectionInfo ? `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}` : range ? `${range.startOffset}-${range.endOffset}-${computeCFI(range.startContainer)}-${computeCFI(range.endContainer)}` : "_RANGE_"; // ${selectionInfo.rangeInfo.cfi} useless
 
     // console.log("RANGE uniqueStr: " + uniqueStr + " (( " + range?.toString());
@@ -1200,7 +1228,7 @@ function createHighlightDom(
     const documant = win.document;
     const scrollElement = getScrollingElement(documant);
 
-    const range = highlight.selectionInfo ? convertRangeInfo(documant, highlight.selectionInfo.rangeInfo) : highlight.range;
+    const range = highlight.range ? highlight.range : highlight.selectionInfo ? convertRangeInfo(documant, highlight.selectionInfo.rangeInfo) : undefined;
     if (!range) {
         return null;
     }
@@ -1216,6 +1244,84 @@ function createHighlightDom(
     const vertical = isVerticalWritingMode();
 
     const doDrawMargin = drawMargin(highlight);
+
+    const isCssHighlight = ENABLE_CSS_HIGHLIGHTS && CSS.highlights && !doDrawMargin && highlight.color && drawBackground;
+
+    if (isCssHighlight) {
+        const strRGB = `R${highlight.color.red}G${highlight.color.green}B${highlight.color.blue}`;
+        const cssHighlightID = `highlight_${strRGB}`;
+        const styleElement = win.document.getElementById("Readium2-" + strRGB);
+        if (!styleElement) {
+            appendCSSInline(win.document, strRGB,
+// :root > body#body, :root[style] > body#body { background-color: magenta !important; }
+// text-decoration
+// text-shadow
+// -webkit-text-stroke-color
+// -webkit-text-fill-color
+// -webkit-text-stroke-width
+`
+/*
+https://lea.verou.me/blog/2024/contrast-color
+https://blackorwhite.lloydk.ca
+*/
+
+@property --${strRGB} {
+syntax: "<color>";
+inherits: true;
+initial-value: transparent;
+}
+
+::highlight(${cssHighlightID}) {
+    --${strRGB}: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
+    background-color: var(--${strRGB});
+
+    color: red;
+    text-shadow: 0 0 .05em black, 0 0 .05em black, 0 0 .05em black, 0 0 .05em black;
+}
+
+/* @supports (color: oklch(from color-mix(in oklch, red, tan) l c h)) { */
+@supports (color: oklch(from red l c h)) {
+
+    ::highlight(${cssHighlightID}) {
+        --${strRGB}: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
+        background-color: var(--${strRGB});
+
+        --l-threshold: 0.7;
+        --l: clamp(0, (var(--l-threshold, 0.623) / l - 1) * infinity, 1);
+
+        -y-threshold: 0.36;
+        --y: clamp(0, (var(--y-threshold) / y - 1) * infinity, 1);
+
+        color: oklch(from var(--${strRGB}) var(--l) 0 h);
+        /*
+        color: color(from var(--${strRGB}) xyz-d65 var(--y) var(--y) var(--y));
+        */
+
+        text-shadow: none;
+    }
+}
+
+@supports (color: contrast-color(red)) {
+
+    ::highlight(${cssHighlightID}) {
+        --${strRGB}: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
+        background-color: var(--${strRGB});
+
+        color: contrast-color(var(--${strRGB}));
+        text-shadow: none;
+    }
+}
+`);
+        }
+
+        let cssHighlight = CSS.highlights.get(cssHighlightID);
+        if (!cssHighlight) {
+            cssHighlight = new Highlight();
+            CSS.highlights.set(cssHighlightID, cssHighlight);
+        }
+
+        cssHighlight.add(range);
+    }
 
     // checkRangeFix(documant);
 
@@ -1705,7 +1811,7 @@ function createHighlightDom(
     ?
     polygonSurface.reduce((prevSVGPath, currentPolygon) => {
         return prevSVGPath + currentPolygon.svg({
-            fill: DEBUG_RECTS ? "pink" : drawOutline ? "transparent" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+            fill: DEBUG_RECTS ? "pink" : (drawOutline || isCssHighlight) ? "transparent" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
             fillRule: "evenodd",
             stroke: DEBUG_RECTS ? "magenta" : drawOutline ? `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` : "transparent",
             strokeWidth: DEBUG_RECTS ? 1 : drawOutline ? 2 : 0,
@@ -1716,7 +1822,7 @@ function createHighlightDom(
     }, "")
     :
     polygonSurface.svg({
-        fill: DEBUG_RECTS ? "yellow" : drawOutline ? "transparent" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+        fill: DEBUG_RECTS ? "yellow" : (drawOutline || isCssHighlight) ? "transparent" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
         fillRule: "evenodd",
         stroke: DEBUG_RECTS ? "green" : drawOutline ? `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` : "transparent",
         strokeWidth: DEBUG_RECTS ? 1 : drawOutline ? 2 : 0,
