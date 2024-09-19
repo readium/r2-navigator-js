@@ -792,6 +792,7 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
     // for (const highlight of _highlights) {
     for (let i = _highlights.length - 1; i >= 0; i--) {
         const highlight = _highlights[i];
+        const doDrawMargin = drawMargin(highlight);
 
         let highlightParent = documant.getElementById(`${highlight.id}`);
         if (!highlightParent) { // ??!!
@@ -806,7 +807,7 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
             if (highlightFragment.namespaceURI === SVG_XML_NAMESPACE) {
 
                 const svg = highlightFragment as ISVGElementWithPolygon;
-                hit = svg.polygon.contains(new Point((x - xOffset) * scale, (y - yOffset) * scale));
+                hit = (!doDrawMargin || svg.classList.contains(CLASS_HIGHLIGHT_CONTOUR_MARGIN)) && svg.polygon.contains(new Point((x - xOffset) * scale, (y - yOffset) * scale));
                 if (hit) {
                     break;
                 }
@@ -844,7 +845,7 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
         return;
     }
 
-    if (foundElement && foundHighlight?.pointerInteraction) {
+    if (foundElement && foundHighlight && foundHighlight.pointerInteraction) { // && !drawMargin(foundHighlight)
 
         if (isMouseMove) {
             foundElement.classList.add(CLASS_HIGHLIGHT_HOVER);
