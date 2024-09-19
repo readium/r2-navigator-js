@@ -21,7 +21,8 @@ export const HighlightDrawTypeOutline = 3;
 export interface IHighlight {
     id: string;
     selectionInfo?: ISelectionInfo;
-    range?: Range,
+    range?: Range;
+    rangeCssHighlight?: Range;
     color: IColor;
     pointerInteraction: boolean;
 
@@ -35,7 +36,7 @@ export interface IHighlight {
 
 export interface IHighlightDefinition {
     selectionInfo: ISelectionInfo | undefined;
-    range?: Range,
+    range?: Range;
 
     color: IColor | undefined;
 

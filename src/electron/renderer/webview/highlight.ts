@@ -972,13 +972,13 @@ export function destroyHighlight(documant: Document, id: string) {
         highlightContainer.remove();
     }
 
-    if (highlight && ENABLE_CSS_HIGHLIGHTS && CSS.highlights && highlight.range && highlight.color && (!highlight.drawType || highlight.drawType === HighlightDrawTypeBackground)) {
+    if (highlight && ENABLE_CSS_HIGHLIGHTS && CSS.highlights && highlight.rangeCssHighlight && highlight.color && (!highlight.drawType || highlight.drawType === HighlightDrawTypeBackground)) {
         const strRGB = `R${highlight.color.red}G${highlight.color.green}B${highlight.color.blue}`;
         const cssHighlightID = `highlight_${strRGB}`;
 
         const cssHighlight = CSS.highlights.get(cssHighlightID);
-        if (cssHighlight && cssHighlight.has(highlight.range)) {
-            cssHighlight.delete(highlight.range);
+        if (cssHighlight && cssHighlight.has(highlight.rangeCssHighlight)) {
+            cssHighlight.delete(highlight.rangeCssHighlight);
         }
     }
 }
@@ -1003,13 +1003,13 @@ export function destroyHighlightsGroup(documant: Document, group: string) {
                 highlightContainer.remove();
             }
 
-            if (ENABLE_CSS_HIGHLIGHTS && CSS.highlights && highlight.range && highlight.color && (!highlight.drawType || highlight.drawType === HighlightDrawTypeBackground)) {
+            if (ENABLE_CSS_HIGHLIGHTS && CSS.highlights && highlight.rangeCssHighlight && highlight.color && (!highlight.drawType || highlight.drawType === HighlightDrawTypeBackground)) {
                 const strRGB = `R${highlight.color.red}G${highlight.color.green}B${highlight.color.blue}`;
                 const cssHighlightID = `highlight_${strRGB}`;
 
                 const cssHighlight = CSS.highlights.get(cssHighlightID);
-                if (cssHighlight && cssHighlight.has(highlight.range)) {
-                    cssHighlight.delete(highlight.range);
+                if (cssHighlight && cssHighlight.has(highlight.rangeCssHighlight)) {
+                    cssHighlight.delete(highlight.rangeCssHighlight);
                 }
             }
         } else {
@@ -1248,6 +1248,7 @@ function createHighlightDom(
     const isCssHighlight = ENABLE_CSS_HIGHLIGHTS && CSS.highlights && !doDrawMargin && highlight.color && drawBackground;
 
     if (isCssHighlight) {
+        highlight.rangeCssHighlight = range;
         const strRGB = `R${highlight.color.red}G${highlight.color.green}B${highlight.color.blue}`;
         const cssHighlightID = `highlight_${strRGB}`;
         const styleElement = win.document.getElementById("Readium2-" + strRGB);
@@ -1319,7 +1320,7 @@ https://blackorwhite.lloydk.ca
             CSS.highlights.set(cssHighlightID, cssHighlight);
         }
 
-        cssHighlight.add(range);
+        cssHighlight.add(highlight.rangeCssHighlight);
     }
 
     // checkRangeFix(documant);
