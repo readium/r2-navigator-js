@@ -51,7 +51,7 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).DEBUG_RECTS = IS_DEV && VERBOSE;
 
-const ENABLE_CSS_HIGHLIGHTS = true;
+export const ENABLE_CSS_HIGHLIGHTS = true && !!CSS.highlights;
 
 const cleanupPolygon = (polygonAccumulator: Polygon, off: number) => {
 
@@ -936,7 +936,7 @@ export function hideAllhighlights(_documant: Document) {
         console.log("--HIGH WEBVIEW-- hideAllhighlights: " + _highlights.length);
     }
 
-    if (ENABLE_CSS_HIGHLIGHTS && CSS.highlights) {
+    if (ENABLE_CSS_HIGHLIGHTS) {
         CSS.highlights.clear();
     }
 
@@ -973,7 +973,7 @@ export function destroyHighlight(documant: Document, id: string) {
         highlightContainer.remove();
     }
 
-    if (highlight && ENABLE_CSS_HIGHLIGHTS && CSS.highlights && highlight.rangeCssHighlight && highlight.color && (!highlight.drawType || highlight.drawType === HighlightDrawTypeBackground)) {
+    if (highlight && ENABLE_CSS_HIGHLIGHTS && highlight.rangeCssHighlight && highlight.color && (!highlight.drawType || highlight.drawType === HighlightDrawTypeBackground)) {
         const strRGB = `R${highlight.color.red}G${highlight.color.green}B${highlight.color.blue}`;
         const cssHighlightID = `highlight_${strRGB}`;
 
@@ -1004,7 +1004,7 @@ export function destroyHighlightsGroup(documant: Document, group: string) {
                 highlightContainer.remove();
             }
 
-            if (ENABLE_CSS_HIGHLIGHTS && CSS.highlights && highlight.rangeCssHighlight && highlight.color && (!highlight.drawType || highlight.drawType === HighlightDrawTypeBackground)) {
+            if (ENABLE_CSS_HIGHLIGHTS && highlight.rangeCssHighlight && highlight.color && (!highlight.drawType || highlight.drawType === HighlightDrawTypeBackground)) {
                 const strRGB = `R${highlight.color.red}G${highlight.color.green}B${highlight.color.blue}`;
                 const cssHighlightID = `highlight_${strRGB}`;
 
@@ -1246,7 +1246,7 @@ function createHighlightDom(
 
     const doDrawMargin = drawMargin(highlight);
 
-    const isCssHighlight = ENABLE_CSS_HIGHLIGHTS && CSS.highlights && !doDrawMargin && highlight.color && drawBackground;
+    const isCssHighlight = ENABLE_CSS_HIGHLIGHTS && !doDrawMargin && highlight.color && drawBackground;
 
     if (isCssHighlight) {
         highlight.rangeCssHighlight = range;
