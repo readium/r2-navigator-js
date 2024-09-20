@@ -1290,14 +1290,23 @@ https://blackorwhite.lloydk.ca
     text-shadow: 0 0 .05em black, 0 0 .05em black, 0 0 .05em black, 0 0 .05em black;
 }
 
-/* @supports (color: oklch(from color-mix(in oklch, red, tan) l c h)) { */
 @supports (color: oklch(from red l c h)) {
 
     ::highlight(${cssHighlightID}) {
         background-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
 
         color: oklch(from rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) clamp(0, (0.7 / l - 1) * infinity, 1) c h);
-        colorxxx: color(from rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) xyz-d65 clamp(0, (0.36 / y - 1) * infinity, 1) clamp(0, (0.36 / y - 1) * infinity, 1) clamp(0, (0.36 / y - 1) * infinity, 1));
+
+        text-shadow: none;
+    }
+}
+
+@supports (color: oklch(from color-mix(in oklch, red, tan) l c h)) {
+
+    ::highlight(${cssHighlightID}) {
+        background-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
+
+        color: color(from rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}) xyz-d65 clamp(0, (0.36 / y - 1) * infinity, 1) clamp(0, (0.36 / y - 1) * infinity, 1) clamp(0, (0.36 / y - 1) * infinity, 1));
 
         text-shadow: none;
     }
@@ -1348,7 +1357,7 @@ https://blackorwhite.lloydk.ca
     // export const HighlightDrawTypeUnderline = 1;
     // export const HighlightDrawTypeStrikethrough = 2;
     // export const HighlightDrawTypeOutline = 3;
-    if (!highlight.drawType || highlight.drawType === HighlightDrawTypeBackground) {
+    if (drawBackground) {
         // highlightParent.style.setProperty(
         //     "mix-blend-mode",
         //     // isNight ? "hard-light" :
@@ -1359,6 +1368,11 @@ https://blackorwhite.lloydk.ca
         //     "-1");
         highlightParent.classList.add(CLASS_HIGHLIGHT_BEHIND);
     }
+
+    // [BEGIN] TTS skip
+    // TTS solid background highlights don't need SVG polygons,
+    // no mouse cursor hit testing, just CSS highlights rendering
+    if (!isCssHighlight || highlight.pointerInteraction) {
 
     // const docStyle = (documant.defaultView as Window).getComputedStyle(documant.documentElement);
     // const bodyStyle = (documant.defaultView as Window).getComputedStyle(documant.body);
@@ -2032,6 +2046,7 @@ https://blackorwhite.lloydk.ca
 
         highlightParent.append(highlightMarginSVG);
     }
+    } // [END] TTS skip
 
     return highlightParent;
 }
