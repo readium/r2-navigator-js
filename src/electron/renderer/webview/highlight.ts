@@ -973,9 +973,8 @@ export function destroyHighlight(documant: Document, id: string) {
         highlightContainer.remove();
     }
 
-    if (highlight && ENABLE_CSS_HIGHLIGHTS && highlight.rangeCssHighlight && highlight.color && (!highlight.drawType || highlight.drawType === HighlightDrawTypeBackground)) {
-        const strRGB = `R${highlight.color.red}G${highlight.color.green}B${highlight.color.blue}`;
-        const cssHighlightID = `highlight_${strRGB}`;
+    if (ENABLE_CSS_HIGHLIGHTS && highlight && highlight.rangeCssHighlight) {
+        const [_strRGB, cssHighlightID] = computeCssHighlightRGBID(highlight);
 
         const cssHighlight = CSS.highlights.get(cssHighlightID);
         if (cssHighlight && cssHighlight.has(highlight.rangeCssHighlight)) {
@@ -1004,9 +1003,8 @@ export function destroyHighlightsGroup(documant: Document, group: string) {
                 highlightContainer.remove();
             }
 
-            if (ENABLE_CSS_HIGHLIGHTS && highlight.rangeCssHighlight && highlight.color && (!highlight.drawType || highlight.drawType === HighlightDrawTypeBackground)) {
-                const strRGB = `R${highlight.color.red}G${highlight.color.green}B${highlight.color.blue}`;
-                const cssHighlightID = `highlight_${strRGB}`;
+            if (ENABLE_CSS_HIGHLIGHTS && highlight.rangeCssHighlight) {
+                const [_strRGB, cssHighlightID] = computeCssHighlightRGBID(highlight);
 
                 const cssHighlight = CSS.highlights.get(cssHighlightID);
                 if (cssHighlight && cssHighlight.has(highlight.rangeCssHighlight)) {
@@ -1216,6 +1214,17 @@ export function createHighlight(
     return [highlight, div];
 }
 
+const computeCssHighlightRGBID = (highlight: IHighlight) => {
+    // const drawBackground = !highlight.drawType || highlight.drawType === HighlightDrawTypeBackground;
+    const drawUnderline = highlight.drawType === HighlightDrawTypeUnderline;
+    const drawStrikeThrough = highlight.drawType === HighlightDrawTypeStrikethrough;
+    // const drawOutline = highlight.drawType === HighlightDrawTypeOutline;
+
+    const strRGB = `R${highlight.color.red}G${highlight.color.green}B${highlight.color.blue}${drawUnderline ? "_" : drawStrikeThrough ? "__" : ""}`;
+    const cssHighlightID = `highlight_${strRGB}`;
+    return [ strRGB, cssHighlightID ];
+};
+
 const JAPANESE_RUBY_TO_SKIP = ["rt", "rp"];
 function createHighlightDom(
     win: ReadiumElectronWebviewWindow,
@@ -1234,6 +1243,34 @@ function createHighlightDom(
         return null;
     }
 
+    // win.READIUM2 && win.READIUM2.isFixedLayout
+    let rangeHasSVG = false;
+    let parent: Node | null = range.startContainer;
+    while (parent) {
+        if (parent.nodeType === Node.ELEMENT_NODE) {
+            const ns = (parent as Element).namespaceURI;
+            if (ns && ns.includes("svg")) {
+                rangeHasSVG = true;
+                break;
+            }
+        }
+        parent = parent.parentNode;
+    }
+    if (!rangeHasSVG) {
+        parent = range.endContainer;
+        while (parent) {
+            if (parent.nodeType === Node.ELEMENT_NODE) {
+                const ns = (parent as Element).namespaceURI;
+                if (ns && ns.includes("svg")) {
+                    rangeHasSVG = true;
+                    break;
+                }
+            }
+            parent = parent.parentNode;
+        }
+    }
+    // highlight.rangeHasSVG = rangeHasSVG;
+
     const drawBackground = !highlight.drawType || highlight.drawType === HighlightDrawTypeBackground;
     const drawUnderline = highlight.drawType === HighlightDrawTypeUnderline;
     const drawStrikeThrough = highlight.drawType === HighlightDrawTypeStrikethrough;
@@ -1244,14 +1281,15 @@ function createHighlightDom(
     const rtl = isRTL();
     const vertical = isVerticalWritingMode();
 
-    const doDrawMargin = drawMargin(highlight);
+    const doDrawMargin = drawMargin(highlight);;
 
-    const isCssHighlight = ENABLE_CSS_HIGHLIGHTS && !doDrawMargin && highlight.color && drawBackground;
+    const underlineThickness = 3;
+    const strikeThroughLineThickness = 4;
 
-    if (isCssHighlight) {
+    if (ENABLE_CSS_HIGHLIGHTS && !doDrawMargin && !rangeHasSVG && (drawBackground || (drawUnderline && !vertical) || (drawStrikeThrough && !vertical))) {
         highlight.rangeCssHighlight = range;
-        const strRGB = `R${highlight.color.red}G${highlight.color.green}B${highlight.color.blue}`;
-        const cssHighlightID = `highlight_${strRGB}`;
+
+        const [strRGB, cssHighlightID] = computeCssHighlightRGBID(highlight);
         const styleElement = win.document.getElementById("Readium2-" + strRGB);
         if (!styleElement) {
             // window.CSS.registerProperty({
@@ -1261,6 +1299,22 @@ function createHighlightDom(
             //     initialValue: "transparent",
             // });
             appendCSSInline(win.document, strRGB,
+                drawUnderline || drawStrikeThrough
+?
+// -webkit-text-stroke-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
+// -webkit-text-fill-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
+// -webkit-text-stroke-width: ${drawUnderline ? underlineThickness : drawStrikeThrough ? strikeThroughLineThickness : underlineThickness}px;
+
+//text-decoration-thickness: ${drawUnderline ? underlineThickness : drawStrikeThrough ? strikeThroughLineThickness : underlineThickness}px;
+`
+::highlight(${cssHighlightID}) {
+    text-decoration-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
+    text-decoration-style: solid;
+    text-decoration-thickness: 0.16em;
+    text-decoration-line: ${drawUnderline ? "underline" : "line-through"};
+}
+`
+:
 // :root > body#body, :root[style] > body#body { background-color: magenta !important; }
 
 // @property --${strRGB} {
@@ -1369,10 +1423,11 @@ https://blackorwhite.lloydk.ca
         highlightParent.classList.add(CLASS_HIGHLIGHT_BEHIND);
     }
 
-    // [BEGIN] TTS skip
     // TTS solid background highlights don't need SVG polygons,
     // no mouse cursor hit testing, just CSS highlights rendering
-    if (!isCssHighlight || highlight.pointerInteraction) {
+    if (highlight.rangeCssHighlight && !highlight.pointerInteraction) {
+        return highlightParent;
+    }
 
     // const docStyle = (documant.defaultView as Window).getComputedStyle(documant.documentElement);
     // const bodyStyle = (documant.defaultView as Window).getComputedStyle(documant.body);
@@ -1501,9 +1556,6 @@ https://blackorwhite.lloydk.ca
 
     // let highlightAreaSVGDocFrag: DocumentFragment | undefined;
     // const roundedCorner = 3;
-
-    const underlineThickness = 3;
-    const strikeThroughLineThickness = 4;
 
     // const rangeBoundingClientRect = range.getBoundingClientRect();
 
@@ -1661,7 +1713,9 @@ https://blackorwhite.lloydk.ca
     cleanupPolygon(polygonCountourUnionPoly, gap);
 
     let polygonSurface: Polygon | Polygon[] | undefined;
-    if (doNotMergeHorizontallyAlignedRects) {
+    if (highlight.rangeCssHighlight) {
+        polygonSurface = undefined;
+    } else if (doNotMergeHorizontallyAlignedRects) {
         const singleSVGPath = !DEBUG_RECTS;
         if (singleSVGPath) {
             polygonSurface = new Polygon();
@@ -1800,7 +1854,9 @@ https://blackorwhite.lloydk.ca
     if (DEBUG_RECTS) {
         addEdgePoints(polygonCountourUnionPoly, 1);
 
-        if (Array.isArray(polygonSurface)) {
+        if (!polygonSurface) {
+            // noop
+        } else if (Array.isArray(polygonSurface)) {
             for (const poly of polygonSurface) {
                 addEdgePoints(poly, 1);
             }
@@ -1819,17 +1875,36 @@ https://blackorwhite.lloydk.ca
     // highlightAreaSVG.polygon = polygonSurface;
     highlightAreaSVG.polygon = polygonCountourUnionPoly; // TODO: gap expansion too generous for hit testing?
 
+    let outlineThickness = 2;
+    let usrFontSize = bodyComputedStyle.getPropertyValue("--USER__fontSize");
+    if (usrFontSize) {
+        usrFontSize = usrFontSize.replace("%", "");
+        try {
+            const factor = parseInt(usrFontSize, 10) / 100;
+            outlineThickness = outlineThickness * factor;
+        } catch (_e) {
+            // ignore
+        }
+    }
+
+    // const styleAttr = win.document.documentElement.getAttribute("style");
+    // const isUserFontSize = styleAttr ? styleAttr.indexOf("--USER__fontSize") >= 0 : false;
+    // if (isUserFontSize) {
+    //     // const docStyle = win.getComputedStyle(win.document.documentElement);
+    // }
+
     // highlightAreaSVG.append((new DOMParser()​​.parseFromString(`<svg xmlns="${SVG_XML_NAMESPACE}">${polys.svg()}</svg>`, "image/svg+xml")).firstChild);
     highlightAreaSVG.innerHTML =
+    (polygonSurface ?
     (
     Array.isArray(polygonSurface)
     ?
     polygonSurface.reduce((prevSVGPath, currentPolygon) => {
         return prevSVGPath + currentPolygon.svg({
-            fill: DEBUG_RECTS ? "pink" : (drawOutline || isCssHighlight) ? "transparent" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+            fill: DEBUG_RECTS ? "pink" : (drawOutline || highlight.rangeCssHighlight) ? "transparent" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
             fillRule: "evenodd",
             stroke: DEBUG_RECTS ? "magenta" : drawOutline ? `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` : "transparent",
-            strokeWidth: DEBUG_RECTS ? 1 : drawOutline ? 2 : 0,
+            strokeWidth: DEBUG_RECTS ? 1 : drawOutline ? outlineThickness : 0,
             fillOpacity: 1,
             className: undefined,
             // r: 4,
@@ -1837,15 +1912,15 @@ https://blackorwhite.lloydk.ca
     }, "")
     :
     polygonSurface.svg({
-        fill: DEBUG_RECTS ? "yellow" : (drawOutline || isCssHighlight) ? "transparent" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+        fill: DEBUG_RECTS ? "yellow" : (drawOutline || highlight.rangeCssHighlight) ? "transparent" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
         fillRule: "evenodd",
         stroke: DEBUG_RECTS ? "green" : drawOutline ? `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` : "transparent",
-        strokeWidth: DEBUG_RECTS ? 1 : drawOutline ? 2 : 0,
+        strokeWidth: DEBUG_RECTS ? 1 : drawOutline ? outlineThickness : 0,
         fillOpacity: 1,
         className: undefined,
         // r: 4,
     })
-    )
+    ) : "")
     +
     polygonCountourUnionPoly.svg({
         fill: "transparent",
@@ -2046,7 +2121,6 @@ https://blackorwhite.lloydk.ca
 
         highlightParent.append(highlightMarginSVG);
     }
-    } // [END] TTS skip
 
     return highlightParent;
 }
