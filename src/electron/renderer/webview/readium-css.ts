@@ -134,9 +134,10 @@ export const calculateMaxScrollShift = ():
     return { maxScrollShift, maxScrollShiftAdjusted };
 };
 
+// when increasing font size with ReadiumCSS columns=auto ==> auto switch to single column (visually) but column count still 2 (col width dictates)
 export const isTwoPageSpread = (): boolean => {
 
-    if (!win || !win.document || !win.document.documentElement) {
+    if (!win || !win.document || !win.document.documentElement || !win.document.body) {
         return false;
     }
 
@@ -149,8 +150,14 @@ export const isTwoPageSpread = (): boolean => {
         docColumnCount = parseInt(docStyle.getPropertyValue("column-count"), 10);
         // docColumnGap = parseInt(docStyle.getPropertyValue("column-gap"), 10);
     }
-
-    return docColumnCount === 2;
+    const scrollElement = getScrollingElement(win.document);
+    const bodyComputedStyle = win.getComputedStyle(win.document.body);
+    const bodyWidth = parseInt(bodyComputedStyle.width, 10);
+    let paginatedTwo = docColumnCount === 2;
+    if (paginatedTwo && (bodyWidth * 2) > scrollElement.clientWidth) {
+        paginatedTwo = false;
+    }
+    return paginatedTwo;
 };
 
 export const calculateTotalColumns = (): number => {
