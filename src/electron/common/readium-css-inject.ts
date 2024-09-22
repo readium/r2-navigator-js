@@ -1043,12 +1043,12 @@ export function readiumCssTransformHtml(
     const htmlStrToParse = `<?xml version="1.0" encoding="utf-8"?>${parseableChunk}TXT</body></html>`;
     // debug(htmlStrToParse);
 
-    const documant = parseDOM(htmlStrToParse, mediaType);
+    const documantFromXmlDom = parseDOM(htmlStrToParse, mediaType);
 
-    documant.documentElement.setAttribute("data-readiumcss-injected", "yes");
+    documantFromXmlDom.documentElement.setAttribute("data-readiumcss-injected", "yes");
 
-    documant.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK);
-    documant.documentElement.classList.remove(ROOT_CLASS_INVISIBLE_MASK_REMOVED);
+    documantFromXmlDom.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK);
+    documantFromXmlDom.documentElement.classList.remove(ROOT_CLASS_INVISIBLE_MASK_REMOVED);
 
     // const wh = configureFixedLayout(doc, win.READIUM2.isFixedLayout,
     //     win.READIUM2.fxlViewportWidth, win.READIUM2.fxlViewportHeight,
@@ -1058,26 +1058,26 @@ export function readiumCssTransformHtml(
     //     win.READIUM2.fxlViewportHeight = wh.height;
     // }
 
-    const rtl = isDocRTL(documant);
-    const vertical = isDocVertical(documant);
+    const rtl = isDocRTL(documantFromXmlDom);
+    const vertical = isDocVertical(documantFromXmlDom);
     if (readiumcssJson) {
         if (IS_DEV) {
             debug("_____ readiumCssJson.urlRoot (readiumCssTransformHtml()): ", readiumcssJson.urlRoot);
         }
 
         readiumCSSSet(
-            documant,
+            documantFromXmlDom,
             readiumcssJson,
             vertical,
             rtl);
     }
 
-    injectDefaultCSS(documant);
+    injectDefaultCSS(documantFromXmlDom);
     if (IS_DEV) { // isDEBUG_VISUALS(documant)
-        injectReadPosCSS(documant);
+        injectReadPosCSS(documantFromXmlDom);
     }
 
-    const serialized = serializeDOM(documant);
+    const serialized = serializeDOM(documantFromXmlDom);
     // debug("serialized:");
     // debug(serialized);
 

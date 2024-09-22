@@ -56,6 +56,7 @@ import {
 } from "./readium-css";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires,@typescript-eslint/no-require-imports
 import URI = require("urijs");
 const debug = debug_("r2:navigator#electron/renderer/location");
 
@@ -1834,6 +1835,7 @@ export async function isLocatorVisible(locator: Locator): Promise<boolean> {
             return;
         }
 
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         reject("isLocatorVisible - no webview href match.");
     });
 }

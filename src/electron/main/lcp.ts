@@ -20,6 +20,7 @@ export async function doTryLcpPass(
 
     const publication = publicationsServer.cachedPublication(publicationFilePath);
     if (!publication || !publication.LCP) {
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         return Promise.reject("no publication LCP data?! " + publicationFilePath);
     }
 
@@ -42,6 +43,7 @@ export async function doTryLcpPass(
     } catch (err) {
         debug(err);
         debug("FAIL publication.LCP.tryUserKeys(): " + err);
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         return Promise.reject(err);
         // DRMErrorCode (from r2-lcp-client)
         // 1 === NO CORRECT PASSPHRASE / UERKEY IN GIVEN ARRAY

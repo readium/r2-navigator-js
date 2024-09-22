@@ -23,6 +23,7 @@ export async function doLsdReturn(
 
     const publication = publicationsServer.cachedPublication(publicationFilePath);
     if (!publication || !publication.LCP || !publication.LCP.LSD) {
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         return Promise.reject("no publication LCP LSD data?!");
     }
 
@@ -31,12 +32,14 @@ export async function doLsdReturn(
         returnResponseLsd = await lsdReturn_(publication.LCP.LSD, deviceIDManager);
     } catch (err) {
         debug(err);
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         return Promise.reject(err);
     }
     if (returnResponseLsd) {
         publication.LCP.LSD = returnResponseLsd;
         return Promise.resolve(publication.LCP.LSD);
     }
+    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
     return Promise.reject("doLsdReturn?!");
 }
 
@@ -48,6 +51,7 @@ export async function doLsdRenew(
 
     const publication = publicationsServer.cachedPublication(publicationFilePath);
     if (!publication || !publication.LCP || !publication.LCP.LSD) {
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         return Promise.reject("no publication LCP LSD data?!");
     }
 
@@ -57,11 +61,13 @@ export async function doLsdRenew(
         returnResponseLsd = await lsdRenew_(endDate, publication.LCP.LSD, deviceIDManager);
     } catch (err) {
         debug(err);
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         return Promise.reject(err);
     }
     if (returnResponseLsd) {
         publication.LCP.LSD = returnResponseLsd;
         return Promise.resolve(publication.LCP.LSD);
     }
+    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
     return Promise.reject("doLsdRenew?!");
 }

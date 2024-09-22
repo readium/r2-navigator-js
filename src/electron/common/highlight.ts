@@ -23,6 +23,7 @@ export interface IHighlight {
     selectionInfo?: ISelectionInfo;
     range?: Range;
     rangeCssHighlight?: Range;
+    // rangeHasSVG?: boolean;
     color: IColor;
     pointerInteraction: boolean;
 

@@ -118,6 +118,7 @@ export async function highlightsCreate(
                     webview.removeEventListener("ipc-message", cb);
                     if (!payloadPong.highlights) { // includes undefined and empty array
                         // UNCHANGED webview.READIUM2.highlights = undefined;
+                        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
                         reject("highlightCreate fail?!");
                     } else {
                         if (!webview.READIUM2.highlights) {
@@ -143,6 +144,7 @@ export async function highlightsCreate(
             return;
         }
 
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         reject("highlightsCreate - no webview match?!");
     });
 }

@@ -10,7 +10,7 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 // import { consoleRedirect } from "../common/console-redirect";
 if (IS_DEV) {
     // tslint:disable-next-line:no-var-requires
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-var-requires,@typescript-eslint/no-require-imports
     const cr = require("./common/console-redirect");
     // const releaseConsoleRedirect =
     cr.consoleRedirect("r2:navigator#electron/renderer/index", process.stdout, process.stderr, true);

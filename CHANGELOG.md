@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.15.10...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.16.0...develop
 
 Changes:
 * TODO
+
+# 1.16.0
+
+# > Build environment: NodeJS `20.17.0`, NPM `10.8.3`
+
+Changes:
+* NPM package updates, notably Electron v32
+* CSS Highlights API for solid background, underline and strikethrough (retains SVG polygons for hit-testing and hover outline interactions, including margin display, but the CSS Highlights API controls text foreground/background contrast in the case of solid background, note that outline style remains entirely based on SVG)
+* Fixed CSS column pagination edge case: when column count is 2 but because of column width in Readium CSS in fact a single column is displayed (for example when shrinking the window or increasing the font size, the bug is immediately observable when displaying annotation highlights)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.16.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.16.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.16.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.15.10...v1.16.0
 
 # 1.15.10
 

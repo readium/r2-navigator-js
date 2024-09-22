@@ -7,9 +7,13 @@
 
 import * as xmldom from "@xmldom/xmldom";
 
-export function serializeDOM(documant: Document): string {
+export function serializeDOM(documant: Document | xmldom.Document): string {
 
-    const serialized = new xmldom.XMLSerializer().serializeToString(documant);
+    const isWeb = typeof window !== "undefined" && documant instanceof window.Document;
+    console.log("--DOMDOM: SERIALIZE--", isWeb);
+    const serialized = isWeb
+        ? new XMLSerializer().serializeToString(documant)
+        : new xmldom.XMLSerializer().serializeToString(documant as xmldom.Document);
 
     // import * as parse5 from "parse5";
     // const serialized = parse5.serialize(documant);
@@ -23,38 +27,52 @@ export function parseDOM(htmlStrToParse: string, mediaType: string | undefined):
     // https://github.com/jindw/xmldom/pull/208
     // https://github.com/jindw/xmldom/pull/242
     // https://github.com/xmldom/xmldom/blob/3db6ccf3f7ecbde73608490d71f96c727abdd69a/lib/dom-parser.js#L12
-    if (mediaType === "application/xhtml+xml") {
-        mediaType = "application/xhtml";
+    // https://github.com/xmldom/xmldom/blob/0.9.3/lib/dom-parser.js#L220
+    // https://github.com/xmldom/xmldom/blob/0.9.3/index.d.ts#L24
+    // https://github.com/xmldom/xmldom/blob/0.9.3/index.d.ts#L99
+    // if (mediaType === "application/xhtml+xml") {
+    //     mediaType = "application/xhtml";
+    // }
+    if (!mediaType) {
+        mediaType = "application/xml";
     }
-    const documant = mediaType ?
-        new xmldom.DOMParser().parseFromString(htmlStrToParse, mediaType) :
-        new xmldom.DOMParser().parseFromString(htmlStrToParse);
+
+    // type DOMParserSupportedType = "application/xhtml+xml" | "application/xml" | "image/svg+xml" | "text/html" | "text/xml"
+    const isWeb = typeof window !== "undefined" && (mediaType === "application/xhtml+xml" || mediaType === "application/xml" || mediaType === "image/svg+xml" || mediaType === "text/html" || mediaType === "text/xml");
+    console.log("--DOMDOM: PARSE--", isWeb);
+    const documant = isWeb
+        ? new DOMParser().parseFromString(htmlStrToParse, mediaType as DOMParserSupportedType)
+        : new xmldom.DOMParser().parseFromString(htmlStrToParse, mediaType);
 
     // import * as parse5 from "parse5";
     // const documant = parse5.parse(htmlStrToParse);
 
     // debug(documant.doctype);
 
-    if (!documant.head) {
-        definePropertyGetterSetter_DocHeadBody(documant, "head");
-    }
-    if (!documant.body) {
-        definePropertyGetterSetter_DocHeadBody(documant, "body");
-    }
-    if (!documant.documentElement.style) {
-        definePropertyGetterSetter_ElementStyle(documant.documentElement);
-    }
-    if (!documant.body.style) {
-        definePropertyGetterSetter_ElementStyle(documant.body);
-    }
-    if (!documant.documentElement.classList) {
-        definePropertyGetterSetter_ElementClassList(documant.documentElement);
+    const docNodeJS = documant as xmldom.Document;
+    const docWeb = documant as Document;
+    if (!isWeb) {
+        if (!docWeb.head) {
+            definePropertyGetterSetter_DocHeadBody(docNodeJS, "head");
+        }
+        if (!docWeb.body) {
+            definePropertyGetterSetter_DocHeadBody(docNodeJS, "body");
+        }
+        if (docWeb.documentElement && !docWeb.documentElement.style) {
+            definePropertyGetterSetter_ElementStyle(docNodeJS.documentElement as xmldom.Element);
+        }
+        if (docWeb.body && !docWeb.body.style) {
+            definePropertyGetterSetter_ElementStyle(docWeb.body as unknown as xmldom.Element);
+        }
+        if (docWeb.documentElement && !docWeb.documentElement.classList) {
+            definePropertyGetterSetter_ElementClassList(docNodeJS.documentElement as xmldom.Element);
+        }
     }
 
-    return documant;
+    return docWeb;
 }
 
-function definePropertyGetterSetter_ElementClassList(element: Element) {
+function definePropertyGetterSetter_ElementClassList(element: xmldom.Element) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const classListObj: any = {};
     classListObj.element = element;
@@ -142,11 +160,11 @@ function classListRemove(this: any, className: string) {
     elem.setAttribute("class", arr.join(" "));
 }
 
-function definePropertyGetterSetter_DocHeadBody(documant: Document, elementName: string) {
+function definePropertyGetterSetter_DocHeadBody(documant: xmldom.Document, elementName: string) {
 
     Object.defineProperty(documant, elementName, {
         get() {
-            const doc = this as Document;
+            const doc = this as xmldom.Document;
 
             const key = elementName + "_";
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -154,12 +172,12 @@ function definePropertyGetterSetter_DocHeadBody(documant: Document, elementName:
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 return (doc as any)[key]; // cached
             }
-            if (doc.documentElement.childNodes && doc.documentElement.childNodes.length) {
+            if (doc.documentElement?.childNodes && doc.documentElement.childNodes.length) {
                 // tslint:disable-next-line: prefer-for-of
                 for (let i = 0; i < doc.documentElement.childNodes.length; i++) {
                     const child = doc.documentElement.childNodes[i];
-                    if (child.nodeType === 1) { // Node.ELEMENT_NODE
-                        const element = child as Element;
+                    if ((child as xmldom.Element).nodeType === 1) { // Node.ELEMENT_NODE
+                        const element = child as xmldom.Element;
                         if (element.localName && element.localName.toLowerCase() === elementName) {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             (doc as any)[key] = element; // cache
@@ -179,7 +197,7 @@ function definePropertyGetterSetter_DocHeadBody(documant: Document, elementName:
     });
 }
 
-function definePropertyGetterSetter_ElementStyle(element: Element) {
+function definePropertyGetterSetter_ElementStyle(element: xmldom.Element) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const styleObj: any = {};
     styleObj.element = element;
