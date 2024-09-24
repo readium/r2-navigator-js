@@ -4016,11 +4016,12 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): { epubPage
     return nil;
 };
 
+// TODO: is that a sensible default?
+const MAX_FOLLOWING_ELEMENTS_IDS = 100;
 let _elementsWithID: Array<Element> | undefined;
 const findFollowingDescendantSiblingElementsWithID = (el: Element): string[] | undefined => {
     let followingElementIDs: string[] | undefined;
-    if (true // win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING) || win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED)
-    ) {
+    if (win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING) || win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED) || win.document.documentElement.classList.contains(R2_MO_CLASS_STOPPED)) {
         followingElementIDs = [];
 
         if (!_elementsWithID) {
@@ -4067,6 +4068,9 @@ const findFollowingDescendantSiblingElementsWithID = (el: Element): string[] | u
                 }
                 if (doPush) {
                     followingElementIDs.push(id);
+                    if (followingElementIDs.length >= MAX_FOLLOWING_ELEMENTS_IDS) {
+                        return followingElementIDs;
+                    }
                 }
             }
         }
