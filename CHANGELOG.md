@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.16.0...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.16.1...develop
 
 Changes:
 * TODO
+
+# 1.16.1
+
+# > Build environment: NodeJS `20.17.0`, NPM `10.8.3`
+
+Changes:
+* LocatorExtended followingElementIDs only for Media Overlays and with length limit to avoid spamming the reading location notifications with useless heavy data (also fixed in Thorium)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.16.1/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.16.1/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.16.1
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.16.10...v1.16.1
 
 # 1.16.0
 
