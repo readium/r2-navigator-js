@@ -33,6 +33,8 @@ export interface IHighlight {
     expand?: number;
 
     group: string | undefined;
+
+    marginText?: string;
 }
 
 export interface IHighlightDefinition {
@@ -47,6 +49,8 @@ export interface IHighlightDefinition {
     expand?: number;
 
     group: string | undefined;
+
+    marginText?: string;
 }
 
 export function convertColorHexadecimalToRGBA(cssHex: string, alpha?: number): string | undefined {

@@ -30,7 +30,7 @@ import {
 } from "../common/dom-text-utils";
 import { easings } from "../common/easings";
 import { IHTMLDialogElementWithPopup, PopupDialog, isPopupDialogOpen } from "../common/popup-dialog";
-import { createHighlights, destroyHighlight, ENABLE_CSS_HIGHLIGHTS } from "./highlight";
+import { createHighlights, destroyHighlight, ENABLE_CSS_HIGHLIGHTS, HIGHLIGHT_GROUP_TTS } from "./highlight";
 import { isRTL, clearImageZoomOutlineDebounced } from "./readium-css";
 
 import { ReadiumElectronWebviewWindow } from "./state";
@@ -690,7 +690,7 @@ function wrapHighlightWord(
                 drawType: HighlightDrawTypeUnderline,
                 expand: ENABLE_CSS_HIGHLIGHTS ? 0 : 2,
                 selectionInfo: undefined,
-                group: "tts",
+                group: HIGHLIGHT_GROUP_TTS,
                 range,
                 // selectionInfo: {
                 //     rawBefore: textInfo.rawBefore,
@@ -860,7 +860,7 @@ function wrapHighlight(
                     drawType: HighlightDrawTypeBackground,
                     expand: 4,
                     selectionInfo: undefined,
-                    group: "tts",
+                    group: HIGHLIGHT_GROUP_TTS,
                     range,
                     // selectionInfo: {
                     //     rawBefore: textInfo.rawBefore,

@@ -52,6 +52,7 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 (window as any).DEBUG_RECTS = IS_DEV && VERBOSE;
 
 export const ENABLE_CSS_HIGHLIGHTS = true && !!CSS.highlights;
+export const ENABLE_PAGEBREAK_MARGIN_TEXT_EXPERIMENT = false;
 
 const cleanupPolygon = (polygonAccumulator: Polygon, off: number) => {
 
@@ -676,8 +677,18 @@ const DEFAULT_BACKGROUND_COLOR: IColor = {
 
 const _highlights: IHighlight[] = [];
 
+// TODO: super hacky!! (separation of concerns)
+export const HIGHLIGHT_GROUP_TTS = "tts";
+export const HIGHLIGHT_GROUP_PAGEBREAK = "pagebreak";
+
 let _drawMargin: boolean | string[] = false;
 const drawMargin = (h: IHighlight) => {
+    if (h.group === HIGHLIGHT_GROUP_TTS) {
+        return false;
+    }
+    if (h.group === HIGHLIGHT_GROUP_PAGEBREAK) {
+        return true;
+    }
     if (Array.isArray(_drawMargin)) {
         if (h.group) {
             return _drawMargin.includes(h.group);
@@ -845,6 +856,7 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
         return;
     }
 
+    // we're not checking foundHighlight.group !== HIGHLIGHT_GROUP_TTS because foundHighlight.pointerInteraction does the job
     if (foundElement && foundHighlight && foundHighlight.pointerInteraction) { // && !drawMargin(foundHighlight)
 
         if (isMouseMove) {
@@ -852,9 +864,11 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
 
             // const doDrawMargin = drawMargin(foundHighlight);
             // documant.documentElement.classList.add(doDrawMargin ? CLASS_HIGHLIGHT_CURSOR1 : CLASS_HIGHLIGHT_CURSOR2);
-            documant.documentElement.classList.add(CLASS_HIGHLIGHT_CURSOR2);
+            if (foundHighlight.group !== HIGHLIGHT_GROUP_PAGEBREAK) {
+                documant.documentElement.classList.add(CLASS_HIGHLIGHT_CURSOR2);
+            }
 
-        } else if (ev.type === "mouseup" || ev.type === "click") {
+        } else if ((ev.type === "mouseup" || ev.type === "click") && foundHighlight.group !== HIGHLIGHT_GROUP_PAGEBREAK) {
             // documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR1);
             documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR2);
 
@@ -1110,6 +1124,7 @@ export function createHighlights(
             highDef.drawType,
             highDef.expand,
             highDef.group,
+            highDef.marginText,
             bodyRect,
             bodyComputedStyle);
         highlights.push(high);
@@ -1167,6 +1182,7 @@ export function createHighlight(
     drawType: number | undefined,
     expand: number | undefined,
     group: string | undefined,
+    marginText: string | undefined,
     bodyRect: DOMRect,
     bodyComputedStyle: CSSStyleDeclaration): [IHighlight, HTMLDivElement | null] {
 
@@ -1207,6 +1223,7 @@ export function createHighlight(
         selectionInfo,
         range,
         group,
+        marginText,
     };
     _highlights.push(highlight);
 
@@ -1466,7 +1483,7 @@ https://blackorwhite.lloydk.ca
         // non-solid highlight (underline or strikethrough), cannot merge and reduce/simplify client rectangles much due to importance of line-level decoration (must preserve horizontal/vertical line heights)
 
         // Japanese Ruby ... ugly hack, TODO extract logic elsewhere!? TODO only TTS? (annotations and search could be problematic if only Ruby RT/RP match? ... but search already excludes Ruby, and mouse text selection makes it hard/impossible to select Ruby upperscript, so...)
-        // highlight.group === "tts" ? JAPANESE_RUBY_TO_SKIP : undefined
+        // highlight.group === HIGHLIGHT_GROUP_TTS ? JAPANESE_RUBY_TO_SKIP : undefined
         const textClientRects = getTextClientRects(range, JAPANESE_RUBY_TO_SKIP);
 
         const textReducedClientRects = getClientRectsNoOverlap(textClientRects, true, vertical, highlight.expand ? highlight.expand : 0);
@@ -1555,7 +1572,6 @@ https://blackorwhite.lloydk.ca
     }
 
     // let highlightAreaSVGDocFrag: DocumentFragment | undefined;
-    // const roundedCorner = 3;
 
     // const rangeBoundingClientRect = range.getBoundingClientRect();
 
@@ -2107,7 +2123,7 @@ https://blackorwhite.lloydk.ca
         const highlightMarginSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
         highlightMarginSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON} ${CLASS_HIGHLIGHT_CONTOUR_MARGIN}`);
         highlightMarginSVG.polygon = polygonMarginUnionPoly;
-        highlightMarginSVG.innerHTML = polygonMarginUnionPoly.svg({
+        const svgPath = polygonMarginUnionPoly.svg({
             fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
             fillRule: "evenodd",
             stroke: "transparent",
@@ -2118,6 +2134,21 @@ https://blackorwhite.lloydk.ca
             className: undefined,
             // r: 4,
         });
+        if (ENABLE_PAGEBREAK_MARGIN_TEXT_EXPERIMENT) {
+            let svg = svgPath;
+            highlight.marginText = "Long test 1.";
+            if (highlight.marginText) {
+                const m = svg.match(/d="\s*M([0-9]+\.?[0-9]*),([0-9]+\.?[0-9]*)/);
+                if (m && m[1] && m[2]) {
+                    const r2SvgHighlightsTextFilterID = `r2SvgFilterR${highlight.color.red}G${highlight.color.green}B${highlight.color.blue}`;
+                    const el = highlightParent.querySelector(`#${r2SvgHighlightsTextFilterID}`); // documant.getElementById(r2SvgHighlightsTextFilterID);
+                    const filter = el ? "" : `<defs><filter x="0" y="0" width="1" height="1" id="${r2SvgHighlightsTextFilterID}"><feFlood flood-color="rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})" result="bg" /><feMerge><feMergeNode in="bg"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+                    svg = `${filter}${svgPath}<text x="${m[1]}" y="${m[2]}" class="${CLASS_HIGHLIGHT_CONTOUR_MARGIN}_" font-size="stroke:red; fill: magenta;" filter="url(#${r2SvgHighlightsTextFilterID})">${highlight.marginText}</text>`;
+                }
+            }
+            highlightMarginSVG.innerHTML = svg;
+        }
+        highlightMarginSVG.innerHTML = svgPath;
 
         highlightParent.append(highlightMarginSVG);
     }

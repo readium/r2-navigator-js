@@ -45,7 +45,7 @@ import {
     R2_EVENT_TTS_OVERLAY_ENABLE, R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_TTS_SENTENCE_DETECT_ENABLE,
     R2_EVENT_TTS_VOICE, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP, R2_EVENT_HIGHLIGHT_DRAW_MARGIN, IEventPayload_R2_EVENT_HIGHLIGHT_DRAW_MARGIN,
 } from "../../common/events";
-import { IHighlightDefinition } from "../../common/highlight";
+import { HighlightDrawTypeOutline, IHighlightDefinition } from "../../common/highlight";
 import { IPaginationInfo } from "../../common/pagination";
 import {
     appendCSSInline, configureFixedLayout, injectDefaultCSS, injectReadPosCSS, isPaginated,
@@ -82,6 +82,8 @@ import { setupAudioBook } from "./audiobook";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
 import {
     createHighlights, destroyAllhighlights, destroyHighlight, destroyHighlightsGroup,
+    ENABLE_PAGEBREAK_MARGIN_TEXT_EXPERIMENT,
+    HIGHLIGHT_GROUP_PAGEBREAK,
     recreateAllHighlights, recreateAllHighlightsRaw, setDrawMargin,
 } from "./highlight";
 import { popoutImage } from "./popoutImages";
@@ -3979,6 +3981,42 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): { epubPage
 
         // debug("_allEpubPageBreaks XPath", JSON.stringify(_allEpubPageBreaks, null, 4));
         debug("_allEpubPageBreaks XPath", _allEpubPageBreaks.length, xpathResult.snapshotLength);
+
+        if (ENABLE_PAGEBREAK_MARGIN_TEXT_EXPERIMENT) {
+            destroyHighlightsGroup(win.document, HIGHLIGHT_GROUP_PAGEBREAK);
+            const highlightDefinitions: IHighlightDefinition[] = [];
+            for (const pageBreak of _allEpubPageBreaks) {
+
+                const range = new Range(); // document.createRange()
+                // range.setStart(pageBreak.element, 0);
+                // range.setEnd(pageBreak.element, 0);
+                range.selectNode(pageBreak.element);
+
+                highlightDefinitions.push(
+                    {
+                        // https://htmlcolorcodes.com/
+                        color: {
+                            blue: 60,
+                            green: 76,
+                            red:  231,
+                        },
+                        // drawType: HighlightDrawTypeUnderline,
+                        // expand: ENABLE_CSS_HIGHLIGHTS ? 0 : 2,
+                        drawType: HighlightDrawTypeOutline,
+                        expand: 1,
+                        selectionInfo: undefined,
+                        group: HIGHLIGHT_GROUP_PAGEBREAK,
+                        range,
+                        marginText: pageBreak.text ? pageBreak.text : undefined,
+                    },
+                );
+            }
+            createHighlights(
+                win,
+                highlightDefinitions,
+                true, // mouse / pointer interaction
+            );
+        }
     }
 
     for (let i = _allEpubPageBreaks.length - 1; i >= 0; i--) {
