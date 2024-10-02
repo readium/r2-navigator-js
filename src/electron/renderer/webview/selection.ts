@@ -15,6 +15,8 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Selection
 
+// const win = global.window as ReadiumElectronWebviewWindow;
+
 function dumpDebug(
     msg: string,
     startNode: Node, startOffset: number,
@@ -65,11 +67,37 @@ function dumpDebug(
     console.log("$$$$$$$$$$$$$$$$$");
 }
 
+let _selectionChangeTimeout: number | undefined = undefined;
+let _ignoreSelectionChangeEvent: boolean = false;
+export const setSelectionChangeAction = (win: ReadiumElectronWebviewWindow, func: () => void) => {
+    win.document?.addEventListener("selectionchange", (_ev: Event) => {
+        if (_selectionChangeTimeout !== undefined) {
+            win.clearTimeout(_selectionChangeTimeout);
+        }
+        if (_ignoreSelectionChangeEvent) {
+            // console.log("############ selectionchange SKIP");
+            _ignoreSelectionChangeEvent = false;
+            return;
+        }
+        // console.log("############ selectionchange OK");
+        func();
+    });
+};
+
 export function clearCurrentSelection(win: ReadiumElectronWebviewWindow) {
     const selection = win.getSelection();
     if (!selection) {
         return;
     }
+    // if (!selection.isCollapsed) {
+    //     _ignoreSelectionChangeEvent = true;
+    // }
+    _ignoreSelectionChangeEvent = true;
+    _selectionChangeTimeout = win.setTimeout(() => {
+        // console.log("############ selectionchange TIMEOUT");
+        _ignoreSelectionChangeEvent = false;
+        _selectionChangeTimeout = undefined;
+    }, 200);
     selection.removeAllRanges();
     // selection.empty();
     // selection.collapseToStart();

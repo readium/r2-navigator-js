@@ -96,7 +96,7 @@ import {
     computeVerticalRTL, getScrollingElement, isRTL, isTwoPageSpread, isVerticalWritingMode,
     readiumCSS, clearImageZoomOutlineDebounced, clearImageZoomOutline,
 } from "./readium-css";
-import { clearCurrentSelection, convertRangeInfo, getCurrentSelectionInfo, convertRange } from "./selection";
+import { clearCurrentSelection, convertRangeInfo, getCurrentSelectionInfo, convertRange, setSelectionChangeAction } from "./selection";
 import { ReadiumElectronWebviewWindow } from "./state";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
@@ -203,6 +203,10 @@ const CSS_PIXEL_TOLERANCE = 5;
 //     }
 // }, 2000);
 
+setSelectionChangeAction(win, () => {
+    notifyReadingLocationDebounced(true); // userInteract assumed (not programmatic)
+});
+
 const TOUCH_SWIPE_DELTA_MIN = 80;
 const TOUCH_SWIPE_LONG_PRESS_MAX_TIME = 500;
 const TOUCH_SWIPE_MAX_TIME = 500;
@@ -266,6 +270,10 @@ win.document.addEventListener(
             ) {
                 touchstartEvent = undefined;
                 touchEventEnd = undefined;
+
+                // if (win.document.getSelection()) {
+                //     notifyReadingLocationDebounced(true);
+                // }
                 return;
             }
 
@@ -293,7 +301,7 @@ win.document.addEventListener(
         }
 
         const rtl = isRTL();
-        if (deltaX < 0) {
+        if (deltaX > 0) {
             // navLeftOrRight(!rtl);
             // navPreviousOrNext(rtl)
             const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
