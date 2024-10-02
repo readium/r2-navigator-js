@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.16.1...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.16.2...develop
 
 Changes:
 * TODO
+
+# 1.16.2
+
+# > Build environment: NodeJS `20.17.0`, NPM `10.8.3`
+
+Changes:
+* Fixed text finger selection which now triggers notification of current reading location (mouse / trackpad cursor and stylus worked fine, but touchscreen interactions were failing)
+* Fixed the inversed finger touch swipe direction (horizontal axis RTL / LTR)
+* NPM package updates
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.16.2/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.16.2/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.16.2
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.16.1...v1.16.2
 
 # 1.16.1
 
@@ -21,7 +40,7 @@ Git commit history:
 * https://github.com/readium/r2-navigator-js/commits/v1.16.1
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.16.10...v1.16.1
+* https://github.com/readium/r2-navigator-js/compare/v1.16.0...v1.16.1
 
 # 1.16.0
 

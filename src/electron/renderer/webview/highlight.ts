@@ -2147,8 +2147,9 @@ https://blackorwhite.lloydk.ca
                 }
             }
             highlightMarginSVG.innerHTML = svg;
+        } else {
+            highlightMarginSVG.innerHTML = svgPath;
         }
-        highlightMarginSVG.innerHTML = svgPath;
 
         highlightParent.append(highlightMarginSVG);
     }
