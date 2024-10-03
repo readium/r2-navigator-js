@@ -273,7 +273,7 @@ export function fixedLayoutZoomPercent(zoomPercent: number) {
 
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
-        if (_fixedLayoutZoomPercentTimers[activeWebView.id]) {
+        if (_fixedLayoutZoomPercentTimers[activeWebView.id] !== undefined) {
             win.clearTimeout(_fixedLayoutZoomPercentTimers[activeWebView.id]);
             _fixedLayoutZoomPercentTimers[activeWebView.id] = undefined;
             // delete _fixedLayoutZoomPercentTimers[activeWebView.id];

@@ -11,6 +11,8 @@ export enum WebViewSlotEnum {
     right = "right",
 }
 
+export const EXTRA_COLUMN_PAD_ID = "r2-extra-column-pad";
+
 export const CLASS_VWM = "r2-class-VWM";
 
 export const CLASS_PAGINATED = "r2-css-paginated";

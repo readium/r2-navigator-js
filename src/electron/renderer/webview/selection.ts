@@ -73,6 +73,7 @@ export const setSelectionChangeAction = (win: ReadiumElectronWebviewWindow, func
     win.document?.addEventListener("selectionchange", (_ev: Event) => {
         if (_selectionChangeTimeout !== undefined) {
             win.clearTimeout(_selectionChangeTimeout);
+            _selectionChangeTimeout = undefined;
         }
         if (_ignoreSelectionChangeEvent) {
             // console.log("############ selectionchange SKIP");
@@ -94,9 +95,9 @@ export function clearCurrentSelection(win: ReadiumElectronWebviewWindow) {
     // }
     _ignoreSelectionChangeEvent = true;
     _selectionChangeTimeout = win.setTimeout(() => {
+        _selectionChangeTimeout = undefined;
         // console.log("############ selectionchange TIMEOUT");
         _ignoreSelectionChangeEvent = false;
-        _selectionChangeTimeout = undefined;
     }, 200);
     selection.removeAllRanges();
     // selection.empty();

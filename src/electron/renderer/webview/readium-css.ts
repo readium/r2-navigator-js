@@ -10,7 +10,7 @@ import { IEventPayload_R2_EVENT_READIUMCSS } from "../../common/events";
 import {
     isDocRTL, isDocVertical, isPaginated, readiumCSSSet,
 } from "../../common/readium-css-inject";
-import { FOOTNOTE_FORCE_SHOW, ROOT_CLASS_NO_FOOTNOTES } from "../../common/styles";
+import { EXTRA_COLUMN_PAD_ID, FOOTNOTE_FORCE_SHOW, POPUP_DIALOG_CLASS, ROOT_CLASS_NO_FOOTNOTES } from "../../common/styles";
 import { ReadiumElectronWebviewWindow } from "./state";
 
 import {
@@ -157,6 +157,10 @@ export const isTwoPageSpread = (): boolean => {
     if (paginatedTwo && (bodyWidth * 2) > scrollElement.clientWidth) {
         paginatedTwo = false;
     }
+    if (docColumnCount && isNaN(docColumnCount) // "auto"?
+        && (bodyWidth * 2) <= (scrollElement.clientWidth + 10)) {
+        paginatedTwo = true;
+    }
     return paginatedTwo;
 };
 
@@ -262,7 +266,7 @@ export function computeVerticalRTL() {
                 break;
             }
             const id = childEl.id || childEl.getAttribute("id");
-            if (id === SKIP_LINK_ID || id === ID_HIGHLIGHTS_CONTAINER) {
+            if (id === SKIP_LINK_ID || id === ID_HIGHLIGHTS_CONTAINER || id === EXTRA_COLUMN_PAD_ID || id === POPUP_DIALOG_CLASS) {
                 continue;
             }
             singleChild = childEl;
