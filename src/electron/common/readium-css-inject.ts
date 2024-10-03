@@ -19,6 +19,7 @@ import {
     ROOT_CLASS_REDUCE_MOTION, WebViewSlotEnum, audioCssStyles, focusCssStyles, footnotesCssStyles,
     mediaOverlaysCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles,
     targetCssStyles, ttsCssStyles, visibilityMaskCssStyles,
+    ENABLE_VISIBILITY_MASK,
 } from "./styles";
 
 export const READIUM2_BASEURL_ID = "r2_BASEURL_ID";
@@ -1047,8 +1048,10 @@ export function readiumCssTransformHtml(
 
     documantFromXmlDom.documentElement.setAttribute("data-readiumcss-injected", "yes");
 
-    documantFromXmlDom.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK);
-    documantFromXmlDom.documentElement.classList.remove(ROOT_CLASS_INVISIBLE_MASK_REMOVED);
+    if (ENABLE_VISIBILITY_MASK) {
+        documantFromXmlDom.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK);
+        documantFromXmlDom.documentElement.classList.remove(ROOT_CLASS_INVISIBLE_MASK_REMOVED);
+    }
 
     // const wh = configureFixedLayout(doc, win.READIUM2.isFixedLayout,
     //     win.READIUM2.fxlViewportWidth, win.READIUM2.fxlViewportHeight,

@@ -39,6 +39,7 @@ import {
     AUDIO_BODY_ID, AUDIO_BUFFER_CANVAS_ID, AUDIO_CONTROLS_ID, AUDIO_COVER_ID, AUDIO_FORWARD_ID,
     AUDIO_ID, AUDIO_NEXT_ID, AUDIO_PERCENT_ID, AUDIO_PLAYPAUSE_ID, AUDIO_PREVIOUS_ID, AUDIO_RATE_ID,
     AUDIO_REWIND_ID, AUDIO_SECTION_ID, AUDIO_SLIDER_ID, AUDIO_TIME_ID, AUDIO_TITLE_ID,
+    ENABLE_EXTRA_COLUMN_SHIFT_METHOD,
     WebViewSlotEnum,
 } from "../common/styles";
 import { getCurrentAudioPlaybackRate, setCurrentAudioPlaybackRate } from "./audiobook";
@@ -66,9 +67,9 @@ const win = global.window as ReadiumElectronBrowserWindow;
 
 const webviewStyleCommon = "display: flex; border: 0; margin: 0; padding: 0; box-sizing: border-box; position: absolute; ";
 
-const webviewStyleLeft = "opacity: 0; " + webviewStyleCommon + "left: 0; width: 50%; bottom: 0; top: 0;";
-const webviewStyleRight = "opacity: 0; " + webviewStyleCommon + "left: 50%; right: 0; bottom: 0; top: 0;";
-const webviewStyleCenter = "opacity: 0; " + webviewStyleCommon + "left: 0; right: 0; bottom: 0; top: 0;";
+const webviewStyleLeft = `opacity: ${ENABLE_EXTRA_COLUMN_SHIFT_METHOD ? 0 : 1}; ` + webviewStyleCommon + "left: 0; width: 50%; bottom: 0; top: 0;";
+const webviewStyleRight = `opacity: ${ENABLE_EXTRA_COLUMN_SHIFT_METHOD ? 0 : 1}; ` + webviewStyleCommon + "left: 50%; right: 0; bottom: 0; top: 0;";
+const webviewStyleCenter = `opacity: ${ENABLE_EXTRA_COLUMN_SHIFT_METHOD ? 0 : 1}; ` + webviewStyleCommon + "left: 0; right: 0; bottom: 0; top: 0;";
 
 const webviewStyleLeft_ = "opacity: 1; " + webviewStyleCommon +
     "left: 0; top: calc(0 - max(var(--R2_FXL_Y_SHIFT), var(--R2_FXL_Y_SHIFT_)));";
@@ -1118,7 +1119,8 @@ function loadLink(
             debug(msgStr);
         }
         if (activeWebView) {
-            if (activeWebView.style.transform &&
+            if (ENABLE_EXTRA_COLUMN_SHIFT_METHOD &&
+                activeWebView.style.transform &&
                 activeWebView.style.transform !== "none" &&
                 !activeWebView.hasAttribute("data-wv-fxl")) {
 
@@ -1628,7 +1630,8 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
 
                 activeWebView.READIUM2.highlights = highlights;
 
-                if (activeWebView.style.transform &&
+                if (ENABLE_EXTRA_COLUMN_SHIFT_METHOD &&
+                    activeWebView.style.transform &&
                     activeWebView.style.transform !== "none" &&
                     !activeWebView.hasAttribute("data-wv-fxl")) {
                     // activeWebView.setAttribute("src", "data:, ");

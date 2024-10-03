@@ -31,7 +31,7 @@ import { READIUM_CSS_URL_PATH } from "../common/readium-css-settings";
 import {
     R2_SESSION_WEBVIEW, READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl,
 } from "../common/sessions";
-import { WebViewSlotEnum } from "../common/styles";
+import { ENABLE_EXTRA_COLUMN_SHIFT_METHOD, WebViewSlotEnum } from "../common/styles";
 import { URL_PARAM_DEBUG_VISUALS } from "./common/url-params";
 import { highlightsHandleIpcMessage } from "./highlight";
 import {
@@ -214,7 +214,8 @@ function readiumCssApplyToWebview(
 
     const payloadRcss = adjustReadiumCssJsonMessageForFixedLayout(activeWebView, pubLink || activeWebView.READIUM2.link, actualReadiumCss);
 
-    if (activeWebView.style.transform &&
+    if (ENABLE_EXTRA_COLUMN_SHIFT_METHOD &&
+        activeWebView.style.transform &&
         activeWebView.style.transform !== "none" &&
         !activeWebView.hasAttribute("data-wv-fxl")) {
 
@@ -410,7 +411,7 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             // win.focus();
 
             // ipcRenderer.invoke(R2_EVENT_KEYBOARD_FOCUS_REQUEST, webview.getWebContentsId());
-        } else if (event.channel === R2_EVENT_SHOW) {
+        } else if (event.channel === R2_EVENT_SHOW && ENABLE_EXTRA_COLUMN_SHIFT_METHOD) {
             webview.style.opacity = "1";
         } else if (event.channel === R2_EVENT_FXL_CONFIGURE) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_FXL_CONFIGURE;

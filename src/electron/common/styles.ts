@@ -5,6 +5,8 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+export const ENABLE_EXTRA_COLUMN_SHIFT_METHOD = false;
+
 export enum WebViewSlotEnum {
     center = "center",
     left = "left",
@@ -855,6 +857,7 @@ export const CLASS_HIGHLIGHT_CURSOR2 = "R2_CLASS_HIGHLIGHT_CURSOR2";
 // export const CLASS_HIGHLIGHT_BOUNDING_AREA = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA";
 // export const CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN";
 
+export const ENABLE_VISIBILITY_MASK = false;
 export const ROOT_CLASS_INVISIBLE_MASK = "r2-visibility-mask-class";
 export const ROOT_CLASS_INVISIBLE_MASK_REMOVED = "r2-visibility-mask-removed-class";
 

@@ -63,6 +63,8 @@ import {
     readPosCssStylesAttr3, readPosCssStylesAttr4,
     ID_HIGHLIGHTS_CONTAINER,
     EXTRA_COLUMN_PAD_ID,
+    ENABLE_EXTRA_COLUMN_SHIFT_METHOD,
+    ENABLE_VISIBILITY_MASK,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector3";
@@ -117,8 +119,6 @@ if (IS_DEV) {
 // registerProtocol();
 
 const debug = debug_("r2:navigator#electron/renderer/webview/preload");
-
-const ENABLE_EXTRA_COLUMN_SHIFT_METHOD = false;
 
 const INJECTED_LINK_TXT = "__";
 
@@ -1728,11 +1728,16 @@ let _ignoreScrollEvent = false;
 // });
 
 function showHideContentMask(doHide: boolean, isFixedLayout: boolean | null) {
+    if (!ENABLE_VISIBILITY_MASK) {
+        return;
+    }
     if (doHide) {
         win.document.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK);
         win.document.documentElement.classList.remove(ROOT_CLASS_INVISIBLE_MASK_REMOVED);
     } else {
-        ipcRenderer.sendToHost(R2_EVENT_SHOW, null);
+        if (ENABLE_EXTRA_COLUMN_SHIFT_METHOD) {
+            ipcRenderer.sendToHost(R2_EVENT_SHOW, null);
+        }
 
         if (isFixedLayout) {
             win.document.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK_REMOVED);
