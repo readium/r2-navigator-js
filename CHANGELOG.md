@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.16.2...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.16.3...develop
 
 Changes:
 * TODO
+
+# 1.16.3
+
+# > Build environment: NodeJS `20.17.0`, NPM `10.8.3`
+
+Changes:
+* Updated the technique used to append a blank pagination column after an odd (non even) number of columns when 2-page spreads are rendered (this removes the complex viewport shifting transform)
+* Disabled the visibility mask technique which never delivered satisfactory results
+* Replaced the buggy (Chromium) pure CSS computation of high-contrast foreground colour over highlighted text background (fixed TTS, annotations, search, etc.) with a simpler luminance-based calculation
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.16.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.16.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.16.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.16.2...v1.16.3
 
 # 1.16.2
 
