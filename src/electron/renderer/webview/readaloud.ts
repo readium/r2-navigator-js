@@ -5,11 +5,11 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { debounce } from "debounce";
+import * as debounce from "debounce";
 import { ipcRenderer } from "electron";
 
 import {
-    R2_EVENT_TTS_DOC_END, R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED,
+    R2_EVENT_TTS_DOC_END, R2_EVENT_TTS_DOC_BACK, R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED,
 } from "../../common/events";
 import {
     HighlightDrawTypeBackground, HighlightDrawTypeUnderline, IHighlight,
@@ -23,17 +23,20 @@ import {
     TTS_POPUP_DIALOG_CLASS,
 } from "../../common/styles";
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
-import { uniqueCssSelector } from "../common/cssselector2-3";
+
 import {
     ITtsQueueItem, ITtsQueueItemReference, findTtsQueueItemIndex, generateTtsQueue,
     getTtsQueueItemRef, getTtsQueueItemRefText, getTtsQueueLength, normalizeHtmlText,
 } from "../common/dom-text-utils";
 import { easings } from "../common/easings";
 import { IHTMLDialogElementWithPopup, PopupDialog, isPopupDialogOpen } from "../common/popup-dialog";
-import { createHighlights, destroyHighlight } from "./highlight";
+import { createHighlights, destroyHighlight, ENABLE_CSS_HIGHLIGHTS, HIGHLIGHT_GROUP_TTS } from "./highlight";
 import { isRTL, clearImageZoomOutlineDebounced } from "./readium-css";
-import { convertRange } from "./selection";
+
 import { ReadiumElectronWebviewWindow } from "./state";
+
+// import { uniqueCssSelector } from "../common/cssselector2-3";
+// import { convertRange } from "./selection";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -112,6 +115,21 @@ function resetState(stop: boolean) {
     clearImageZoomOutlineDebounced();
 }
 
+function documentForward(node: Node): Node | null {
+    if (node.firstChild) {
+        return node.firstChild;
+    }
+
+    let n: Node | null = node;
+    while (!n.nextSibling) {
+        n = n.parentNode;
+        if (!n) {
+            return null;
+        }
+    }
+    return n.nextSibling;
+}
+
 export function ttsPlay(
     speed: number,
     voice: SpeechSynthesisVoice | null,
@@ -124,7 +142,6 @@ export function ttsPlay(
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: (val: number) => void,
 ) {
-
     ttsStop();
 
     let rootEl = rootElem;
@@ -141,9 +158,21 @@ export function ttsPlay(
 
     let ttsQueueIndex = -1;
     if (startElem) {
-        const idx = findTtsQueueItemIndex(ttsQueue, startElem, startTextNode, startTextNodeOffset, rootEl);
+        let idx = findTtsQueueItemIndex(ttsQueue, startElem, startTextNode, startTextNodeOffset, rootEl);
         if (idx >= 0) {
             ttsQueueIndex = idx;
+        } else {
+            let nextEl: Node | null = startElem;
+            while (nextEl = documentForward(nextEl)) {
+                if (nextEl.nodeType !== Node.ELEMENT_NODE) {
+                    continue;
+                }
+                idx = findTtsQueueItemIndex(ttsQueue, nextEl as Element, undefined, 0, rootEl);
+                if (idx >= 0) {
+                    ttsQueueIndex = idx;
+                    break;
+                }
+            }
         }
     }
     if (ttsQueueIndex < 0) {
@@ -389,6 +418,16 @@ export function ttsNext(skipSentences = false) {
                     _dialogState.ttsQueueItem.iSentence);
         }
         if (j >= _dialogState.ttsQueueLength || j < 0) {
+
+            ttsStop();
+            setTimeout(() => {
+                ipcRenderer.sendToHost(R2_EVENT_TTS_DOC_END);
+                // const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+                //     direction: "LTR",
+                //     go: "NEXT",
+                // };
+                // ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+            }, 400);
             return;
         }
         ttsPause(true);
@@ -406,6 +445,15 @@ export function ttsPrevious(skipSentences = false) {
             j = _dialogState.ttsQueueItem.iGlobal - _dialogState.ttsQueueItem.iSentence - 1;
         }
         if (j >= _dialogState.ttsQueueLength || j < 0) {
+            ttsStop();
+            setTimeout(() => {
+                ipcRenderer.sendToHost(R2_EVENT_TTS_DOC_BACK);
+                // const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
+                //     direction: "LTR",
+                //     go: "NEXT",
+                // };
+                // ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
+            }, 400);
             return;
         }
         ttsPause(true);
@@ -426,26 +474,82 @@ export function ttsPreviewAndEventuallyPlayQueueIndex(n: number) {
     ttsPlayQueueIndexDebounced(n);
 }
 
-const _getCssSelectorOptions = {
-    className: (_str: string) => {
-        return true;
-    },
-    idName: (_str: string) => {
-        return true;
-    },
-    tagName: (_str: string) => {
-        return true;
-    },
-};
-function getCssSelector(element: Element): string {
-    try {
-        return uniqueCssSelector(element, win.document, _getCssSelectorOptions);
-    } catch (err) {
-        console.log("uniqueCssSelector:");
-        console.log(err);
-        return "";
-    }
+// const _getCssSelectorOptions = {
+//     className: (_str: string) => {
+//         return true;
+//     },
+//     idName: (_str: string) => {
+//         return true;
+//     },
+//     tagName: (_str: string) => {
+//         return true;
+//     },
+// };
+// function getCssSelector(element: Element): string {
+//     try {
+//         return uniqueCssSelector(element, win.document, _getCssSelectorOptions);
+//     } catch (err) {
+//         console.log("uniqueCssSelector:");
+//         console.log(err);
+//         return "";
+//     }
+// }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function throttle(fn: (...argz: any[]) => any, time: number) {
+    let called = false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let lastCalled: any[] | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const func = (...args: any[]) => {
+        if (!called) {
+            fn(...args);
+            called = true;
+            setTimeout(() => {
+                called = false;
+                if (lastCalled) {
+                    const argos = lastCalled;
+                    lastCalled = undefined;
+                    func(...argos);
+                    // setTimeout(() => {
+                    // }, 0);
+                }
+            }, time);
+        } else {
+            lastCalled = args;
+        }
+    };
+    return func;
 }
+
+// const focusScrollImmediate =
+//     debounce((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => {
+//         if (_dialogState && _dialogState.focusScrollRaw) {
+//                 _dialogState.focusScrollRaw(el, doFocus, animate, domRect);
+//         }
+//     }, 500, { immediate: true });
+
+const focusScrollImmediate = throttle((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => {
+    if (_dialogState && _dialogState.focusScrollRaw) {
+        _dialogState.focusScrollRaw(el, doFocus, animate, domRect);
+    }
+}, 500);
+
+const isOnlyWhiteSpace = (str: string) => {
+    for (let i = 0; i < str.length; i++) {
+        if (str[i] !== " " &&
+            str[i] !== "\t" &&
+            str[i] !== "\n" &&
+            str[i] !== "\r"
+            // && !/\s/.test(str)
+        ) {
+            // console.log("isOnlyWhiteSpace FALSE: [[" + str + "]]");
+            return false;
+        }
+    }
+    // console.log("isOnlyWhiteSpace TRUE");
+    return true;
+};
 
 let _ttsQueueItemHighlightsSentence: Array<IHighlight | null> | undefined;
 let _ttsQueueItemHighlightsWord: Array<IHighlight | null> | undefined;
@@ -455,9 +559,10 @@ function wrapHighlightWord(
     utteranceText: string,
     charIndex: number,
     charLength: number,
-    word: string,
-    start: number,
-    end: number) {
+    // word: string,
+    // start: number,
+    // end: number
+) {
 
     if (_dialogState && _dialogState.ttsOverlayEnabled) {
         return;
@@ -479,6 +584,7 @@ function wrapHighlightWord(
         ttsQueueItem.combinedTextSentencesRangeBegin &&
         ttsQueueItem.combinedTextSentencesRangeEnd &&
         ttsQueueItemRef.iSentence >= 0) {
+
         const sentOffset = ttsQueueItem.combinedTextSentencesRangeBegin[ttsQueueItemRef.iSentence];
         charIndexAdjusted += sentOffset;
         txtToCheck = ttsQueueItem.combinedTextSentences[ttsQueueItemRef.iSentence];
@@ -489,12 +595,12 @@ function wrapHighlightWord(
             console.log("TTS utteranceText DIFF?? ",
                 `[[${utteranceText}]]`, `[[${txtToCheck}]]`);
         }
-        const ttsWord = utteranceText.substr(charIndex, charLength);
-        if (ttsWord !== word) {
-            console.log("TTS word DIFF?? ",
-                `[[${ttsWord}]]`, `[[${word}]]`,
-                `${charIndex}--${charLength}`, `${start}--${end - start}`);
-        }
+        // const ttsWord = utteranceText.substr(charIndex, charLength);
+        // if (ttsWord !== word) {
+        //     console.log("TTS word DIFF?? ",
+        //         `[[${ttsWord}]]`, `[[${word}]]`,
+        //         `${charIndex}--${charLength}`, `${start}--${end - start}`);
+        // }
         // console.log("HIGHLIGHT WORD DATA:");
         // console.log(utteranceText);
         // console.log(txtToCheck);
@@ -506,6 +612,23 @@ function wrapHighlightWord(
         // console.log(end - start);
     }
 
+    // console.log("...");
+    // console.log("++TTS 4 combinedText: [[" + ttsQueueItem.combinedText + "]]");
+    // console.log("++TTS 4: combinedTextSentences: [[" + JSON.stringify(ttsQueueItem.combinedTextSentences, null, 4) + "]]");
+    // console.log("...");
+    // for (const txtNode of ttsQueueItem.textNodes) {
+    //     console.log("++TTS 4 TXT A: [[" + txtNode.nodeValue + "]]");
+    // }
+    // console.log("...");
+    // for (const txtNode of ttsQueueItemRef.item.textNodes) {
+    //     console.log("++TTS 4 TXT B: [[" + txtNode.nodeValue + "]]");
+    // }
+    // console.log("...");
+    // console.log("++TTS 4 charIndex: " + charIndex);
+    // console.log("++TTS 4 charLength: " + charLength);
+    // console.log("++TTS 4 charIndexAdjusted: " + charIndexAdjusted);
+    // console.log("...");
+
     let acc = 0;
     let rangeStartNode: Node | undefined;
     let rangeStartOffset = -1;
@@ -516,7 +639,7 @@ function wrapHighlightWord(
         if (!txtNode.nodeValue && txtNode.nodeValue !== "") {
             continue;
         }
-        const l = txtNode.nodeValue.length;
+        const l = isOnlyWhiteSpace(txtNode.nodeValue) ? 1 : txtNode.nodeValue.length;
         acc += l;
         if (!rangeStartNode) {
             if (charIndexAdjusted < acc) {
@@ -542,18 +665,19 @@ function wrapHighlightWord(
 
         if (_dialogState && _dialogState.focusScrollRaw) {
             const domRect = range.getBoundingClientRect();
-            _dialogState.focusScrollRaw(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect);
+            //_dialogState.focusScrollRaw
+            focusScrollImmediate(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect);
         }
 
-        const tuple = convertRange(
-            range,
-            getCssSelector,
-            (_node: Node) => ""); // computeElementCFI
-        if (!tuple) {
-            return;
-        }
-        const rangeInfo = tuple[0];
-        const textInfo = tuple[1];
+        // const tuple = convertRange(
+        //     range,
+        //     getCssSelector,
+        //     (_node: Node) => ""); // computeElementCFI
+        // if (!tuple) {
+        //     return;
+        // }
+        // const rangeInfo = tuple[0];
+        // const textInfo = tuple[1];
 
         const highlightDefinitions = [
             {
@@ -564,18 +688,21 @@ function wrapHighlightWord(
                     red: 255,
                 },
                 drawType: HighlightDrawTypeUnderline,
-                expand: 2,
-                selectionInfo: {
-                    rawBefore: textInfo.rawBefore,
-                    rawText: textInfo.rawText,
-                    rawAfter: textInfo.rawAfter,
+                expand: ENABLE_CSS_HIGHLIGHTS ? 0 : 2,
+                selectionInfo: undefined,
+                group: HIGHLIGHT_GROUP_TTS,
+                range,
+                // selectionInfo: {
+                //     rawBefore: textInfo.rawBefore,
+                //     rawText: textInfo.rawText,
+                //     rawAfter: textInfo.rawAfter,
 
-                    cleanBefore: textInfo.cleanBefore,
-                    cleanText: textInfo.cleanText,
-                    cleanAfter: textInfo.cleanAfter,
+                //     cleanBefore: textInfo.cleanBefore,
+                //     cleanText: textInfo.cleanText,
+                //     cleanAfter: textInfo.cleanAfter,
 
-                    rangeInfo,
-                },
+                //     rangeInfo,
+                // },
             },
         ];
         _ttsQueueItemHighlightsWord = createHighlights(
@@ -585,6 +712,7 @@ function wrapHighlightWord(
         );
     }
 }
+
 function wrapHighlight(
     doHighlight: boolean,
     ttsQueueItemRef: ITtsQueueItemReference) {
@@ -616,6 +744,7 @@ function wrapHighlight(
 
         let range: Range | undefined;
         if (!ttsQueueItem.textNodes || !ttsQueueItem.textNodes.length) {
+            // console.log("++TTS 1");
             range = new Range();
             range.selectNode(ttsQueueItem.parentElement);
             // if (ttsQueueItem.parentElement.childNodes?.length) {
@@ -627,6 +756,18 @@ function wrapHighlight(
             ttsQueueItem.combinedTextSentencesRangeBegin &&
             ttsQueueItem.combinedTextSentencesRangeEnd &&
             ttsQueueItemRef.iSentence >= 0) {
+            // console.log("...");
+            // console.log("++TTS 2 combinedText: [[" + ttsQueueItem.combinedText + "]]");
+            // console.log("++TTS 2: combinedTextSentences: [[" + JSON.stringify(ttsQueueItem.combinedTextSentences, null, 4) + "]]");
+            // console.log("...");
+            // for (const txtNode of ttsQueueItem.textNodes) {
+            //     console.log("++TTS 2 TXT A: [[" + txtNode.nodeValue + "]]");
+            // }
+            // console.log("...");
+            // for (const txtNode of ttsQueueItemRef.item.textNodes) {
+            //     console.log("++TTS 2 TXT B: [[" + txtNode.nodeValue + "]]");
+            // }
+            // console.log("...");
 
             const sentBegin = ttsQueueItem.combinedTextSentencesRangeBegin[ttsQueueItemRef.iSentence];
             const sentEnd = ttsQueueItem.combinedTextSentencesRangeEnd[ttsQueueItemRef.iSentence];
@@ -640,7 +781,7 @@ function wrapHighlight(
                 if (!txtNode.nodeValue && txtNode.nodeValue !== "") {
                     continue;
                 }
-                const l = txtNode.nodeValue.length;
+                const l = isOnlyWhiteSpace(txtNode.nodeValue) ? 1 : txtNode.nodeValue.length;
                 acc += l;
                 if (!rangeStartNode) {
                     if (sentBegin < acc) {
@@ -665,6 +806,15 @@ function wrapHighlight(
                 range.setEnd(rangeEndNode, rangeEndOffset);
             }
         } else { // ttsQueueItem.combinedText
+            // console.log("...");
+            // console.log("++TTS 3 combinedText: [[" + ttsQueueItem.combinedText + "]]");
+            // console.log("...");
+            // console.log("++TTS 3: combinedTextSentences: [[" + JSON.stringify(ttsQueueItem.combinedTextSentences, null, 4) + "]]");
+            // console.log("...");
+            // for (const txtNode of ttsQueueItem.textNodes) {
+            //     console.log("++TTS 3 TXT: [[" + txtNode.nodeValue + "]]");
+            // }
+            // console.log("...");
 
             range = new Range(); // document.createRange()
 
@@ -672,31 +822,32 @@ function wrapHighlight(
             if (!firstTextNode.nodeValue && firstTextNode.nodeValue !== "") {
                 return;
             }
-            range.setStart(firstTextNode, 0);
+            range.setStart(firstTextNode, isOnlyWhiteSpace(firstTextNode.nodeValue) ? firstTextNode.nodeValue.length - 1 : 0);
 
             const lastTextNode = ttsQueueItem.textNodes[ttsQueueItem.textNodes.length - 1];
             if (!lastTextNode.nodeValue && lastTextNode.nodeValue !== "") {
                 return;
             }
-            range.setEnd(lastTextNode, lastTextNode.nodeValue.length);
+            range.setEnd(lastTextNode, isOnlyWhiteSpace(lastTextNode.nodeValue) ? 1 : lastTextNode.nodeValue.length);
         }
 
         if (range) {
 
             if (_dialogState && _dialogState.focusScrollRaw) {
                 const domRect = range.getBoundingClientRect();
-                _dialogState.focusScrollRaw(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect);
+                // _dialogState.focusScrollRaw
+                focusScrollImmediate(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect);
             }
 
-            const tuple = convertRange(
-                range,
-                getCssSelector,
-                (_node: Node) => ""); // computeElementCFI
-            if (!tuple) {
-                return;
-            }
-            const rangeInfo = tuple[0];
-            const textInfo = tuple[1];
+            // const tuple = convertRange(
+            //     range,
+            //     getCssSelector,
+            //     (_node: Node) => ""); // computeElementCFI
+            // if (!tuple) {
+            //     return;
+            // }
+            // const rangeInfo = tuple[0];
+            // const textInfo = tuple[1];
 
             const highlightDefinitions = [
                 {
@@ -708,17 +859,20 @@ function wrapHighlight(
                     },
                     drawType: HighlightDrawTypeBackground,
                     expand: 4,
-                    selectionInfo: {
-                        rawBefore: textInfo.rawBefore,
-                        rawText: textInfo.rawText,
-                        rawAfter: textInfo.rawAfter,
+                    selectionInfo: undefined,
+                    group: HIGHLIGHT_GROUP_TTS,
+                    range,
+                    // selectionInfo: {
+                    //     rawBefore: textInfo.rawBefore,
+                    //     rawText: textInfo.rawText,
+                    //     rawAfter: textInfo.rawAfter,
 
-                        cleanBefore: textInfo.cleanBefore,
-                        cleanText: textInfo.cleanText,
-                        cleanAfter: textInfo.cleanAfter,
+                    //     cleanBefore: textInfo.cleanBefore,
+                    //     cleanText: textInfo.cleanText,
+                    //     cleanAfter: textInfo.cleanAfter,
 
-                        rangeInfo,
-                    },
+                    //     rangeInfo,
+                    // },
                 },
             ];
             _ttsQueueItemHighlightsSentence = createHighlights(
@@ -854,6 +1008,7 @@ function updateTTSInfo(
         return undefined;
     }
 
+    // utteranceText is set from utterance.onboundary event callback
     const isWordBoundary = charIndex >= 0 && utteranceText;
 
     if (_dialogState.ttsOverlayEnabled &&
@@ -876,30 +1031,51 @@ function updateTTSInfo(
         _dialogState.focusScrollRaw(ttsQueueItem.item.parentElement as HTMLElement, false, true, undefined); // domRect
     }
 
+    // console.log("--TTS utteranceText: [" + utteranceText + "]");
     const ttsQueueItemText = utteranceText ? utteranceText : getTtsQueueItemRefText(ttsQueueItem);
+    // console.log("--TTS ttsQueueItemText: [" + ttsQueueItemText + "]" + " -- [" + getTtsQueueItemRefText(ttsQueueItem) + "]");
+
+    if (!ttsQueueItemText.trim().length) {
+        // console.log("--TTS ttsQueueItemText EMPTY SKIP");
+        return "";
+    }
 
     let ttsQueueItemMarkup = normalizeHtmlText(ttsQueueItemText);
+    // console.log("--TTS ttsQueueItemMarkup: [" + ttsQueueItemMarkup + "]");
 
-    if (charIndex >= 0 && utteranceText) { // isWordBoundary
-        const start = utteranceText.slice(0, charIndex + 1).search(/\S+$/);
-        const right = utteranceText.slice(charIndex).search(/\s/);
-        const word = right < 0 ? utteranceText.slice(start) : utteranceText.slice(start, right + charIndex);
-        const end = start + word.length;
-        // debug(word);
+    if (isWordBoundary) { // charIndex >= 0 && utteranceText
+        // const start = utteranceText.slice(0, charIndex + 1).search(/\S+$/);
+        // const right = utteranceText.slice(charIndex).search(/\s/);
+        // const word = right < 0 ? utteranceText.slice(start) : utteranceText.slice(start, right + charIndex);
+        // const end = start + word.length;
+        // // debug(word);
+        const word = utteranceText.substr(charIndex, charLength);
+        // console.log("--TTS word: [" + word + "]");
 
         if (_dialogState && _dialogState.ttsOverlayEnabled) {
             const prefix = `<span id="${TTS_ID_ACTIVE_WORD}">`;
             const suffix = "</span>";
 
-            const before = utteranceText.substr(0, start);
-            const after = utteranceText.substr(end);
+            // const before = utteranceText.substr(0, start);
+            // const after = utteranceText.substr(end);
+
+            const before = utteranceText.substr(0, charIndex);
+            const after = utteranceText.substr(charIndex + charLength);
+            // console.log("--TTS before: [" + before + "]");
+            // console.log("--TTS after: [" + after + "]");
+
             const l = before.length + word.length + after.length;
+            // console.log("--TTS utteranceText.length: " + utteranceText.length);
+            // console.log("--TTS l: " + l);
+
             ttsQueueItemMarkup = (l === utteranceText.length) ?
                 `${normalizeHtmlText(before)}${prefix}${normalizeHtmlText(word)}${suffix}${normalizeHtmlText(after)}` :
                 normalizeHtmlText(utteranceText);
         } else {
             // tslint:disable-next-line:max-line-length
-            wrapHighlightWord(ttsQueueItem, utteranceText, charIndex, charLength, word, start, end);
+            wrapHighlightWord(ttsQueueItem, utteranceText, charIndex, charLength,
+            // , word, start, end
+            );
         }
     }
 
@@ -1016,7 +1192,9 @@ function updateTTSInfo(
             if (ttsQItem.item.lang) {
                 ttsQItemMarkupAttributes += ` lang="${ttsQItem.item.lang}" xml:lang="${ttsQItem.item.lang}" `;
             }
-            fullMarkup += `${imageMarkup}<div ${ttsQItemMarkupAttributes}>${ttsQItemMarkup}</div>`;
+            if (imageMarkup || ttsQItemMarkup?.trim().length) {
+                fullMarkup += `${imageMarkup}<div ${ttsQItemMarkupAttributes}>${ttsQItemMarkup}</div>`;
+            }
         }
 
         try {
@@ -1098,6 +1276,14 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
     highlights(true);
 
     const txtStr = updateTTSInfo(-1, -1, undefined);
+
+    if (txtStr === "") {
+        highlights(false);
+        ttsPlayQueueIndexDebounced(ttsQueueIndex + 1);
+        return;
+    }
+
+    // empty string is falsy!
     if (!txtStr) {
         ttsStop();
         return;
@@ -1186,7 +1372,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
         updateTTSInfo(ev.charIndex, ev.charLength, utterance.text);
     };
 
-    utterance.onend = (_ev: SpeechSynthesisEvent) => {
+    const onEnd = () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((utterance as any).r2_cancel) {
             return;
@@ -1203,6 +1389,9 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
 
         ttsPlayQueueIndexDebounced(ttsQueueIndex + 1);
     };
+    utterance.onend = (_ev: SpeechSynthesisEvent) => {
+        onEnd();
+    };
 
     _resumableState = {
         ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable:
@@ -1218,6 +1407,12 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (utterance as any).r2_cancel = false;
     setTimeout(() => {
+        // note that isSkippable===true never reaches into a ttsQueueItem because we eject at compilation time instead of runtime / playback:
+        // if (win.READIUM2.ttsSkippabilityEnabled && ttsQueueItem.item.isSkippable) {
+        //     onEnd();
+        // } else {
+        //     win.speechSynthesis.speak(utterance);
+        // }
         win.speechSynthesis.speak(utterance);
     }, 0);
 
@@ -1263,7 +1458,7 @@ function startTTSSession(
 
     const val = win.READIUM2.ttsOverlayEnabled ? ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable() : undefined;
 
-    function onDialogClosed(el: HTMLOrSVGElement | null) {
+    function onDialogClosed(thiz: PopupDialog, el: HTMLOrSVGElement | null) {
         ttsPause(true);
 
         if (_dialogState && _dialogState.focusScrollRaw) {
@@ -1284,6 +1479,60 @@ function startTTSSession(
         setTimeout(() => {
             resetState(false);
         }, 50);
+        setTimeout(() => {
+            if (thiz.clickCloseXY.clickX >= 0 && thiz.clickCloseXY.clickY >= 0) {
+                // const ev = win.document.createEvent("MouseEvents");
+                // ev.initMouseEvent(
+                //     "click", // typeArg
+                //     false, // canBubbleArg
+                //     false, // cancelableArg
+                //     win.document.defaultView as Window, // viewArg
+                //     0, // detailArg
+                //     thiz.clickCloseXY.clickX, // screenXArg
+                //     thiz.clickCloseXY.clickY, // screenYArg
+                //     thiz.clickCloseXY.clickX, // clientXArg
+                //     thiz.clickCloseXY.clickY, // clientYArg
+                //     false, // ctrlKeyArg
+                //     false, // altKeyArg
+                //     false, // shiftKeyArg
+                //     false, // metaKeyArg
+                //     0, // buttonArg
+                //     null, // relatedTargetArg
+                // );
+
+                const ev = new MouseEvent("click", {
+                    button: 0,
+                    buttons: 0,
+                    clientX: thiz.clickCloseXY.clickX,
+                    clientY: thiz.clickCloseXY.clickY,
+                    movementX: thiz.clickCloseXY.clickX,
+                    movementY: thiz.clickCloseXY.clickY,
+                    relatedTarget: null,
+                    screenX: thiz.clickCloseXY.clickX,
+                    screenY: thiz.clickCloseXY.clickY,
+
+                    altKey: false,
+                    ctrlKey: false,
+                    metaKey: false,
+                    modifierAltGraph: false,
+                    modifierCapsLock: false,
+                    modifierFn: false,
+                    modifierFnLock: false,
+                    modifierHyper: false,
+                    modifierNumLock: false,
+                    modifierScrollLock: false,
+                    modifierSuper: false,
+                    modifierSymbol: false,
+                    modifierSymbolLock: false,
+                    shiftKey: false,
+
+                    detail: 0,
+                    view: win.document.defaultView,
+                    which: 0,
+                });
+                win.document.dispatchEvent(ev);
+            }
+        }, 100);
     }
 
     // &#x21E0;
@@ -1297,8 +1546,8 @@ function startTTSSession(
     tabindex="0" autofocus="autofocus"></div>
 ${win.READIUM2.ttsOverlayEnabled ?
             `
-<button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}" title="previous"><span>&#9668;</span></button>
-<button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}" title="next"><span>&#9658;</span></button>
+<button id="${TTS_ID_PREVIOUS}" class="${TTS_NAV_BUTTON_CLASS}" title="${isRTL() ? "next" : "previous"}"><span>&#9668;</span></button>
+<button id="${TTS_ID_NEXT}" class="${TTS_NAV_BUTTON_CLASS}" title="${isRTL() ? "previous" : "next"}"><span>&#9658;</span></button>
 <input id="${TTS_ID_SLIDER}" type="range" min="0" max="${ttsQueueLength - 1}" value="0"
     ${isRTL() ? "dir=\"rtl\"" : "dir=\"ltr\""}  title="progress"/>
 `

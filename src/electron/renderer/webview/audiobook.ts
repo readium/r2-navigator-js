@@ -5,7 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { debounce } from "debounce";
+import * as debounce from "debounce";
 import { ipcRenderer } from "electron";
 
 import { DEBUG_AUDIO } from "../../common/audiobook";
@@ -192,14 +192,14 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
 
     previousElement.addEventListener("click", () => {
         const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-            direction: "LTR",
+            // direction: "LTR",
             go: "PREVIOUS",
         };
         ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
     });
     nextElement.addEventListener("click", () => {
         const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-            direction: "LTR",
+            // direction: "LTR",
             go: "NEXT",
         };
         ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
@@ -234,7 +234,7 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
             } else {
                 if (audioElement.currentTime >= audioElement.duration - 0.5) {
                     const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-                        direction: "LTR",
+                        // direction: "LTR",
                         go: "NEXT",
                     };
                     ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);
@@ -364,7 +364,7 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
         playPauseElement.classList.remove("pause");
         notifyPlaybackLocation();
         const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-            direction: "LTR",
+            // direction: "LTR",
             go: "NEXT",
         };
         ipcRenderer.sendToHost(R2_EVENT_PAGE_TURN_RES, payload);

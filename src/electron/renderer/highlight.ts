@@ -7,8 +7,9 @@
 
 import {
     IEventPayload_R2_EVENT_HIGHLIGHT_CLICK, IEventPayload_R2_EVENT_HIGHLIGHT_CREATE,
-    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_CLICK, R2_EVENT_HIGHLIGHT_CREATE,
+    IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE, IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE_ALL, R2_EVENT_HIGHLIGHT_CLICK, R2_EVENT_HIGHLIGHT_CREATE,
     R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
+    IEventPayload_R2_EVENT_HIGHLIGHT_DRAW_MARGIN, R2_EVENT_HIGHLIGHT_DRAW_MARGIN,
 } from "../common/events";
 import { IHighlight, IHighlightDefinition } from "../common/highlight";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
@@ -29,7 +30,7 @@ export function highlightsHandleIpcMessage(
         const activeWebView = eventCurrentTarget;
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_HIGHLIGHT_CLICK;
         if (_highlightsClickListener && activeWebView.READIUM2.link) {
-            _highlightsClickListener(activeWebView.READIUM2.link.Href, payload.highlight);
+            _highlightsClickListener(activeWebView.READIUM2.link.Href, payload.highlight, payload.event);
         }
         return true;
     } else if (eventChannel === R2_EVENT_HIGHLIGHT_CREATE) {
@@ -39,11 +40,12 @@ export function highlightsHandleIpcMessage(
     }
 }
 
-let _highlightsClickListener: ((href: string, highlight: IHighlight) => void) | undefined;
-export function highlightsClickListen(highlightsClickListener: (href: string, highlight: IHighlight) => void) {
+let _highlightsClickListener: ((href: string, highlight: IHighlight, event?: IEventPayload_R2_EVENT_HIGHLIGHT_CLICK["event"]) => void) | undefined;
+export function highlightsClickListen(highlightsClickListener: (href: string, highlight: IHighlight, event?: IEventPayload_R2_EVENT_HIGHLIGHT_CLICK["event"]) => void) {
     _highlightsClickListener = highlightsClickListener;
 }
-export function highlightsRemoveAll(href: string) {
+export function highlightsRemoveAll(href: string, groups: string[] | undefined) {
+    console.log("--HIGH-- highlightsRemoveAll: " + href + " ... " + JSON.stringify(groups));
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
         if (activeWebView.READIUM2.link?.Href !== href) {
@@ -52,12 +54,26 @@ export function highlightsRemoveAll(href: string) {
 
         setTimeout(async () => {
             if (activeWebView.READIUM2?.DOMisReady) {
-                await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE_ALL);
+
+                const payload: IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE_ALL = {
+                    groups,
+                };
+                if (groups) {
+                    if (activeWebView.READIUM2.highlights) {
+                        activeWebView.READIUM2.highlights =  activeWebView.READIUM2.highlights.filter((h) => {
+                            return !h.group || !groups.includes(h.group);
+                        });
+                    }
+                } else {
+                    activeWebView.READIUM2.highlights = undefined;
+                }
+                await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE_ALL, payload);
             }
         }, 0);
     }
 }
 export function highlightsRemove(href: string, highlightIDs: string[]) {
+    console.log("--HIGH-- highlightsRemove: " + href + " ==> " + highlightIDs.length);
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
         if (activeWebView.READIUM2.link?.Href !== href) {
@@ -69,6 +85,11 @@ export function highlightsRemove(href: string, highlightIDs: string[]) {
         };
         setTimeout(async () => {
             if (activeWebView.READIUM2?.DOMisReady) {
+                if (activeWebView.READIUM2.highlights) {
+                    activeWebView.READIUM2.highlights = activeWebView.READIUM2.highlights.filter((h) => {
+                        return !highlightIDs.includes(h.id);
+                    });
+                }
                 await activeWebView.send(R2_EVENT_HIGHLIGHT_REMOVE, payload);
             }
         }, 0);
@@ -79,7 +100,7 @@ export async function highlightsCreate(
     highlightDefinitions: IHighlightDefinition[] | undefined):
     Promise<Array<IHighlight | null>> {
     return new Promise<Array<IHighlight | null>>((resolve, reject) => {
-
+        console.log("--HIGH-- highlightsCreate: " + href + " ==> " + highlightDefinitions?.length);
         const activeWebViews = win.READIUM2.getActiveWebViews();
         for (const activeWebView of activeWebViews) {
             if (activeWebView.READIUM2.link?.Href !== href) {
@@ -96,8 +117,14 @@ export async function highlightsCreate(
                     const payloadPong = event.args[0] as IEventPayload_R2_EVENT_HIGHLIGHT_CREATE;
                     webview.removeEventListener("ipc-message", cb);
                     if (!payloadPong.highlights) { // includes undefined and empty array
+                        // UNCHANGED webview.READIUM2.highlights = undefined;
+                        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
                         reject("highlightCreate fail?!");
                     } else {
+                        if (!webview.READIUM2.highlights) {
+                            webview.READIUM2.highlights = [];
+                        }
+                        webview.READIUM2.highlights.push(...(payloadPong.highlights.filter((h) => !!h) as IHighlight[]));
                         resolve(payloadPong.highlights);
                     }
                 }
@@ -117,6 +144,23 @@ export async function highlightsCreate(
             return;
         }
 
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         reject("highlightsCreate - no webview match?!");
     });
+}
+
+export function highlightsDrawMargin(drawMargin: boolean | string[]) {
+    console.log("--HIGH-- highlightsDrawMargin: " + JSON.stringify(drawMargin, null, 4));
+    win.READIUM2.highlightsDrawMargin = drawMargin;
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        const payload: IEventPayload_R2_EVENT_HIGHLIGHT_DRAW_MARGIN = {
+            drawMargin,
+        };
+        setTimeout(async () => {
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_HIGHLIGHT_DRAW_MARGIN, payload);
+            }
+        }, 0);
+    }
 }

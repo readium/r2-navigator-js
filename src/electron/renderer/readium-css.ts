@@ -14,7 +14,7 @@ const win = global.window as ReadiumElectronBrowserWindow;
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
-export function isRTL(/* link: Link | undefined */): boolean {
+export function isRTL_PackageMeta(/* link: Link | undefined */): boolean {
     // if (link && link.Properties) {
     //     if (link.Properties.Direction === "rtl") {
     //         return true;
@@ -69,6 +69,7 @@ export function obtainReadiumCss(rcss?: IEventPayload_R2_EVENT_READIUMCSS) {
 
 export function adjustReadiumCssJsonMessageForFixedLayout(
     webview: IReadiumElectronWebview | undefined,
+    pubLink: Link | undefined,
     rcss: IEventPayload_R2_EVENT_READIUMCSS,
 ): IEventPayload_R2_EVENT_READIUMCSS {
 
@@ -76,7 +77,8 @@ export function adjustReadiumCssJsonMessageForFixedLayout(
         return rcss;
     }
 
-    if (isFixedLayout(webview.READIUM2.link)) {
+    if (isFixedLayout(pubLink)) {
+
         return {
             fixedLayoutWebViewHeight: webview.clientHeight,
             fixedLayoutWebViewWidth: webview.clientWidth,

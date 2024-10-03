@@ -7,10 +7,15 @@
 
 import { IRangeInfo, ISelectedTextInfo, ISelectionInfo } from "../../common/selection";
 import { ReadiumElectronWebviewWindow } from "./state";
+import { ipcRenderer } from "electron";
+
+import { R2_EVENT_READING_LOCATION_CLEAR_SELECTION } from "../../common/events";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Selection
+
+// const win = global.window as ReadiumElectronWebviewWindow;
 
 function dumpDebug(
     msg: string,
@@ -62,16 +67,50 @@ function dumpDebug(
     console.log("$$$$$$$$$$$$$$$$$");
 }
 
+let _selectionChangeTimeout: number | undefined = undefined;
+let _ignoreSelectionChangeEvent: boolean = false;
+export const setSelectionChangeAction = (win: ReadiumElectronWebviewWindow, func: () => void) => {
+    win.document?.addEventListener("selectionchange", (_ev: Event) => {
+        if (_selectionChangeTimeout !== undefined) {
+            win.clearTimeout(_selectionChangeTimeout);
+        }
+        if (_ignoreSelectionChangeEvent) {
+            // console.log("############ selectionchange SKIP");
+            _ignoreSelectionChangeEvent = false;
+            return;
+        }
+        // console.log("############ selectionchange OK");
+        func();
+    });
+};
+
 export function clearCurrentSelection(win: ReadiumElectronWebviewWindow) {
     const selection = win.getSelection();
     if (!selection) {
         return;
     }
+    // if (!selection.isCollapsed) {
+    //     _ignoreSelectionChangeEvent = true;
+    // }
+    _ignoreSelectionChangeEvent = true;
+    _selectionChangeTimeout = win.setTimeout(() => {
+        // console.log("############ selectionchange TIMEOUT");
+        _ignoreSelectionChangeEvent = false;
+        _selectionChangeTimeout = undefined;
+    }, 200);
     selection.removeAllRanges();
+    // selection.empty();
+    // selection.collapseToStart();
+
+    if (win.READIUM2.locationHashOverrideInfo?.selectionInfo) {
+        win.READIUM2.locationHashOverrideInfo.selectionInfo = undefined;
+    }
+
+    ipcRenderer.sendToHost(R2_EVENT_READING_LOCATION_CLEAR_SELECTION);
 }
 
 export const collapseWhitespaces = (str: string) => {
-    return str.replace(/\n/g, " ").replace(/\s\s+/g, " ");
+    return str.replace(/[\r\n]/g, " ").replace(/\s\s+/g, " ");
 };
 
 export const cleanupStr = (str: string) => {
@@ -94,6 +133,7 @@ export function getCurrentSelectionInfo(
         return undefined;
     }
 
+    // rawText is in fact already clean! (Selection API does it)
     const rawText = selection.toString();
     const cleanText = collapseWhitespaces(rawText);
     if (cleanText.length === 0) {
@@ -399,7 +439,7 @@ export function convertRange(
         let i = rawBefore.length - 1;
         let wasWhiteSpace = false;
         for (; i >= 0; i--) {
-            const isWhiteSpace = /[\n\s]/.test(rawBefore[i]);
+            const isWhiteSpace = /[\r\n\s]/.test(rawBefore[i]);
             if (isWhiteSpace && i !== 0 && i !== rawBefore.length - 1 && wasWhiteSpace) {
                 wasWhiteSpace = isWhiteSpace;
                 continue;
@@ -417,7 +457,7 @@ export function convertRange(
         let i = 0;
         let wasWhiteSpace = false;
         for (; i < rawAfter.length; i++) {
-            const isWhiteSpace = /[\n\s]/.test(rawAfter[i]);
+            const isWhiteSpace = /[\r\n\s]/.test(rawAfter[i]);
             if (isWhiteSpace && i !== 0 && i !== rawAfter.length - 1 && wasWhiteSpace) {
                 wasWhiteSpace = isWhiteSpace;
                 continue;
@@ -692,6 +732,7 @@ function getChildTextNodeCfiIndex(element: Element, child: Text): number {
 // }
 
 //  https://github.com/webmodules/range-normalize/pull/2
+// https://github.com/apache/incubator-annotator/blob/main/packages/dom/src/normalize-range.ts
 //  "Normalizes" the DOM Range instance, such that slight variations in the start
 //  and end containers end up being normalized to the same "base" representation.
 //  The aim is to always have `startContainer` and `endContainer` pointing to

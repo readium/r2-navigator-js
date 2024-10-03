@@ -8,6 +8,8 @@
 import * as debug_ from "debug";
 import * as util from "util";
 
+import { getCurrentReadingLocation } from "./location";
+
 import { TaJsonDeserialize } from "@r2-lcp-js/serializable";
 import { MediaOverlayNode } from "@r2-shared-js/models/media-overlay";
 import { Publication } from "@r2-shared-js/models/publication";
@@ -18,10 +20,9 @@ import {
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK, IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_STATE, R2_EVENT_MEDIA_OVERLAY_STATE, MediaOverlaysStateEnum as MediaOverlaysStateEnum_,
     IEventPayload_R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_MEDIA_OVERLAY_CLICK,
-    R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, R2_EVENT_MEDIA_OVERLAY_STARTSTOP,
+    R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, R2_EVENT_MEDIA_OVERLAY_STARTSTOP, IEventPayload_R2_EVENT_READING_LOCATION,
 } from "../common/events";
-import { handleLinkUrl, navLeftOrRight } from "./location";
-import { isRTL } from "./readium-css";
+import { handleLinkUrl, navPreviousOrNext } from "./location";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 // export enum MediaOverlaysStateEnum {
@@ -94,7 +95,55 @@ async function playMediaOverlays(
     isInteract: boolean) {
 
     if (IS_DEV) {
-        debug("playMediaOverlays()");
+        debug("playMediaOverlays() : " + textHref + " //// " + decodeURIComponent(textHref));
+        debug(JSON.stringify(textFragmentIDChain, null, 4));
+    }
+
+    const loc = getCurrentReadingLocation();
+    const locationHashOverrideInfo = _lastClickedNotification?.locationHashOverrideInfo;
+
+    if (!textFragmentIDChain) {
+        if (loc) {
+            if (IS_DEV) {
+                debug("playMediaOverlays() CURRENT LOCATOR " + textHref + " -- " + loc.locator?.href);
+                debug(JSON.stringify(loc, null, 4));
+            }
+            const hrefUrlObj = new URL("https://dummy.com/" + loc.locator?.href);
+            if (textHref === hrefUrlObj.pathname.substr(1)) { // includes leading slash
+                if (loc.locator.locations?.cssSelector) {
+                    debug("playMediaOverlays() CSS SELECTOR: " + loc.locator.locations.cssSelector);
+                    const hashI = loc.locator.locations.cssSelector.lastIndexOf("#");
+                    if (hashI >= 0) {
+                        const after = loc.locator.locations.cssSelector.substring(hashI + 1);
+                        if (after) {
+                            const spaceI = after.indexOf(" ");
+                            let hashID = after;
+                            if (spaceI > 0) {
+                                hashID = after.substring(0, spaceI);
+                            }
+                            debug("playMediaOverlays() CSS SELECTOR ID: " + hashID);
+                            // textFragmentIDChain = [hashID];
+                        }
+                    }
+                }
+                if (loc.locator.locations?.cfi) {
+                    debug("playMediaOverlays() CFI: " + loc.locator.locations.cfi);
+                    let arrayIDs: string[] = [];
+                    const regexpr = /\[([^\]]+)\]/g;
+                    const matches = loc.locator.locations.cfi.matchAll(regexpr);
+                    // debug("playMediaOverlays() CFI MATCHES: " + JSON.stringify(matches, null, 4));
+                    if (matches) {
+                        arrayIDs = Array.from(matches, (m) => m[1]);
+                    }
+                    // let match;
+                    // while (match = regexpr.exec(loc.locator.locations.cfi)) {
+                    //     arrayIDs.push(match[1]);
+                    // }
+                    debug("playMediaOverlays() CFI IDs: " + JSON.stringify(arrayIDs, null, 4));
+                    textFragmentIDChain = arrayIDs;
+                }
+            }
+        }
     }
 
     let textFragmentIDChain_: Array<string> | undefined | null = textFragmentIDChain ? textFragmentIDChain.filter((id) => id) as Array<string> : undefined;
@@ -102,17 +151,44 @@ async function playMediaOverlays(
         textFragmentIDChain_ = null;
     }
 
-    let moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, textFragmentIDChain_);
+    let moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, textFragmentIDChain_, false);
     if (!moTextAudioPair && (textFragmentIDChain_ || textFragmentIDChain_ === null && !isInteract)) {
-        if (IS_DEV) {
-            debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE ");
-            debug(JSON.stringify(textFragmentIDChain_, null, 4));
-            debug(JSON.stringify(rootMo, null, 4));
+        const followingElementIDs = loc?.followingElementIDs || locationHashOverrideInfo?.followingElementIDs;
+        if (followingElementIDs) {
+            if (IS_DEV) {
+                debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE TRY ... ");
+                debug(JSON.stringify(textFragmentIDChain_, null, 4));
+                debug(JSON.stringify(followingElementIDs, null, 4));
+            }
+            for (const id of followingElementIDs) {
+                moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, [id], false);
+                if (moTextAudioPair) {
+                    debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE FOUND: " + id);
+                    break;
+                }
+            }
         }
-        moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, undefined);
+        if (!moTextAudioPair) {
+            debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE FALLBACK...");
+            moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, textFragmentIDChain_, true);
+        }
+        // if (textFragmentIDChain) {
+        //     if (IS_DEV) {
+        //         debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE SKIP (jump back to body begin not desirable)");
+        //         debug(JSON.stringify(textFragmentIDChain, null, 4));
+        //         debug(JSON.stringify(textFragmentIDChain_, null, 4));
+        //     }
+        // } else {
+        //     if (IS_DEV) {
+        //         debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE ");
+        //         debug(JSON.stringify(textFragmentIDChain_, null, 4));
+        //         debug(JSON.stringify(rootMo, null, 4));
+        //     }
+        //     moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, undefined);
+        // }
     }
     if (moTextAudioPair) {
-        if (moTextAudioPair.Audio) {
+        if (moTextAudioPair.Audio || moTextAudioPair.Video) {
             if (IS_DEV) {
                 debug("playMediaOverlays() - playMediaOverlaysAudio()");
             }
@@ -128,6 +204,12 @@ async function playMediaOverlays(
 }
 
 const ontimeupdate = async (ev: Event) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (_currentAudioElement && (_currentAudioElement as any).__draggable && (_currentAudioElement as any).__hidden) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (_currentAudioElement as any).__hidden = false;
+        _currentAudioElement.style.display = "block";
+    }
     const currentAudioElement = ev.currentTarget as HTMLAudioElement;
     if (_currentAudioEnd && currentAudioElement.currentTime >= (_currentAudioEnd - 0.05)) {
 
@@ -157,6 +239,150 @@ const ensureOnTimeUpdate = (remove: boolean) => {
     }
 };
 
+function ensureVideoFrameDraggable() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!_currentAudioElement || (_currentAudioElement as any).__draggable) {
+        return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (_currentAudioElement as any).__draggable = true;
+
+    let moveDiv: HTMLDivElement | undefined;
+
+    let pos1 = 0;
+    let pos2 = 0;
+    let pos3 = 0;
+    let pos4 = 0;
+    let mouseDownX = 0;
+    let mouseDownY = 0;
+
+    if (document.pictureInPictureEnabled) {
+        _currentAudioElement.addEventListener("enterpictureinpicture", async () => {
+            if (!_currentAudioElement) {
+                return;
+            }
+            _currentAudioElement.style.opacity = "0.2";
+            _currentAudioElement.style.width = "1px";
+            _currentAudioElement.style.height = "1px";
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (_currentAudioElement as any).__previousStyleTop = _currentAudioElement.style.top;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (_currentAudioElement as any).__previousStyleLeft = _currentAudioElement.style.left;
+            _currentAudioElement.style.top = "0px";
+            _currentAudioElement.style.left = "0px";
+        });
+
+        _currentAudioElement.addEventListener("leavepictureinpicture", async () => {
+            if (!_currentAudioElement) {
+                return;
+            }
+            _currentAudioElement.style.opacity = "1";
+            _currentAudioElement.style.width = "auto";
+            _currentAudioElement.style.height = "auto";
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if ((_currentAudioElement as any).__previousStyleTop) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                _currentAudioElement.style.top = (_currentAudioElement as any).__previousStyleTop;
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if ((_currentAudioElement as any).__previousStyleLeft) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                _currentAudioElement.style.left = (_currentAudioElement as any).__previousStyleLeft;
+            }
+        });
+
+        // _currentAudioElement.addEventListener("click", async () => {
+        // }, true);
+    }
+
+    _currentAudioElement.addEventListener("mousedown", elMouseDown);
+    _currentAudioElement.addEventListener("mouseup", elMouseUp);
+
+    async function elMouseUp(e: MouseEvent) {
+            const _mouseDownX = mouseDownX;
+            const _mouseDownY = mouseDownY;
+            mouseDownX = 0;
+            mouseDownY = 0;
+            if (!_currentAudioElement) {
+                docMouseUp();
+                return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (!_currentAudioElement || !document.pictureInPictureEnabled) {
+                return;
+            }
+
+            // CLICK
+            if (Math.abs(_mouseDownX - e.clientX) <= 4 && Math.abs(_mouseDownY - e.clientY) <= 4) {
+                try {
+                    if (_currentAudioElement !== document.pictureInPictureElement) {
+                        await (_currentAudioElement as HTMLVideoElement).requestPictureInPicture();
+                    } else {
+                        await document.exitPictureInPicture();
+                    }
+                } catch (err) {
+                    console.log("VIDEO PiP Error:", err);
+                }
+            }
+    };
+
+    function elMouseDown(e: MouseEvent) {
+        if (!_currentAudioElement) {
+            docMouseUp();
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+
+        mouseDownX = e.clientX;
+        mouseDownY = e.clientY;
+
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+
+        if (moveDiv?.parentNode) {
+            moveDiv.parentNode.removeChild(moveDiv);
+            moveDiv = undefined;
+        }
+        moveDiv = document.createElement("div");
+        moveDiv.setAttribute("style", "display: block; position: absolute; padding: 0; margin: 0; left: 0; top: 0; right: 0; bottom: 0; z-index: 9998; cursor: move; opacity: 0.4; background-color: black;");
+        document.body.insertBefore(moveDiv, _currentAudioElement);
+
+        document.body.addEventListener("mouseup", docMouseUp, true);
+        document.body.addEventListener("mousemove", docMouseMove, true);
+    }
+
+    function docMouseMove(e: MouseEvent) {
+        if (!_currentAudioElement) {
+            docMouseUp();
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        _currentAudioElement.style.top = (_currentAudioElement.offsetTop - pos2) + "px";
+        _currentAudioElement.style.left = (_currentAudioElement.offsetLeft - pos1) + "px";
+    }
+
+    function docMouseUp(e: MouseEvent | undefined = undefined) {
+        if (e) {
+            e.preventDefault();
+            // e.stopPropagation();
+        }
+        if (moveDiv?.parentNode) {
+            moveDiv.parentNode.removeChild(moveDiv);
+            moveDiv = undefined;
+        }
+        document.body.removeEventListener("mouseup", docMouseUp, true);
+        document.body.removeEventListener("mousemove", docMouseMove, true);
+    }
+}
+
 async function playMediaOverlaysAudio(
     moTextAudioPair: MediaOverlayNode,
     begin: number | undefined,
@@ -172,7 +398,7 @@ async function playMediaOverlaysAudio(
     _mediaOverlayTextAudioPair = moTextAudioPair;
     _mediaOverlayTextId = undefined;
 
-    if (!moTextAudioPair.Audio) {
+    if (!moTextAudioPair.Audio && !moTextAudioPair.Video) {
 
         if (IS_DEV) {
             debug("playMediaOverlaysAudio - !moTextAudioPair.Audio => mediaOverlaysNext()");
@@ -189,7 +415,7 @@ async function playMediaOverlaysAudio(
     // }
 
     // const url = publicationURL + "/../" + moTextAudioPair.Audio;
-    const urlObjFull = new URL(moTextAudioPair.Audio, publicationURL);
+    const urlObjFull = new URL(moTextAudioPair.Audio || moTextAudioPair.Video, publicationURL);
     const urlFull = urlObjFull.toString();
 
     const urlObjNoQuery = new URL(urlFull);
@@ -313,8 +539,17 @@ async function playMediaOverlaysAudio(
                 _currentAudioElement.parentNode.removeChild(_currentAudioElement);
             }
         }
-        _currentAudioElement = document.createElement("audio"); // no controls => should be invisible
-        _currentAudioElement.setAttribute("style", "display: none");
+        _currentAudioElement = document.createElement(moTextAudioPair.Video ? "video" : "audio"); // no controls => should be invisible
+        if (moTextAudioPair.Video) {
+            _currentAudioElement.setAttribute("style", "display: block; position: absolute; padding: 0; margin: 0; left: 10px; top: 10px; width: auto; height: auto; z-index: 9999; cursor: move; border: 2px solid black;");
+            // _currentAudioElement.setAttribute("controls", "true");
+            _currentAudioElement.setAttribute("disableremoteplayback", "true");
+            _currentAudioElement.setAttribute("controlsList", "nofullscreen nodownload noremoteplayback noplaybackrate");
+            // _currentAudioElement.setAttribute("disablePictureInPicture", "false");
+            ensureVideoFrameDraggable();
+        } else {
+            _currentAudioElement.setAttribute("style", "display: none");
+        }
         _currentAudioElement.setAttribute("id", AUDIO_MO_ID);
         // _currentAudioElement.setAttribute("loop", "loop");
         // _currentAudioElement.setAttribute("autoplay", "autoplay");
@@ -518,13 +753,17 @@ async function playMediaOverlaysAudio(
 
         const onpause = async (_ev: Event) => {
             debug("onpause");
-            // mediaOverlaysStateSet(MediaOverlaysStateEnum_.PAUSED);
+            if (_mediaOverlaysState !== MediaOverlaysStateEnum_.PAUSED && _mediaOverlaysState !== MediaOverlaysStateEnum_.STOPPED) {
+                mediaOverlaysStateSet(MediaOverlaysStateEnum_.PAUSED);
+            }
         };
         _currentAudioElement.addEventListener("pause", onpause);
 
         const onplay = async (_ev: Event) => {
             debug("onplay");
-            // mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
+            if (_mediaOverlaysState !== MediaOverlaysStateEnum_.PLAYING) {
+                mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
+            }
         };
         _currentAudioElement.addEventListener("play", onplay);
 
@@ -538,8 +777,8 @@ async function playMediaOverlaysAudio(
     }
 }
 
-// https://www.w3.org/publishing/epub3/epub-mediaoverlays.html#sec-skippability
-// https://idpf.github.io/epub-vocabs/structure/
+// https://www.w3.org/TR/epub-33/#sec-behaviors-skip-escape
+// https://www.w3.org/TR/epub-ssv-11/
 const _skippables = [
     "footnote",
     "endnote",
@@ -742,7 +981,8 @@ function findPreviousTextAudioPair(
 function findDepthFirstTextAudioPair(
     textHref: string,
     mo: MediaOverlayNode,
-    textFragmentIDChain: Array<string> | undefined | null):
+    textFragmentIDChain: Array<string> | undefined | null,
+    allowFallbackSeek: boolean):
     MediaOverlayNode | undefined | null { // returns null when skipped
 
     if (DEBUG_AUDIO) {
@@ -777,7 +1017,8 @@ function findDepthFirstTextAudioPair(
         debug("isFragmentIDMatch: " + isFragmentIDMatch);
         debug("isTextUrlMatch: " + isTextUrlMatch);
     }
-    if (!mo.Children || !mo.Children.length) { // leaf === text/audio pair (SMIL par)
+    const isLeaf = mo.Children?.length;
+    if (!isLeaf) { // leaf === text/audio pair (SMIL par)
         if (DEBUG_AUDIO) {
             debug("findDepthFirstTextAudioPair() - leaf text/audio pair");
         }
@@ -811,7 +1052,7 @@ function findDepthFirstTextAudioPair(
             debug("findDepthFirstTextAudioPair() - child");
             debug(JSON.stringify(child));
         }
-        const match = findDepthFirstTextAudioPair(textHref, child, frags);
+        const match = findDepthFirstTextAudioPair(textHref, child, frags, allowFallbackSeek);
         if (match === null) { // match, but skipped ... let's ignore the fragment IDs and just pick the next
             if (DEBUG_AUDIO) {
                 debug("findDepthFirstTextAudioPair() - child - match null (skip)");
@@ -826,7 +1067,7 @@ function findDepthFirstTextAudioPair(
             return match;
         }
     }
-    if (isFragmentIDMatch) {
+    if (allowFallbackSeek && isFragmentIDMatch) {
         if (isSkip) {
             if (DEBUG_AUDIO) {
                 debug("findDepthFirstTextAudioPair() - post isFragmentIDMatch (skip)");
@@ -836,7 +1077,7 @@ function findDepthFirstTextAudioPair(
             if (DEBUG_AUDIO) {
                 debug("findDepthFirstTextAudioPair() - post isFragmentIDMatch");
             }
-            const match = findDepthFirstTextAudioPair(textHref, mo, undefined);
+            const match = findDepthFirstTextAudioPair(textHref, mo, undefined, false);
             if (match) {
                 if (DEBUG_AUDIO) {
                     debug("findDepthFirstTextAudioPair() - post isFragmentIDMatch - match");
@@ -905,8 +1146,9 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
 
             mediaOverlaysStop(true);
             // metadata-level RTL
-            const rtl = isRTL();
-            navLeftOrRight(rtl, true, true);
+            // const rtl = isRTL_PackageMeta();
+            // navLeftOrRight(rtl, true, true);
+            navPreviousOrNext(false, true, true);
         }, 600); // was 2 seconds, but transition too slow (user thinks playback is stalled)
 
         mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
@@ -981,6 +1223,7 @@ async function playMediaOverlaysForLink(link: Link, textFragmentIDChain: Array<s
 }
 
 let _lastClickedNotification: {
+    locationHashOverrideInfo: IEventPayload_R2_EVENT_READING_LOCATION | undefined;
     textFragmentIDChain: Array<string | null> | undefined;
     link: Link | undefined;
 } | undefined;
@@ -1041,6 +1284,7 @@ export function mediaOverlaysHandleIpcMessage(
             _lastClickedNotification = {
                 link: activeWebView.READIUM2.link,
                 textFragmentIDChain: payload.textFragmentIDChain,
+                locationHashOverrideInfo: payload.locationHashOverrideInfo,
             };
 
             if ((payload.userInteract && _mediaOverlaysClickEnabled) ||
@@ -1130,9 +1374,12 @@ function moHighlight(href: string | undefined, id: string | undefined) {
 
         if (href) {
             if (id) {
+                // const loc = getCurrentReadingLocation();
+                // loc?.followingElementIDs
                 _lastClickedNotification = {
                     link: activeWebView.READIUM2.link,
                     textFragmentIDChain: [id],
+                    locationHashOverrideInfo: undefined,
                 };
             } else {
                 _lastClickedNotification = undefined;
@@ -1242,7 +1489,7 @@ export function mediaOverlaysInterrupt() {
 }
 export function mediaOverlaysStop(stayActive?: boolean) {
     if (IS_DEV) {
-        debug("mediaOverlaysStop()");
+        debug("mediaOverlaysStop() stayActive: " + stayActive);
     }
     if (!win.READIUM2 || !win.READIUM2.publication) {
         return;
@@ -1255,10 +1502,39 @@ export function mediaOverlaysStop(stayActive?: boolean) {
     _mediaOverlayRoot = undefined;
     _mediaOverlayTextAudioPair = undefined;
     _mediaOverlayTextId = undefined;
-    // _lastClickedNotification = undefined;
 
     if (!_mediaOverlayActive) {
+        _lastClickedNotification = undefined;
         mediaOverlaysStateSet(MediaOverlaysStateEnum_.STOPPED);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (_currentAudioElement && (_currentAudioElement as any).__draggable) {
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (_currentAudioElement as any).__hidden = true;
+            _currentAudioElement.style.display = "none";
+
+            if (document.pictureInPictureEnabled) {
+                if (_currentAudioElement === document.pictureInPictureElement) {
+                    setTimeout(async () =>{
+                        try {
+                            await document.exitPictureInPicture();
+                        } catch (err) {
+                            console.log("VIDEO PiP Error:", err);
+                        }
+                    }, 100);
+                }
+            }
+        }
+        // if (_currentAudioElement) {
+        //     ensureOnTimeUpdate(true);
+        //     // _currentAudioElement.pause();
+        //     _currentAudioElement.setAttribute("src", "");
+        //     if (_currentAudioElement.parentNode) {
+        //         _currentAudioElement.parentNode.removeChild(_currentAudioElement);
+        //     }
+        //     _currentAudioElement = undefined;
+        // }
     }
 }
 
@@ -1313,8 +1589,9 @@ export function mediaOverlaysPrevious() {
             }
             mediaOverlaysStop(true);
             // metadata-level RTL
-            const rtl = isRTL();
-            navLeftOrRight(!rtl, true, true);
+            // const rtl = isRTL_PackageMeta();
+            // navLeftOrRight(!rtl, true, true);
+            navPreviousOrNext(true, true, true);
         } else {
             let switchDoc = false;
             if (_mediaOverlayTextAudioPair.Text && previousTextAudioPair.Text) {
@@ -1362,8 +1639,9 @@ export function mediaOverlaysPrevious() {
         }
         mediaOverlaysStop(true);
         // metadata-level RTL
-        const rtl = isRTL();
-        navLeftOrRight(!rtl, true, true);
+        // const rtl = isRTL_PackageMeta();
+        // navLeftOrRight(!rtl, true, true);
+        navPreviousOrNext(true, true, true);
         // if (IS_DEV) {
         //     debug("mediaOverlaysPrevious() - mediaOverlaysPlay()");
         // }
@@ -1392,8 +1670,9 @@ export function mediaOverlaysNext(escape?: boolean) {
             }
             mediaOverlaysStop(true);
             // metadata-level RTL
-            const rtl = isRTL();
-            navLeftOrRight(rtl, true, true);
+            // const rtl = isRTL_PackageMeta();
+            // navLeftOrRight(rtl, true, true);
+            navPreviousOrNext(false, true, true);
         } else {
             let switchDoc = false;
             if (_mediaOverlayTextAudioPair.Text && nextTextAudioPair.Text) {
@@ -1441,8 +1720,9 @@ export function mediaOverlaysNext(escape?: boolean) {
         }
         mediaOverlaysStop(true);
         // metadata-level RTL
-        const rtl = isRTL();
-        navLeftOrRight(rtl, true, true);
+        // const rtl = isRTL_PackageMeta();
+        // navLeftOrRight(rtl, true, true);
+        navPreviousOrNext(false, true, true);
         // if (IS_DEV) {
         //     debug("mediaOverlaysNext() - mediaOverlaysPlay()");
         // }

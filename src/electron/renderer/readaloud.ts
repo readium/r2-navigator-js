@@ -5,20 +5,20 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { debounce } from "debounce";
+import * as debounce from "debounce";
 
 import {
     IEventPayload_R2_EVENT_TTS_CLICK_ENABLE, IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS,
     IEventPayload_R2_EVENT_TTS_DO_PLAY, IEventPayload_R2_EVENT_TTS_OVERLAY_ENABLE,
     IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE, IEventPayload_R2_EVENT_TTS_SENTENCE_DETECT_ENABLE,
+    IEventPayload_R2_EVENT_TTS_SKIP_ENABLE, R2_EVENT_TTS_SKIP_ENABLE,
     IEventPayload_R2_EVENT_TTS_VOICE, R2_EVENT_READING_LOCATION, R2_EVENT_TTS_CLICK_ENABLE,
-    R2_EVENT_TTS_DOC_END, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY,
+    R2_EVENT_TTS_DOC_END, R2_EVENT_TTS_DOC_BACK, R2_EVENT_TTS_DO_NEXT, R2_EVENT_TTS_DO_PAUSE, R2_EVENT_TTS_DO_PLAY,
     R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP, R2_EVENT_TTS_IS_PAUSED,
     R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED, R2_EVENT_TTS_OVERLAY_ENABLE,
     R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_TTS_SENTENCE_DETECT_ENABLE, R2_EVENT_TTS_VOICE,
 } from "../common/events";
-import { getCurrentReadingLocation, navLeftOrRight } from "./location";
-import { isRTL } from "./readium-css";
+import { getCurrentReadingLocation, navPreviousOrNext } from "./location";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
 // import * as debug_ from "debug";
@@ -66,7 +66,9 @@ function checkTtsStateRaw(wasStopped: boolean, wv: IReadiumElectronWebview) {
             _ttsAutoPlayTimeout = win.setTimeout(() => {
                 _ttsAutoPlayTimeout = undefined;
 
-                if (!_lastTTSWebView && wv.READIUM2.link?.Href) {
+                if (wv.READIUM2.link?.Href &&
+                    (!_lastTTSWebView ||
+                    (wasStopped && _lastTTSWebViewHref === wv.READIUM2.link?.Href))) {
 
                     _lastTTSWebView = wv;
                     _lastTTSWebViewHref = wv.READIUM2.link.Href;
@@ -146,7 +148,24 @@ export function ttsHandleIpcMessage(
         //     _ttsListener(TTSStateEnum.STOPPED);
         // }
         // const nextSpine =
-        navLeftOrRight(isRTL(), true, true);
+        //
+        // navLeftOrRight(isRTL_PackageMeta(), true, true);
+        navPreviousOrNext(false, true, true);
+        // if (nextSpine) {
+        //     setTimeout(() => {
+        //         playTtsOnReadingLocation(nextSpine.Href);
+        //     }, 200);
+        // }
+    }  else if (eventChannel === R2_EVENT_TTS_DOC_BACK) {
+        // _lastTTSWebView = undefined;
+        // _lastTTSWebViewHref = undefined;
+        // if (_ttsListener) {
+        //     _ttsListener(TTSStateEnum.STOPPED);
+        // }
+        // const nextSpine =
+        //
+        // navLeftOrRight(isRTL_PackageMeta(), true, true);
+        navPreviousOrNext(true, true, true);
         // if (nextSpine) {
         //     setTimeout(() => {
         //         playTtsOnReadingLocation(nextSpine.Href);
@@ -357,6 +376,26 @@ export function ttsPlaybackRate(speed: number) {
         setTimeout(async () => {
             if (activeWebView.READIUM2?.DOMisReady) {
                 await activeWebView.send(R2_EVENT_TTS_PLAYBACK_RATE, payload);
+            }
+        }, 0);
+    }
+}
+
+export function ttsSkippabilityEnable(doEnable: boolean) {
+
+    if (win.READIUM2) {
+        win.READIUM2.ttsSkippabilityEnabled = doEnable;
+    }
+
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        setTimeout(async () => {
+            const payload: IEventPayload_R2_EVENT_TTS_SKIP_ENABLE = {
+                doEnable,
+            };
+
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_TTS_SKIP_ENABLE, payload);
             }
         }, 0);
     }

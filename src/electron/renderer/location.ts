@@ -10,9 +10,9 @@ import { ipcRenderer, shell } from "electron";
 import * as path from "path";
 import { URL } from "url";
 
-import { FRAG_ID_CSS_SELECTOR } from "./common/cssselector2-3";
+// import { streamToBufferPromise } from "@r2-utils-js/_utils/stream/BufferUtils";
 
-import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
+import { Locator, LocatorLocations } from "../common/locator";
 import { PageEnum, Properties, SpreadEnum } from "@r2-shared-js/models/metadata-properties";
 import { Link } from "@r2-shared-js/models/publication-link";
 import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
@@ -26,11 +26,12 @@ import {
     IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X,
     R2_EVENT_AUDIO_PLAYBACK_RATE, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN,
     R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
+    R2_EVENT_READING_LOCATION_CLEAR_SELECTION,
 } from "../common/events";
 import { IwidthHeight } from "../common/fxl";
 import { IPaginationInfo } from "../common/pagination";
 import { READIUM2_BASEURL_ID, readiumCssTransformHtml } from "../common/readium-css-inject";
-import { IRangeInfo, ISelectionInfo } from "../common/selection";
+import { ISelectionInfo } from "../common/selection";
 import {
     READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl, convertHttpUrlToCustomScheme,
 } from "../common/sessions";
@@ -42,17 +43,20 @@ import {
 } from "../common/styles";
 import { getCurrentAudioPlaybackRate, setCurrentAudioPlaybackRate } from "./audiobook";
 import {
+    URL_PARAM_HIGHLIGHTS,
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
     URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_GOTO_DOM_RANGE, URL_PARAM_PREVIOUS,
     URL_PARAM_REFRESH, URL_PARAM_SECOND_WEBVIEW, URL_PARAM_SESSION_INFO, URL_PARAM_WEBVIEW_SLOT,
+    FRAG_ID_CSS_SELECTOR,
 } from "./common/url-params";
 import { getEpubReadingSystemInfo } from "./epubReadingSystem";
 import { mediaOverlaysInterrupt } from "./media-overlays";
 import {
-    adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, isRTL, obtainReadiumCss,
+    adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, isRTL_PackageMeta, obtainReadiumCss,
 } from "./readium-css";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires,@typescript-eslint/no-require-imports
 import URI = require("urijs");
 const debug = debug_("r2:navigator#electron/renderer/location");
 
@@ -146,8 +150,9 @@ export function locationHandleIpcMessage(
     } else if (eventChannel === R2_EVENT_PAGE_TURN_RES) {
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_PAGE_TURN;
         if (payload.nav) {
-            const rtl = payload.direction === "LTR" && payload.go === "PREVIOUS" || payload.direction === "RTL" && payload.go === "NEXT";
-            navLeftOrRight(!rtl);
+            // const left = payload.direction === "LTR" && payload.go === "PREVIOUS" || payload.direction === "RTL" && payload.go === "NEXT";
+            // navLeftOrRight(left);
+            navPreviousOrNext(payload.go === "PREVIOUS");
             return true;
         }
 
@@ -157,7 +162,7 @@ export function locationHandleIpcMessage(
             return true;
         }
 
-        const doNothing = payload.go === "" && payload.direction === "";
+        const doNothing = payload.go === ""; // && payload.direction === "";
         if (doNothing) {
             return true;
         }
@@ -200,6 +205,11 @@ export function locationHandleIpcMessage(
                 false,
                 activeWebView.READIUM2.readiumCss,
             );
+        }
+    } else if (eventChannel === R2_EVENT_READING_LOCATION_CLEAR_SELECTION) {
+        if (_lastSavedReadingLocation?.selectionInfo) {
+            _lastSavedReadingLocation.selectionInfo = undefined;
+            // no push (invoking registered listeneres), the app must pull the latest up to date state
         }
     } else if (eventChannel === R2_EVENT_READING_LOCATION) {
         const payload = eventArgs[0] as IEventPayload_R2_EVENT_READING_LOCATION;
@@ -244,7 +254,7 @@ export function locationHandleIpcMessage(
             //         }
             //     }
             // }
-            _saveReadingLocation(activeWebView.READIUM2.link.Href, payload);
+            _saveReadingLocation(activeWebView, payload);
         }
     } else if (eventChannel === R2_EVENT_LINK) {
         // debug("R2_EVENT_LINK (webview.addEventListener('ipc-message')");
@@ -325,8 +335,8 @@ export function shiftWebview(webview: IReadiumElectronWebview, offset: number, b
     }
 }
 
-export function navLeftOrRight(
-    left: boolean,
+export function navPreviousOrNext(
+    goPREVIOUS: boolean,
     spineNav?: boolean,
     ignorePageSpreadHandling?: boolean,
     ): Link | undefined {
@@ -341,13 +351,8 @@ export function navLeftOrRight(
         return undefined;
     }
 
-    // metadata-level RTL
-    const rtl = isRTL();
-
-    // const goPrevious = left && !rtl || !left && rtl;
-    const goPREVIOUS = left ? !rtl : rtl;
-
     const loc = _lastSavedReadingLocation; // getCurrentReadingLocation()
+
     let href = loc ? loc.locator.href : undefined;
 
     if (!ignorePageSpreadHandling) {
@@ -381,16 +386,17 @@ export function navLeftOrRight(
             return undefined;
         }
 
-        if (IS_DEV) {
-            // document-level RTL
-            const rtl_ = loc ? (loc.docInfo && loc.docInfo.isRightToLeft) : rtl;
-            if (rtl_ !== rtl) {
-                debug(`RTL differ?! METADATA ${rtl} vs. DOCUMENT ${rtl_}`);
-            }
-        }
+        // if (IS_DEV) {
+        //     // document-level RTL
+        //     const rtl_ = loc ? (loc.docInfo && loc.docInfo.isRightToLeft) : rtl;
+        //     if (rtl_ !== rtl) {
+        //         debug(`RTL differ?! METADATA ${rtl} vs. DOCUMENT ${rtl_}`);
+        //     }
+        // }
 
         // array boundaries overflow are checked further down ...
-        const offset = (left ? -1 : 1) * (rtl ? -1 : 1);
+        // const offset = (left ? -1 : 1) * (rtl ? -1 : 1);
+        const offset = goPREVIOUS ? -1 : 1;
 
         const currentSpineIndex = publication.Spine.findIndex((link) => {
             return link.Href === href;
@@ -429,8 +435,10 @@ export function navLeftOrRight(
     } else {
         mediaOverlaysInterrupt();
 
+        // const rtl = isRTL_PackageMeta() || (loc?.docInfo?.isRightToLeft ? true : false);
+
         const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
-            direction: rtl ? "RTL" : "LTR",
+            // direction: rtl ? "RTL" : "LTR",
             go: goPREVIOUS ? "PREVIOUS" : "NEXT",
         };
         const activeWebView = win.READIUM2.getFirstOrSecondWebView();
@@ -444,6 +452,32 @@ export function navLeftOrRight(
     }
 
     return undefined;
+}
+export function navLeftOrRight(
+    left: boolean,
+    spineNav?: boolean,
+    ignorePageSpreadHandling?: boolean,
+    ): Link | undefined {
+
+    const loc = _lastSavedReadingLocation; // getCurrentReadingLocation()
+
+    const rtl = isRTL_PackageMeta() ||
+        (typeof loc?.docInfo?.isRightToLeft !== "undefined" ?
+            loc.docInfo.isRightToLeft :
+            isRTL_PackageMeta()
+        );
+    // const rtl =
+    //     loc?.docInfo?.isFixedLayout ?
+    //     isRTL_PackageMeta() :
+    //     (typeof loc?.docInfo?.isRightToLeft !== "undefined" ?
+    //         loc.docInfo.isRightToLeft :
+    //         isRTL_PackageMeta()
+    //     );
+
+    // const goPrevious = left && !rtl || !left && rtl;
+    const goPREVIOUS = left ? !rtl : rtl;
+
+    return navPreviousOrNext(goPREVIOUS, spineNav, ignorePageSpreadHandling);
 }
 
 export function handleLink(
@@ -495,8 +529,9 @@ export function handleLinkUrl(
 export function handleLinkLocator(
     location: Locator | undefined,
     rcss?: IEventPayload_R2_EVENT_READIUMCSS,
-    rangeInfo?: IRangeInfo,
 ) {
+    const rangeInfo = location?.locations?.rangeInfo;
+
     const publication = win.READIUM2.publication;
     const publicationURL = win.READIUM2.publicationURL;
 
@@ -681,6 +716,7 @@ function loadLink(
                 data[URL_PARAM_REFRESH] = undefined;
                 data[URL_PARAM_WEBVIEW_SLOT] = undefined;
                 data[URL_PARAM_SECOND_WEBVIEW] = undefined;
+                data[URL_PARAM_HIGHLIGHTS] = undefined;
             });
             hrefToLoadHttpNoHash = hrefToLoadHttpObjUri.toString();
         } catch (err) {
@@ -777,7 +813,9 @@ function loadLink(
         linkIndex >= 0 &&
         isFixedLayout(pubLink)) {
 
-        const rtl = isRTL();
+        // const loc = _lastSavedReadingLocation; // getCurrentReadingLocation()
+        // const rtl = isRTL_PackageMeta() || (loc?.docInfo?.isRightToLeft ? true : false);
+        const rtl = isRTL_PackageMeta();
 
         const publicationSpreadNone = publication.Metadata?.Rendition?.Spread === SpreadEnum.None;
         const slotOfFirstPageInSpread = rtl ? PageEnum.Right : PageEnum.Left;
@@ -923,7 +961,7 @@ function loadLink(
         win.READIUM2.destroySecondWebView();
     }
 
-    const rcssJson = adjustReadiumCssJsonMessageForFixedLayout(activeWebView, actualReadiumCss);
+    const rcssJson = adjustReadiumCssJsonMessageForFixedLayout(activeWebView, pubLink || activeWebView?.READIUM2.link, actualReadiumCss);
 
     const rcssJsonstr = JSON.stringify(rcssJson, null, "");
     const rcssJsonstrBase64 = Buffer.from(rcssJsonstr).toString("base64");
@@ -984,6 +1022,7 @@ function loadLink(
             data[URL_PARAM_REFRESH] = undefined;
             data[URL_PARAM_WEBVIEW_SLOT] = undefined;
             data[URL_PARAM_SECOND_WEBVIEW] = undefined;
+            data[URL_PARAM_HIGHLIGHTS] = undefined;
         });
     } else {
         // TODO: urijs types broke this! (lib remains unchanged)
@@ -1486,59 +1525,129 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
             }
             return true;
         } else if (webviewNeedsHardRefresh) {
-            if (IS_DEV) {
-                debug(`___HARD___ WEBVIEW REFRESH: ${uriStr_}`);
-            }
+            const highlights = activeWebView.READIUM2.link === pubLink ? activeWebView.READIUM2.highlights : undefined;
+            setTimeout(async () => {
+                if (highlights) {
+                    const jsonStr = JSON.stringify({
+                        margin: win.READIUM2.highlightsDrawMargin,
+                        list: highlights,
+                    });
 
-            const readiumCssBackup = activeWebView.READIUM2.readiumCss;
-            if (secondWebView) {
-                if (!secondWebViewWasJustCreated) {
-                    win.READIUM2.destroySecondWebView();
-                    win.READIUM2.createSecondWebView();
+                    // console.log("--HIGH LOAD PARAM IN--");
+                    // console.log(jsonStr);
+                    // const b64Highlights_ = Buffer.from(jsonStr).toString("base64");
+
+                    const cs = new CompressionStream("gzip");
+                    const csWriter = cs.writable.getWriter();
+                    csWriter.write(new TextEncoder().encode(jsonStr));
+                    csWriter.close();
+                    const buff = Buffer.from(await new Response(cs.readable).arrayBuffer());
+                    // const buff = await streamToBufferPromise(cs.readable as ReadableStream<any>);
+                    const b64Highlights = buff.toString("base64");
+
+                    // console.log(" **** " + b64Highlights.length + " VS " + b64Highlights_.length);
+
+                    // TODO: urijs types broke this! (lib remains unchanged)
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (hrefToLoadHttpUri as any).search((data: any) => {
+                        // overrides existing (leaves others intact)
+
+                        data[URL_PARAM_HIGHLIGHTS] = b64Highlights;
+                    });
                 }
-            } else {
-                win.READIUM2.destroyFirstWebView();
-                win.READIUM2.createFirstWebView();
-            }
-            const newActiveWebView = secondWebView ?
-                win.READIUM2.getSecondWebView(false) :
-                win.READIUM2.getFirstWebView();
-            if (newActiveWebView) {
-                newActiveWebView.READIUM2.readiumCss = readiumCssBackup;
-                newActiveWebView.READIUM2.link = pubLink;
-                newActiveWebView.setAttribute("src", uriStr_);
-            }
-            return true;
+                const uriStr = hrefToLoadHttpUri.toString();
+                const uriStr__ = uriStr.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ? uriStr :
+                    (pubIsServedViaSpecialUrlProtocol ? convertHttpUrlToCustomScheme(uriStr) : uriStr);
+
+                if (IS_DEV) {
+                    debug(`___HARD___ WEBVIEW REFRESH: ${uriStr__}`);
+                }
+
+                const readiumCssBackup = activeWebView.READIUM2.readiumCss;
+                if (secondWebView) {
+                    if (!secondWebViewWasJustCreated) {
+                        win.READIUM2.destroySecondWebView();
+                        win.READIUM2.createSecondWebView();
+                    }
+                } else {
+                    win.READIUM2.destroyFirstWebView();
+                    win.READIUM2.createFirstWebView();
+                }
+                const newActiveWebView = secondWebView ?
+                    win.READIUM2.getSecondWebView(false) :
+                    win.READIUM2.getFirstWebView();
+                if (newActiveWebView) {
+                    newActiveWebView.READIUM2.readiumCss = readiumCssBackup;
+                    newActiveWebView.READIUM2.highlights = highlights;
+                    newActiveWebView.READIUM2.link = pubLink;
+                    newActiveWebView.setAttribute("src", uriStr__);
+                }
+            }, highlights ? 500 : win.READIUM2.ttsClickEnabled ? 100 : 10);
         } else {
-            if (IS_DEV) {
-                debug(`___SOFT___ WEBVIEW REFRESH: ${uriStr_}`);
-            }
+            const highlights = activeWebView.READIUM2.link === pubLink ? activeWebView.READIUM2.highlights : undefined;
+            setTimeout(async () => {
+                if (highlights) {
+                    const jsonStr = JSON.stringify({
+                        margin: win.READIUM2.highlightsDrawMargin,
+                        list: highlights,
+                    });
 
-            const webviewAlreadyHasContent = (typeof activeWebView.READIUM2.link !== "undefined")
-                && activeWebView.READIUM2.link !== null;
-            activeWebView.READIUM2.link = pubLink;
+                    // console.log("--HIGH LOAD PARAM IN--");
+                    // console.log(jsonStr);
+                    // const b64Highlights_ = Buffer.from(jsonStr).toString("base64");
 
-            if (activeWebView.style.transform &&
-                activeWebView.style.transform !== "none" &&
-                !activeWebView.hasAttribute("data-wv-fxl")) {
-                // activeWebView.setAttribute("src", "data:, ");
+                    const cs = new CompressionStream("gzip");
+                    const csWriter = cs.writable.getWriter();
+                    csWriter.write(new TextEncoder().encode(jsonStr));
+                    csWriter.close();
+                    const buff = Buffer.from(await new Response(cs.readable).arrayBuffer());
+                    // const buff = await streamToBufferPromise(cs.readable as ReadableStream<any>);
+                    const b64Highlights = buff.toString("base64");
 
-                if (webviewAlreadyHasContent) {
-                    activeWebView.style.opacity = "0";
-                    // setTimeout(async () => {
-                    // if (activeWebView.READIUM2?.DOMisReady) {}
-                    //     await activeWebView.send("R2_EVENT_HIDE",
-                    //         activeWebView.READIUM2.link ? isFixedLayout(activeWebView.READIUM2.link) : null);
-                    // }, 0);
+                    // console.log(" **** " + b64Highlights.length + " VS " + b64Highlights_.length);
+
+                    // TODO: urijs types broke this! (lib remains unchanged)
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (hrefToLoadHttpUri as any).search((data: any) => {
+                        // overrides existing (leaves others intact)
+
+                        data[URL_PARAM_HIGHLIGHTS] = b64Highlights;
+                    });
+                }
+                const uriStr = hrefToLoadHttpUri.toString();
+                const uriStr__ = uriStr.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ? uriStr :
+                    (pubIsServedViaSpecialUrlProtocol ? convertHttpUrlToCustomScheme(uriStr) : uriStr);
+
+                if (IS_DEV) {
+                    debug(`___SOFT___ WEBVIEW REFRESH: ${uriStr__}`);
                 }
 
-                setTimeout(() => {
+                const webviewAlreadyHasContent = (typeof activeWebView.READIUM2.link !== "undefined")
+                    && activeWebView.READIUM2.link !== null;
+                activeWebView.READIUM2.link = pubLink;
+
+                activeWebView.READIUM2.highlights = highlights;
+
+                if (activeWebView.style.transform &&
+                    activeWebView.style.transform !== "none" &&
+                    !activeWebView.hasAttribute("data-wv-fxl")) {
+                    // activeWebView.setAttribute("src", "data:, ");
+
+                    if (webviewAlreadyHasContent) {
+                        activeWebView.style.opacity = "0";
+                        // setTimeout(async () => {
+                        // if (activeWebView.READIUM2?.DOMisReady) {}
+                        //     await activeWebView.send("R2_EVENT_HIDE",
+                        //         activeWebView.READIUM2.link ? isFixedLayout(activeWebView.READIUM2.link) : null);
+                        // }, 0);
+                    }
+
                     shiftWebview(activeWebView, 0, undefined); // reset
-                    activeWebView.setAttribute("src", uriStr_);
-                }, 10);
-            } else {
-                activeWebView.setAttribute("src", uriStr_);
-            }
+                    activeWebView.setAttribute("src", uriStr__);
+                } else {
+                    activeWebView.setAttribute("src", uriStr__);
+                }
+            }, highlights ? 500 : win.READIUM2.ttsClickEnabled ? 100 : 10);
         }
     }
 
@@ -1565,6 +1674,8 @@ export interface LocatorExtended {
     headings: Array<{ id: string | undefined, txt: string | undefined, level: number }> | undefined;
 
     secondWebViewHref: string | undefined;
+
+    followingElementIDs?: string[];
 }
 
 let _lastSavedReadingLocation: LocatorExtended | undefined;
@@ -1572,7 +1683,21 @@ export function getCurrentReadingLocation(): LocatorExtended | undefined {
     return _lastSavedReadingLocation;
 }
 let _readingLocationSaver: ((locator: LocatorExtended) => void) | undefined;
-const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_READING_LOCATION) => {
+const _saveReadingLocation = (activeWebView: IReadiumElectronWebview, locator: IEventPayload_R2_EVENT_READING_LOCATION) => {
+
+    const docHref = activeWebView.READIUM2.link?.Href;
+    if (!docHref) {
+        return;
+    }
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    let otherActive: IReadiumElectronWebview | undefined;
+    for (const active of activeWebViews) {
+        if (active === activeWebView) {
+            continue;
+        }
+        otherActive = active;
+        break;
+    }
 
     const publication = win.READIUM2.publication;
 
@@ -1623,6 +1748,8 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
         locator: {
             href: docHref,
             locations: {
+                rangeInfo: locator.locations.rangeInfo ?
+                    locator.locations.rangeInfo : undefined,
                 cfi: locator.locations.cfi ?
                     locator.locations.cfi : undefined,
                 cssSelector: locator.locations.cssSelector ?
@@ -1636,10 +1763,14 @@ const _saveReadingLocation = (docHref: string, locator: IEventPayload_R2_EVENT_R
             title: locator.title,
         },
         paginationInfo: locator.paginationInfo,
-        secondWebViewHref: locator.secondWebViewHref,
+        secondWebViewHref: locator.secondWebViewHref || otherActive?.READIUM2.link?.Href,
         selectionInfo: locator.selectionInfo,
         selectionIsNew: locator.selectionIsNew,
+        followingElementIDs: locator.followingElementIDs,
     };
+    // if (locator.followingElementIDs) {
+    //     _lastSavedReadingLocation.followingElementIDs = locator.followingElementIDs;
+    // }
 
     if (IS_DEV) {
         // debug(">->->", JSON.stringify(_lastSavedReadingLocation, null, "  "));
@@ -1704,6 +1835,7 @@ export async function isLocatorVisible(locator: Locator): Promise<boolean> {
             return;
         }
 
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         reject("isLocatorVisible - no webview href match.");
     });
 }

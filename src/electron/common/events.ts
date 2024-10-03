@@ -5,7 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { Locator, LocatorLocations } from "@r2-shared-js/models/locator";
+import { Locator, LocatorLocations } from "./locator";
 
 import { IAudioPlaybackInfo } from "./audiobook";
 import { IDocInfo } from "./document";
@@ -72,7 +72,7 @@ export const R2_EVENT_PAGE_TURN = "R2_EVENT_PAGE_TURN";
 export const R2_EVENT_PAGE_TURN_RES = "R2_EVENT_PAGE_TURN_RES";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_PAGE_TURN {
-    direction: string; // RTL, LTR
+    // direction: string; // RTL, LTR
     go: string; // PREVIOUS, NEXT
     nav?: boolean;
 }
@@ -96,6 +96,7 @@ export const R2_EVENT_KEYBOARD_FOCUS_REQUEST = "R2_EVENT_KEYBOARD_FOCUS_REQUEST"
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
 export const R2_EVENT_READING_LOCATION = "R2_EVENT_READING_LOCATION";
+export const R2_EVENT_READING_LOCATION_CLEAR_SELECTION = "R2_EVENT_READING_LOCATION_CLEAR_SELECTION";
 
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_READING_LOCATION extends Locator {
@@ -116,6 +117,8 @@ export interface IEventPayload_R2_EVENT_READING_LOCATION extends Locator {
     userInteract: boolean;
 
     secondWebViewHref: string | undefined;
+
+    followingElementIDs?: string[];
 }
 
 // in MAIN: browserWindow.webContents.send()
@@ -142,6 +145,7 @@ export interface IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK {
 export const R2_EVENT_MEDIA_OVERLAY_CLICK = "R2_EVENT_MEDIA_OVERLAY_CLICK";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_MEDIA_OVERLAY_CLICK {
+    locationHashOverrideInfo: IEventPayload_R2_EVENT_READING_LOCATION | undefined;
     textFragmentIDChain: Array<string | null> | undefined;
     userInteract: boolean;
 }
@@ -245,6 +249,14 @@ export interface IEventPayload_R2_EVENT_TTS_VOICE {
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_TTS_SKIP_ENABLE = "R2_EVENT_TTS_SKIP_ENABLE";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_TTS_SKIP_ENABLE {
+    doEnable: boolean;
+}
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_TTS_SENTENCE_DETECT_ENABLE = "R2_EVENT_TTS_SENTENCE_DETECT_ENABLE";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_TTS_SENTENCE_DETECT_ENABLE {
@@ -289,6 +301,10 @@ export const R2_EVENT_TTS_IS_PLAYING = "R2_EVENT_TTS_IS_PLAYING";
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
 export const R2_EVENT_TTS_DOC_END = "R2_EVENT_TTS_DOC_END";
+
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_TTS_DOC_BACK = "R2_EVENT_TTS_DOC_BACK";
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
@@ -337,7 +353,19 @@ export interface IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE {
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_HIGHLIGHT_DRAW_MARGIN = "R2_EVENT_HIGHLIGHT_DRAW_MARGIN";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_HIGHLIGHT_DRAW_MARGIN {
+    drawMargin: boolean | string[];
+}
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_HIGHLIGHT_REMOVE_ALL = "R2_EVENT_HIGHLIGHT_REMOVE_ALL";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE_ALL {
+    groups: string[] | undefined;
+}
 
 // in WEBVIEW: ipcRenderer.sendToHost()
 // in RENDERER: webview.addEventListener("ipc-message")
@@ -345,6 +373,16 @@ export const R2_EVENT_HIGHLIGHT_CLICK = "R2_EVENT_HIGHLIGHT_CLICK";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_HIGHLIGHT_CLICK {
     highlight: IHighlight;
+    event: {
+        type: string;
+        button: number;
+        alt: boolean;
+        shift: boolean;
+        ctrl: boolean;
+        meta: boolean;
+        x: number;
+        y: number;
+    };
 }
 
 // in WEBVIEW: ipcRenderer.sendToHost()

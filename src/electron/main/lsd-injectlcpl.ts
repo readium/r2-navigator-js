@@ -34,6 +34,7 @@ export async function lsdLcpUpdateInject(
     try {
         lcpl = TaJsonDeserialize<LCP>(lcplJson, LCP);
     } catch (erorz) {
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         return Promise.reject(erorz);
     }
     lcpl.ZipPath = zipEntryPath;
@@ -53,6 +54,7 @@ export async function lsdLcpUpdateInject(
         const newPublicationPath = publicationPath + ".new";
         injectBufferInZip(publicationPath, newPublicationPath, Buffer.from(lcplStr, "utf8"), zipEntryPath,
             (err) => {
+                // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
                 reject(err);
             },
             () => {

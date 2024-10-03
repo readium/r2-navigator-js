@@ -422,7 +422,7 @@ export function popoutImage(
 
     const isSVG = href_src.startsWith("<svg");
     if (isSVG) {
-        // href_src = href_src.replace(/\n/g, " ").replace(/\s\s+/g, " ").trim();
+        // href_src = href_src.replace(/[\r\n]/g, " ").replace(/\s\s+/g, " ").trim();
         href_src = "data:image/svg+xml;base64," + Buffer.from(href_src).toString("base64");
     }
 
@@ -464,7 +464,7 @@ export function popoutImage(
     //     (win as any).readiumClosePopupDialogs = () => { closePopupDialogs(win.document); };
     // }
 
-    function onDialogClosed(el: HTMLOrSVGElement | null) {
+    function onDialogClosed(_thiz: PopupDialog, el: HTMLOrSVGElement | null) {
         win.READIUM2.ignorekeyDownUpEvents = false;
 
         if (el) {

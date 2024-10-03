@@ -13,8 +13,9 @@ import { IwidthHeight } from "./fxl";
 import { READIUM_CSS_URL_PATH } from "./readium-css-settings";
 import { READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl } from "./sessions";
 import {
+    CLASS_VWM,
     CLASS_PAGINATED, ROOT_CLASS_FIXED_LAYOUT, ROOT_CLASS_INVISIBLE_MASK,
-    ROOT_CLASS_INVISIBLE_MASK_REMOVED, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES,
+    ROOT_CLASS_INVISIBLE_MASK_REMOVED, ROOT_CLASS_MATHJAX, ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_NO_RUBY,
     ROOT_CLASS_REDUCE_MOTION, WebViewSlotEnum, audioCssStyles, focusCssStyles, footnotesCssStyles,
     mediaOverlaysCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles,
     targetCssStyles, ttsCssStyles, visibilityMaskCssStyles,
@@ -133,10 +134,54 @@ export function isDocRTL(documant: Document): boolean {
     return rtl;
 }
 
+const isDocJapanese = (documant: Document) => {
+
+    let isJA = false;
+    let langAttr = documant.documentElement.getAttribute("lang");
+    if (!langAttr) {
+        langAttr = documant.documentElement.getAttribute("xml:lang");
+    }
+    if (!langAttr) {
+        langAttr = documant.documentElement.getAttributeNS("http://www.w3.org/XML/1998/", "lang");
+    }
+    if (langAttr &&
+        (langAttr === "ja" || langAttr.startsWith("ja-"))
+    ) {
+        isJA = true;
+    }
+    return isJA;
+};
+
+export const isDocCJK = (documant: Document) => {
+
+    let isCJK = false;
+    let langAttr = documant.documentElement.getAttribute("lang");
+    if (!langAttr) {
+        langAttr = documant.documentElement.getAttribute("xml:lang");
+    }
+    if (!langAttr) {
+        langAttr = documant.documentElement.getAttributeNS("http://www.w3.org/XML/1998/", "lang");
+    }
+    if (langAttr &&
+        (langAttr === "ja" || langAttr.startsWith("ja-") ||
+        langAttr === "zh" || langAttr.startsWith("zh-") ||
+        langAttr === "ko" || langAttr.startsWith("ko-"))
+    ) {
+        isCJK = true;
+    }
+    return isCJK;
+};
+
 export function isPaginated(documant: Document): boolean {
     return documant && documant.documentElement &&
         documant.documentElement.classList.contains(CLASS_PAGINATED);
 }
+
+// see comments below for readiumCSSSet() isVerticalWritingMode and isRTL arguments
+// export function isVerticalWritingMode(documant: Document): boolean {
+//     return documant && documant.documentElement &&
+//         documant.documentElement.classList.contains(CLASS_VWM);
+// }
 
 // tslint:disable-next-line:max-line-length
 // https://github.com/readium/readium-css/blob/develop/docs/CSS12-user_prefs.md
@@ -147,7 +192,8 @@ export function isPaginated(documant: Document): boolean {
 export function readiumCSSSet(
     documant: Document,
     messageJson: IEventPayload_R2_EVENT_READIUMCSS,
-    isVerticalWritingMode: boolean, isRTL: boolean) {
+    isVerticalWritingMode: boolean, isRTL: boolean, // obtained from live DOM getComputedStyle() see readium-css.ts (preload.ts computeVerticalRTL() / isVerticalWritingMode() and re-call to readiumCSS() ), otherwise from statically from dir and land in readiumCssTransformHtml() see here
+) {
 
     if (!messageJson) {
         return;
@@ -174,7 +220,18 @@ export function readiumCSSSet(
             }
         }
     }
-
+    if (!messageJson.urlRoot) {
+        const elBefore = documant.getElementById("ReadiumCSS-before");
+        if (elBefore) {
+            const elHref = elBefore.getAttribute("href");
+            if (elHref) {
+                const iHref = elHref.indexOf("/" + READIUM_CSS_URL_PATH);
+                if (iHref >= 0) {
+                    messageJson.urlRoot = elHref.substring(0, iHref);
+                }
+            }
+        }
+    }
     if (IS_DEV) {
         debug("_____ readiumCssJson.urlRoot (readiumCSSSet()): ", messageJson.urlRoot);
     }
@@ -191,6 +248,7 @@ export function readiumCSSSet(
     if (!setCSS) {
 
         docElement.classList.remove(ROOT_CLASS_NO_FOOTNOTES);
+        docElement.classList.remove(ROOT_CLASS_NO_RUBY);
 
         docElement.removeAttribute("data-readiumcss");
         removeAllCSS(documant);
@@ -222,8 +280,58 @@ export function readiumCSSSet(
         return;
     }
 
+    if (isVerticalWritingMode) {
+        docElement.classList.add(CLASS_VWM);
+        setCSS.paged = false; // force disabled column pagination (too many issues)
+    }
+
+    if (docElement.hasAttribute("data-readiumcss")) {
+        let reset = false;
+
+        const isV = docElement.hasAttribute("data-rss-isVWM");
+        if (isV !== isVerticalWritingMode) {
+            reset = true;
+            if (isV) {
+                docElement.removeAttribute("data-rss-isVWM");
+            }
+            // else {
+            //     docElement.setAttribute("data-rss-isVWM", "true");
+            // }
+        }
+
+        const isR = docElement.hasAttribute("data-rss-isRTL");
+        if (isR !== isRTL) {
+            reset = true;
+            if (isR) {
+                docElement.removeAttribute("data-rss-isRTL");
+            }
+            // else {
+            //     docElement.setAttribute("data-rss-isRTL", "true");
+            // }
+        }
+
+        if (reset) {
+            docElement.removeAttribute("data-readiumcss");
+            removeAllCSS(documant);
+        }
+    }
+
     if (!docElement.hasAttribute("data-readiumcss")) {
         docElement.setAttribute("data-readiumcss", "yes");
+
+        if (isVerticalWritingMode) {
+            docElement.setAttribute("data-rss-isVWM", "true");
+        }
+        // else {
+        //     docElement.removeAttribute("data-rss-isVWM");
+        // }
+
+        if (isRTL) {
+            docElement.setAttribute("data-rss-isRTL", "true");
+        }
+        // else {
+        //     docElement.removeAttribute("data-rss-isRTL");
+        // }
 
         let needsDefaultCSS = true;
 
@@ -263,7 +371,12 @@ export function readiumCSSSet(
             }
         }
 
-        const urlRoot = messageJson.urlRoot + "/" + READIUM_CSS_URL_PATH + "/";
+        const isCJK = isDocCJK(documant);
+        const custom = isVerticalWritingMode && isCJK ?
+            "cjk-vertical/" : (isCJK ?
+                "cjk-horizontal/" : (isRTL ?
+                    "rtl/" : ""));
+        const urlRoot = messageJson.urlRoot + "/" + READIUM_CSS_URL_PATH + "/" + custom;
 
         appendCSS(documant, "before", urlRoot);
         if (needsDefaultCSS) {
@@ -276,6 +389,12 @@ export function readiumCSSSet(
         debug("---- setCSS -----");
         debug(setCSS);
         debug("-----");
+    }
+
+    if (setCSS.noRuby) {
+        docElement.classList.add(ROOT_CLASS_NO_RUBY);
+    } else {
+        docElement.classList.remove(ROOT_CLASS_NO_RUBY);
     }
 
     if (setCSS.noFootnotes) {
@@ -432,17 +551,31 @@ export function readiumCSSSet(
         docElement.style.removeProperty("--USER__paraSpacing");
     }
 
-    const isCJK = false; // TODO, lang tag?
+    const isCJK = isDocCJK(documant);
     if (isVerticalWritingMode || (isRTL || isCJK)) {
+
         docElement.style.removeProperty("--USER__bodyHyphens");
 
-        docElement.style.removeProperty("--USER__wordSpacing");
-
-        docElement.style.removeProperty("--USER__letterSpacing");
+        if (isDocJapanese(documant)) {
+            if (setCSS.wordSpacing && setCSS.wordSpacing.trim() !== "0") {
+                docElement.style.setProperty("--USER__wordSpacing", setCSS.wordSpacing);
+            } else {
+                docElement.style.removeProperty("--USER__wordSpacing");
+            }
+            if (setCSS.letterSpacing && setCSS.letterSpacing.trim() !== "0") {
+                docElement.style.setProperty("--USER__letterSpacing", setCSS.letterSpacing);
+            } else {
+                docElement.style.removeProperty("--USER__letterSpacing");
+            }
+        } else {
+            docElement.style.removeProperty("--USER__wordSpacing");
+            docElement.style.removeProperty("--USER__letterSpacing");
+        }
 
         if (isVerticalWritingMode || isCJK) {
             if (isVerticalWritingMode) {
-                docElement.style.removeProperty("--USER__colCount");
+                // docElement.style.removeProperty("--USER__colCount");
+                docElement.style.setProperty("--USER__colCount", "1"); // force single page solves layout issues
             }
 
             docElement.style.removeProperty("--USER__paraIndent");
@@ -505,14 +638,38 @@ export function readiumCSSSet(
     }
 
     if (setCSS.backgroundColor) {
-        docElement.style.setProperty("--USER__backgroundColor", setCSS.backgroundColor);
+        docElement.style.setProperty(setCSS.sepia || setCSS.night ? "--RS__backgroundColor" : "--USER__backgroundColor", setCSS.backgroundColor);
     } else {
         docElement.style.removeProperty("--USER__backgroundColor");
+        docElement.style.removeProperty("--RS__backgroundColor");
     }
     if (setCSS.textColor) {
-        docElement.style.setProperty("--USER__textColor", setCSS.textColor);
+        docElement.style.setProperty(setCSS.sepia || setCSS.night ? "--RS__textColor" : "--USER__textColor", setCSS.textColor);
     } else {
         docElement.style.removeProperty("--USER__textColor");
+        docElement.style.removeProperty("--RS__textColor");
+    }
+
+    if (setCSS.selectionBackgroundColor) {
+        docElement.style.setProperty("--RS__selectionBackgroundColor", setCSS.selectionBackgroundColor);
+    } else {
+        docElement.style.removeProperty("--RS__selectionBackgroundColor");
+    }
+    if (setCSS.selectionTextColor) {
+        docElement.style.setProperty("--RS__selectionTextColor", setCSS.selectionTextColor);
+    } else {
+        docElement.style.removeProperty("--RS__selectionTextColor");
+    }
+
+    if (setCSS.linkColor) {
+        docElement.style.setProperty("--RS__linkColor", setCSS.linkColor);
+    } else {
+        docElement.style.removeProperty("--RS__linkColor");
+    }
+    if (setCSS.linkVisitedColor) {
+        docElement.style.setProperty("--RS__visitedColor", setCSS.linkVisitedColor);
+    } else {
+        docElement.style.removeProperty("--RS__visitedColor");
     }
 }
 
@@ -766,7 +923,38 @@ export function appendCSS(documant: Document, mod: string, urlRoot: string) {
         const styleElement = documant.createElement("style");
         styleElement.setAttribute("id", idz + "-PATCH");
         styleElement.setAttribute("type", "text/css");
-        styleElement.appendChild(documant.createTextNode("audio[controls] { width: revert !important; height: revert !important; }"));
+        styleElement.appendChild(documant.createTextNode(`
+audio[controls] {
+    width: revert !important; height: revert !important;
+}
+
+/* exception for Japanese, ReadiumCSS normally recommends disabling CSS letter/word-spacing for CJK in general */
+
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) h1,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) h2,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) h3,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) h4,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) h5,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) h6,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) p,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) li,
+:root[style*="readium-advanced-on"][style*="--USER__letterSpacing"]:lang(ja) div {
+    letter-spacing: var(--USER__letterSpacing);
+    font-variant: none;
+}
+
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) h1,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) h2,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) h3,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) h4,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) h5,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) h6,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) p,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) li,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"]:lang(ja) div {
+    word-spacing: var(--USER__wordSpacing);
+}
+`));
         documant.head.insertBefore(styleElement, firstElementChild);
     } else {
         documant.head.appendChild(linkElement);
@@ -777,6 +965,10 @@ export function removeCSS(documant: Document, mod: string) {
     const linkElement = documant.getElementById("ReadiumCSS-" + mod);
     if (linkElement && linkElement.parentNode) {
         linkElement.parentNode.removeChild(linkElement);
+    }
+    const styleElement = documant.getElementById("ReadiumCSS-" + mod + "-PATCH");
+    if (styleElement && styleElement.parentNode) {
+        styleElement.parentNode.removeChild(styleElement);
     }
 }
 
@@ -851,12 +1043,12 @@ export function readiumCssTransformHtml(
     const htmlStrToParse = `<?xml version="1.0" encoding="utf-8"?>${parseableChunk}TXT</body></html>`;
     // debug(htmlStrToParse);
 
-    const documant = parseDOM(htmlStrToParse, mediaType);
+    const documantFromXmlDom = parseDOM(htmlStrToParse, mediaType);
 
-    documant.documentElement.setAttribute("data-readiumcss-injected", "yes");
+    documantFromXmlDom.documentElement.setAttribute("data-readiumcss-injected", "yes");
 
-    documant.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK);
-    documant.documentElement.classList.remove(ROOT_CLASS_INVISIBLE_MASK_REMOVED);
+    documantFromXmlDom.documentElement.classList.add(ROOT_CLASS_INVISIBLE_MASK);
+    documantFromXmlDom.documentElement.classList.remove(ROOT_CLASS_INVISIBLE_MASK_REMOVED);
 
     // const wh = configureFixedLayout(doc, win.READIUM2.isFixedLayout,
     //     win.READIUM2.fxlViewportWidth, win.READIUM2.fxlViewportHeight,
@@ -866,26 +1058,26 @@ export function readiumCssTransformHtml(
     //     win.READIUM2.fxlViewportHeight = wh.height;
     // }
 
-    const rtl = isDocRTL(documant);
-    const vertical = isDocVertical(documant);
+    const rtl = isDocRTL(documantFromXmlDom);
+    const vertical = isDocVertical(documantFromXmlDom);
     if (readiumcssJson) {
         if (IS_DEV) {
             debug("_____ readiumCssJson.urlRoot (readiumCssTransformHtml()): ", readiumcssJson.urlRoot);
         }
 
         readiumCSSSet(
-            documant,
+            documantFromXmlDom,
             readiumcssJson,
             vertical,
             rtl);
     }
 
-    injectDefaultCSS(documant);
+    injectDefaultCSS(documantFromXmlDom);
     if (IS_DEV) { // isDEBUG_VISUALS(documant)
-        injectReadPosCSS(documant);
+        injectReadPosCSS(documantFromXmlDom);
     }
 
-    const serialized = serializeDOM(documant);
+    const serialized = serializeDOM(documantFromXmlDom);
     // debug("serialized:");
     // debug(serialized);
 

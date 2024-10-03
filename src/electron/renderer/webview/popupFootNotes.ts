@@ -172,6 +172,9 @@ export async function popupFootNote(
     // htmltxt = htmltxt.replace(/id=["'][^"']+["']/, `id="${id_}"`);
     htmltxt = htmltxt.replace(/id=["']([^"']+)["']/g, "idvoid=\"$1\""); // remove duplicate IDs
 
+    // CSS display:none
+    // htmltxt = htmltxt.replace(/<a ... (role=["'][^"']*doc-backlink[^"']*["'] .... <\/a>)/g, "<!-- removed backlink -->"); // remove backlinks
+
     // tslint:disable-next-line:max-line-length
     htmltxt = `<div id="${id_}" class="${FOOTNOTES_CONTAINER_CLASS} ${CSS_CLASS_NO_FOCUS_OUTLINE}" tabindex="0" autofocus="autofocus">${htmltxt}</div>`;
 
@@ -183,7 +186,10 @@ export async function popupFootNote(
     // https://github.com/jindw/xmldom/pull/208
     // https://github.com/jindw/xmldom/pull/242
     // https://github.com/xmldom/xmldom/blob/3db6ccf3f7ecbde73608490d71f96c727abdd69a/lib/dom-parser.js#L12
-    // const dom = new xmldom.DOMParser().parseFromString(htmltxt, "application/xhtml");
+    // https://github.com/xmldom/xmldom/blob/0.9.3/lib/dom-parser.js#L220
+    // https://github.com/xmldom/xmldom/blob/0.9.3/index.d.ts#L24
+    // https://github.com/xmldom/xmldom/blob/0.9.3/index.d.ts#L99
+    // const dom = new xmldom.DOMParser().parseFromString(htmltxt, "application/xhtml+xml"); // "application/xhtml"
 
     // const payload_: IEventPayload_R2_EVENT_LINK_FOOTNOTE = {
     //     hash: url.hash,
@@ -194,7 +200,7 @@ export async function popupFootNote(
 
     const val = ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable();
 
-    function onDialogClosed(el: HTMLOrSVGElement | null) {
+    function onDialogClosed(_thiz: PopupDialog, el: HTMLOrSVGElement | null) {
 
         if (el) {
             focusScrollRaw(el, true, true, undefined);

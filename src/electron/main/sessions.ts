@@ -12,7 +12,7 @@ import {
     session,
 } from "electron";
 import * as request from "request";
-import * as requestPromise from "request-promise-native";
+// import * as requestPromise from "request-promise-native";
 
 import { Publication } from "@r2-shared-js/models/publication";
 import { Link } from "@r2-shared-js/models/publication-link";
@@ -452,11 +452,10 @@ const streamProtocolHandler = async (
         }
     }
 
-    // No response streaming! :(
-    // https://github.com/request/request-promise/issues/90
-    const needsStreamingResponse = true;
-
-    if (needsStreamingResponse) {
+    // // No response streaming! :(
+    // // https://github.com/request/request-promise/issues/90
+    // const needsStreamingResponse = true;
+    // if (needsStreamingResponse) {
         request.get({
             headers: reqHeaders,
             method: "GET",
@@ -470,22 +469,22 @@ const streamProtocolHandler = async (
             .on("error", (err: any) => {
                 failure(err);
             });
-    } else {
-        let response: requestPromise.FullResponse;
-        try {
-            // tslint:disable-next-line:await-promise no-floating-promises
-            response = await requestPromise({
-                headers: reqHeaders,
-                method: "GET",
-                rejectUnauthorized: false, // self-signed certificate
-                resolveWithFullResponse: true,
-                uri: url,
-            });
-            success(response);
-        } catch (err) {
-            failure(err);
-        }
-    }
+    // } else {
+    //     let response: requestPromise.FullResponse;
+    //     try {
+    //         // tslint:disable-next-line:await-promise no-floating-promises
+    //         response = await requestPromise({
+    //             headers: reqHeaders,
+    //             method: "GET",
+    //             rejectUnauthorized: false, // self-signed certificate
+    //             resolveWithFullResponse: true,
+    //             uri: url,
+    //         });
+    //         success(response);
+    //     } catch (err) {
+    //         failure(err);
+    //     }
+    // }
 };
 const httpProtocolHandler = (
     req: ProtocolRequest,
@@ -554,7 +553,7 @@ const transformerAudioVideo: TTransformFunction = (
     }
 
     // debug(htmlStrToParse);
-    const documant = parseDOM(htmlStrToParse, mediaType);
+    const documantFromXmlDom = parseDOM(htmlStrToParse, mediaType);
 
     // debug(url);
     let urlHttp = url;
@@ -612,9 +611,9 @@ const transformerAudioVideo: TTransformFunction = (
             }
         }
     };
-    processTree(documant.body);
+    processTree(documantFromXmlDom.body);
 
-    const serialized = serializeDOM(documant);
+    const serialized = serializeDOM(documantFromXmlDom);
 
     const prefix = htmlStr.substr(0, iHtmlStart);
 
@@ -671,7 +670,7 @@ const transformerHttpBaseIframes: TTransformFunction = (
     }
 
     // debug(htmlStrToParse);
-    const documant = parseDOM(htmlStrToParse, mediaType);
+    const documantFromXmlDom = parseDOM(htmlStrToParse, mediaType);
 
     // debug(url);
     let urlHttp = url;
@@ -756,9 +755,9 @@ const transformerHttpBaseIframes: TTransformFunction = (
             }
         }
     };
-    processTree(documant.body);
+    processTree(documantFromXmlDom.body);
 
-    const serialized = serializeDOM(documant);
+    const serialized = serializeDOM(documantFromXmlDom);
 
     const prefix = htmlStr.substr(0, iHtmlStart);
 
@@ -944,11 +943,9 @@ export async function clearSession(sess: Electron.Session, str: string): Promise
         origin: "*",
         quotas: [
             "temporary",
-            "persistent",
             "syncable",
         ],
         storages: [
-            "appcache",
             // "cookies",
             // "filesystem",
             // "indexdb",

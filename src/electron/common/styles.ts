@@ -11,6 +11,8 @@ export enum WebViewSlotEnum {
     right = "right",
 }
 
+export const CLASS_VWM = "r2-class-VWM";
+
 export const CLASS_PAGINATED = "r2-css-paginated";
 
 export const HIDE_CURSOR_CLASS = "r2-hideCursor";
@@ -18,12 +20,14 @@ export const HIDE_CURSOR_CLASS = "r2-hideCursor";
 export const ZERO_TRANSFORM_CLASS = "r2-zeroTransform";
 export const SKIP_LINK_ID = "r2-skip-link";
 export const LINK_TARGET_CLASS = "r2-link-target";
+export const LINK_TARGET_ALT_CLASS = "r2-link-target-alt";
 
 export const ROOT_CLASS_REDUCE_MOTION = "r2-reduce-motion";
 export const ROOT_CLASS_MATHJAX = "r2-mathjax";
 
 export const ROOT_CLASS_FIXED_LAYOUT = "r2-fixed-layout";
 export const ROOT_CLASS_NO_FOOTNOTES = "r2-no-popup-foonotes";
+export const ROOT_CLASS_NO_RUBY = "r2-no-ruby";
 export const FOOTNOTES_CONTAINER_CLASS = "r2-footnote-container";
 export const FOOTNOTES_CLOSE_BUTTON_CLASS = "r2-footnote-close";
 export const FOOTNOTE_FORCE_SHOW = "r2-footnote-force-show";
@@ -346,6 +350,13 @@ export const footnotesCssStyles = `
     margin: 0 !important;
     padding: 0 !important;
     width: 100%;
+}
+
+:root[style] .${FOOTNOTES_CONTAINER_CLASS} a[epub|type~="backlink"],
+:root .${FOOTNOTES_CONTAINER_CLASS} a[epub|type~="backlink"],
+:root[style] .${FOOTNOTES_CONTAINER_CLASS} a[role~="doc-backlink"],
+:root .${FOOTNOTES_CONTAINER_CLASS} a[role~="doc-backlink"] {
+    display: none !important;
 }
 
 /*
@@ -828,9 +839,286 @@ export const ttsCssStyles = `
 }
 `;
 
+export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
+export const CLASS_HIGHLIGHT_COMMON = "R2_CLASS_HIGHLIGHT_COMMON";
+export const CLASS_HIGHLIGHT_CONTOUR = "R2_CLASS_HIGHLIGHT_CONTOUR";
+export const CLASS_HIGHLIGHT_CONTOUR_MARGIN = "R2_CLASS_HIGHLIGHT_CONTOUR_MARGIN";
+export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
+export const CLASS_HIGHLIGHT_MARGIN = "R2_CLASS_HIGHLIGHT_MARGIN";
+export const CLASS_HIGHLIGHT_BEHIND = "R2_CLASS_HIGHLIGHT_BEHIND";
+export const CLASS_HIGHLIGHT_HOVER = "R2_CLASS_HIGHLIGHT_HOVER";
+export const CLASS_HIGHLIGHT_CURSOR2 = "R2_CLASS_HIGHLIGHT_CURSOR2";
+// export const CLASS_HIGHLIGHT_CURSOR1 = "R2_CLASS_HIGHLIGHT_CURSOR1";
+// export const CLASS_HIGHLIGHT_AREA = "R2_CLASS_HIGHLIGHT_AREA";
+// export const CLASS_HIGHLIGHT_BOUNDING_AREA = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA";
+// export const CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN = "R2_CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN";
+
 export const ROOT_CLASS_INVISIBLE_MASK = "r2-visibility-mask-class";
 export const ROOT_CLASS_INVISIBLE_MASK_REMOVED = "r2-visibility-mask-removed-class";
+
+// set to false to debug bounding boxes
+const hover = true ? `.${CLASS_HIGHLIGHT_HOVER}` : "";
+
+/*
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}:not(.${CLASS_HIGHLIGHT_MARGIN}) > .${CLASS_HIGHLIGHT_BOUNDING_AREA},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}:not(.${CLASS_HIGHLIGHT_MARGIN}) > .${CLASS_HIGHLIGHT_BOUNDING_AREA}
+{
+outline-color: #555555 !important;
+outline-style: solid !important;
+outline-width: 2px !important;
+outline-offset: 2px !important;
+}
+*/
+/*
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN} > .${CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN} > .${CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN}
+{
+outline-color: #555555 !important;
+outline-style: solid !important;
+outline-width: 1px !important;
+outline-offset: 1px !important;
+}
+*/
+/*
+:root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}:not(.${CLASS_HIGHLIGHT_MARGIN}) > .${CLASS_HIGHLIGHT_BOUNDING_AREA}
+{
+outline-color: yellow !important;
+outline-style: solid !important;
+outline-width: 2px !important;
+outline-offset: 2px !important;
+}
+*/
+/*
+:root[style].${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_AREA},
+:root.${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_AREA},
+:root[style].${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_BOUNDING_AREA},
+:root.${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_BOUNDING_AREA},
+:root[style].${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN},
+:root.${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN},
+*/
+/*
+:root[style]:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_AREA},
+:root:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_AREA},
+:root[style]:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_BOUNDING_AREA},
+:root:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_BOUNDING_AREA},
+:root[style]:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN},
+:root:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN},
+*/
+/*
+:root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN} > .${CLASS_HIGHLIGHT_BOUNDING_AREA_MARGIN}
+{
+outline-color: yellow !important;
+outline-style: solid !important;
+outline-width: 1px !important;
+outline-offset: 1px !important;
+}
+*/
+/*
+:root[style].${CLASS_HIGHLIGHT_CURSOR1},
+:root.${CLASS_HIGHLIGHT_CURSOR1}
+{
+cursor: pointer !important;
+}
+*/
+/*
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(1),
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(1)
+{
+fill: blue !important;
+}
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(2),
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(2)
+{
+stroke: #dddddd !important;
+}
+:root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:nth-child(2)
+{
+stroke: #aaaaaa !important;
+}
+*/
+/*
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN}[data-type="0"] > .${CLASS_HIGHLIGHT_AREA},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN}[data-type="0"] > .${CLASS_HIGHLIGHT_AREA},
+*/
+/*
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > .${CLASS_HIGHLIGHT_AREA},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > .${CLASS_HIGHLIGHT_AREA},
+*/
+/*
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_AREA},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > .${CLASS_HIGHLIGHT_AREA},
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR}
+{
+transform: translate3d(0px, 0px, 0px) !important;
+}
+*/
+
+/*
+https://developer.mozilla.org/en-US/docs/Web/CSS/overflow
+hidden
+    Overflow content is clipped at the element's padding box. There are no scroll bars, and the clipped content is not visible (i.e., clipped content is hidden), but the content still exists. User agents do not add scroll bars and also do not allow users to view the content outside the clipped region by actions such as dragging on a touch screen or using the scroll wheel on a mouse. The content can be scrolled programmatically (for example, by setting the value of the scrollLeft property or the scrollTo() method), in which case the element box is a scroll container.
+clip
+    Overflow content is clipped at the element's overflow clip edge that is defined using the overflow-clip-margin property. As a result, content overflows the element's padding box by the <length> value of overflow-clip-margin or by 0px if not set. Overflow content outside the clipped region is not visible, user agents do not add a scroll bar, and programmatic scrolling is also not supported. No new formatting context is created. To establish a formatting context, use overflow: clip along with display: flow-root. The element box is not a scroll container.
+*/
+/*
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not(${hover}):not(.${CLASS_HIGHLIGHT_MARGIN})[data-type="0"],
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not(${hover}):not(.${CLASS_HIGHLIGHT_MARGIN})[data-type="0"]
+{
+opacity: 0.5 !important;
+}
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN}[data-type="0"] > svg.${CLASS_HIGHLIGHT_CONTOUR},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN}[data-type="0"] > svg.${CLASS_HIGHLIGHT_CONTOUR}
+{
+opacity: 0.5 !important;
+}
+*/
 export const visibilityMaskCssStyles = `
+
+:root[style].${ROOT_CLASS_NO_RUBY} > body rt,
+:root.${ROOT_CLASS_NO_RUBY} > body rt,
+:root[style].${ROOT_CLASS_NO_RUBY} > body rp,
+:root.${ROOT_CLASS_NO_RUBY} > body rp
+{
+display: none;
+}
+
+r2-wbr,
+wbr {
+display: none;
+}
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"] r2-wbr,
+:root[style*="readium-advanced-on"][style*="--USER__wordSpacing"] wbr {
+display: inherit;
+}
+r2-wbr::before,
+wbr::before {
+content: ' ';
+}
+
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > svg.${CLASS_HIGHLIGHT_CONTOUR},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > svg.${CLASS_HIGHLIGHT_CONTOUR}
+{
+display: none !important;
+}
+
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}:not(.${CLASS_HIGHLIGHT_MARGIN}) > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:last-child,
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}:not(.${CLASS_HIGHLIGHT_MARGIN}) > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:last-child
+{
+stroke: #555555 !important;
+/* stroke-width: 2 !important; */
+}
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:last-child,
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:last-child
+{
+stroke: #555555 !important;
+/* stroke-width: 2 !important; */
+}
+
+:root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}:not(.${CLASS_HIGHLIGHT_MARGIN}) > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:last-child
+{
+stroke: yellow !important;
+/* stroke-width: 2 !important; */
+}
+:root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}.${CLASS_HIGHLIGHT_MARGIN} > svg.${CLASS_HIGHLIGHT_CONTOUR} > path:last-child
+{
+stroke: yellow !important;
+/* stroke-width: 2 !important; */
+}
+
+:root[style].${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR},
+:root.${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR},
+:root[style].${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR_MARGIN},
+:root.${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR_MARGIN}
+{
+position: fixed !important;
+}
+
+:root[style]:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR},
+:root:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR},
+:root[style]:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR_MARGIN},
+:root:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER} > svg.${CLASS_HIGHLIGHT_CONTOUR_MARGIN}
+{
+position: absolute !important;
+}
+
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}
+{
+width: 1px !important;
+height: 1px !important;
+}
+
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not(.${CLASS_HIGHLIGHT_BEHIND}),
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not(.${CLASS_HIGHLIGHT_BEHIND})
+{
+    opacity: 0.8;
+}
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_BEHIND}:not(.${CLASS_HIGHLIGHT_MARGIN}),
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_BEHIND}:not(.${CLASS_HIGHLIGHT_MARGIN}),
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_BEHIND}.${CLASS_HIGHLIGHT_MARGIN}${hover},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_BEHIND}.${CLASS_HIGHLIGHT_MARGIN}${hover}
+{
+    mix-blend-mode: multiply;
+}
+:root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_BEHIND}:not(.${CLASS_HIGHLIGHT_MARGIN}),
+:root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_BEHIND}.${CLASS_HIGHLIGHT_MARGIN}${hover}
+{
+    mix-blend-mode: exclusion;
+}
+
+/*
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER}
+{
+isolation: isolate;
+}
+*/
+
+/*
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_BEHIND},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_BEHIND},
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}
+*/
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}
+{
+z-index: 1;
+}
+
+/*
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_BEHIND}${hover},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_BEHIND}${hover},
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}${hover},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}${hover}
+*/
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}${hover}
+{
+z-index: 2;
+}
+
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} .${CLASS_HIGHLIGHT_COMMON},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} .${CLASS_HIGHLIGHT_COMMON}
+{
+background-color: transparent !important;
+position: absolute !important;
+top: 0 !important;
+left: 0 !important;
+overflow: visible !important;
+margin: 0 !important;
+padding: 0 !important;
+border: 0 !important;
+box-sizing: border-box !important;
+pointer-events: none !important;
+}
+
+:root[style].${CLASS_HIGHLIGHT_CURSOR2},
+:root.${CLASS_HIGHLIGHT_CURSOR2}
+{
+    cursor: crosshair !important;
+}
 
 /*
 bugfix: for some reason, "inherit" does not work in Chromium, so we patch ReadiumCSS here :(
@@ -859,8 +1147,8 @@ no new stacking context, otherwise massive performance degradation with CSS Colu
 :root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) {
     overflow: visible !important;
 }
-:root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body,
-:root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body {
+:root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body,
+:root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body {
     /*
     Electron v19 --> v21 breaking change :(
     ("hidden" is now "clip")
@@ -868,8 +1156,15 @@ no new stacking context, otherwise massive performance degradation with CSS Colu
     overflow-y: visible !important;
     */
     overflow-x: clip !important;
-    overflow-y: visible !important;
+    overflow-y: hidden !important;
 }
+/*
+:root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body,
+:root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body {
+    overflow-x: visible !important;
+    overflow-y: clip !important;
+}
+*/
 
 /*
 This only visually hides the scrollbars,
@@ -893,26 +1188,145 @@ We cannot completely disable "scroll" event (prevent default) because we need to
     margin: 0 !important;
 }
 
-:root.${exports.CLASS_PAGINATED} > body,
-:root:not(.${exports.CLASS_PAGINATED}) > body,
-:root.${exports.ROOT_CLASS_FIXED_LAYOUT} > body,
-:root:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body,
-:root[style].${exports.CLASS_PAGINATED} > body,
-:root[style]:not(.${exports.CLASS_PAGINATED}) > body,
-:root[style].${exports.ROOT_CLASS_FIXED_LAYOUT} > body,
-:root[style]:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body {
+:root.${CLASS_PAGINATED} > body,
+:root:not(.${CLASS_PAGINATED}) > body,
+:root.${ROOT_CLASS_FIXED_LAYOUT} > body,
+:root:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body,
+:root[style].${CLASS_PAGINATED} > body,
+:root[style]:not(.${CLASS_PAGINATED}) > body,
+:root[style].${ROOT_CLASS_FIXED_LAYOUT} > body,
+:root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}) > body {
     /* see ensureHighlightsContainer() */
     position: relative !important;
     /* display: block; */
+
+    /* background-color: yellow !important; */
 }
 
-:root[style]:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}),
-:root:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) {
-    height: 100vh !important;
+:root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}),
+:root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) {
+    /* overflow-x: clip !important; */
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    height: inherit !important;
+    min-height: 0 !important;
+    max-height: none !important;
 }
 
-:root[style].${exports.CLASS_PAGINATED}:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}),
-:root.${exports.CLASS_PAGINATED}:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) {
+:root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}),
+:root:not(.${ROOT_CLASS_FIXED_LAYOUT}) {
+    --RS__pageGutter: 50px !important;
+}
+
+@media screen and (min-width: 35em) {
+    :root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}),
+    :root:not(.${ROOT_CLASS_FIXED_LAYOUT}) {
+        --RS__pageGutter: 50px !important;
+    }
+}
+
+@media screen and (min-width: 45em) {
+    :root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}),
+    :root:not(.${ROOT_CLASS_FIXED_LAYOUT}) {
+        --RS__pageGutter: 50px !important;
+    }
+}
+
+:root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body,
+:root:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body {
+    padding-top: 20px !important;
+    padding-bottom: 20px !important;
+    padding-left: 50px !important;
+    padding-right: 50px !important;
+}
+:root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body,
+:root:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body {
+    padding-top: 22px !important;
+    padding-bottom: 22px !important;
+    padding-left: 50px !important;
+    padding-right: 50px !important;
+}
+:root[style*="--USER__pageMargins"]:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body {
+    padding-left: calc(var(--RS__pageGutter) * var(--USER__pageMargins)) !important;
+    padding-right: calc(var(--RS__pageGutter) * var(--USER__pageMargins)) !important;
+}
+:root[style*="--USER__pageMargins"]:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body {
+    padding-top: calc(var(--RS__pageGutter) * var(--USER__pageMargins)) !important;
+    padding-bottom: calc(var(--RS__pageGutter) * var(--USER__pageMargins)) !important;
+}
+
+:root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body,
+:root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body {
+    margin: 0 !important;
+    margin: 0 auto !important;
+
+    --RS__maxLineLength: 60em !important;
+
+    height: inherit !important;
+    min-height: 0 !important;
+    max-height: none !important;
+}
+:root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body > *:not(#${POPUP_DIALOG_CLASS}) div,
+:root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body > *:not(#${POPUP_DIALOG_CLASS}) div,
+:root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body > div,
+:root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body > div
+{
+    max-width: none !important;
+    max-height: none !important;
+}
+
+:root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body,
+:root:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body {
+    min-height: inherit !important;
+}
+
+:root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM},
+:root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} {
+    overflow-y: clip !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    width: inherit !important;
+    min-width: 0 !important;
+    max-width: none !important;
+
+    height: inherit !important;
+    min-height: 0 !important;
+    max-height: none !important;
+}
+:root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body,
+:root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body {
+    margin: 0 !important;
+
+    --RS__maxLineLength: 1000em !important;
+
+    width: inherit !important;
+    min-width: 0 !important;
+    max-width: none !important;
+
+    height: inherit !important;
+    min-height: 0 !important;
+    max-height: none !important;
+}
+:root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body > *:not(#${POPUP_DIALOG_CLASS}) div,
+:root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body > *:not(#${POPUP_DIALOG_CLASS}) div,
+:root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body > div,
+:root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body > div {
+    max-width: none !important;
+    max-height: none !important;
+}
+/*
+:root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body,
+:root:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body {
+    min-width: inherit;
+}
+*/
+
+:root[style].${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}),
+:root.${CLASS_PAGINATED}:not(.${ROOT_CLASS_FIXED_LAYOUT}) {
     /* display: block; */
     /*
     Chrome Electron 19 - Chrome v102 CSS regression bug!
@@ -920,14 +1334,6 @@ We cannot completely disable "scroll" event (prevent default) because we need to
     See SKIP_LINK_ID rules below :(
     (hacky, but works without regressions or layout shift)
     */
-}
-:root[style]:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body,
-:root:not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body {
-    min-height: inherit;
-}
-:root[style]:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body,
-:root:not(.${exports.CLASS_PAGINATED}):not(.${exports.ROOT_CLASS_FIXED_LAYOUT}) > body {
-    height: inherit;
 }
 
 /*
@@ -1034,12 +1440,28 @@ export const targetCssStyles = `
 :root[style] *:target,
 :root *:target,
 */
-:root[style] *.${LINK_TARGET_CLASS},
-:root *.${LINK_TARGET_CLASS}
+:root[style] *.${LINK_TARGET_CLASS}:not(.${LINK_TARGET_ALT_CLASS}),
+:root *.${LINK_TARGET_CLASS}:not(.${LINK_TARGET_ALT_CLASS})
 {
-    outline-color: green !important;
+    outline-color: gray !important;
     outline-style: solid !important;
-    outline-width: 2px !important;
+    outline-width: 1px !important;
+    outline-offset: 2px !important;
+
+    /*
+    animation-name: readium2ElectronAnimation_TARGET;
+    animation-duration: 3s;
+    animation-delay: 1s;
+    animation-fill-mode: forwards;
+    animation-timing-function: linear;
+    */
+}
+:root[style] *.${LINK_TARGET_CLASS}.${LINK_TARGET_ALT_CLASS},
+:root *.${LINK_TARGET_CLASS}.${LINK_TARGET_ALT_CLASS}
+{
+    outline-color: orange !important;
+    outline-style: solid !important;
+    outline-width: 1px !important;
     outline-offset: 2px !important;
 
     /*
@@ -1073,7 +1495,7 @@ export const selectionCssStyles = `
     will-change: scroll-position;
     transform: translateX(0px);
 }
-
+/*
 :root[style] ::selection,
 :root ::selection {
 background: rgb(155, 179, 240) !important;
@@ -1084,6 +1506,7 @@ color: black !important;
 background: rgb(100, 122, 177) !important;
 color: white !important;
 }
+*/
 `;
 
 export const scrollBarCssStyles = `

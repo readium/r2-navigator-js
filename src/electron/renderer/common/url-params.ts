@@ -18,6 +18,8 @@ export const URL_PARAM_REFRESH = "r2_REFRESH";
 
 export const URL_PARAM_SESSION_INFO = "r2_SESSION_INFO";
 
+export const URL_PARAM_HIGHLIGHTS = "r2_HIGHLIGHTS";
+
 export const URL_PARAM_CLIPBOARD_INTERCEPT = "r2_CLIPBOARD_INTERCEPT";
 
 export const URL_PARAM_IS_IFRAME = "r2_IS_IFRAME";
@@ -25,3 +27,5 @@ export const URL_PARAM_IS_IFRAME = "r2_IS_IFRAME";
 export const URL_PARAM_WEBVIEW_SLOT = "r2_WEBVIEW_SLOT";
 
 export const URL_PARAM_SECOND_WEBVIEW = "r2_SECOND_WEBVIEW";
+
+export const FRAG_ID_CSS_SELECTOR = "r2-css-selector_";

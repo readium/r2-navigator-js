@@ -10,7 +10,6 @@ import * as debug_ from "debug";
 import { uniqueCssSelector as uniqueCssSelector2 } from "./cssselector2";
 import { uniqueCssSelector as uniqueCssSelector3, Options } from "./cssselector3";
 
-export { FRAG_ID_CSS_SELECTOR } from "./cssselector2";
 
 const debug = debug_("r2:navigator#electron/renderer/common/cssselector");
 

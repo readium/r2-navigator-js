@@ -8,6 +8,9 @@
 // @medv/finder v3.1.0
 // https://github.com/antonmedv/finder/blob/df88b7266bdf21fc657efc00469001c2af04b433/finder.ts
 
+// This polyfill automatically invokes the native CSS.escape API if available
+// https://github.com/mathiasbynens/CSS.escape/blob/4b25c283eaf4dd443f44a7096463e973d56dd1b2/css.escape.js#L16-L18
+// https://developer.mozilla.org/en-US/docs/Web/API/CSS/escape_static
 import * as CSSEscape from "css.escape";
 
 type Knot = {
@@ -132,6 +135,14 @@ function bottomUpSearch(
             }
         }
         current = current.parentElement;
+
+        if (current && !current.parentElement) {
+            break; // exclude root HTML document element for when seedMinLength and optimizedMinLength allow reaching up to the body and even beyond in the ancestor path.
+        }
+        // if (current && (!current.parentElement || !current.parentElement.parentElement)) {
+        //     break; // exclude root HTML document element or even body element for when seedMinLength and optimizedMinLength allow reaching up to the body and even beyond in the ancestor path.
+        // }
+
         i++;
     }
     if (!path) {
@@ -225,11 +236,17 @@ function classNames(input: Element): Knot[] {
     );
 }
 
+const ELEMENT_NAMESPACE_PREFIX = /^(.+:)(.+)$/;
+const ELEMENT_NAMESPACE_PREFIX_ = /^\*\|(a|script|style)$/;
 function tagName(input: Element): Knot | null {
     const name = input.tagName.toLowerCase();
     if (config.tagName(name)) {
+
+        // https://github.com/antonmedv/finder/issues/78
+        // "div" ==> "div", "m:math" ==> "*|math", "svg:a" ==> "*|a" (which unfortunately matches HTML "a" without XML namespace too! ... that's a shortcoming of the web's querySelector() API) https://www.w3.org/TR/selectors-api/#namespace-prefix-needs-to-be-resolved
+        const n = name.replace(ELEMENT_NAMESPACE_PREFIX, "*|$2").replace(ELEMENT_NAMESPACE_PREFIX_, "*|$1:not(|$1)"); // match SVG / MathML namespace-prefixed elements but exclude HTML elements with the same non-prefixed name
         return {
-            name,
+            name: n,
             penalty: 2,
         };
     }

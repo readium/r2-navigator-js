@@ -5,7 +5,7 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { debounce } from "debounce";
+import * as debounce from "debounce";
 import { IEventPayload_R2_EVENT_READIUMCSS } from "../../common/events";
 import {
     isDocRTL, isDocVertical, isPaginated, readiumCSSSet,
@@ -16,6 +16,8 @@ import { ReadiumElectronWebviewWindow } from "./state";
 import {
     POPOUTIMAGE_CONTAINER_ID, R2_MO_CLASS_PAUSED, R2_MO_CLASS_PLAYING, TTS_CLASS_PAUSED, TTS_CLASS_PLAYING,
 } from "../../common/styles";
+
+import { SKIP_LINK_ID, ID_HIGHLIGHTS_CONTAINER } from "../../common/styles";
 
 const win = global.window as ReadiumElectronWebviewWindow;
 
@@ -111,28 +113,31 @@ export const calculateMaxScrollShift = ():
 
     const scrollElement = getScrollingElement(win.document);
 
+    const vwm = isVerticalWritingMode();
+
     const maxScrollShift = isPaged ?
-        ((isVerticalWritingMode() ?
+        ((vwm ?
             (scrollElement.scrollHeight - win.document.documentElement.offsetHeight) :
             (scrollElement.scrollWidth - win.document.documentElement.offsetWidth))) :
-        ((isVerticalWritingMode() ?
+        ((vwm ?
             (scrollElement.scrollWidth - win.document.documentElement.clientWidth) :
             (scrollElement.scrollHeight - win.document.documentElement.clientHeight)));
 
     const maxScrollShiftAdjusted = isPaged ?
-        ((isVerticalWritingMode() ?
+        ((vwm ?
             maxScrollShift :
             (calculateDocumentColumnizedWidthAdjustedForTwoPageSpread() - win.document.documentElement.offsetWidth))) :
-        ((isVerticalWritingMode() ?
+        ((vwm ?
             maxScrollShift :
             maxScrollShift));
 
     return { maxScrollShift, maxScrollShiftAdjusted };
 };
 
+// when increasing font size with ReadiumCSS columns=auto ==> auto switch to single column (visually) but column count still 2 (col width dictates)
 export const isTwoPageSpread = (): boolean => {
 
-    if (!win || !win.document || !win.document.documentElement) {
+    if (!win || !win.document || !win.document.documentElement || !win.document.body) {
         return false;
     }
 
@@ -145,8 +150,14 @@ export const isTwoPageSpread = (): boolean => {
         docColumnCount = parseInt(docStyle.getPropertyValue("column-count"), 10);
         // docColumnGap = parseInt(docStyle.getPropertyValue("column-gap"), 10);
     }
-
-    return docColumnCount === 2;
+    const scrollElement = getScrollingElement(win.document);
+    const bodyComputedStyle = win.getComputedStyle(win.document.body);
+    const bodyWidth = parseInt(bodyComputedStyle.width, 10);
+    let paginatedTwo = docColumnCount === 2;
+    if (paginatedTwo && (bodyWidth * 2) > scrollElement.clientWidth) {
+        paginatedTwo = false;
+    }
+    return paginatedTwo;
 };
 
 export const calculateTotalColumns = (): number => {
@@ -198,6 +209,7 @@ export function isRTL(): boolean {
 // https://github.com/readium/readium-css/blob/develop/docs/CSS16-internationalization.md
 // tslint:disable-next-line:max-line-length
 // https://github.com/readium/readium-css/blob/develop/docs/CSS12-user_prefs.md#user-settings-can-be-language-specific
+// https://developer.mozilla.org/en-US/docs/Web/CSS/writing-mode
 export function computeVerticalRTL() {
 
     if (!win.document || !win.document.documentElement) {
@@ -209,42 +221,68 @@ export function computeVerticalRTL() {
 
     const htmlStyle = win.getComputedStyle(win.document.documentElement);
     if (htmlStyle) {
-        let prop = htmlStyle.getPropertyValue("writing-mode");
+        let prop = htmlStyle.getPropertyValue("direction");
+        if (prop && prop.indexOf("rtl") >= 0) {
+            rtl = true;
+        }
+        prop = htmlStyle.getPropertyValue("writing-mode");
         if (!prop) {
             prop = htmlStyle.getPropertyValue("-epub-writing-mode");
         }
         if (prop && prop.indexOf("vertical") >= 0) {
             vertical = true;
         }
-        if (prop && prop.indexOf("-rl") > 0) {
+        if (prop && prop.indexOf("-rl") > 0) { // overrides direction above!
             rtl = true;
         }
-        if (!rtl) {
-            prop = htmlStyle.getPropertyValue("direction");
+    }
+    if (win.document.body) {
+        const bodyStyle = win.getComputedStyle(win.document.body);
+        if (bodyStyle) {
+            let prop = bodyStyle.getPropertyValue("direction");
             if (prop && prop.indexOf("rtl") >= 0) {
                 rtl = true;
             }
+            prop = bodyStyle.getPropertyValue("writing-mode");
+            if (!prop) {
+                prop = bodyStyle.getPropertyValue("-epub-writing-mode");
+            }
+            if (prop && prop.indexOf("vertical") >= 0) {
+                vertical = true;
+            }
+            if (prop && prop.indexOf("-rl") > 0) { // overrides direction above!
+                rtl = true;
+            }
         }
-    }
-    if ((!vertical || !rtl) && win.document.body) {
-        const bodyStyle = win.getComputedStyle(win.document.body);
-        if (bodyStyle) {
-            let prop: string;
-            if (!vertical) {
-                prop = bodyStyle.getPropertyValue("writing-mode");
+        let singleChild: Element | undefined;
+        let childEl = win.document.body.firstElementChild;
+        while (childEl) {
+            if (singleChild) {
+                singleChild = undefined;
+                break;
+            }
+            const id = childEl.id || childEl.getAttribute("id");
+            if (id === SKIP_LINK_ID || id === ID_HIGHLIGHTS_CONTAINER) {
+                continue;
+            }
+            singleChild = childEl;
+            childEl = childEl.nextElementSibling;
+        }
+        if (singleChild) {
+            const singleChildStyle = win.getComputedStyle(singleChild);
+            if (singleChildStyle) {
+                let prop = singleChildStyle.getPropertyValue("direction");
+                if (prop && prop.indexOf("rtl") >= 0) {
+                    rtl = true;
+                }
+                prop = singleChildStyle.getPropertyValue("writing-mode");
                 if (!prop) {
-                    prop = bodyStyle.getPropertyValue("-epub-writing-mode");
+                    prop = singleChildStyle.getPropertyValue("-epub-writing-mode");
                 }
                 if (prop && prop.indexOf("vertical") >= 0) {
                     vertical = true;
                 }
-                if (prop && prop.indexOf("-rl") > 0) {
-                    rtl = true;
-                }
-            }
-            if (!rtl) {
-                prop = bodyStyle.getPropertyValue("direction");
-                if (prop && prop.indexOf("rtl") >= 0) {
+                if (prop && prop.indexOf("-rl") > 0) { // overrides direction above!
                     rtl = true;
                 }
             }

@@ -10,8 +10,10 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 import * as debug_ from "debug";
 import { ipcRenderer } from "electron";
 
+import { Link } from "@r2-shared-js/models/publication-link";
+
 import { mediaOverlaysInterrupt } from "./media-overlays";
-import { Locator } from "@r2-shared-js/models/locator";
+import { Locator } from "../common/locator";
 import { Publication } from "@r2-shared-js/models/publication";
 
 import { CONTEXT_MENU_SETUP } from "../common/context-menu";
@@ -39,9 +41,9 @@ import {
 import { mediaOverlaysHandleIpcMessage } from "./media-overlays";
 import {
     checkTtsState, ttsClickEnable, ttsHandleIpcMessage, ttsOverlayEnable, ttsPlaybackRate,
-    ttsSentenceDetectionEnable, ttsVoice,
+    ttsSentenceDetectionEnable, ttsSkippabilityEnable, ttsVoice,
 } from "./readaloud";
-import { adjustReadiumCssJsonMessageForFixedLayout, obtainReadiumCss } from "./readium-css";
+import { adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, obtainReadiumCss } from "./readium-css";
 import { soundtrackHandleIpcMessage } from "./soundtrack";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 
@@ -65,7 +67,7 @@ const captionsOverlayCssStyles = `
     padding: 2em;
     line-height: initial;
     user-select: none;
-`.replace(/\n/g, " ").replace(/\s\s+/g, " ").trim();
+`.replace(/[\r\n]/g, " ").replace(/\s\s+/g, " ").trim();
 const captionsOverlayParaCssStyles = `
     margin: 0;
     margin-top: auto;
@@ -74,7 +76,7 @@ const captionsOverlayParaCssStyles = `
     max-width: 900px;
     font-weight: bolder;
     text-align: center;
-`.replace(/\n/g, " ").replace(/\s\s+/g, " ").trim();
+`.replace(/[\r\n]/g, " ").replace(/\s\s+/g, " ").trim();
 // replace "{RCSS_BASE_URL}"
 const readiumCssStyle = `
 @font-face {
@@ -108,7 +110,17 @@ win.addEventListener("resize", () => {
         return;
     }
 
-    if (win.READIUM2.publication?.Metadata?.Rendition?.Layout !== "fixed") {
+    let atLeastOneFXL = false;
+    const actives = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of actives) {
+        if (isFixedLayout(activeWebView.READIUM2?.link)) {
+            atLeastOneFXL = true;
+            break;
+        }
+    }
+    // win.READIUM2.publication?.Metadata?.Rendition?.Layout !== "fixed"
+    if (!atLeastOneFXL) {
+        debug("Window resize (TOP), !FXL SKIP ...");
         return;
     }
 
@@ -194,12 +206,13 @@ ipcRenderer.on("accessibility-support-changed", (_e, accessibilitySupportEnabled
 function readiumCssApplyToWebview(
     loc: LocatorExtended | undefined,
     activeWebView: IReadiumElectronWebview,
+    pubLink: Link | undefined,
     rcss?: IEventPayload_R2_EVENT_READIUMCSS) {
 
     const actualReadiumCss = obtainReadiumCss(rcss);
     activeWebView.READIUM2.readiumCss = actualReadiumCss;
 
-    const payloadRcss = adjustReadiumCssJsonMessageForFixedLayout(activeWebView, actualReadiumCss);
+    const payloadRcss = adjustReadiumCssJsonMessageForFixedLayout(activeWebView, pubLink || activeWebView.READIUM2.link, actualReadiumCss);
 
     if (activeWebView.style.transform &&
         activeWebView.style.transform !== "none" &&
@@ -230,8 +243,18 @@ function readiumCssApplyToWebview(
 
         setTimeout(() => {
             debug("readiumCssOnOff -> handleLinkLocator");
+            stealFocusDisable(true);
             handleLinkLocator(loc.locator, actualReadiumCss);
+            setTimeout(() => {
+                stealFocusDisable(false);
+            }, 200);
         }, 60);
+    }
+}
+
+export function stealFocusDisable(doDisable: boolean) {
+    if (win.READIUM2) {
+        win.READIUM2.stealFocusDisabled = doDisable;
     }
 }
 
@@ -239,12 +262,14 @@ const _fixedLayoutZoomPercentTimers: {
     [id: string]: number | undefined;
 } = {};
 export function fixedLayoutZoomPercent(zoomPercent: number) {
+    // READIUM2 object created in installNavigatorDOM, no need to check here
+    // if (!win.READIUM2) {
+    //     return;
+    // }
 
     win.READIUM2.domSlidingViewport.style.overflow = zoomPercent === 0 ? "hidden" : "auto";
 
-    if (win.READIUM2) {
-        win.READIUM2.fixedLayoutZoomPercent = zoomPercent;
-    }
+    win.READIUM2.fixedLayoutZoomPercent = zoomPercent;
 
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
@@ -281,7 +306,7 @@ export function readiumCssOnOff(rcss?: IEventPayload_R2_EVENT_READIUMCSS) {
 
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
-        readiumCssApplyToWebview(loc, activeWebView, rcss);
+        readiumCssApplyToWebview(loc, activeWebView, undefined, rcss);
     }
 }
 export function readiumCssUpdate(rcss: IEventPayload_R2_EVENT_READIUMCSS) {
@@ -346,6 +371,7 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             ttsPlaybackRate(win.READIUM2.ttsPlaybackRate);
             ttsClickEnable(win.READIUM2.ttsClickEnabled);
             ttsSentenceDetectionEnable(win.READIUM2.ttsSentenceDetectionEnabled);
+            ttsSkippabilityEnable(win.READIUM2.ttsSkippabilityEnabled);
             ttsOverlayEnable(win.READIUM2.ttsOverlayEnabled);
             // fixedLayoutZoomPercent(win.READIUM2.fixedLayoutZoomPercent);
         }
@@ -363,17 +389,21 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
         if (event.channel === R2_EVENT_MEDIA_OVERLAY_INTERRUPT) {
             mediaOverlaysInterrupt();
         } else if (event.channel === R2_EVENT_KEYBOARD_FOCUS_REQUEST) {
-            debug("KEYBOARD FOCUS REQUEST (2) ", webview.id, win.document.activeElement?.id);
+            const skip = win.READIUM2?.stealFocusDisabled;
 
-            if (win.document.activeElement && (win.document.activeElement as HTMLElement).blur) {
-                (win.document.activeElement as HTMLElement).blur();
-            }
+            debug("KEYBOARD FOCUS REQUEST (2) ", webview.id, win.document.activeElement?.id, skip);
 
-            const iframe = webview.shadowRoot?.querySelector("iframe");
-            if (iframe) {
-                iframe.focus();
-            } else {
-                webview.focus();
+            if (!skip) {
+                if (win.document.activeElement && (win.document.activeElement as HTMLElement).blur) {
+                    (win.document.activeElement as HTMLElement).blur();
+                }
+
+                const iframe = webview.shadowRoot?.querySelector("iframe");
+                if (iframe) {
+                    iframe.focus();
+                } else {
+                    webview.focus();
+                }
             }
 
             // win.blur();
@@ -454,8 +484,9 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
                 clipboardInterceptor(payload);
             }
         } else if (event.channel === R2_EVENT_PAGE_TURN_RES &&
-            (event.args[0] as IEventPayload_R2_EVENT_PAGE_TURN).go === "" &&
-            (event.args[0] as IEventPayload_R2_EVENT_PAGE_TURN).direction === "") {
+            (event.args[0] as IEventPayload_R2_EVENT_PAGE_TURN).go === ""
+            // && (event.args[0] as IEventPayload_R2_EVENT_PAGE_TURN).direction === ""
+        ) {
             checkTtsState(wv as IReadiumElectronWebview);
         } else if (!highlightsHandleIpcMessage(event.channel, event.args, webview) &&
             !ttsHandleIpcMessage(event.channel, event.args, webview) &&
@@ -525,6 +556,7 @@ function createWebView(second?: boolean) {
             id: 2,
             link: undefined,
             readiumCss: undefined,
+            highlights: undefined,
         };
         _webview2.setAttribute("id", "r2_webview2");
         domSlidingViewport.appendChild(_webview2 as Node);
@@ -537,6 +569,7 @@ function createWebView(second?: boolean) {
             id: 1,
             link: undefined,
             readiumCss: undefined,
+            highlights: undefined,
         };
         _webview1.setAttribute("id", "r2_webview1");
         domSlidingViewport.appendChild(_webview1 as Node);
@@ -639,8 +672,11 @@ export function installNavigatorDOM(
         ttsClickEnabled: false,
         ttsOverlayEnabled: false,
         ttsPlaybackRate: 1,
+        ttsSkippabilityEnabled: false,
         ttsSentenceDetectionEnabled: true,
         ttsVoice: null,
+        highlightsDrawMargin: false,
+        stealFocusDisabled: false,
     };
     ipcRenderer.send("accessibility-support-changed");
 

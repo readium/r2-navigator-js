@@ -14,6 +14,7 @@ import {
 } from "../../common/events";
 import { WebViewSlotEnum } from "../../common/styles";
 import { IStringMap } from "../common/querystring";
+import { IHighlight } from "src/electron/common/highlight";
 
 export type TWindow = typeof window;
 
@@ -25,6 +26,11 @@ export interface IReadiumElectronWebviewWindowState {
     hashElement: Element | null;
     locationHashOverride: Element | undefined;
     locationHashOverrideInfo: IEventPayload_R2_EVENT_READING_LOCATION | undefined;
+
+    lastClickedTextChar: {
+        textNode: Node,
+        textNodeOffset: number,
+    } | undefined;
 
     isAudio: boolean;
     ignorekeyDownUpEvents: boolean;
@@ -39,6 +45,7 @@ export interface IReadiumElectronWebviewWindowState {
 
     DEBUG_VISUALS: boolean;
 
+    ttsSkippabilityEnabled: boolean;
     ttsSentenceDetectionEnabled: boolean;
     ttsClickEnabled: boolean;
     ttsOverlayEnabled: boolean;
@@ -59,6 +66,8 @@ export interface IReadiumElectronWebviewState {
 
     readiumCss: IEventPayload_R2_EVENT_READIUMCSS | undefined;
 
+    highlights: IHighlight[] | undefined;
+
     DOMisReady?: boolean;
 }
 export interface IReadiumElectronWebview extends Electron.WebviewTag {
@@ -76,11 +85,14 @@ export interface IReadiumElectronBrowserWindow {
 
     DEBUG_VISUALS: boolean;
 
+    ttsSkippabilityEnabled: boolean;
     ttsSentenceDetectionEnabled: boolean;
     ttsClickEnabled: boolean;
     ttsOverlayEnabled: boolean;
     ttsPlaybackRate: number;
     ttsVoice: SpeechSynthesisVoice | null;
+
+    stealFocusDisabled: boolean;
 
     // see fxlZoomPercent
     fixedLayoutZoomPercent: number;
@@ -103,6 +115,8 @@ export interface IReadiumElectronBrowserWindow {
 
     enableScreenReaderAccessibilityWebViewHardRefresh: boolean;
     isScreenReaderMounted: boolean;
+
+    highlightsDrawMargin: boolean | string[];
 }
 
 export interface IWithIReadiumElectronBrowserWindow {

@@ -16,10 +16,14 @@ export interface IColor {
 export const HighlightDrawTypeBackground = 0;
 export const HighlightDrawTypeUnderline = 1;
 export const HighlightDrawTypeStrikethrough = 2;
+export const HighlightDrawTypeOutline = 3;
 
 export interface IHighlight {
     id: string;
-    selectionInfo: ISelectionInfo;
+    selectionInfo?: ISelectionInfo;
+    range?: Range;
+    rangeCssHighlight?: Range;
+    // rangeHasSVG?: boolean;
     color: IColor;
     pointerInteraction: boolean;
 
@@ -27,16 +31,26 @@ export interface IHighlight {
     drawType?: number;
 
     expand?: number;
+
+    group: string | undefined;
+
+    marginText?: string;
 }
 
 export interface IHighlightDefinition {
     selectionInfo: ISelectionInfo | undefined;
+    range?: Range;
+
     color: IColor | undefined;
 
     // 0 is full background (default), 1 is underline, 2 is strikethrough
     drawType?: number;
 
     expand?: number;
+
+    group: string | undefined;
+
+    marginText?: string;
 }
 
 export function convertColorHexadecimalToRGBA(cssHex: string, alpha?: number): string | undefined {
