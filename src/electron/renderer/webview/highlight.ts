@@ -1242,6 +1242,24 @@ const computeCssHighlightRGBID = (highlight: IHighlight) => {
     return [ strRGB, cssHighlightID ];
 };
 
+const calcRGB = (rgb: number) => {
+    return (rgb <= 0.03928) ? rgb / 12.92 : ((rgb + 0.055) / 1.055) ** 2.4;
+};
+const computeHighContrastForegroundColourForBackground = (color: IColor) => {
+    let foregroundColour = "#ffffff";
+    const red = calcRGB(color.red);
+    const green = calcRGB(color.green);
+    const blue = calcRGB(color.blue);
+    // sRGB Luma (ITU Rec. 709) https://en.wikipedia.org/wiki/Rec._709
+    const luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    const pickBlack = (luminance + 0.05) / 0.05;
+    const pickWhite = 1.05 / (luminance + 0.05);
+    if (pickBlack > pickWhite) {
+        foregroundColour = "#000000";
+    }
+    return foregroundColour;
+};
+
 const JAPANESE_RUBY_TO_SKIP = ["rt", "rp"];
 function createHighlightDom(
     win: ReadiumElectronWebviewWindow,
@@ -1309,6 +1327,8 @@ function createHighlightDom(
         const [strRGB, cssHighlightID] = computeCssHighlightRGBID(highlight);
         const styleElement = win.document.getElementById("Readium2-" + strRGB);
         if (!styleElement) {
+            const foregroundColour = computeHighContrastForegroundColourForBackground(highlight.color);
+
             // window.CSS.registerProperty({
             //     name: `--${strRGB}`,
             //     syntax: "<color>",
@@ -1349,11 +1369,27 @@ function createHighlightDom(
 // -webkit-text-fill-color
 // -webkit-text-stroke-width
 `
+::highlight(${cssHighlightID}) {
+    background-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
+    color: ${foregroundColour};
+}
+@supports (color: contrast-color(red)) {
+
+    ::highlight(${cssHighlightID}) {
+        background-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
+
+        color: contrast-color(rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}));
+        text-shadow: none;
+    }
+}
+`);
+
+// https://github.com/edrlab/thorium-reader/issues/2586
 /*
 https://lea.verou.me/blog/2024/contrast-color
 https://blackorwhite.lloydk.ca
 */
-
+/*
 ::highlight(${cssHighlightID}) {
     background-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
 
@@ -1382,17 +1418,7 @@ https://blackorwhite.lloydk.ca
         text-shadow: none;
     }
 }
-
-@supports (color: contrast-color(red)) {
-
-    ::highlight(${cssHighlightID}) {
-        background-color: rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue});
-
-        color: contrast-color(rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue}));
-        text-shadow: none;
-    }
-}
-`);
+*/
         }
 
         let cssHighlight = CSS.highlights.get(cssHighlightID);
