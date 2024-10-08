@@ -2208,7 +2208,7 @@ const appendExtraColumnPadIfNecessary = (skipResizeObserver: boolean) => {
         // var hasOddColCount = (Math.round(colCount * 2) / 2) % 1 > 0.1;
 
         if (maxScrollShiftAdjusted > maxScrollShift) {
-            // console.log("<><><> 3");
+            // console.log("<><><> 3", maxScrollShiftAdjusted, maxScrollShift);
             // if (elPad) {
             //     elPad.remove();
             // } else {
@@ -2216,7 +2216,9 @@ const appendExtraColumnPadIfNecessary = (skipResizeObserver: boolean) => {
                 elPad = win.document.createElement("div");
                 elPad.setAttribute("id", EXTRA_COLUMN_PAD_ID);
                 elPad.style.breakBefore = "column";
-                elPad.innerHTML = "&#8203;"; // zero-width space
+                // zero-width space
+                // &ZeroWidthSpace;
+                elPad.innerHTML = "&#8203;";
 
                 if (!skipResizeObserver) {
                     _firstResizeObserver = true;

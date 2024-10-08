@@ -93,8 +93,18 @@ const calculateDocumentColumnizedWidthAdjustedForTwoPageSpread = (): number => {
         const fractionalSpread = nSpreads - nWholeSpread;
         // console.log(`fractionalSpread: ${fractionalSpread}`);
 
+        // DEBUG BODY
+        // win.document.body.style.background = "yellow";
+        // win.document.body.style.outlineColor = "magenta";
+        // win.document.body.style.outlineStyle = "solid";
+        // win.document.body.style.outlineWidth = "4px";
+        // win.document.body.style.outlineOffset = "-4px";
+        // TODO: strictly less than...interesting edge cases with AccessibleEPUB3 and end-of-document boxes which cause additional CSS empty column, yet page-break:column injected DIV remains at the top of the surplus column
         if (fractionalSpread > 0 && (Math.round(fractionalSpread * 10) / 10) <= 0.5) {
-            w = twoColWidth * Math.ceil(nSpreads);
+            // console.log("<><><> 3x", win.document.documentElement.offsetWidth, w); // 1580(documentElement.offsetWidth) 2370(scrollElement.scrollWidth) ==> diff 790
+            w = twoColWidth * Math.ceil(nSpreads); // 3160
+            // console.log("<><><> 3y", w, nSpreads, Math.ceil(nSpreads), twoColWidth); // 1.5 2 1580(documentElement.offsetWidth) ==> 790*2
+            // console.log("<><><> 3z", fractionalSpread, (Math.round(fractionalSpread * 10) / 10)); // 0.5 0.5
             // tslint:disable-next-line
             // console.log(`wDIFF: ${scrollElement.scrollWidth} => ${w} (${w - scrollElement.scrollWidth} -- ${twoColWidth / 2})`);
         }
