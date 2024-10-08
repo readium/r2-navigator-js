@@ -5,6 +5,13 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
+export type TextFragment = {
+    prefix?: string;
+    textStart: string;
+    textEnd?: string;
+    suffix?: string;
+}
+
 // https://developer.mozilla.org/en-US/docs/Web/API/Selection
 // https://developer.mozilla.org/en-US/docs/Web/API/Range
 
@@ -81,6 +88,7 @@ export interface ISelectedTextInfo {
 
 export interface ISelectionInfo extends ISelectedTextInfo {
     rangeInfo: IRangeInfo;
+    textFragment: TextFragment | undefined;
 }
 
 export function sameSelections(sel1: ISelectionInfo, sel2: ISelectionInfo): boolean {

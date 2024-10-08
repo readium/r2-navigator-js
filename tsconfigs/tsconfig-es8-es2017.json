@@ -8,7 +8,8 @@
     "lib": [
       "dom",
       "es2015",
-      "dom.iterable"
+      "dom.iterable",
+      "es2022.intl"
     ],
     "paths": {
       "@r2-opds-js/*": [
