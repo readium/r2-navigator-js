@@ -153,6 +153,11 @@ export function getCurrentSelectionInfo(
     }
 
     const range = normalizeRange(r);
+    if (range.collapsed) {
+        console.log("$$$$$$$$$$$$$$$$$ RANGE COLLAPSED AFTER NORMALISE?!");
+        return undefined;
+    }
+
     if (IS_DEV) {
         if (range.startContainer !== r.startContainer) {
             console.log(">>>>>>>>>>>>>>>>>>>>>>> SELECTION RANGE NORMALIZE diff: startContainer");
@@ -225,6 +230,9 @@ export function getCurrentSelectionInfo(
     } else {
         // selection.addRange(range);
     }
+
+    // https://github.com/GoogleChromeLabs/text-fragments-polyfill/blob/53375fea08665bac009bb0aa01a030e065c3933d/src/fragment-generation-utils.js#L171
+    // doGenerateFragmentFromRange() ... but without expandRangeStart/EndToWordBound() etc.
 
     return {
         rangeInfo,
@@ -732,8 +740,145 @@ function getChildTextNodeCfiIndex(element: Element, child: Text): number {
 //     return found;
 // }
 
-//  https://github.com/webmodules/range-normalize/pull/2
+// https://github.com/GoogleChromeLabs/text-fragments-polyfill/blob/53375fea08665bac009bb0aa01a030e065c3933d/src/fragment-generation-utils.js#L1418
+// moveRangeEdgesToTextNodes() / normalizeRange() ?
+
+// https://github.com/apache/incubator-annotator/issues/51
+// https://github.com/apache/incubator-annotator/commit/c7e98eeac3e07e45b14b94e2aec2add8f137aea9
+// https://github.com/apache/incubator-annotator/pull/98/files#diff-557f9d738d69e6fad35b0780d8b722f6f00b36676c20d46d33d4fad35912d940
 // https://github.com/apache/incubator-annotator/blob/main/packages/dom/src/normalize-range.ts
+/**
+* Normalise a {@link https://developer.mozilla.org/en-US/docs/Web/API/Range |
+* Range} such that ranges spanning the same text become exact equals.
+*
+* *Note: in this context ‘text’ means any characters, including whitespace.*
+
+* Normalises a range such that both its start and end are text nodes, and that
+* if there are equivalent text selections it takes the narrowest option (i.e.
+* it prefers the start not to be at the end of a text node, and vice versa).
+*
+* If there is no text between the start and end, they thus collapse onto one a
+* single position; and if there are multiple equivalent positions, it takes the
+* first one; or, if scope is passed, the first equivalent falling within scope.
+*
+* Note that if the given range does not contain non-empty text nodes, it may
+* end up pointing at a text node outside of it (before it if possible, else
+* after). If the document does not contain any text nodes, an error is thrown.
+*/
+export function normalizeRange(r: Range): Range {
+    const range = r.cloneRange(); // new Range(); // document.createRange()
+
+    const documant = range.startContainer.ownerDocument;
+    if (!documant) {
+        range.collapse();
+        return range;
+    }
+
+    const walker = documant.createTreeWalker(documant, NodeFilter.SHOW_TEXT,
+        // {
+        //     acceptNode(_node: Text) {
+        //         return NodeFilter.FILTER_ACCEPT;
+        //     },
+        // }
+    );
+
+    const resStart = snapBoundaryPointToTextNode(
+        range.startContainer,
+        range.startOffset,
+        walker,
+    );
+    if (!resStart) {
+        range.collapse();
+        return range;
+    }
+    let startContainer = resStart[0];
+    let startOffset = resStart[1];
+
+    walker.currentNode = startContainer;
+    while (startOffset === startContainer.length && walker.nextNode()) {
+        startContainer = walker.currentNode as Text;
+        startOffset = 0;
+    }
+
+    range.setStart(startContainer, startOffset);
+
+    const resEnd = snapBoundaryPointToTextNode(
+        range.endContainer,
+        range.endOffset,
+        walker,
+    );
+    if (!resEnd) {
+        range.collapse();
+        return range;
+    }
+    let endContainer = resEnd[0];
+    let endOffset = resEnd[1];
+
+    walker.currentNode = endContainer;
+    while (endOffset === 0 && walker.previousNode()) {
+        endContainer = walker.currentNode as Text;
+        endOffset = endContainer.length;
+    }
+
+    range.setEnd(endContainer, endOffset);
+
+    return range;
+}
+function snapBoundaryPointToTextNode(
+    node: Node,
+    offset: number,
+    walker: TreeWalker,
+): [Text, number] | undefined {
+
+    if (isText(node)) {
+        return [node, offset];
+    }
+
+    let curNode: Node | undefined;
+    if (isCharacterData(node)) {
+        curNode = node;
+    } else if (offset < node.childNodes.length) {
+        curNode = node.childNodes[offset];
+    } else {
+        curNode = node;
+        while (!curNode.nextSibling) {
+            if (!curNode.parentNode) {
+                return undefined;
+            }
+            curNode = curNode.parentNode;
+        }
+        curNode = curNode.nextSibling;
+    }
+
+    if (isText(curNode)) {
+        return [curNode, 0];
+    }
+
+    // const documant = node.ownerDocument ?? (node as Document);
+    // const walker = documant.createTreeWalker(documant, NodeFilter.SHOW_TEXT);
+    walker.currentNode = curNode;
+    if (walker.nextNode()) {
+        return [walker.currentNode as Text, 0];
+    } else if (walker.previousNode()) {
+        return [walker.currentNode as Text, (walker.currentNode as Text).length];
+    } else {
+        return undefined;
+    }
+}
+
+function isText(node: Node): node is Text {
+    return node.nodeType === Node.TEXT_NODE;
+}
+
+function isCharacterData(node: Node): node is CharacterData {
+    return (
+        node.nodeType === Node.PROCESSING_INSTRUCTION_NODE ||
+        node.nodeType === Node.COMMENT_NODE ||
+        node.nodeType === Node.TEXT_NODE
+    );
+}
+
+// https://github.com/webmodules/range-normalize/pull/2
 //  "Normalizes" the DOM Range instance, such that slight variations in the start
 //  and end containers end up being normalized to the same "base" representation.
 //  The aim is to always have `startContainer` and `endContainer` pointing to
@@ -749,9 +894,7 @@ function getChildTextNodeCfiIndex(element: Element, child: Text): number {
 //    - Move it to the previous leaf Node, but not past the start container.
 //    - Is the end container a leaf Node but not a TextNode?
 //      - Set the end boundary to be after the Node.
-//  @param {Range} range - DOM Range instance to "normalize"
-//  @return {Range} returns a "normalized" clone of `range`
-export function normalizeRange(r: Range) {
+export function normalizeRange_(r: Range): Range {
 
     const range = r.cloneRange(); // new Range(); // document.createRange()
 
