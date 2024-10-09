@@ -19,6 +19,7 @@ import { TextFragment } from "../../common/selection";
 // https://github.com/GoogleChromeLabs/text-fragments-polyfill/issues/161
 // https://github.com/GoogleChromeLabs/text-fragments-polyfill/issues/162
 // https://github.com/GoogleChromeLabs/text-fragments-polyfill/issues/163
+// https://github.com/GoogleChromeLabs/text-fragments-polyfill/issues/165
 // ...and notably:
 // https://github.com/GoogleChromeLabs/text-fragments-polyfill/issues/164
 
@@ -32,6 +33,7 @@ const reverseString = (str: string): string => {
 // type ElementWithoutTextContent = Omit<Element, "textContent">;
 // type NodeWithoutTextContent = Omit<Element, "textContent">;
 // const isElement = (node: NodeWithoutTextContent): node is ElementWithoutTextContent => {
+ // node instanceof Element --- node instanceof HTMLElement || node instanceof SVGElement
 const isElement = (node: Node): node is Element => {
     return node.nodeType === Node.ELEMENT_NODE;
 };
@@ -70,9 +72,10 @@ const BLOCK_ELEMENTS = [
     "PRE", "SECTION", "TABLE", "UL", "TR", "TH",
     "TD", "COLGROUP", "COL", "CAPTION", "THEAD", "TBODY",
     "TFOOT",
+    "SVG",
 ];
 const isBlock = (node: Node): node is Element => {
-    if (!isElement(node)) { // node instanceof HTMLElement
+    if (!isElement(node)) {
         return false;
     }
     const tagName = node.tagName.toUpperCase();
@@ -85,7 +88,7 @@ const NON_BOUNDARY_CHARS = /[^\t-\r -#%-\*,-\/:;\?@\[-\]_\{\}\x85\xA0\xA1\xA7\xA
 
 const isNodeVisible = (node: Node): boolean => {
     let elt: Node | null = node;
-    while (elt && !isElement(elt)) { // (elt instanceof HTMLElement)
+    while (elt && !isElement(elt)) {
         elt = elt.parentNode;
     }
     if (elt) {
@@ -255,7 +258,7 @@ const getAllTextNodes = (root: Node, range: Range): Array<Array<Text>> => {
         if (isText(node)) {
             tmp.push(node);
         } else if (
-            isElement(node) && // node instanceof HTMLElement
+            isElement(node) &&
             BLOCK_ELEMENTS.includes(node.tagName.toUpperCase()) &&
             tmp.length > 0) {
 
