@@ -19,11 +19,19 @@ import { TextFragment } from "../../common/selection";
 // https://github.com/GoogleChromeLabs/text-fragments-polyfill/issues/161
 // https://github.com/GoogleChromeLabs/text-fragments-polyfill/issues/162
 // https://github.com/GoogleChromeLabs/text-fragments-polyfill/issues/163
+// ...and notably:
+// https://github.com/GoogleChromeLabs/text-fragments-polyfill/issues/164
+
+const FORCE_WORD_ALIGNMENT = false;
+const USE_SEGMENTER = true;
 
 const reverseString = (str: string): string => {
     return [...(str || "")].reverse().join("");
 };
 
+// type ElementWithoutTextContent = Omit<Element, "textContent">;
+// type NodeWithoutTextContent = Omit<Element, "textContent">;
+// const isElement = (node: NodeWithoutTextContent): node is ElementWithoutTextContent => {
 const isElement = (node: Node): node is Element => {
     return node.nodeType === Node.ELEMENT_NODE;
 };
@@ -41,9 +49,9 @@ const isText = (node: Node): node is Text => {
 // };
 
 const normalizeString = (str: string): string => {
-    return (str || "")
+    return str
         .normalize("NFKD")
-        .replace(/\s+/g, " ")
+        .replace(/\s+/g, " ") // collapse contiguous whitespace into single space
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
 };
@@ -64,23 +72,16 @@ const BLOCK_ELEMENTS = [
     "TFOOT",
 ];
 const isBlock = (node: Node): node is Element => {
-    return isElement(node) && // node instanceof HTMLElement
-        (BLOCK_ELEMENTS.includes(node.tagName) ||
-            node.tagName === "HTML" ||
-            node.tagName === "BODY");
+    if (!isElement(node)) { // node instanceof HTMLElement
+        return false;
+    }
+    const tagName = node.tagName.toUpperCase();
+    return BLOCK_ELEMENTS.includes(tagName) || tagName === "HTML" || tagName === "BODY";
 };
 
 const BOUNDARY_CHARS = /[\t-\r -#%-\*,-\/:;\?@\[-\]_\{\}\x85\xA0\xA1\xA7\xAB\xB6\xB7\xBB\xBF\u037E\u0387\u055A-\u055F\u0589\u058A\u05BE\u05C0\u05C3\u05C6\u05F3\u05F4\u0609\u060A\u060C\u060D\u061B\u061E\u061F\u066A-\u066D\u06D4\u0700-\u070D\u07F7-\u07F9\u0830-\u083E\u085E\u0964\u0965\u0970\u0AF0\u0DF4\u0E4F\u0E5A\u0E5B\u0F04-\u0F12\u0F14\u0F3A-\u0F3D\u0F85\u0FD0-\u0FD4\u0FD9\u0FDA\u104A-\u104F\u10FB\u1360-\u1368\u1400\u166D\u166E\u1680\u169B\u169C\u16EB-\u16ED\u1735\u1736\u17D4-\u17D6\u17D8-\u17DA\u1800-\u180A\u1944\u1945\u1A1E\u1A1F\u1AA0-\u1AA6\u1AA8-\u1AAD\u1B5A-\u1B60\u1BFC-\u1BFF\u1C3B-\u1C3F\u1C7E\u1C7F\u1CC0-\u1CC7\u1CD3\u2000-\u200A\u2010-\u2029\u202F-\u2043\u2045-\u2051\u2053-\u205F\u207D\u207E\u208D\u208E\u2308-\u230B\u2329\u232A\u2768-\u2775\u27C5\u27C6\u27E6-\u27EF\u2983-\u2998\u29D8-\u29DB\u29FC\u29FD\u2CF9-\u2CFC\u2CFE\u2CFF\u2D70\u2E00-\u2E2E\u2E30-\u2E44\u3000-\u3003\u3008-\u3011\u3014-\u301F\u3030\u303D\u30A0\u30FB\uA4FE\uA4FF\uA60D-\uA60F\uA673\uA67E\uA6F2-\uA6F7\uA874-\uA877\uA8CE\uA8CF\uA8F8-\uA8FA\uA8FC\uA92E\uA92F\uA95F\uA9C1-\uA9CD\uA9DE\uA9DF\uAA5C-\uAA5F\uAADE\uAADF\uAAF0\uAAF1\uABEB\uFD3E\uFD3F\uFE10-\uFE19\uFE30-\uFE52\uFE54-\uFE61\uFE63\uFE68\uFE6A\uFE6B\uFF01-\uFF03\uFF05-\uFF0A\uFF0C-\uFF0F\uFF1A\uFF1B\uFF1F\uFF20\uFF3B-\uFF3D\uFF3F\uFF5B\uFF5D\uFF5F-\uFF65]|\uD800[\uDD00-\uDD02\uDF9F\uDFD0]|\uD801\uDD6F|\uD802[\uDC57\uDD1F\uDD3F\uDE50-\uDE58\uDE7F\uDEF0-\uDEF6\uDF39-\uDF3F\uDF99-\uDF9C]|\uD804[\uDC47-\uDC4D\uDCBB\uDCBC\uDCBE-\uDCC1\uDD40-\uDD43\uDD74\uDD75\uDDC5-\uDDC9\uDDCD\uDDDB\uDDDD-\uDDDF\uDE38-\uDE3D\uDEA9]|\uD805[\uDC4B-\uDC4F\uDC5B\uDC5D\uDCC6\uDDC1-\uDDD7\uDE41-\uDE43\uDE60-\uDE6C\uDF3C-\uDF3E]|\uD807[\uDC41-\uDC45\uDC70\uDC71]|\uD809[\uDC70-\uDC74]|\uD81A[\uDE6E\uDE6F\uDEF5\uDF37-\uDF3B\uDF44]|\uD82F\uDC9F|\uD836[\uDE87-\uDE8B]|\uD83A[\uDD5E\uDD5F]/u;
 
 const NON_BOUNDARY_CHARS = /[^\t-\r -#%-\*,-\/:;\?@\[-\]_\{\}\x85\xA0\xA1\xA7\xAB\xB6\xB7\xBB\xBF\u037E\u0387\u055A-\u055F\u0589\u058A\u05BE\u05C0\u05C3\u05C6\u05F3\u05F4\u0609\u060A\u060C\u060D\u061B\u061E\u061F\u066A-\u066D\u06D4\u0700-\u070D\u07F7-\u07F9\u0830-\u083E\u085E\u0964\u0965\u0970\u0AF0\u0DF4\u0E4F\u0E5A\u0E5B\u0F04-\u0F12\u0F14\u0F3A-\u0F3D\u0F85\u0FD0-\u0FD4\u0FD9\u0FDA\u104A-\u104F\u10FB\u1360-\u1368\u1400\u166D\u166E\u1680\u169B\u169C\u16EB-\u16ED\u1735\u1736\u17D4-\u17D6\u17D8-\u17DA\u1800-\u180A\u1944\u1945\u1A1E\u1A1F\u1AA0-\u1AA6\u1AA8-\u1AAD\u1B5A-\u1B60\u1BFC-\u1BFF\u1C3B-\u1C3F\u1C7E\u1C7F\u1CC0-\u1CC7\u1CD3\u2000-\u200A\u2010-\u2029\u202F-\u2043\u2045-\u2051\u2053-\u205F\u207D\u207E\u208D\u208E\u2308-\u230B\u2329\u232A\u2768-\u2775\u27C5\u27C6\u27E6-\u27EF\u2983-\u2998\u29D8-\u29DB\u29FC\u29FD\u2CF9-\u2CFC\u2CFE\u2CFF\u2D70\u2E00-\u2E2E\u2E30-\u2E44\u3000-\u3003\u3008-\u3011\u3014-\u301F\u3030\u303D\u30A0\u30FB\uA4FE\uA4FF\uA60D-\uA60F\uA673\uA67E\uA6F2-\uA6F7\uA874-\uA877\uA8CE\uA8CF\uA8F8-\uA8FA\uA8FC\uA92E\uA92F\uA95F\uA9C1-\uA9CD\uA9DE\uA9DF\uAA5C-\uAA5F\uAADE\uAADF\uAAF0\uAAF1\uABEB\uFD3E\uFD3F\uFE10-\uFE19\uFE30-\uFE52\uFE54-\uFE61\uFE63\uFE68\uFE6A\uFE6B\uFF01-\uFF03\uFF05-\uFF0A\uFF0C-\uFF0F\uFF1A\uFF1B\uFF1F\uFF20\uFF3B-\uFF3D\uFF3F\uFF5B\uFF5D\uFF5F-\uFF65]|\uD800[\uDD00-\uDD02\uDF9F\uDFD0]|\uD801\uDD6F|\uD802[\uDC57\uDD1F\uDD3F\uDE50-\uDE58\uDE7F\uDEF0-\uDEF6\uDF39-\uDF3F\uDF99-\uDF9C]|\uD804[\uDC47-\uDC4D\uDCBB\uDCBC\uDCBE-\uDCC1\uDD40-\uDD43\uDD74\uDD75\uDDC5-\uDDC9\uDDCD\uDDDB\uDDDD-\uDDDF\uDE38-\uDE3D\uDEA9]|\uD805[\uDC4B-\uDC4F\uDC5B\uDC5D\uDCC6\uDDC1-\uDDD7\uDE41-\uDE43\uDE60-\uDE6C\uDF3C-\uDF3E]|\uD807[\uDC41-\uDC45\uDC70\uDC71]|\uD809[\uDC70-\uDC74]|\uD81A[\uDE6E\uDE6F\uDEF5\uDF37-\uDF3B\uDF44]|\uD82F\uDC9F|\uD836[\uDE87-\uDE8B]|\uD83A[\uDD5E\uDD5F]/u;
-
-const MAX_EXACT_MATCH_LENGTH = 300;
-const MIN_LENGTH_WITHOUT_CONTEXT = 20;
-const ITERATIONS_BEFORE_ADDING_CONTEXT = 1;
-const WORDS_TO_ADD_FIRST_ITERATION = 3;
-const WORDS_TO_ADD_SUBSEQUENT_ITERATIONS = 1;
-// const TRUNCATE_RANGE_CHECK_CHARS = 10000;
-// const MAX_DEPTH = 500;
 
 const isNodeVisible = (node: Node): boolean => {
     let elt: Node | null = node;
@@ -152,7 +153,7 @@ const makeTextNodeWalker = (range: Range): TreeWalker => {
 const advanceRangeStartToNonWhitespace = (range: Range) => {
     const walker = makeTextNodeWalker(range);
 
-    let node = walker.nextNode();
+    let node = walker.nextNode() as Text | null;
     while (!range.collapsed && node) {
         if (node !== range.startContainer) {
             range.setStart(node, 0);
@@ -168,7 +169,7 @@ const advanceRangeStartToNonWhitespace = (range: Range) => {
         try {
             range.setStart(node, range.startOffset + 1);
         } catch (_err) {
-            node = walker.nextNode();
+            node = walker.nextNode() as Text | null;
             if (!node) {
                 range.collapse();
             } else {
@@ -186,7 +187,7 @@ function* getElementsIn(root: Node, filter: (node: Node) => number): Generator<N
     );
 
     const finishedSubtrees = new Set<Node>();
-    while (forwardTraverse(treeWalker, finishedSubtrees) !== null) {
+    while (forwardTraverse(treeWalker, finishedSubtrees)) {
         yield treeWalker.currentNode;
     }
 };
@@ -195,19 +196,19 @@ const forwardTraverse = (walker: TreeWalker, finishedSubtrees: Set<Node>): Node 
 
     if (!finishedSubtrees.has(walker.currentNode)) {
         const firstChild = walker.firstChild();
-        if (firstChild !== null) {
+        if (firstChild) {
             return firstChild;
         }
     }
 
     const nextSibling = walker.nextSibling();
-    if (nextSibling !== null) {
+    if (nextSibling) {
         return nextSibling;
     }
 
     const parent = walker.parentNode();
 
-    if (parent !== null) {
+    if (parent) {
         finishedSubtrees.add(parent);
     }
 
@@ -218,58 +219,29 @@ const backwardTraverse = (walker: TreeWalker, finishedSubtrees: Set<Node>): Node
 
     if (!finishedSubtrees.has(walker.currentNode)) {
         const lastChild = walker.lastChild();
-        if (lastChild !== null) {
+        if (lastChild) {
             return lastChild;
         }
     }
 
     const previousSibling = walker.previousSibling();
-    if (previousSibling !== null) {
+    if (previousSibling) {
         return previousSibling;
     }
 
     const parent = walker.parentNode();
 
-    if (parent !== null) {
+    if (parent) {
         finishedSubtrees.add(parent);
     }
 
     return parent;
 };
 
-const getFirstNodeForBlockSearch = (range: Range): Node => {
-    let node = range.startContainer;
-    if (isElement(node) &&
-        range.startOffset < node.childNodes.length) {
-        node = node.childNodes[range.startOffset];
-    }
-    return node;
-};
-
-const containsBlockBoundary = (range: Range): boolean => {
-    const tempRange = range.cloneRange();
-    let node: Node | null = getFirstNodeForBlockSearch(tempRange);
-    if (!node) {
-        return false;
-    }
-    const walker = makeWalkerForNode(node);
-    const finishedSubtrees = new Set<Node>();
-
-    while (!tempRange.collapsed && node) {
-        if (isBlock(node)) {
-            return true;
-        }
-        if (node) {
-            tempRange.setStartAfter(node);
-        }
-        node = forwardTraverse(walker, finishedSubtrees);
-    }
-    return false;
-};
-
-const getAllTextNodes = (root: Node, range: Range): Node[][] => {
-    const blocks: Node[][] = [];
-    let tmp: Node[] = [];
+const getAllTextNodes = (root: Node, range: Range): Array<Array<Text>> => {
+    // const blocks: Text[][] = [];
+    const blocks: Array<Array<Text>> = [];
+    let tmp: Text[] = [];
 
     const nodes = Array.from(
         getElementsIn(
@@ -284,7 +256,7 @@ const getAllTextNodes = (root: Node, range: Range): Node[][] => {
             tmp.push(node);
         } else if (
             isElement(node) && // node instanceof HTMLElement
-            BLOCK_ELEMENTS.includes(node.tagName) &&
+            BLOCK_ELEMENTS.includes(node.tagName.toUpperCase()) &&
             tmp.length > 0) {
 
             blocks.push(tmp);
@@ -298,7 +270,7 @@ const getAllTextNodes = (root: Node, range: Range): Node[][] => {
     return blocks;
 };
 
-const getTextContent = (nodes: Node[], startOffset: number, endOffset: number | undefined): string => {
+const getTextContent = (nodes: Text[], startOffset: number, endOffset: number | undefined): string => {
     let str = "";
     if (!nodes[0].textContent) {
         return str;
@@ -310,9 +282,11 @@ const getTextContent = (nodes: Node[], startOffset: number, endOffset: number | 
             nodes.slice(1, -1).reduce((s, n) => s + (n.textContent || ""), "") +
             (nodes.slice(-1)[0].textContent?.substring(0, endOffset) || "");
     }
-    return str.replace(/[\t\n\r ]+/g, " ");
+    return str.replace(/\s+/g, " "); // collapse contiguous whitespace into single space
+    // return str.replace(/[\t\n\r ]+/g, " ");
 };
 
+// // FORCE_WORD_ALIGNMENT
 // const isWordBounded = (text: string, startPos: number, length: number, segmenter: Intl.Segmenter | undefined): boolean => {
 //     if (startPos < 0 || startPos >= text.length || length <= 0 || startPos + length > text.length) {
 //         return false;
@@ -362,7 +336,7 @@ const getTextContent = (nodes: Node[], startOffset: number, endOffset: number | 
 //     return true;
 // };
 
-const getBoundaryPointAtIndex = (index: number, textNodes: Node[], isEnd: boolean): { node: Node, offset: number } | undefined => {
+const getBoundaryPointAtIndex = (index: number, textNodes: Text[], isEnd: boolean): { node: Node, offset: number } | undefined => {
     let counted = 0;
     let normalizedData: string | undefined;
     for (let i = 0; i < textNodes.length; i++) {
@@ -418,7 +392,7 @@ const getBoundaryPointAtIndex = (index: number, textNodes: Node[], isEnd: boolea
     return undefined;
 };
 
-const findRangeFromNodeList = (query: string, range: Range, textNodes: Node[], _segmenter: Intl.Segmenter | undefined): Range | undefined => {
+const findRangeFromNodeList = (query: string, range: Range, textNodes: Text[], _segmenter: Intl.Segmenter | undefined): Range | undefined => {
     if (!textNodes.length) {
         return undefined;
     }
@@ -434,7 +408,7 @@ const findRangeFromNodeList = (query: string, range: Range, textNodes: Node[], _
             return undefined;
         }
 
-        // if (isWordBounded(data, matchIndex, normalizedQuery.length, segmenter)) {
+        // if (!FORCE_WORD_ALIGNMENT || isWordBounded(data, matchIndex, normalizedQuery.length, segmenter)) {
         //     start = getBoundaryPointAtIndex(matchIndex, textNodes, false);
         //     end = getBoundaryPointAtIndex(matchIndex + normalizedQuery.length, textNodes, true);
         // }
@@ -458,7 +432,7 @@ const findRangeFromNodeList = (query: string, range: Range, textNodes: Node[], _
 
 const findTextInRange = (query: string, range: Range) => {
     const textNodeLists = getAllTextNodes(range.commonAncestorContainer, range);
-    const segmenter = makeNewSegmenter();
+    const segmenter = USE_SEGMENTER ? makeNewSegmenter() : undefined;
 
     for (const list of textNodeLists) {
         const found = findRangeFromNodeList(query, range, list, segmenter);
@@ -467,13 +441,6 @@ const findTextInRange = (query: string, range: Range) => {
         }
     }
     return undefined;
-};
-
-const canUseExactMatch = (range: Range) => {
-    if (range.toString().length > MAX_EXACT_MATCH_LENGTH) {
-        return false;
-    }
-    return !containsBlockBoundary(range);
 };
 
 export const processTextFragmentDirective = (textFragment: TextFragment, documant: Document) => {
@@ -635,84 +602,11 @@ const CheckSuffixResult = {
     MISPLACED_SUFFIX: 2,
 };
 
-type NodeTextContent = {
-    textContent: string;
-}
-const BlockTextAccumulator = class {
-    public searchRange: Range;
-    public isForwardTraversal: boolean;
-    public textFound: boolean;
-    public textNodes: NodeTextContent[];
-    public textInBlock: string | null;
-    constructor(searchRange: Range, isForwardTraversal: boolean) {
-        this.searchRange = searchRange;
-        this.isForwardTraversal = isForwardTraversal;
-        this.textFound = false;
-        this.textNodes = [];
-        this.textInBlock = null;
-    }
-    finish() {
-        if (this.textFound) {
-            if (!this.isForwardTraversal) {
-                this.textNodes.reverse();
-            }
-
-            this.textInBlock = this.textNodes.map(textNode => textNode.textContent).join("").trim();
-        } else {
-            this.textNodes = [];
-        }
-    }
-    appendNode(node: Node) {
-        if (this.textInBlock) {
-            return;
-        }
-
-        if (isBlock(node)) {
-            this.finish();
-            return;
-        }
-
-        if (!isText(node)) {
-            return;
-        }
-
-        const nodeToInsert = this.getNodeIntersectionWithRange(node);
-
-        this.textFound = !!this.textFound || !!nodeToInsert;
-
-        if (nodeToInsert) {
-            this.textNodes.push(nodeToInsert);
-        }
-    }
-
-    getNodeIntersectionWithRange(node: Node): NodeTextContent | undefined {
-        let startOffset = null;
-        let endOffset = null;
-
-        if (node === this.searchRange.startContainer &&
-            this.searchRange.startOffset !== 0) {
-            startOffset = this.searchRange.startOffset;
-        }
-
-        if (node === this.searchRange.endContainer &&
-            (!node.textContent || this.searchRange.endOffset !== node.textContent.length)) {
-            endOffset = this.searchRange.endOffset;
-        }
-        if (node.textContent && (startOffset !== null || endOffset !== null)) {
-            const str = node.textContent.substring(startOffset ?? 0, endOffset ?? node.textContent.length);
-            return str.trim().length ? {
-                textContent: str,
-            } : undefined;
-        }
-
-        return node.textContent?.trim().length ? node as NodeTextContent : undefined;
-    }
-};
-
-const getLastNodeForBlockSearch = (range: Range) => {
-    let node = range.endContainer;
-    if (isElement(node) && range.endOffset > 0) {
-        node = node.childNodes[range.endOffset - 1];
+const getFirstNodeForBlockSearch = (range: Range): Node => {
+    let node = range.startContainer;
+    if (isElement(node) &&
+        range.startOffset < node.childNodes.length) {
+        node = node.childNodes[range.startOffset];
     }
     return node;
 };
@@ -749,12 +643,20 @@ const getSearchSpaceForStart = (range: Range) => {
         node = forwardTraverse(walker, finishedSubtrees);
     }
 
-    textAccumulator.finish();
-    if (textAccumulator.textInBlock !== null) {
-        return textAccumulator.textInBlock;
-    }
+    // textAccumulator.finish();
+    // if (textAccumulator.textInBlock !== null) {
+    //     return textAccumulator.textInBlock;
+    // }
 
     return undefined;
+};
+
+const getLastNodeForBlockSearch = (range: Range) => {
+    let node = range.endContainer;
+    if (isElement(node) && range.endOffset > 0) {
+        node = node.childNodes[range.endOffset - 1];
+    }
+    return node;
 };
 
 const getSearchSpaceForEnd = (range: Range) => {
@@ -791,14 +693,464 @@ const getSearchSpaceForEnd = (range: Range) => {
         node = backwardTraverse(walker, finishedSubtrees);
     }
 
-    textAccumulator.finish();
-    if (textAccumulator.textInBlock !== null) {
-        return textAccumulator.textInBlock;
-    }
+    // textAccumulator.finish();
+    // if (textAccumulator.textInBlock !== null) {
+    //     return textAccumulator.textInBlock;
+    // }
 
     return undefined;
 };
 
+const containsBlockBoundary = (range: Range): boolean => {
+    const tempRange = range.cloneRange();
+    let node: Node | null = getFirstNodeForBlockSearch(tempRange);
+    if (!node) {
+        return false;
+    }
+    const walker = makeWalkerForNode(node);
+    const finishedSubtrees = new Set<Node>();
+
+    while (!tempRange.collapsed && node) {
+        if (isBlock(node)) {
+            return true;
+        }
+        if (node) {
+            tempRange.setStartAfter(node);
+        }
+        node = forwardTraverse(walker, finishedSubtrees);
+    }
+    return false;
+};
+
+const MAX_EXACT_MATCH_LENGTH = 300;
+const canUseExactMatch = (range: Range): boolean => {
+    if (range.toString().length > MAX_EXACT_MATCH_LENGTH) {
+        return false;
+    }
+    return !containsBlockBoundary(range);
+};
+
+// // FORCE_WORD_ALIGNMENT
+// const getFirstTextNode = (range: Range): Text | null => {
+//     const firstNode = getFirstNodeForBlockSearch(range);
+//     if (isText(firstNode) && isNodeVisible(firstNode)) {
+//         return firstNode;
+//     }
+
+//     const walker = makeTextNodeWalker(range);
+//     walker.currentNode = firstNode;
+
+//     return walker.nextNode() as Text | null;
+
+//     // const finishedSubtrees = new Set<Node>();
+//     // return forwardTraverse(walker, finishedSubtrees);
+// };
+
+// // FORCE_WORD_ALIGNMENT
+// const getLastTextNode = (range: Range): Node | null => {
+//     const lastNode = getLastNodeForBlockSearch(range);
+//     if (isText(lastNode) && isNodeVisible(lastNode)) {
+//         return lastNode;
+//     }
+
+//     const walker = makeTextNodeWalker(range);
+//     walker.currentNode = lastNode;
+
+//     // return walker.previousNode();
+
+//     const finishedSubtrees = new Set<Node>();
+//     return backwardTraverse(walker, finishedSubtrees);
+// };
+
+// // FORCE_WORD_ALIGNMENT
+// const moveRangeEdgesToTextNodes = (range: Range) => {
+//     const firstTextNode = getFirstTextNode(range);
+
+//     if (!firstTextNode) {
+//         range.collapse();
+//         return;
+//     }
+
+//     const firstNode = getFirstNodeForBlockSearch(range);
+
+//     if (firstNode !== firstTextNode) {
+//         range.setStart(firstTextNode, 0);
+//     }
+
+//     const lastNode = getLastNodeForBlockSearch(range);
+//     const lastTextNode = getLastTextNode(range);
+
+//     if (lastTextNode && isText(lastTextNode) && lastTextNode.textContent && lastNode !== lastTextNode) {
+//         range.setEnd(lastTextNode, lastTextNode.textContent.length);
+//     }
+// };
+
+// // FORCE_WORD_ALIGNMENT
+// const findWordStartBoundInTextNode = (node: Node, startOffset: number | null) => {
+//     if (node.nodeType !== Node.TEXT_NODE || node.textContent === null) {
+//         return -1;
+//     }
+
+//     const offset = startOffset !== null ? startOffset : node.textContent.length;
+
+//     if (offset < node.textContent.length && BOUNDARY_CHARS.test(node.textContent[offset])) {
+//         return offset;
+//     }
+
+//     const precedingText = node.textContent.substring(0, offset);
+//     const boundaryIndex = reverseString(precedingText).search(BOUNDARY_CHARS);
+
+//     if (boundaryIndex !== -1) {
+//         return offset - boundaryIndex;
+//     }
+//     return -1;
+// };
+
+// // FORCE_WORD_ALIGNMENT
+// const findWordEndBoundInTextNode = (node: Node, endOffset: number | null) => {
+//     if (node.nodeType !== Node.TEXT_NODE || node.textContent === null) {
+//         return -1;
+//     }
+
+//     const offset = endOffset !== null ? endOffset : 0;
+
+//     if (offset < node.textContent.length && offset > 0 &&
+//         BOUNDARY_CHARS.test(node.textContent[offset - 1])) {
+//         return offset;
+//     }
+
+//     const followingText = node.textContent.substring(offset);
+//     const boundaryIndex = followingText.search(BOUNDARY_CHARS);
+
+//     if (boundaryIndex !== -1) {
+//         return offset + boundaryIndex;
+//     }
+//     return -1;
+// };
+
+// // FORCE_WORD_ALIGNMENT
+// const getTextNodesInSameBlock = (node: Node): { preNodes: Node[], innerNodes: Node[], postNodes: Node[] } => {
+//     const preNodes = [];
+
+//     const backWalker = makeWalkerForNode(node);
+
+//     const finishedSubtrees = new Set<Node>();
+//     let backNode = backwardTraverse(backWalker, finishedSubtrees);
+//     while (backNode && !isBlock(backNode)) {
+
+//         if (backNode.nodeType === Node.TEXT_NODE) {
+//             preNodes.push(backNode);
+//         }
+//         backNode = backwardTraverse(backWalker, finishedSubtrees);
+//     };
+//     preNodes.reverse();
+
+//     const innerNodes = [];
+//     if (node.nodeType === Node.TEXT_NODE) {
+//         innerNodes.push(node);
+//     } else {
+//         const walker = document.createTreeWalker(
+//             node,
+//             NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+//             (node) => {
+//                 return acceptNodeIfVisibleInRange(node, undefined);
+//             });
+//         walker.currentNode = node;
+//         let child = walker.nextNode();
+//         while (child) {
+
+//             if (child.nodeType === Node.TEXT_NODE) {
+//                 innerNodes.push(child);
+//             }
+//             child = walker.nextNode();
+//         }
+//     }
+
+//     const postNodes = [];
+//     const forwardWalker = makeWalkerForNode(node);
+
+//     const finishedSubtreesForward = new Set([node]);
+//     let forwardNode = forwardTraverse(forwardWalker, finishedSubtreesForward);
+//     while (forwardNode && !isBlock(forwardNode)) {
+
+//         if (forwardNode.nodeType === Node.TEXT_NODE) {
+//             postNodes.push(forwardNode);
+//         }
+//         forwardNode = forwardTraverse(forwardWalker, finishedSubtreesForward);
+//     }
+
+//     return { preNodes: preNodes, innerNodes: innerNodes, postNodes: postNodes };
+// };
+
+// // FORCE_WORD_ALIGNMENT
+// const expandToNearestWordBoundaryPointUsingSegments = (segmenter: Intl.Segmenter, isRangeEnd: boolean, range: Range) => {
+//     const boundary = isRangeEnd ?
+//         { node: range.endContainer, offset: range.endOffset } :
+//         { node: range.startContainer, offset: range.startOffset };
+
+//     const nodes = getTextNodesInSameBlock(boundary.node);
+//     const preNodeText = nodes.preNodes.reduce((prev, cur) => {
+//         return prev.concat(cur.textContent || "");
+//     }, "");
+
+//     const innerNodeText = nodes.innerNodes.reduce((prev, cur) => {
+//         return prev.concat(cur.textContent || "");
+//     }, "");
+
+//     let offsetInText = preNodeText.length;
+//     if (boundary.node.nodeType === Node.TEXT_NODE) {
+//         offsetInText += boundary.offset;
+//     } else if (isRangeEnd) {
+//         offsetInText += innerNodeText.length;
+//     }
+
+//     const postNodeText = nodes.postNodes.reduce((prev, cur) => {
+//         return prev.concat(cur.textContent || "");
+//     }, "");
+
+//     const allNodes = [...nodes.preNodes, ...nodes.innerNodes, ...nodes.postNodes];
+
+//     if (allNodes.length === 0) {
+//         return;
+//     }
+
+//     const text = preNodeText.concat(innerNodeText, postNodeText);
+
+//     const segments = segmenter.segment(text);
+//     const foundSegment = segments.containing(offsetInText);
+
+//     if (!foundSegment) {
+//         if (isRangeEnd) {
+//             range.setEndAfter(allNodes[allNodes.length - 1]);
+//         } else {
+//             range.setEndBefore(allNodes[0]);
+//         }
+//         return;
+//     }
+
+//     if (!foundSegment.isWordLike) {
+//         return;
+//     }
+
+//     if (offsetInText === foundSegment.index ||
+//         offsetInText === foundSegment.index + foundSegment.segment.length) {
+//         return;
+//     }
+
+//     const desiredOffsetInText = isRangeEnd ?
+//         foundSegment.index + foundSegment.segment.length :
+//         foundSegment.index;
+//     let newNodeIndexInText = 0;
+//     for (const node of allNodes) {
+//         if (node.textContent === null) {
+//             continue;
+//         }
+//         if (newNodeIndexInText <= desiredOffsetInText &&
+//             desiredOffsetInText < newNodeIndexInText + node.textContent.length) {
+//             const offsetInNode = desiredOffsetInText - newNodeIndexInText;
+//             if (isRangeEnd) {
+//                 if (offsetInNode >= node.textContent.length) {
+//                     range.setEndAfter(node);
+//                 } else {
+//                     range.setEnd(node, offsetInNode);
+//                 }
+//             } else {
+//                 if (offsetInNode >= node.textContent.length) {
+//                     range.setStartAfter(node);
+//                 } else {
+//                     range.setStart(node, offsetInNode);
+//                 }
+//             }
+//             return;
+//         }
+//         newNodeIndexInText += node.textContent.length;
+//     }
+
+//     if (isRangeEnd) {
+//         range.setEndAfter(allNodes[allNodes.length - 1]);
+//     } else {
+//         range.setStartBefore(allNodes[0]);
+//     }
+// };
+
+// // FORCE_WORD_ALIGNMENT
+// const expandRangeStartToWordBound = (range: Range) => {
+//     const segmenter = USE_SEGMENTER ? makeNewSegmenter() : undefined;
+//     if (segmenter) {
+//         const startNode = getFirstNodeForBlockSearch(range);
+//         if (startNode !== range.startContainer) {
+//             range.setStartBefore(startNode);
+//         }
+
+//         expandToNearestWordBoundaryPointUsingSegments(segmenter, false, range);
+//     } else {
+//         const newOffset = findWordStartBoundInTextNode(range.startContainer, range.startOffset);
+//         if (newOffset !== -1) {
+//             range.setStart(range.startContainer, newOffset);
+//             return;
+//         }
+
+//         if (isBlock(range.startContainer) && range.startOffset === 0) {
+//             return;
+//         }
+
+//         const walker = makeWalkerForNode(range.startContainer);
+//         if (!walker) {
+//             return;
+//         }
+//         const finishedSubtrees = new Set<Node>();
+
+//         let node = backwardTraverse(walker, finishedSubtrees);
+//         while (node) {
+//             const newOffset = findWordStartBoundInTextNode(node, null);
+//             if (newOffset !== -1) {
+//                 range.setStart(node, newOffset);
+//                 return;
+//             }
+
+//             if (isBlock(node)) {
+//                 if (node.contains(range.startContainer)) {
+//                     range.setStart(node, 0);
+//                 } else {
+//                     range.setStartAfter(node);
+//                 }
+//                 return;
+//             }
+
+//             node = backwardTraverse(walker, finishedSubtrees);
+
+//             range.collapse();
+//         }
+//     }
+// };
+
+// // FORCE_WORD_ALIGNMENT
+// const expandRangeEndToWordBound = (range: Range) => {
+//     const segmenter = USE_SEGMENTER ? makeNewSegmenter() : undefined;
+//     if (segmenter) {
+//         const endNode = getLastNodeForBlockSearch(range);
+//         if (endNode !== range.endContainer) {
+//             range.setEndAfter(endNode);
+//         }
+//         expandToNearestWordBoundaryPointUsingSegments(segmenter, true, range);
+//     } else {
+//         let initialOffset: number | null = range.endOffset;
+
+//         let node: Node | null = range.endContainer;
+//         if (node.nodeType === Node.ELEMENT_NODE) {
+//             if (range.endOffset < node.childNodes.length) {
+//                 node = node.childNodes[range.endOffset];
+//             }
+//         }
+
+//         const walker = makeWalkerForNode(node);
+//         if (!walker) {
+//             return;
+//         }
+
+//         const finishedSubtrees = new Set<Node>([node]);
+
+//         while (node) {
+
+//             const newOffset = findWordEndBoundInTextNode(node, initialOffset);
+
+//             initialOffset = null;
+
+//             if (newOffset !== -1) {
+//                 range.setEnd(node, newOffset);
+//                 return;
+//             }
+
+//             if (isBlock(node)) {
+//                 if (node.contains(range.endContainer)) {
+//                     range.setEnd(node, node.childNodes.length);
+//                 } else {
+//                     range.setEndBefore(node);
+//                 }
+//                 return;
+//             }
+
+//             node = forwardTraverse(walker, finishedSubtrees);
+//         }
+
+//         range.collapse();
+//     }
+// };
+
+export const convertRangeToTextFragment = (range: Range): TextFragment | undefined => {
+
+    // if (FORCE_WORD_ALIGNMENT) {
+    //     expandRangeStartToWordBound(range);
+    //     expandRangeEndToWordBound(range);
+    // }
+    const rangeBeforeShrinking = FORCE_WORD_ALIGNMENT ? range.cloneRange() : range;
+    // if (FORCE_WORD_ALIGNMENT) {
+    //     moveRangeEdgesToTextNodes(range);
+    // }
+
+    let factory;
+
+    const doExactMatch = canUseExactMatch(range);
+    if (doExactMatch) {
+        const exactText = normalizeString(range.toString());
+        const fragment: TextFragment = {
+            textStart: exactText,
+        };
+
+        if (exactText.length >= MIN_LENGTH_WITHOUT_CONTEXT && isUniquelyIdentifying(fragment)) {
+            return fragment;
+        }
+
+        factory = new FragmentFactory();
+        factory.setExactTextMatch(exactText);
+    } else {
+        const startSearchSpace = getSearchSpaceForStart(range);
+        const endSearchSpace = getSearchSpaceForEnd(range);
+
+        if (startSearchSpace && endSearchSpace) {
+            factory = new FragmentFactory();
+            factory.setStartAndEndSearchSpace(startSearchSpace, endSearchSpace);
+        } else {
+            factory = new FragmentFactory();
+            factory.setSharedSearchSpace(range.toString().trim());
+        }
+    }
+
+    const prefixRange = window.document.createRange();
+    prefixRange.selectNodeContents(document.body);
+    const suffixRange = prefixRange.cloneRange();
+
+    prefixRange.setEnd(rangeBeforeShrinking.startContainer, rangeBeforeShrinking.startOffset);
+    suffixRange.setStart(rangeBeforeShrinking.endContainer, rangeBeforeShrinking.endOffset);
+
+    const prefixSearchSpace = getSearchSpaceForEnd(prefixRange);
+    const suffixSearchSpace = getSearchSpaceForStart(suffixRange);
+
+    if (prefixSearchSpace || suffixSearchSpace) {
+        factory.setPrefixAndSuffixSearchSpace(prefixSearchSpace, suffixSearchSpace);
+    }
+
+    const segmenter = USE_SEGMENTER ? makeNewSegmenter() : undefined;
+    if (segmenter) {
+        factory.useSegmenter(segmenter);
+    }
+
+    let didEmbiggen = false;
+    do {
+        didEmbiggen = factory.embiggen();
+        const fragment = factory.tryToMakeUniqueFragment();
+        if (fragment) {
+            return fragment;
+        }
+    } while (didEmbiggen);
+
+    return undefined;
+};
+
+const WORDS_TO_ADD_SUBSEQUENT_ITERATIONS = 1;
+const WORDS_TO_ADD_FIRST_ITERATION = 3;
+const MIN_LENGTH_WITHOUT_CONTEXT = 20;
+const ITERATIONS_BEFORE_ADDING_CONTEXT = 1;
 const FragmentFactoryMode = {
     ALL_PARTS: 1,
     SHARED_START_AND_END: 2,
@@ -865,7 +1217,7 @@ const FragmentFactory = class {
     tryToMakeUniqueFragment() {
         let fragment: TextFragment | undefined;
         if (this.mode === FragmentFactoryMode.CONTEXT_ONLY) {
-            if (this.exactTextMatch === undefined) {
+            if (!this.exactTextMatch) {
                 return undefined;
             }
             fragment = { textStart: this.exactTextMatch };
@@ -976,7 +1328,10 @@ const FragmentFactory = class {
         }
 
         let canExpandContext = false;
-        if (this.startOffset !== null && (!canExpandRange || this.startOffset + this.backwardsEndOffset() < MIN_LENGTH_WITHOUT_CONTEXT || this.numIterations >= ITERATIONS_BEFORE_ADDING_CONTEXT)) {
+        if (!canExpandRange ||
+            (this.startOffset !== null &&
+                ((this.startOffset + this.backwardsEndOffset()) < MIN_LENGTH_WITHOUT_CONTEXT)) ||
+            this.numIterations >= ITERATIONS_BEFORE_ADDING_CONTEXT) {
 
             if ((this.backwardsPrefixOffset() !== null && this.backwardsPrefixOffset() !== this.getPrefixSearchSpace().length) ||
                 (this.suffixOffset !== null && this.suffixOffset !== this.getSuffixSearchSpace().length)) {
@@ -1040,7 +1395,7 @@ const FragmentFactory = class {
                             i++;
                         }
                     } while (this.suffixOffset !== null &&
-                        this.suffixOffset < this.getSuffixSearchSpace().length &&
+                    this.suffixOffset < this.getSuffixSearchSpace().length &&
                         i < desiredIterations);
                 }
             }
@@ -1228,63 +1583,96 @@ const FragmentFactory = class {
     }
 };
 
-export const convertRangeToTextFragment = (range: Range, bypassExactMatch?: boolean): TextFragment | undefined => {
+type NodeTextContent = {
+    textContent: string;
+}
+const BlockTextAccumulator = class {
+    public searchRange: Range;
+    public isForwardTraversal: boolean;
+    public textFound: boolean;
+    public textNodes: NodeTextContent[];
+    public textInBlock: string | null;
+    constructor(searchRange: Range, isForwardTraversal: boolean) {
+        this.searchRange = searchRange;
+        this.isForwardTraversal = isForwardTraversal;
+        this.textFound = false;
+        this.textNodes = [];
+        this.textInBlock = null;
+    }
+    finish() {
+        if (this.textFound) {
+            if (!this.isForwardTraversal) {
+                this.textNodes.reverse();
+            }
 
-    let factory;
-
-    const doExactMatch = !bypassExactMatch && canUseExactMatch(range);
-    if (doExactMatch) {
-        const exactText = normalizeString(range.toString());
-        const fragment: TextFragment = {
-            textStart: exactText,
-        };
-
-        if (exactText.length >= MIN_LENGTH_WITHOUT_CONTEXT && isUniquelyIdentifying(fragment)) {
-            return fragment;
-        }
-
-        factory = new FragmentFactory();
-        factory.setExactTextMatch(exactText);
-    } else {
-        const startSearchSpace = getSearchSpaceForStart(range);
-        const endSearchSpace = getSearchSpaceForEnd(range);
-
-        if (startSearchSpace && endSearchSpace) {
-            factory = new FragmentFactory();
-            factory.setStartAndEndSearchSpace(startSearchSpace, endSearchSpace);
+            this.textInBlock = this.textNodes.map(textNode => textNode.textContent).join("");
+            // TODO: preserve interspersed whitespace
+            // const lBeforeTrim = this.textInBlock.length;
+            this.textInBlock = this.textInBlock.trim();
+            // if (lBeforeTrim > 0 && this.textInBlock.length === 0) {
+            //     this.textInBlock = " "; // preserved collapsed whitespaces
+            // }
         } else {
-            factory = new FragmentFactory();
-            factory.setSharedSearchSpace(range.toString().trim());
+            this.textNodes = [];
+        }
+    }
+    appendNode(node: Node) {
+        if (this.textInBlock !== null) {
+            return;
+        }
+
+        if (isBlock(node)) {
+            this.finish();
+            return;
+        }
+
+        if (!isText(node)) {
+            return;
+        }
+
+        // nodeToInsert.textContent.trim() !== ""
+        // nodeToInsert.textContent.trim().length !== 0
+        const nodeToInsert = this.getNodeIntersectionWithRange(node);
+
+        if (nodeToInsert) { // nodeToInsert.textContent guaranteed non-null
+            this.textFound = true;
+            this.textNodes.push(nodeToInsert);
         }
     }
 
-    const prefixRange = window.document.createRange();
-    prefixRange.selectNodeContents(document.body);
-    const suffixRange = prefixRange.cloneRange();
+    getNodeIntersectionWithRange(node: Text): NodeTextContent | undefined {
+        let startOffset = null;
+        let endOffset = null;
 
-    prefixRange.setEnd(range.startContainer, range.startOffset);
-    suffixRange.setStart(range.endContainer, range.endOffset);
-
-    const prefixSearchSpace = getSearchSpaceForEnd(prefixRange);
-    const suffixSearchSpace = getSearchSpaceForStart(suffixRange);
-
-    if (prefixSearchSpace || suffixSearchSpace) {
-        factory.setPrefixAndSuffixSearchSpace(prefixSearchSpace, suffixSearchSpace);
-    }
-
-    factory.useSegmenter(makeNewSegmenter());
-
-    let didEmbiggen = false;
-    do {
-        didEmbiggen = factory.embiggen();
-        const fragment = factory.tryToMakeUniqueFragment();
-        if (fragment) {
-            return fragment;
+        if (node === this.searchRange.startContainer &&
+            this.searchRange.startOffset !== 0) {
+            startOffset = this.searchRange.startOffset;
         }
-    } while (didEmbiggen);
 
-    if (doExactMatch) {
-        return convertRangeToTextFragment(range, true);
+        if (node === this.searchRange.endContainer &&
+            (!node.textContent || this.searchRange.endOffset !== node.textContent.length)) {
+            endOffset = this.searchRange.endOffset;
+        }
+
+        if (node.textContent) {
+            let str = node.textContent;
+            let changed = false;
+            if (startOffset !== null || endOffset !== null) {
+                str = node.textContent.substring(startOffset ?? 0, endOffset ?? node.textContent.length);
+                changed = true;
+            }
+
+            // TODO: preserve interspersed whitespace
+            // const nodeIsFirst = node === node.parentNode?.firstChild;
+            // const nodeIsLast = node === node.parentNode?.lastChild;
+            // if (!changed && !str.trim().length && !nodeIsFirst && !nodeIsLast) {
+            //     str = " "; // collapse contiguous whitespace into single space
+            //     changed = true;
+            // }
+
+            return changed ? { textContent: str } : node as NodeTextContent;
+        }
+
+        return undefined;
     }
-    return undefined;
 };
