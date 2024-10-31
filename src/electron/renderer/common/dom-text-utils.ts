@@ -835,18 +835,39 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                             }
 
                             if (!done) {
+                                // this causes an infinite loop / GUI lockup with some SVG, not sure why!?
+                                // const parentElement = elementStack[elementStack.length - 1];
+                                // if (parentElement !== childElement) {
+                                //     // putInElementStack = true;
+                                //     elementStack.push(childElement);
+                                // }
+
                                 const iter = win.document.createNodeIterator(
                                     childElement, // win.document.body
                                     NodeFilter.SHOW_ELEMENT,
                                     {
                                         // tspan breaks words / sentences
-                                        acceptNode: (node) => node.nodeName.toLowerCase() === "text" ?
-                                        NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
+                                        acceptNode: (node) => {
+                                            const low = node.nodeName.toLowerCase();
+                                            return low === "text"
+                                            || low === "math" // inside foreignObject
+                                            ?
+                                            NodeFilter.FILTER_ACCEPT
+                                            :
+                                            NodeFilter.FILTER_REJECT;
+                                        },
                                     },
                                 );
                                 let n: Node | null;
                                 while (n = iter.nextNode()) {
                                     const el = n as Element;
+
+                                    const parentElement = elementStack[elementStack.length - 1];
+                                    if (parentElement !== el) {
+                                        // putInElementStack = true;
+                                        elementStack.push(el);
+                                    }
+
                                     try {
                                         processElement(el);
                                     } catch (err) {
@@ -868,7 +889,11 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                                             });
                                         }
                                     }
+
+                                    elementStack.pop();
                                 }
+
+                                // elementStack.pop();
                             }
                         }
                     }

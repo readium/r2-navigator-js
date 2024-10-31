@@ -239,9 +239,9 @@ function classNames(input: Element): Knot[] {
 const ELEMENT_NAMESPACE_PREFIX = /^(.+:)(.+)$/;
 const ELEMENT_NAMESPACE_PREFIX_ = /^\*\|(a|script|style)$/;
 function tagName(input: Element): Knot | null {
-    const name = input.tagName.toLowerCase();
+    // CSS foreignObject ... yeah, it's hacky :(
+    const name = input.tagName === "foreignObject" ? input.tagName : input.tagName.toLowerCase();
     if (config.tagName(name)) {
-
         // https://github.com/antonmedv/finder/issues/78
         // "div" ==> "div", "m:math" ==> "*|math", "svg:a" ==> "*|a" (which unfortunately matches HTML "a" without XML namespace too! ... that's a shortcoming of the web's querySelector() API) https://www.w3.org/TR/selectors-api/#namespace-prefix-needs-to-be-resolved
         const n = name.replace(ELEMENT_NAMESPACE_PREFIX, "*|$2").replace(ELEMENT_NAMESPACE_PREFIX_, "*|$1:not(|$1)"); // match SVG / MathML namespace-prefixed elements but exclude HTML elements with the same non-prefixed name
