@@ -5,12 +5,13 @@
 // that can be found in the LICENSE file exposed on Github (readium) in the project repository.
 // ==LICENSE-END==
 
-import { IRangeInfo, ISelectedTextInfo, ISelectionInfo, TextFragment } from "../../common/selection";
+// import { convertRangeToTextFragment } from "./textFragment";
+import { IRangeInfo, ISelectedTextInfo, ISelectionInfo } from "../../common/selection"; // TextFragment
+
 import { ReadiumElectronWebviewWindow } from "./state";
 import { ipcRenderer } from "electron";
 
 import { R2_EVENT_READING_LOCATION_CLEAR_SELECTION } from "../../common/events";
-import { convertRangeToTextFragment } from "./textFragment";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -232,16 +233,16 @@ export function getCurrentSelectionInfo(
         // selection.addRange(range);
     }
 
-    let textFragment: TextFragment | undefined;
-    try {
-        textFragment = convertRangeToTextFragment(range);
-    } catch (err) {
-        console.log("!?convertRangeToTextFragment!?");
-        console.log(err);
-    }
+    // let textFragment: TextFragment | undefined;
+    // try {
+    //     textFragment = convertRangeToTextFragment(range);
+    // } catch (err) {
+    //     console.log("!?convertRangeToTextFragment!?");
+    //     console.log(err);
+    // }
 
     return {
-        textFragment,
+        textFragment: undefined,
 
         rangeInfo,
 
