@@ -315,6 +315,7 @@ export const R2_EVENT_TTS_DO_PREVIOUS = "R2_EVENT_TTS_DO_PREVIOUS";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS {
     skipSentences: boolean | undefined;
+    escape: boolean | undefined;
 }
 
 // in RENDERER: webview.send()

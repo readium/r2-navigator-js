@@ -274,7 +274,7 @@ export function ttsResume() {
         }, 0);
     }
 }
-export function ttsPrevious(skipSentences = false) {
+export function ttsPrevious(skipSentences: boolean, escape = false) {
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
         if (_lastTTSWebView && _lastTTSWebView !== activeWebView) {
@@ -283,6 +283,7 @@ export function ttsPrevious(skipSentences = false) {
         setTimeout(async () => {
             const payload: IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS = {
                 skipSentences,
+                escape,
             };
             if (activeWebView.READIUM2?.DOMisReady) {
                 await activeWebView.send(R2_EVENT_TTS_DO_PREVIOUS, payload);
@@ -290,7 +291,7 @@ export function ttsPrevious(skipSentences = false) {
         }, 0);
     }
 }
-export function ttsNext(skipSentences = false) {
+export function ttsNext(skipSentences: boolean, escape = false) {
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
         if (_lastTTSWebView && _lastTTSWebView !== activeWebView) {
@@ -299,6 +300,7 @@ export function ttsNext(skipSentences = false) {
         setTimeout(async () => {
             const payload: IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS = {
                 skipSentences,
+                escape,
             };
             if (activeWebView.READIUM2?.DOMisReady) {
                 await activeWebView.send(R2_EVENT_TTS_DO_NEXT, payload);

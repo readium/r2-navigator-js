@@ -318,7 +318,7 @@ const _skippables = [
 // so ideally we should ignore the fragment and merge together the adjacent text(s) to form the utterance ...
 // but this is technically challenging in this algorithm (previous/next may have different language, etc.),
 
-const computeEpubTypes = (childElement: Element) => {
+export const computeEpubTypes = (childElement: Element) => {
 
     let epubType = childElement.getAttribute("epub:type");
     if (!epubType) {
@@ -507,7 +507,6 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                     const hidden = isHidden(childElement);
 
                     const epubTypes = computeEpubTypes(childElement);
-
                     const isSkippable = epubTypes.find((et) => _skippables.includes(et)) ? true : undefined;
 
                     // note that isSkippable===true never reaches into a ttsQueueItem because we eject at compilation time instead of runtime / playback:

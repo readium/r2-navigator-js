@@ -4444,13 +4444,13 @@ if (!win.READIUM2.isAudio) {
     ipcRenderer.on(R2_EVENT_TTS_DO_NEXT,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_event: any, payload?: IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS) => {
-        ttsNext(payload?.skipSentences);
+        ttsNext(payload?.skipSentences || false, payload?.escape || false);
     });
 
     ipcRenderer.on(R2_EVENT_TTS_DO_PREVIOUS,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_event: any, payload?: IEventPayload_R2_EVENT_TTS_DO_NEXT_OR_PREVIOUS) => {
-        ttsPrevious(payload?.skipSentences);
+        ttsPrevious(payload?.skipSentences || false, payload?.escape || false);
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

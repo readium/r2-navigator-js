@@ -798,7 +798,7 @@ function isSkippable(mo: MediaOverlayNode): boolean {
     }) >= 0;
 }
 
-// https://www.w3.org/publishing/epub3/epub-mediaoverlays.html#sec-escabaility
+// https://www.w3.org/TR/epub-33/#sec-escapability
 // const _escapables = [
 //     "table",
 //     "table-row",
