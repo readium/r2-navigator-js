@@ -1,10 +1,31 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.16.3...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.16.4...develop
 
 Changes:
 * TODO
+
+# 1.16.4
+
+> Build environment: NodeJS `22.11.0`, NPM `10.9.0`
+
+Changes:
+* NPM package updates
+* DOM Range normalization modernized to align with Apache Annotator
+* Fixed SVG deep text TTS utterance builder
+* TTS readaloud escapability (SVG, table, table row, MathML, etc.)
+* TextFragment polyfill experimental code ported to Typescript (inactive placeholder, needs further testing as there are bugs from the original official Javascript implementation)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.16.4/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.16.4/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.16.4
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.16.3...v1.16.4
 
 # 1.16.3
 

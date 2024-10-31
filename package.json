@@ -1,6 +1,6 @@
 {
   "name": "r2-navigator-js",
-  "version": "1.16.3",
+  "version": "1.16.4",
   "description": "Readium 2 'navigator' for NodeJS (TypeScript)",
   "keywords": [
     "readium",
@@ -9,7 +9,6 @@
     "EPUB",
     "TypeScript",
     "JavaScript",
-    "ES5",
     "ES6",
     "ECMAScript 2015",
     "ECMAScript 6",
@@ -124,7 +123,8 @@
     "pretranspile:typescript": "npm run clean",
     "transpile:typescript": "tsc --pretty -p \"./tsconfig.json\"",
     "pretranspile:typescript:all": "npm run clean",
-    "transpile:typescript:all": "npm run transpile:typescript:es5 && npm run transpile:typescript:es6-es2015 && npm run transpile:typescript:es7-es2016 && npm run transpile:typescript:es8-es2017",
+    "_transpile:typescript:all": "npm run transpile:typescript:es5 && ...",
+    "transpile:typescript:all": "npm run transpile:typescript:es6-es2015 && npm run transpile:typescript:es7-es2016 && npm run transpile:typescript:es8-es2017",
     "transpile:typescript:es8-es2017+afterdist": "npm run transpile:typescript:es8-es2017 && npm run afterdist && npm run electron-renderer:es8-es2017",
     "transpile:typescript:single": "node tools/typescript_compile_single.js",
     "posttranspile:typescript:single": "npm run afterdist && npm run electron-renderer:es8-es2017",

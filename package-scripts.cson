@@ -145,8 +145,11 @@
     npm run clean
   '
 
+  '_transpile:typescript:all': '
+    npm run transpile:typescript:es5 && ...
+  '
+
   'transpile:typescript:all': '
-    npm run transpile:typescript:es5 &&
     npm run transpile:typescript:es6-es2015 &&
     npm run transpile:typescript:es7-es2016 &&
     npm run transpile:typescript:es8-es2017
