@@ -58,6 +58,7 @@ export interface LocatorLocations {
     // https://github.com/readium/architecture/blob/f90b440dc3aa63c59981e3e46a7db7b8a545c613/schema/locator.schema.json#L23
     // fragment?: string;
     cfi?: string;
+    xpath?: string;
     cssSelector?: string;
 
     // tslint:disable-next-line:max-line-length

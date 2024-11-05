@@ -124,6 +124,7 @@ export function getCurrentSelectionInfo(
     win: ReadiumElectronWebviewWindow,
     getCssSelector: (element: Element) => string,
     computeElementCFI: (node: Node) => string | undefined,
+    computeElementXPath: (node: Node) => string | undefined,
 ):
     ISelectionInfo | undefined {
 
@@ -181,7 +182,7 @@ export function getCurrentSelectionInfo(
         }
     }
 
-    const tuple = convertRange(range, getCssSelector, computeElementCFI);
+    const tuple = convertRange(range, getCssSelector, computeElementCFI, computeElementXPath);
     if (!tuple) {
         console.log("^^^ SELECTION RANGE INFO FAIL?!");
         return undefined;
@@ -342,6 +343,7 @@ export function convertRange(
     range: Range,
     getCssSelector: (element: Element) => string,
     computeElementCFI: (node: Node) => string | undefined,
+    computeElementXPath: (node: Node) => string | undefined,
 ):
     [IRangeInfo, ISelectedTextInfo] | undefined {
 
@@ -497,10 +499,12 @@ export function convertRange(
     const startElementCfi = computeElementCFI(startContainerElement);
     // console.log(`START CFI: ${startElementCfi}`);
     // console.log(startContainerElement.outerHTML);
+    const startElementXPath = computeElementXPath(startContainerElement);
 
     const endElementCfi = computeElementCFI(endContainerElement);
     // console.log(`END CFI: ${endElementCfi}`);
     // console.log(endContainerElement.outerHTML);
+    const endElementXPath = computeElementXPath(endContainerElement);
 
     let cfi: string | undefined;
 
@@ -573,11 +577,13 @@ export function convertRange(
 
         endContainerChildTextNodeIndex,
         endContainerElementCFI: endElementCfi,
+        endContainerElementXPath: endElementXPath,
         endContainerElementCssSelector,
         endOffset: range.endOffset,
 
         startContainerChildTextNodeIndex,
         startContainerElementCFI: startElementCfi,
+        startContainerElementXPath: startElementXPath,
         startContainerElementCssSelector,
         startOffset: range.startOffset,
     }, {

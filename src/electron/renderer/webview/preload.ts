@@ -150,6 +150,7 @@ win.READIUM2 = {
             cssSelector: undefined,
             position: undefined,
             progression: undefined,
+            xpath: undefined,
         },
         paginationInfo: undefined,
         secondWebViewHref: undefined,
@@ -726,6 +727,7 @@ function resetLocationHashOverrideInfo() {
             cssSelector: undefined,
             position: undefined,
             progression: undefined,
+            xpath: undefined,
         },
         paginationInfo: undefined,
         secondWebViewHref: undefined,
@@ -2576,7 +2578,7 @@ function loaded(forced: boolean) {
     // win.document.addEventListener("selectionstart", (_ev: any) => {
     //     // notifyReadingLocationDebounced();
     //     debug("############ selectionstart EVENT:");
-    //     const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI);
+    //     const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI, computeXPath);
     //     debug(selInfo);
     //     if (win.READIUM2.DEBUG_VISUALS) {
     //         if (selInfo) {
@@ -3613,7 +3615,7 @@ interface IProgressionData {
     percentRatio: number;
     paginationInfo: IPaginationInfo | undefined;
 }
-export const computeProgressionData = (): IProgressionData => {
+const computeProgressionData = (): IProgressionData => {
 
     const isPaged = isPaginated(win.document);
 
@@ -3837,10 +3839,13 @@ const _blacklistIdClassForCFI = [EXTRA_COLUMN_PAD_ID, SKIP_LINK_ID, POPUP_DIALOG
 // "CtxtMenu_MenuArrow", "CtxtMenu_Attached_0", "mjx-container", "MathJax"
 const _blacklistIdClassForCFIMathJax = ["mathjax", "ctxt", "mjx", "r2-wbr"];
 
-export const computeCFI = (node: Node): string | undefined => {
+const computeCFI = (node: Node): string | undefined => {
 
     // TODO: handle character position inside text node
     if (node.nodeType !== Node.ELEMENT_NODE) {
+        // if (node.parentNode) {
+        //     return computeCFI(node.parentNode);
+        // }
         return undefined;
     }
 
@@ -3876,6 +3881,100 @@ export const computeCFI = (node: Node): string | undefined => {
     }
 
     return "/" + cfi;
+};
+
+// const computeCFI = (node: Node): string | undefined => {
+
+//     if (node.nodeType !== Node.ELEMENT_NODE) {
+//         if (node.parentNode) {
+//             return computeCFI(node.parentNode);
+//         }
+//         return undefined;
+//     }
+
+//     let cfi = "";
+
+//     let currentElement = node as Element;
+//     while (currentElement.parentNode && currentElement.parentNode.nodeType === Node.ELEMENT_NODE) {
+//         const currentElementParentChildren = (currentElement.parentNode as Element).children;
+//         let currentElementIndex = -1;
+//         for (let i = 0; i < currentElementParentChildren.length; i++) {
+//             if (currentElement === currentElementParentChildren[i]) {
+//                 currentElementIndex = i;
+//                 break;
+//             }
+//         }
+//         if (currentElementIndex >= 0) {
+//             const cfiIndex = (currentElementIndex + 1) * 2;
+//             cfi = cfiIndex +
+//                 (currentElement.id ? ("[" + currentElement.id + "]") : "") +
+//                 (cfi.length ? ("/" + cfi) : "");
+//         }
+//         currentElement = currentElement.parentNode as Element;
+//     }
+
+//     return "/" + cfi;
+// };
+
+const computeXPath = (node: Node): string | undefined => {
+
+    // TODO: handle character position inside text node
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+        // if (node.parentNode) {
+        //     return computeXPath(node.parentNode);
+        // }
+        return undefined;
+    }
+
+    let xpath = "";
+
+    let currentElement = node as Element;
+    while (currentElement.parentNode && (currentElement.parentNode.nodeType === Node.ELEMENT_NODE || currentElement.parentNode.nodeType === Node.DOCUMENT_NODE)) {
+        const blacklisted = checkBlacklisted(currentElement);
+        if (!blacklisted) {
+            const currentElementParentChildren = currentElement.parentNode.nodeType === Node.ELEMENT_NODE ?
+                (currentElement.parentNode as Element).children :
+                [(currentElement.parentNode as Document).documentElement]; // parentIsDocument
+            let currentElementIndex = -1;
+            let j = 0;
+            let k = -1;
+            for (let i = 0; i < currentElementParentChildren.length; i++) {
+                const child = currentElementParentChildren[i];
+                if (child.tagName === currentElement.tagName) {
+                    k++;
+                    const childBlacklisted = checkBlacklisted(child);
+                    if (childBlacklisted) {
+                        j++;
+                    }
+                }
+                if (currentElement === child) {
+                    currentElementIndex = k;
+                    break;
+                }
+            }
+            if (currentElementIndex >= 0) {
+                const nodeIndex = currentElementIndex - j + 1;
+                // see $_namespaceResolver
+                const nsPrefix =
+                    currentElement.namespaceURI === "http://www.w3.org/1999/xhtml" ? "" :
+                    currentElement.namespaceURI === "http://www.w3.org/2000/svg" ? "svg:" :
+                    currentElement.namespaceURI === "http://www.w3.org/1998/Math/MathML" ? "m:" :
+                    "";
+                const idAssertion = currentElement.id ? `[@id="${currentElement.id}"]` : "";
+                const qname =
+                    // nsPrefix === "svg:" ?
+                    // `*[local-name()="${currentElement.tagName}" and namespace-uri()="${currentElement.namespaceURI}"]` :
+                    `${nsPrefix}${currentElement.tagName}`;
+                xpath = `${qname}[${nodeIndex}]${idAssertion}` +
+                    (xpath.length ? ("/" + xpath) : "");
+            }
+        } else {
+            xpath = "";
+        }
+        currentElement = currentElement.parentNode as Element;
+    }
+
+    return "/" + xpath;
 };
 
 const _getCssSelectorOptions = {
@@ -3940,6 +4039,8 @@ function getCssSelector(element: Element): string {
 const _htmlNamespaces: { [prefix: string]: string } = {
     epub: "http://www.idpf.org/2007/ops",
     xhtml: "http://www.w3.org/1999/xhtml",
+    // svg: "http://www.w3.org/2000/svg",
+    // m: "http://www.w3.org/1998/Math/MathML",
 };
 const _namespaceResolver = (prefix: string | null): string | null => {
     if (!prefix) {
@@ -4251,6 +4352,19 @@ const findFollowingDescendantSiblingElementsWithID = (el: Element): string[] | u
     return followingElementIDs;
 };
 
+const $_htmlNamespaces: { [prefix: string]: string } = {
+    // epub: "http://www.idpf.org/2007/ops",
+    xhtml: "http://www.w3.org/1999/xhtml",
+    svg: "http://www.w3.org/2000/svg",
+    m: "http://www.w3.org/1998/Math/MathML",
+};
+const $_namespaceResolver = (prefix: string | null): string | null => {
+    if (!prefix) {
+        return null; // $_htmlNamespaces.xhtml
+    }
+    return $_htmlNamespaces[prefix] || null;
+};
+
 const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: boolean) => {
     if (!win.READIUM2.locationHashOverride) {
         return;
@@ -4275,6 +4389,44 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
 
     let cssSelector = getCssSelector(win.READIUM2.locationHashOverride);
     let cfi = computeCFI(win.READIUM2.locationHashOverride);
+    let xpath = computeXPath(win.READIUM2.locationHashOverride);
+    if (IS_DEV && xpath) {
+        debug(">>> XPATH original: " + xpath);
+        // const xpath_ = xpath.replace(/\/([^\[\/]+)/g, "/*[name()=\"$1\"]");
+        // const xpath_ = xpath.replace(/\/([^\[:]+)/g, "/xhtml:$1");
+        const xpath_ = xpath.replace(/\/([^\/]+)/g, (m) => {
+            if (m.startsWith("/*") || // m.startsWith("/child::*") || m.startsWith("/descendant::*") ||
+                /^\/[a-zA-Z0-9\-_]+:[a-zA-Z0-9\-_]+.*$/.test(m)) { // replace("/body", "/xxx:body") to test
+                return m;
+            }
+            return m.replace(/\/(.+)/g, "/xhtml:$1");
+        });
+        debug(">>> XPATH adapted: " + xpath_);
+
+        const xpathResult = win.document.evaluate(
+            // `//*[contains(@epub:type,'pagebreak')]`,
+            // `//*[tokenize(@epub:type,'\s+')='pagebreak']`
+            // "//*[contains(concat(' ', normalize-space(@role), ' '), ' doc-pagebreak ')] | //*[contains(concat(' ', normalize-space(@epub:type), ' '), ' pagebreak ')]",
+            xpath_,
+            win.document,
+            $_namespaceResolver, // win.document.documentElement,
+            XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, // FIRST_ORDERED_NODE_TYPE
+            null);
+
+            debug(">>> XPATH snap: " + xpathResult.snapshotLength);
+            if (xpathResult.snapshotLength === 1 && xpathResult.snapshotItem(0) === win.READIUM2.locationHashOverride) {
+                debug(">>> XPATH OK :)");
+            } else {
+                debug(">>> XPATH NOK :(");
+            }
+
+            // for (let i = 0; i < xpathResult.snapshotLength; i++) {
+            //     const n = xpathResult.snapshotItem(i);
+            //     if (n) {
+            //         const el = n as Element;
+            //     }
+            // }
+    }
     let progression = 0;
     if (win.READIUM2.isFixedLayout) {
         progression = 1;
@@ -4286,7 +4438,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
     const pinfo = (progressionData && progressionData.paginationInfo) ?
         progressionData.paginationInfo : undefined;
 
-    const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI);
+    const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI, computeXPath);
     // if (IS_DEV) { // && win.READIUM2.DEBUG_VISUALS
     //     if (selInfo) {
     //         createHighlight(win,
@@ -4302,6 +4454,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
     if (selInfo) {
         cssSelector = selInfo.rangeInfo.startContainerElementCssSelector;
         cfi = selInfo.rangeInfo.startContainerElementCFI;
+        xpath = selInfo.rangeInfo.startContainerElementXPath;
     }
 
     const text = selInfo ? {
@@ -4342,7 +4495,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
         range.setStart(win.READIUM2.lastClickedTextChar.textNode, startOffset);
         range.setEnd(win.READIUM2.lastClickedTextChar.textNode, startOffset + 1);
 
-        const tuple = convertRange(range, getCssSelector, computeCFI);
+        const tuple = convertRange(range, getCssSelector, computeCFI, computeXPath);
         if (tuple) {
             rangeInfo = tuple[0];
             // const textInfo = tuple[1];
@@ -4366,6 +4519,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
             position: undefined, // calculated in host index.js renderer, where publication object is available
             progression,
             rangeInfo,
+            xpath,
         },
         paginationInfo: pinfo,
         secondWebViewHref,
@@ -4657,7 +4811,7 @@ if (!win.READIUM2.isAudio) {
             ] :
             payloadPing.highlightDefinitions;
 
-        const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI);
+        const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI, computeXPath);
         for (const highlightDefinition of highlightDefinitions) {
             if (!highlightDefinition.selectionInfo) {
                 highlightDefinition.selectionInfo = selInfo;
