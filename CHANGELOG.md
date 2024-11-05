@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.16.4...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.16.5...develop
 
 Changes:
 * TODO
+
+# 1.16.5
+
+> Build environment: NodeJS `22.11.0`, NPM `10.9.0`
+
+Changes:
+* Added support for XPath (generation only, no consumption) in Locators, Selection / DOM Ranges
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.16.5/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.16.5/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.16.5
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.16.4...v1.16.5
 
 # 1.16.4
 
