@@ -6,3 +6,10 @@ node_modules_YARN
 .DS_Store
 .history
 
+.zed
+.flox/cache
+.flox/log
+.flox/run
+.flox/lib
+.flox/NPM_PREFIX
+.flox/NPM_CACHE
