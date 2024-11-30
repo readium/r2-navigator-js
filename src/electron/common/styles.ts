@@ -356,12 +356,15 @@ export const footnotesCssStyles = `
     width: 100%;
 }
 
+/*
+https://github.com/edrlab/thorium-reader/issues/2478#issuecomment-2304782942
 :root[style] .${FOOTNOTES_CONTAINER_CLASS} a[epub|type~="backlink"],
 :root .${FOOTNOTES_CONTAINER_CLASS} a[epub|type~="backlink"],
 :root[style] .${FOOTNOTES_CONTAINER_CLASS} a[role~="doc-backlink"],
 :root .${FOOTNOTES_CONTAINER_CLASS} a[role~="doc-backlink"] {
     display: none !important;
 }
+*/
 
 /*
 :root[style] .${FOOTNOTES_CLOSE_BUTTON_CLASS},
