@@ -12,6 +12,8 @@ import {
 } from "../../common/styles";
 import { PopupDialog } from "../common/popup-dialog";
 
+import { removeUTF8BOM } from "@r2-utils-js/_utils/bom";
+
 // import {
 //     READIUM2_ELECTRON_HTTP_PROTOCOL, convertCustomSchemeToHttpUrl,
 // } from "../../common/sessions";
@@ -79,7 +81,7 @@ export async function popupFootNote(
             const txt = await res.text();
             const domparser = new DOMParser();
             documant = domparser.parseFromString(
-                txt,
+                removeUTF8BOM(txt),
                 "application/xhtml+xml");
 
             const aNodeList = documant.querySelectorAll("a[href]");
