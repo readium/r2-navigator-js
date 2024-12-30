@@ -1,10 +1,30 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.16.5...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.16.6...develop
 
 Changes:
 * TODO
+
+# 1.16.6
+
+> Build environment: NodeJS `22.11.0`, NPM `11.0.0`
+
+Changes:
+* fix: breaking change in keyboard focus handling, was push model (from navigator) with hybrid pulls (from Thorium), now completely passive (application pushes requests to focus, decides when best depending on GUI interactions)
+* fix: restore footnote backlinks visibility (reversed decision, see https://github.com/edrlab/thorium-reader/issues/2478#issuecomment-2304782942 )
+* feat(dev): added Flox/Nix
+* NPM package updates
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.16.6/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.16.6/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.16.6
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.16.5...v1.16.6
 
 # 1.16.5
 
