@@ -7,7 +7,10 @@
 
 // @medv/finder v3.1.0
 // https://github.com/antonmedv/finder/blob/df88b7266bdf21fc657efc00469001c2af04b433/finder.ts
+// NEW MAJOR VERSION:
+// https://github.com/antonmedv/finder/blob/4.0.2/finder.ts
 
+// r2-FORK: replaced "CSS.escape()" with "CSSEscape()"
 // This polyfill automatically invokes the native CSS.escape API if available
 // https://github.com/mathiasbynens/CSS.escape/blob/4b25c283eaf4dd443f44a7096463e973d56dd1b2/css.escape.js#L16-L18
 // https://developer.mozilla.org/en-US/docs/Web/API/CSS/escape_static
@@ -36,6 +39,8 @@ export type Options = {
 let config: Options;
 let rootDocument: Document | Element;
 
+// r2-FORK: "finder" replaced with "uniqueCssSelector"
+// r2-FORK: added "doc: Document" function argument
 export function uniqueCssSelector(input: Element, doc: Document, options?: Partial<Options>) {
     if (input.nodeType !== Node.ELEMENT_NODE) {
         throw new Error("Can't generate CSS selector for non-element node type.");
@@ -44,7 +49,7 @@ export function uniqueCssSelector(input: Element, doc: Document, options?: Parti
         return "html";
     }
     const defaults: Options = {
-        root: doc.body,
+        root: doc.body, // r2-FORK: replaced "document" with "doc" (function argument)
         idName: (_name: string) => true,
         className: (_name: string) => true,
         tagName: (_name: string) => true,
@@ -136,6 +141,7 @@ function bottomUpSearch(
         }
         current = current.parentElement;
 
+        // r2-FORK: added parent check
         if (current && !current.parentElement) {
             break; // exclude root HTML document element for when seedMinLength and optimizedMinLength allow reaching up to the body and even beyond in the ancestor path.
         }
@@ -236,6 +242,7 @@ function classNames(input: Element): Knot[] {
     );
 }
 
+// r2-FORK: added "tagName" processing for XML/XHTML
 const ELEMENT_NAMESPACE_PREFIX = /^(.+:)(.+)$/;
 const ELEMENT_NAMESPACE_PREFIX_ = /^\*\|(a|script|style)$/;
 function tagName(input: Element): Knot | null {
