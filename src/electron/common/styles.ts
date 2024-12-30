@@ -22,6 +22,7 @@ export const CLASS_PAGINATED = "r2-css-paginated";
 export const HIDE_CURSOR_CLASS = "r2-hideCursor";
 
 export const ZERO_TRANSFORM_CLASS = "r2-zeroTransform";
+export const ENABLE_SKIP_LINK = false;
 export const SKIP_LINK_ID = "r2-skip-link";
 export const LINK_TARGET_CLASS = "r2-link-target";
 export const LINK_TARGET_ALT_CLASS = "r2-link-target-alt";

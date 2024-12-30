@@ -10,6 +10,8 @@ import * as debug_ from "debug";
 import { ipcRenderer } from "electron";
 import { isFocusable } from "tabbable";
 
+import { ENABLE_SKIP_LINK } from "../../common/styles";
+
 import { IRangeInfo } from "../../common/selection";
 
 import { LocatorLocations, LocatorText } from "../../common/locator";
@@ -36,7 +38,7 @@ import {
     IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, MediaOverlaysStateEnum, R2_EVENT_AUDIO_SOUNDTRACK, R2_EVENT_CAPTIONS,
     R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_FXL_CONFIGURE,
     R2_EVENT_HIGHLIGHT_CREATE, R2_EVENT_HIGHLIGHT_REMOVE, R2_EVENT_HIGHLIGHT_REMOVE_ALL,
-    R2_EVENT_KEYBOARD_FOCUS_REQUEST, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE,
+    /* R2_EVENT_KEYBOARD_FOCUS_REQUEST,*/ R2_EVENT_FOCUS_READING_LOC, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE,
     R2_EVENT_MEDIA_OVERLAY_CLICK, R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
     R2_EVENT_MEDIA_OVERLAY_STARTSTOP, R2_EVENT_MEDIA_OVERLAY_STATE, R2_EVENT_PAGE_TURN, R2_EVENT_PAGE_TURN_RES,
     R2_EVENT_READING_LOCATION, R2_EVENT_READIUMCSS, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
@@ -1169,7 +1171,19 @@ ipcRenderer.on(R2_EVENT_PAGE_TURN, (_event: any, payload: IEventPayload_R2_EVENT
     }, 100);
 });
 
-function focusElement(element: Element, preventScroll: boolean) {
+// +R2_EVENT_KEYBOARD_FOCUS_REQUEST
+function focusElement(element: Element, preventScroll: boolean /*, focusHost: boolean */) {
+
+    if (preventScroll &&
+        (
+        // win.READIUM2.focussedElement ??
+        element === win.document.activeElement
+        // || element === win.READIUM2.locationHashOverride
+        )
+    ) {
+        debug("KEYBOARD FOCUS REQUEST (1) already FOCUSSED, skip");
+        return;
+    }
 
     // const tabbables = lazyTabbables();
     if (element === win.document.body || !isFocusable(element as HTMLElement)) {
@@ -1194,16 +1208,21 @@ function focusElement(element: Element, preventScroll: boolean) {
         //         debug(getCssSelector(element));
         //     }
         // }
+        debug("KEYBOARD FOCUS REQUEST (1) --> BODY");
         (element as HTMLElement).focus({preventScroll: true});
     } else {
+        debug("KEYBOARD FOCUS REQUEST (1) --> not BODY", preventScroll);
         (element as HTMLElement).focus({preventScroll});
     }
 
-    // win.blur();
-    // win.focus();
-    // const payload: IEventPayload_R2_EVENT_KEYBOARD_FOCUS_REQUEST = {
-    // };
-    ipcRenderer.sendToHost(R2_EVENT_KEYBOARD_FOCUS_REQUEST, null);
+    // if (focusHost) {
+    //     // win.blur();
+    //     // win.focus();
+    //     // const payload: IEventPayload_R2_EVENT_KEYBOARD_FOCUS_REQUEST = {
+    //     // };
+    //     ipcRenderer.sendToHost(R2_EVENT_KEYBOARD_FOCUS_REQUEST, null);
+    // }
+
     if (IS_DEV) {
         debug("KEYBOARD FOCUS REQUEST (1) ", getCssSelector(element));
     }
@@ -1265,7 +1284,7 @@ const tempLinkTargetOutline = (element: Element, time: number, alt: boolean) => 
 let _lastAnimState2: IPropertyAnimationState | undefined;
 const animationTime2 = 400;
 
-function scrollElementIntoView(element: Element, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) {
+function scrollElementIntoView(element: Element, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined /*, focusHost: boolean */) {
 
     if (win.READIUM2.DEBUG_VISUALS) {
         const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr3}]`);
@@ -1282,7 +1301,10 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
     if (doFocus) {
         tempLinkTargetOutline(element, 2000, false);
 
-        focusElement(element, !!domRect);
+        // CONTEXT: scrollToHashRaw() ==> scrollElementIntoView()
+        // CONTEXT: focusScrollRaw() ==> scrollElementIntoView()
+        // CONTEXT: R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT ==> scrollElementIntoView()
+        focusElement(element, !!domRect /*, focusHost */);
     }
 
     setTimeout(() => {
@@ -1466,7 +1488,7 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
         //     return;
         // }
         // _ignoreScrollEvent = true;
-        scrollElementIntoView(win.READIUM2.locationHashOverride, true, animate, undefined);
+        scrollElementIntoView(win.READIUM2.locationHashOverride, true, animate, undefined /*, false */);
 
         notifyReadingLocationDebounced();
         return;
@@ -1474,7 +1496,7 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
         win.READIUM2.locationHashOverride = win.READIUM2.hashElement;
 
         // _ignoreScrollEvent = true;
-        scrollElementIntoView(win.READIUM2.hashElement, true, animate, undefined);
+        scrollElementIntoView(win.READIUM2.hashElement, true, animate, undefined /*, false */);
 
         notifyReadingLocationDebounced();
         return;
@@ -1589,7 +1611,7 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
                     }
 
                     // _ignoreScrollEvent = true;
-                    scrollElementIntoView(selected, true, animate, domRect);
+                    scrollElementIntoView(selected, true, animate, domRect /*, false */);
 
                     notifyReadingLocationDebounced();
 
@@ -1632,7 +1654,8 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
 
                     win.READIUM2.locationHashOverride = win.document.body;
                     resetLocationHashOverrideInfo();
-                    focusElement(win.READIUM2.locationHashOverride, false);
+                    // CONTEXT: scrollToHashRaw()
+                    focusElement(win.READIUM2.locationHashOverride, false /*, false */);
 
                     const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
                     processXYRaw(x, 0, false);
@@ -1663,7 +1686,8 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
 
                 win.READIUM2.locationHashOverride = win.document.body;
                 resetLocationHashOverrideInfo();
-                focusElement(win.READIUM2.locationHashOverride, false);
+                // CONTEXT: scrollToHashRaw()
+                focusElement(win.READIUM2.locationHashOverride, false /*, false */);
 
                 // maxScrollShift === scrollElement.scrollWidth - win.document.documentElement.clientWidth
                 // * gotoProgression ?
@@ -1686,7 +1710,8 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
 
         win.READIUM2.locationHashOverride = win.document.body;
         resetLocationHashOverrideInfo();
-        focusElement(win.READIUM2.locationHashOverride, false);
+        // CONTEXT: scrollToHashRaw()
+        focusElement(win.READIUM2.locationHashOverride, false /*, false */);
 
         debug("processXYRaw BODY");
         const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
@@ -1754,7 +1779,7 @@ function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean, animate: boolean
         // !isPaginated(win.document) &&
         !isVisible(false, el as HTMLElement, domRect)) {
 
-        scrollElementIntoView(el as HTMLElement, doFocus, animate, domRect);
+        scrollElementIntoView(el as HTMLElement, doFocus, animate, domRect /*, false */);
     }
 
     if (win.READIUM2.locationHashOverride === (el as HTMLElement)) {
@@ -2246,6 +2271,25 @@ const appendExtraColumnPadIfNecessary = (skipResizeObserver: boolean) => {
     }
 };
 
+function focusCurrentReadingLocationElement(invert: boolean) {
+    if (IS_DEV) {
+        debug(">>>> focus link click: ");
+        debug(win.READIUM2.hashElement ?
+            getCssSelector(win.READIUM2.hashElement) : "!hashElement");
+        debug(win.READIUM2.locationHashOverride ?
+            getCssSelector(win.READIUM2.locationHashOverride) : "!locationHashOverride");
+    }
+
+    // tab+click on underscore link SKIP_LINK_ID implies page/scroll shift causing undesirable new reading location,
+    // but R2_EVENT_FOCUS_READING_LOC event is explicit intent from application shell to navigate to latest reading location, even if caused by user-created page turn / scroll
+    const el = invert ?
+        (win.READIUM2.locationHashOverride || win.READIUM2.hashElement) :
+        (win.READIUM2.hashElement || win.READIUM2.locationHashOverride);
+    if (el) {
+        focusScrollDebounced(el as HTMLElement, true, false, undefined);
+    }
+}
+
 let _firstResizeObserver = true;
 let _firstResizeObserverTimeout: number | undefined = undefined;
 
@@ -2313,7 +2357,7 @@ function loaded(forced: boolean) {
             debug("++++ scrollToHashDebounced FROM LOAD");
             scrollToHashDebounced(false);
 
-            if (win.document.body) {
+            if (ENABLE_SKIP_LINK && win.document.body) {
                 /*
                 if (isPaginated(win.document)) {
                     win.document.body.addEventListener("scroll", (ev) => {
@@ -2337,19 +2381,7 @@ function loaded(forced: boolean) {
                 setTimeout(() => {
                     focusLink.addEventListener("click", (ev) => {
                         ev.preventDefault();
-
-                        if (IS_DEV) {
-                            debug(">>>> focus link click: ");
-                            debug(win.READIUM2.hashElement ?
-                                getCssSelector(win.READIUM2.hashElement) : "!hashElement");
-                            debug(win.READIUM2.locationHashOverride ?
-                                getCssSelector(win.READIUM2.locationHashOverride) : "!locationHashOverride");
-                        }
-
-                        const el = win.READIUM2.hashElement || win.READIUM2.locationHashOverride;
-                        if (el) {
-                            focusScrollDebounced(el as HTMLElement, true, false, undefined);
-                        }
+                        focusCurrentReadingLocationElement(false);
                     });
                 }, 200);
                 // Does not work! :(
@@ -3196,7 +3228,7 @@ function loaded(forced: boolean) {
         // debug("ROOT_CLASS_KEYBOARD_INTERACT: ", win.document.documentElement.classList.contains(ROOT_CLASS_KEYBOARD_INTERACT));
 
         // screen reader a@href click event without ENTER key generates touch/user interaction!
-        if (win.document.activeElement &&
+        if (ENABLE_SKIP_LINK && win.document.activeElement &&
             win.document.activeElement === win.document.getElementById(SKIP_LINK_ID)
 
             // can't filter with this, because screen reader emulates mouse click!
@@ -3590,6 +3622,11 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
             notifyReadingLocationDebouncedImmediate(userInteract);
         } else {
             notifyReadingLocationDebounced(userInteract);
+        }
+
+        if (userInteract && win.READIUM2.locationHashOverride) {
+            // CONTEXT: processXYRaw()
+            focusElement(win.READIUM2.locationHashOverride, true /*, false */);
         }
 
         if (win.READIUM2.DEBUG_VISUALS) {
@@ -4295,7 +4332,7 @@ const findFollowingDescendantSiblingElementsWithID = (el: Element): string[] | u
 
         const elHighlightsContainer = win.document.getElementById(ID_HIGHLIGHTS_CONTAINER);
         const elPopupDialog = win.document.getElementById(POPUP_DIALOG_CLASS);
-        const elSkipLink = win.document.getElementById(SKIP_LINK_ID);
+        const elSkipLink = ENABLE_SKIP_LINK ? win.document.getElementById(SKIP_LINK_ID) : null;
         const elPad = win.document.getElementById(EXTRA_COLUMN_PAD_ID);
 
         // for (let i = _elementsWithID.length - 1; i >= 0; i--) {
@@ -4548,6 +4585,9 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
         tempLinkTargetOutline(win.READIUM2.locationHashOverride, 1000, true);
     }
 
+    // CONTEXT: notifyReadingLocationRaw()
+    focusElement(win.READIUM2.locationHashOverride, true /*, focusHost */);
+
     if (win.READIUM2.DEBUG_VISUALS) {
         const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr4}]`);
         existings.forEach((existing) => {
@@ -4764,7 +4804,7 @@ if (!win.READIUM2.isAudio) {
                         // !isPaginated(win.document) &&
                         !isVisible(false, targetEl, undefined)) {
 
-                        scrollElementIntoView(targetEl, false, true, undefined);
+                        scrollElementIntoView(targetEl, false, true, undefined /*, false */);
                     }
 
                     scrollToHashDebounced.clear();
@@ -4850,5 +4890,10 @@ if (!win.READIUM2.isAudio) {
         } else {
             destroyAllhighlights(win.document);
         }
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ipcRenderer.on(R2_EVENT_FOCUS_READING_LOC, (_event: any, _payload: any) => {
+        focusCurrentReadingLocationElement(true);
     });
 }

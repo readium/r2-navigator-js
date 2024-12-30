@@ -23,7 +23,7 @@ import {
     IEventPayload_R2_EVENT_PAGE_TURN, IEventPayload_R2_EVENT_READIUMCSS,
     IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN, IEventPayload_R2_EVENT_WEBVIEW_KEYUP, IKeyboardEvent,
     R2_EVENT_CAPTIONS, R2_EVENT_CLIPBOARD_COPY, R2_EVENT_DEBUG_VISUALS, R2_EVENT_FXL_CONFIGURE,
-    R2_EVENT_KEYBOARD_FOCUS_REQUEST, R2_EVENT_MEDIA_OVERLAY_INTERRUPT,
+    /* R2_EVENT_KEYBOARD_FOCUS_REQUEST,*/ R2_EVENT_MEDIA_OVERLAY_INTERRUPT,
     R2_EVENT_PAGE_TURN_RES, R2_EVENT_READIUMCSS, R2_EVENT_SHOW, R2_EVENT_WEBVIEW_KEYDOWN,
     R2_EVENT_WEBVIEW_KEYUP,
 } from "../common/events";
@@ -244,18 +244,22 @@ function readiumCssApplyToWebview(
 
         setTimeout(() => {
             debug("readiumCssOnOff -> handleLinkLocator");
-            stealFocusDisable(true);
+            // let forceDisable = false;
+            // if (win.READIUM2 && !win.READIUM2.stealFocusDisabled) {
+            //     forceDisable = true;
+            //     // stealFocusDisable(true);
+            //     win.READIUM2.stealFocusDisabled = true;
+            // }
             handleLinkLocator(loc.locator, actualReadiumCss);
-            setTimeout(() => {
-                stealFocusDisable(false);
-            }, 200);
+            // if (forceDisable) {
+            //     setTimeout(() => {
+            //         if (win.READIUM2) {
+            //             // stealFocusDisable(false);
+            //             win.READIUM2.stealFocusDisabled = false;
+            //         }
+            //     }, 200);
+            // }
         }, 60);
-    }
-}
-
-export function stealFocusDisable(doDisable: boolean) {
-    if (win.READIUM2) {
-        win.READIUM2.stealFocusDisabled = doDisable;
     }
 }
 
@@ -389,29 +393,16 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
         }
         if (event.channel === R2_EVENT_MEDIA_OVERLAY_INTERRUPT) {
             mediaOverlaysInterrupt();
-        } else if (event.channel === R2_EVENT_KEYBOARD_FOCUS_REQUEST) {
-            const skip = win.READIUM2?.stealFocusDisabled;
-
-            debug("KEYBOARD FOCUS REQUEST (2) ", webview.id, win.document.activeElement?.id, skip);
-
-            if (!skip) {
-                if (win.document.activeElement && (win.document.activeElement as HTMLElement).blur) {
-                    (win.document.activeElement as HTMLElement).blur();
-                }
-
-                const iframe = webview.shadowRoot?.querySelector("iframe");
-                if (iframe) {
-                    iframe.focus();
-                } else {
-                    webview.focus();
-                }
-            }
-
-            // win.blur();
-            // win.focus();
-
-            // ipcRenderer.invoke(R2_EVENT_KEYBOARD_FOCUS_REQUEST, webview.getWebContentsId());
-        } else if (event.channel === R2_EVENT_SHOW && ENABLE_EXTRA_COLUMN_SHIFT_METHOD) {
+        }
+        // else if (event.channel === R2_EVENT_KEYBOARD_FOCUS_REQUEST) {
+        //     // +R2_EVENT_KEYBOARD_FOCUS_REQUEST
+        //     const skip = win.READIUM2?.stealFocusDisabled;
+        //     debug("KEYBOARD FOCUS REQUEST (2) ", webview.id, !!win.document.activeElement, win.document.activeElement?.id, skip);
+        //     if (!skip) {
+        //         keyboardFocusRequest(webview);
+        //     }
+        // }
+        else if (event.channel === R2_EVENT_SHOW && ENABLE_EXTRA_COLUMN_SHIFT_METHOD) {
             webview.style.opacity = "1";
         } else if (event.channel === R2_EVENT_FXL_CONFIGURE) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_FXL_CONFIGURE;
@@ -677,7 +668,7 @@ export function installNavigatorDOM(
         ttsSentenceDetectionEnabled: true,
         ttsVoice: null,
         highlightsDrawMargin: false,
-        stealFocusDisabled: false,
+        // stealFocusDisabled: false,
     };
     ipcRenderer.send("accessibility-support-changed");
 

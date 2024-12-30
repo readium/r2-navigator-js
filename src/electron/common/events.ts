@@ -65,6 +65,10 @@ export interface IEventPayload_R2_EVENT_SCROLLTO {
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_FOCUS_READING_LOC = "R2_EVENT_FOCUS_READING_LOC";
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_PAGE_TURN = "R2_EVENT_PAGE_TURN";
 
 // in WEBVIEW: ipcRenderer.sendToHost()

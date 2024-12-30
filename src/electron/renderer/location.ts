@@ -26,7 +26,7 @@ import {
     IEventPayload_R2_EVENT_SCROLLTO, IEventPayload_R2_EVENT_SHIFT_VIEW_X,
     R2_EVENT_AUDIO_PLAYBACK_RATE, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN,
     R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
-    R2_EVENT_READING_LOCATION_CLEAR_SELECTION,
+    R2_EVENT_READING_LOCATION_CLEAR_SELECTION, R2_EVENT_FOCUS_READING_LOC,
 } from "../common/events";
 import { IwidthHeight } from "../common/fxl";
 import { IPaginationInfo } from "../common/pagination";
@@ -130,6 +130,72 @@ export function setWebViewStyle(wv: IReadiumElectronWebview, wvSlot: WebViewSlot
                 "right"),
         );
     }
+}
+
+// export function stealFocusDisable(doDisable: boolean) {
+//     if (win.READIUM2) {
+//         win.READIUM2.stealFocusDisabled = doDisable;
+//     }
+// }
+
+export function keyboardFocusRequest(deep: boolean, webview?: IReadiumElectronWebview) {
+
+    // webview = win.document.querySelector("webview");
+
+    if (!webview) {
+        const loc = getCurrentReadingLocation();
+        if (loc?.locator) {
+            const activeWebViews = win.READIUM2.getActiveWebViews();
+            for (const activeWebView of activeWebViews) {
+                if (activeWebView.READIUM2.DOMisReady &&
+                    loc.locator.href === activeWebView.READIUM2.link?.Href) {
+                    webview = activeWebView;
+                    debug("KEYBOARD FOCUS REQUEST (222) -- NO WEBVIEW => FOUND", loc.locator.href);
+                    break;
+                }
+            }
+        }
+    }
+
+    // TODO: fallback can focus into FXL left/right webview that doesn't actually contain current reading location?
+    if (!webview) {
+        debug("KEYBOARD FOCUS REQUEST (222) -- NO WEBVIEW??! ... FALLBACK");
+        webview = win.READIUM2?.getFirstOrSecondWebView();
+    }
+
+    if (!webview || !webview.READIUM2.DOMisReady) {
+        debug("KEYBOARD FOCUS REQUEST (222) -- NO WEBVIEW??! FAIL :(", !!webview, webview?.READIUM2.DOMisReady);
+        return;
+    }
+
+    debug("KEYBOARD FOCUS REQUEST (222) ", webview.id, !!win.document.activeElement, win.document.activeElement?.id);
+
+    if (win.document.activeElement && (win.document.activeElement as HTMLElement).blur) {
+        debug("KEYBOARD FOCUS REQUEST (222) ... BLUR");
+        (win.document.activeElement as HTMLElement).blur();
+    }
+
+    const iframe = webview.shadowRoot?.querySelector("iframe");
+    if (iframe) {
+        debug("KEYBOARD FOCUS REQUEST (222) --> IFRAME");
+        iframe.focus();
+    } else {
+        debug("KEYBOARD FOCUS REQUEST (222) --> WEBVIEW (no IFRAME)");
+        webview.focus();
+    }
+
+    if (deep) {
+        setTimeout(async () => {
+            if (webview.READIUM2?.DOMisReady) {
+                await webview.send(R2_EVENT_FOCUS_READING_LOC);
+            }
+        }, 0);
+    }
+
+    // win.blur();
+    // win.focus();
+
+    // ipcRenderer.invoke(R2_EVENT_KEYBOARD_FOCUS_REQUEST, webview.getWebContentsId());
 }
 
 export function locationHandleIpcMessage(

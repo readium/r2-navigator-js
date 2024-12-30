@@ -146,6 +146,7 @@ ipcMain.on(CONTEXT_MENU_SETUP, (event, webContentID: number) => {
     contextMenuSetup(event.sender, webContentID);
 });
 
+// +R2_EVENT_KEYBOARD_FOCUS_REQUEST
 ipcMain.handle(R2_EVENT_KEYBOARD_FOCUS_REQUEST, (event, webContentsId) => {
     const wc = webContents.fromId(webContentsId);
     if (!wc) {
