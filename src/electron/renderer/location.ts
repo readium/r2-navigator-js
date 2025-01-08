@@ -562,6 +562,8 @@ export function handleLink(
         if (!okay) {
             debug(`Readium link fail?! ${href}`);
         }
+    } else if (href.startsWith("file://")) {
+        debug(`Skip navigation/link to local filesystem: ${href}`);
     } else {
         debug("handleLink non-R2 URL");
         const okay = loadLink(href, previous, useGoto, rcss);
