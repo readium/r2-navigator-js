@@ -146,8 +146,13 @@ export function getCurrentSelectionInfo(
     }
 
     if (!selection.anchorNode || !selection.focusNode) {
+        console.log("^^^ SELECTION NO ANCHOR/FOCUS NODE?");
         return undefined;
     }
+
+    // ALWAYS 1
+    // console.log("selection.rangeCount " + selection.rangeCount);
+    // DOM RANGE IS ALWAYS ORDERED, EVEN IF SELECTION IS REVERSED
     const r = selection.rangeCount === 1 ? selection.getRangeAt(0) :
         createOrderedRange(selection.anchorNode, selection.anchorOffset, selection.focusNode, selection.focusOffset);
     if (!r || r.collapsed) {
