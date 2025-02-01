@@ -760,7 +760,7 @@ function getChildTextNodeCfiIndex(element: Element, child: Text): number {
 //     return found;
 // }
 
-// https://github.com/GoogleChromeLabs/text-fragments-polyfill/blob/53375fea08665bac009bb0aa01a030e065c3933d/src/fragment-generation-utils.js#L1418
+// https://github.com/GoogleChromeLabs/text-fragments-polyfill/blob/513720586a7b14b12357a9e0aeb2c21d41a9f1ef/src/fragment-generation-utils.js#L1418
 // moveRangeEdgesToTextNodes() / normalizeRange() ?
 
 // https://github.com/apache/incubator-annotator/issues/51

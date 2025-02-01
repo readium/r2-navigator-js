@@ -10,10 +10,10 @@ import { TextFragment } from "../../common/selection";
 // https://github.com/Treora/text-fragments-ts
 
 // TypeScript port of:
-// https://github.com/GoogleChromeLabs/text-fragments-polyfill/tree/53375fea08665bac009bb0aa01a030e065c3933d
+// https://github.com/GoogleChromeLabs/text-fragments-polyfill/tree/513720586a7b14b12357a9e0aeb2c21d41a9f1ef
 // (functionalities removed: timeout  and word-boundary forced alignment)
 
-// https://github.com/GoogleChromeLabs/text-fragments-polyfill/blob/53375fea08665bac009bb0aa01a030e065c3933d/src/fragment-generation-utils.js#L171
+// https://github.com/GoogleChromeLabs/text-fragments-polyfill/blob/513720586a7b14b12357a9e0aeb2c21d41a9f1ef/src/fragment-generation-utils.js#L171
 // doGenerateFragmentFromRange() ... but without expandRangeStart/EndToWordBound() etc.
 // ... and bug fixes:
 // https://github.com/GoogleChromeLabs/text-fragments-polyfill/issues/161
@@ -77,6 +77,12 @@ const isNodeVisible = (node: Node): boolean => {
         elt = elt.parentNode;
     }
     if (elt) {
+        // https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/hidden
+        // https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/hidden
+        // @ts-expect-error (TypeScript HTMLElement.hidden is incorrectly boolean)
+        if ((elt as HTMLElement).hidden === "until-found") {
+            return true;
+        }
         const nodeStyle = window.getComputedStyle(elt);
         if (nodeStyle.visibility === "hidden"
             || nodeStyle.display === "none" ||
