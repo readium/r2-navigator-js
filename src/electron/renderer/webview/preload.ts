@@ -10,7 +10,7 @@ import * as debug_ from "debug";
 import { ipcRenderer } from "electron";
 import { isFocusable } from "tabbable";
 
-import { ENABLE_SKIP_LINK } from "../../common/styles";
+import { DISABLE_TEMPORARY_NAV_TARGET_OUTLINE_CLASS, ENABLE_SKIP_LINK } from "../../common/styles";
 
 import { IRangeInfo } from "../../common/selection";
 
@@ -46,6 +46,8 @@ import {
     R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
     R2_EVENT_TTS_OVERLAY_ENABLE, R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_TTS_SENTENCE_DETECT_ENABLE,
     R2_EVENT_TTS_VOICE, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP, R2_EVENT_HIGHLIGHT_DRAW_MARGIN, IEventPayload_R2_EVENT_HIGHLIGHT_DRAW_MARGIN,
+    // R2_EVENT_DISABLE_TEMPORARY_NAV_TARGET_OUTLINE,
+    // IEventPayload_R2_EVENT_DISABLE_TEMPORARY_NAV_TARGET_OUTLINE,
 } from "../../common/events";
 import { HighlightDrawTypeOutline, IHighlightDefinition } from "../../common/highlight";
 import { IPaginationInfo } from "../../common/pagination";
@@ -127,6 +129,7 @@ const INJECTED_LINK_TXT = "__";
 const win = global.window as ReadiumElectronWebviewWindow;
 
 win.READIUM2 = {
+    // disableTemporaryNavigationTargetOutline: false,
     lastClickedTextChar: undefined,
     DEBUG_VISUALS: false,
     // dialogs = [],
@@ -1229,6 +1232,13 @@ function focusElement(element: Element, preventScroll: boolean /*, focusHost: bo
 }
 
 const tempLinkTargetOutline = (element: Element, time: number, alt: boolean) => {
+    // if (win.READIUM2.disableTemporaryNavigationTargetOutline) {
+    //     return;
+    // }
+    if (win.document.documentElement.classList.contains(DISABLE_TEMPORARY_NAV_TARGET_OUTLINE_CLASS)) {
+        return;
+    }
+
     let skip = false;
     const targets = win.document.querySelectorAll(`.${LINK_TARGET_CLASS}`);
     targets.forEach((t) => {
@@ -4880,6 +4890,11 @@ if (!win.READIUM2.isAudio) {
     ipcRenderer.on(R2_EVENT_HIGHLIGHT_DRAW_MARGIN, (_event: any, payload: IEventPayload_R2_EVENT_HIGHLIGHT_DRAW_MARGIN) => {
         setDrawMargin(win, payload.drawMargin);
     });
+
+    // // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // ipcRenderer.on(R2_EVENT_DISABLE_TEMPORARY_NAV_TARGET_OUTLINE, (_event: any, payload: IEventPayload_R2_EVENT_DISABLE_TEMPORARY_NAV_TARGET_OUTLINE) => {
+    //     win.READIUM2.disableTemporaryNavigationTargetOutline = payload.disableTemporaryNavigationTargetOutline;
+    // });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_HIGHLIGHT_REMOVE_ALL, (_event: any, payload: IEventPayload_R2_EVENT_HIGHLIGHT_REMOVE_ALL) => {

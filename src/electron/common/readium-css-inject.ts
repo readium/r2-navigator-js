@@ -20,6 +20,7 @@ import {
     mediaOverlaysCssStyles, readPosCssStyles, scrollBarCssStyles, selectionCssStyles,
     targetCssStyles, ttsCssStyles, visibilityMaskCssStyles,
     ENABLE_VISIBILITY_MASK,
+    DISABLE_TEMPORARY_NAV_TARGET_OUTLINE_CLASS,
 } from "./styles";
 
 export const READIUM2_BASEURL_ID = "r2_BASEURL_ID";
@@ -402,6 +403,12 @@ export function readiumCSSSet(
         docElement.classList.add(ROOT_CLASS_NO_FOOTNOTES);
     } else {
         docElement.classList.remove(ROOT_CLASS_NO_FOOTNOTES);
+    }
+
+    if (setCSS.noTemporaryNavTargetOutline) {
+        docElement.classList.add(DISABLE_TEMPORARY_NAV_TARGET_OUTLINE_CLASS);
+    } else {
+        docElement.classList.remove(DISABLE_TEMPORARY_NAV_TARGET_OUTLINE_CLASS);
     }
 
     if (setCSS.mathJax) {

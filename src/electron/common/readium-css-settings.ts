@@ -48,6 +48,8 @@ export interface IReadiumCSS {
 
     noFootnotes: boolean | undefined;
 
+    noTemporaryNavTargetOutline: boolean | undefined;
+
     noRuby: boolean | undefined;
 
     mathJax: boolean | undefined;
@@ -125,6 +127,8 @@ export const readiumCSSDefaults = {
     night: false,
 
     noFootnotes: false,
+
+    noTemporaryNavTargetOutline: false,
 
     noRuby: false,
 

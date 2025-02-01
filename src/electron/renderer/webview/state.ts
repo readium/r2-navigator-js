@@ -19,6 +19,8 @@ import { IHighlight } from "src/electron/common/highlight";
 export type TWindow = typeof window;
 
 export interface IReadiumElectronWebviewWindowState {
+    // disableTemporaryNavigationTargetOutline: boolean;
+
     // init'ed from  win.location.search immediately in preload.js
     // updated in R2_EVENT_SCROLLTO IPC renderer event
     urlQueryParams: IStringMap | undefined;

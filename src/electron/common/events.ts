@@ -364,6 +364,14 @@ export interface IEventPayload_R2_EVENT_HIGHLIGHT_DRAW_MARGIN {
     drawMargin: boolean | string[];
 }
 
+// // in RENDERER: webview.send()
+// // in WEBVIEW: ipcRenderer.on()
+// export const R2_EVENT_DISABLE_TEMPORARY_NAV_TARGET_OUTLINE = "R2_EVENT_DISABLE_TEMPORARY_NAV_TARGET_OUTLINE";
+// // tslint:disable-next-line:class-name
+// export interface IEventPayload_R2_EVENT_DISABLE_TEMPORARY_NAV_TARGET_OUTLINE {
+//     disableTemporaryNavigationTargetOutline: boolean;
+// }
+
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_HIGHLIGHT_REMOVE_ALL = "R2_EVENT_HIGHLIGHT_REMOVE_ALL";

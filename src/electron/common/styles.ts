@@ -27,6 +27,8 @@ export const SKIP_LINK_ID = "r2-skip-link";
 export const LINK_TARGET_CLASS = "r2-link-target";
 export const LINK_TARGET_ALT_CLASS = "r2-link-target-alt";
 
+export const DISABLE_TEMPORARY_NAV_TARGET_OUTLINE_CLASS = "r2-no-link-target-temp-highlight";
+
 export const ROOT_CLASS_REDUCE_MOTION = "r2-reduce-motion";
 export const ROOT_CLASS_MATHJAX = "r2-mathjax";
 

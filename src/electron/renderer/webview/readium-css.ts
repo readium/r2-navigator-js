@@ -405,7 +405,7 @@ export const readiumCSS = (documant: Document, messageJson: IEventPayload_R2_EVE
 
     readiumCSSSet(documant, messageJson, _isVerticalWritingMode, _isRTL);
 
-    if ((messageJson && messageJson.setCSS && !messageJson.setCSS.noFootnotes)) {
+    if (messageJson && messageJson.setCSS && !messageJson.setCSS.noFootnotes) {
         checkHiddenFootNotes(documant);
     }
 };

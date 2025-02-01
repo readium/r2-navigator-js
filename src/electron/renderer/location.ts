@@ -27,6 +27,8 @@ import {
     R2_EVENT_AUDIO_PLAYBACK_RATE, R2_EVENT_LINK, R2_EVENT_LOCATOR_VISIBLE, R2_EVENT_PAGE_TURN,
     R2_EVENT_PAGE_TURN_RES, R2_EVENT_READING_LOCATION, R2_EVENT_SCROLLTO, R2_EVENT_SHIFT_VIEW_X,
     R2_EVENT_READING_LOCATION_CLEAR_SELECTION, R2_EVENT_FOCUS_READING_LOC,
+    // IEventPayload_R2_EVENT_DISABLE_TEMPORARY_NAV_TARGET_OUTLINE,
+    // R2_EVENT_DISABLE_TEMPORARY_NAV_TARGET_OUTLINE,
 } from "../common/events";
 import { IwidthHeight } from "../common/fxl";
 import { IPaginationInfo } from "../common/pagination";
@@ -1910,3 +1912,18 @@ export async function isLocatorVisible(locator: Locator): Promise<boolean> {
         reject("isLocatorVisible - no webview href match.");
     });
 }
+
+// export function setTemporaryNavigationTargetOutline(disable: boolean) {
+//     // win.READIUM2.disableTemporaryNavigationTargetOutline = disable;
+//     const activeWebViews = win.READIUM2.getActiveWebViews();
+//     for (const activeWebView of activeWebViews) {
+//         const payload: IEventPayload_R2_EVENT_DISABLE_TEMPORARY_NAV_TARGET_OUTLINE = {
+//             disableTemporaryNavigationTargetOutline: disable,
+//         };
+//         setTimeout(async () => {
+//             if (activeWebView.READIUM2?.DOMisReady) {
+//                 await activeWebView.send(R2_EVENT_DISABLE_TEMPORARY_NAV_TARGET_OUTLINE, payload);
+//             }
+//         }, 0);
+//     }
+// }
