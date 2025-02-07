@@ -15,6 +15,16 @@ import { IPaginationInfo } from "./pagination";
 import { IReadiumCSS } from "./readium-css-settings";
 import { ISelectionInfo } from "./selection";
 
+// Quick fix to Send ImageClick to host
+//
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+export const R2_EVENT_IMAGE_CLICK = "R2_EVENT_IMAGE_CLICK";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_IMAGE_CLICK {
+    href: string;
+}
+
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 // in WEBVIEW: ipcRenderer.sendToHost()

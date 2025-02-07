@@ -46,6 +46,7 @@ import {
     R2_EVENT_TTS_DO_PLAY, R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP,
     R2_EVENT_TTS_OVERLAY_ENABLE, R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_TTS_SENTENCE_DETECT_ENABLE,
     R2_EVENT_TTS_VOICE, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP, R2_EVENT_HIGHLIGHT_DRAW_MARGIN, IEventPayload_R2_EVENT_HIGHLIGHT_DRAW_MARGIN,
+    R2_EVENT_IMAGE_CLICK,
     // R2_EVENT_DISABLE_TEMPORARY_NAV_TARGET_OUTLINE,
     // IEventPayload_R2_EVENT_DISABLE_TEMPORARY_NAV_TARGET_OUTLINE,
 } from "../../common/events";
@@ -93,7 +94,7 @@ import {
     HIGHLIGHT_GROUP_PAGEBREAK,
     recreateAllHighlights, recreateAllHighlightsRaw, setDrawMargin,
 } from "./highlight";
-import { popoutImage } from "./popoutImages";
+// import { popoutImage } from "./popoutImages";
 import { popupFootNote } from "./popupFootNotes";
 import {
     ttsNext, ttsPause, ttsPlay, ttsPlaybackRate, ttsPrevious, ttsResume, ttsStop, ttsVoice,
@@ -395,7 +396,6 @@ if (win.READIUM2.urlQueryParams) {
     if (readiumEpubReadingSystemJson) {
         setWindowNavigatorEpubReadingSystem(win, readiumEpubReadingSystemJson);
     }
-
     win.READIUM2.DEBUG_VISUALS = win.READIUM2.urlQueryParams[URL_PARAM_DEBUG_VISUALS] === "true";
 
     win.READIUM2.isClipboardIntercept = win.READIUM2.urlQueryParams[URL_PARAM_CLIPBOARD_INTERCEPT] === "true";
@@ -2915,6 +2915,7 @@ function loaded(forced: boolean) {
                     debug(`IMG CLICK ABSOLUTE-ized: ${href_src}`);
                 }
 
+                /*
                 popoutImage(
                     win,
                     imageElement as HTMLImageElement | SVGElement,
@@ -2922,6 +2923,11 @@ function loaded(forced: boolean) {
                     focusScrollRaw,
                     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
                     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
+                */
+
+                // TODO: Send Electron IPC event to Thorium Host with href_src
+                debug("IMAGE_CLICK Send To Host");
+                ipcRenderer.sendToHost(R2_EVENT_IMAGE_CLICK, { href: href_src });
             } else {
                 imageElement.setAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`, "1");
             }
