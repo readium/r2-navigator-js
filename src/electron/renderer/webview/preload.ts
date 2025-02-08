@@ -47,6 +47,7 @@ import {
     R2_EVENT_TTS_OVERLAY_ENABLE, R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_TTS_SENTENCE_DETECT_ENABLE,
     R2_EVENT_TTS_VOICE, R2_EVENT_WEBVIEW_KEYDOWN, R2_EVENT_WEBVIEW_KEYUP, R2_EVENT_HIGHLIGHT_DRAW_MARGIN, IEventPayload_R2_EVENT_HIGHLIGHT_DRAW_MARGIN,
     R2_EVENT_IMAGE_CLICK,
+    IEventPayload_R2_EVENT_IMAGE_CLICK,
     // R2_EVENT_DISABLE_TEMPORARY_NAV_TARGET_OUTLINE,
     // IEventPayload_R2_EVENT_DISABLE_TEMPORARY_NAV_TARGET_OUTLINE,
 } from "../../common/events";
@@ -94,7 +95,7 @@ import {
     HIGHLIGHT_GROUP_PAGEBREAK,
     recreateAllHighlights, recreateAllHighlightsRaw, setDrawMargin,
 } from "./highlight";
-// import { popoutImage } from "./popoutImages";
+import { popoutImage } from "./popoutImages";
 import { popupFootNote } from "./popupFootNotes";
 import {
     ttsNext, ttsPause, ttsPlay, ttsPlaybackRate, ttsPrevious, ttsResume, ttsStop, ttsVoice,
@@ -2900,7 +2901,7 @@ function loaded(forced: boolean) {
                 href_src = href_src_image_nested_in_link;
             }
 
-            clearImageZoomOutline();
+            clearImageZoomOutline(); // removes imageElement `data-${POPOUTIMAGE_CONTAINER_ID}`
 
             ev.preventDefault();
             ev.stopPropagation();
@@ -2915,20 +2916,16 @@ function loaded(forced: boolean) {
                     debug(`IMG CLICK ABSOLUTE-ized: ${href_src}`);
                 }
 
-                /*
-                popoutImage(
-                    win,
-                    imageElement as HTMLImageElement | SVGElement,
-                    href_src,
-                    focusScrollRaw,
-                    ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
-                    ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
-                */
+                const imageCssSelector = getCssSelector(imageElement);
 
-                // TODO: Send Electron IPC event to Thorium Host with href_src
-                debug("IMAGE_CLICK Send To Host");
-                ipcRenderer.sendToHost(R2_EVENT_IMAGE_CLICK, { href: href_src });
+                debug("R2_EVENT_IMAGE_CLICK (ipcRenderer.sendToHost) href: " + href_src + " ___ " + imageCssSelector);
+                const payload: IEventPayload_R2_EVENT_IMAGE_CLICK = {
+                    href: href_src,
+                    imageCssSelector,
+                };
+                ipcRenderer.sendToHost(R2_EVENT_IMAGE_CLICK, payload);
             } else {
+                // removed by clearImageZoomOutline();
                 imageElement.setAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`, "1");
             }
 
@@ -2980,6 +2977,25 @@ function loaded(forced: boolean) {
             ipcRenderer.sendToHost(R2_EVENT_LINK, payload);
         }
     }, true);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ipcRenderer.on("R2_EVENT_IMAGE_CLICK", (_event: any, href_src: string, imageCssSelector: string) => {
+        debug("R2_EVENT_IMAGE_CLICK (ipcRenderer.on) href: " + href_src + " ___ " + imageCssSelector);
+        // win.document.querySelectorAll(`img[data-${POPOUTIMAGE_CONTAINER_ID}]`);
+        // win.document.querySelectorAll(`image[data-${POPOUTIMAGE_CONTAINER_ID}]`);
+        // win.document.querySelectorAll(`svg[data-${POPOUTIMAGE_CONTAINER_ID}]`);
+        // const imageElement = win.document.querySelector(`[data-${POPOUTIMAGE_CONTAINER_ID}]`);
+        const imageElement = win.document.querySelector(imageCssSelector);
+        if (imageElement) {
+            popoutImage(
+                win,
+                imageElement as HTMLImageElement | SVGElement,
+                href_src,
+                focusScrollRaw,
+                ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+                ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
+        }
+    });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on("R2_EVENT_WINDOW_RESIZE", (_event: any, zoomPercent: number) => {
