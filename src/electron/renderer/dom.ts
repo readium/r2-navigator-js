@@ -26,6 +26,7 @@ import {
     /* R2_EVENT_KEYBOARD_FOCUS_REQUEST,*/ R2_EVENT_MEDIA_OVERLAY_INTERRUPT,
     R2_EVENT_PAGE_TURN_RES, R2_EVENT_READIUMCSS, R2_EVENT_SHOW, R2_EVENT_WEBVIEW_KEYDOWN,
     R2_EVENT_WEBVIEW_KEYUP,
+    R2_EVENT_IMAGE_CLICK, IEventPayload_R2_EVENT_IMAGE_CLICK,
 } from "../common/events";
 import { READIUM_CSS_URL_PATH } from "../common/readium-css-settings";
 import {
@@ -321,6 +322,11 @@ export function readiumCssUpdate(rcss: IEventPayload_R2_EVENT_READIUMCSS) {
 let _webview1: IReadiumElectronWebview | undefined;
 let _webview2: IReadiumElectronWebview | undefined;
 
+let _imageClickHandler: ((href: string) => void) | undefined;
+export function setImageClickHandler(cb: (href: string) => void) {
+    _imageClickHandler = cb;
+};
+
 function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebview {
 
     const wv = document.createElement("webview");
@@ -480,6 +486,18 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             // && (event.args[0] as IEventPayload_R2_EVENT_PAGE_TURN).direction === ""
         ) {
             checkTtsState(wv as IReadiumElectronWebview);
+
+        } else if (event.channel === R2_EVENT_IMAGE_CLICK) {
+            const payload = event.args[0] as IEventPayload_R2_EVENT_IMAGE_CLICK;
+            if (_imageClickHandler) {
+                debug("R2_EVENT_IMAGE_CLICK (ipc-message) href [_imageClickHandler]: " + payload.href + " ___ " + payload.imageCssSelector);
+                _imageClickHandler(payload.href);
+            } else {
+                debug("R2_EVENT_IMAGE_CLICK (ipc-message) href [NOT _imageClickHandler => webview.send(R2_EVENT_IMAGE_CLICK]: " + payload.href + " ___ " + payload.imageCssSelector);
+                // webview === event.currentTarget as IReadiumElectronWebview
+                // webview === wv
+                webview.send(R2_EVENT_IMAGE_CLICK, payload.href, payload.imageCssSelector);
+            }
         } else if (!highlightsHandleIpcMessage(event.channel, event.args, webview) &&
             !ttsHandleIpcMessage(event.channel, event.args, webview) &&
             !locationHandleIpcMessage(event.channel, event.args, webview) &&

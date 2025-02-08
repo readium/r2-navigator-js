@@ -15,6 +15,18 @@ import { IPaginationInfo } from "./pagination";
 import { IReadiumCSS } from "./readium-css-settings";
 import { ISelectionInfo } from "./selection";
 
+// in WEBVIEW: ipcRenderer.sendToHost()
+// in RENDERER: webview.addEventListener("ipc-message")
+//
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_IMAGE_CLICK = "R2_EVENT_IMAGE_CLICK";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_IMAGE_CLICK {
+    href: string;
+    imageCssSelector: string;
+}
+
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
 // in WEBVIEW: ipcRenderer.sendToHost()
