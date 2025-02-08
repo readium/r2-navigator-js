@@ -10,10 +10,11 @@ import { TextFragment } from "../../common/selection";
 // https://github.com/Treora/text-fragments-ts
 
 // TypeScript port of:
-// https://github.com/GoogleChromeLabs/text-fragments-polyfill/tree/513720586a7b14b12357a9e0aeb2c21d41a9f1ef
+// https://github.com/GoogleChromeLabs/text-fragments-polyfill/tree/9aa1db5d7ca1d965a7565edc074335be39fdb887
 // (functionalities removed: timeout  and word-boundary forced alignment)
 
-// https://github.com/GoogleChromeLabs/text-fragments-polyfill/blob/513720586a7b14b12357a9e0aeb2c21d41a9f1ef/src/fragment-generation-utils.js#L171
+// https://github.com/GoogleChromeLabs/text-fragments-polyfill/compare/def94c50993b155fa831038ebd74ba6f4ab299e3...main
+// https://github.com/GoogleChromeLabs/text-fragments-polyfill/blob/9aa1db5d7ca1d965a7565edc074335be39fdb887/src/fragment-generation-utils.js#L177
 // doGenerateFragmentFromRange() ... but without expandRangeStart/EndToWordBound() etc.
 // ... and bug fixes:
 // https://github.com/GoogleChromeLabs/text-fragments-polyfill/issues/161
@@ -71,16 +72,45 @@ const makeNewSegmenter = (): Intl.Segmenter => {
     return new Intl.Segmenter(lang, { granularity: "word" });
 };
 
+// https://github.com/GoogleChromeLabs/text-fragments-polyfill/compare/def94c50993b155fa831038ebd74ba6f4ab299e3...main#diff-683f94c56eefdd33dcd785e073d00a6db63a57b78ec59c33e64ee633bfe2d3bb
+// scrollElementIntoView?
+// const revealHiddenUntilFoundHierarchy = (elt) => {
+//   while (elt) {
+//     if (isHiddenUntilFound(elt)) {
+//       elt.dispatchEvent(new Event('beforematch'));
+//       elt.hidden = '';
+//     }
+//     elt = elt.parentElement;
+//   }
+// };
+
+// https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/hidden
+// https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/hidden
+const isHiddenUntilFound = (elt: Element) => {
+    // @ts-expect-error (TypeScript HTMLElement.hidden is incorrectly boolean)
+    if ((elt as HTMLElement).hidden === "until-found") {
+        return true;
+    }
+
+    // // Workaround for WebKit. See https://bugs.webkit.org/show_bug.cgi?id=238266
+    // const attributes = elt.attributes;
+    // if (attributes && attributes["hidden"]) {
+    //   const value = attributes["hidden"].value;
+    //   if (value === "until-found") {
+    //     return true;
+    //   }
+    // }
+
+    return false;
+};
+
 const isNodeVisible = (node: Node): boolean => {
     let elt: Node | null = node;
     while (elt && !isElement(elt)) {
         elt = elt.parentNode;
     }
     if (elt) {
-        // https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/hidden
-        // https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/hidden
-        // @ts-expect-error (TypeScript HTMLElement.hidden is incorrectly boolean)
-        if ((elt as HTMLElement).hidden === "until-found") {
+        if (isHiddenUntilFound(elt)) {
             return true;
         }
         const nodeStyle = window.getComputedStyle(elt);
