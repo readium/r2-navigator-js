@@ -7,7 +7,7 @@
 
 import { split } from "sentence-splitter";
 
-import { SKIP_LINK_ID } from "../../common/styles";
+import { ROOT_CLASS_NO_RUBY, SKIP_LINK_ID } from "../../common/styles";
 import { uniqueCssSelector } from "../common/cssselector3";
 import { ReadiumElectronWebviewWindow } from "../webview/state";
 
@@ -365,6 +365,23 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
             return;
         }
 
+        const documant = (textNode.parentElement || parentElement).ownerDocument as Document;
+
+        const lower = (textNode.parentElement || parentElement).tagName?.toLowerCase();
+
+        // <ruby> children are rb or pure kanji TEXT_NODE, then rp and rt siblings
+        if (documant.documentElement.classList.contains(ROOT_CLASS_NO_RUBY)) {
+            if (lower === "rp" || lower === "rt") {
+                return;
+            }
+        } else {
+            if (true // win.READIUM2.ttsSkippabilityEnabled
+                && (lower === "ruby" || lower === "rb")
+            ) {
+                return;
+            }
+        }
+
         let current = ttsQueue[ttsQueue.length - 1];
 
         // note that isSkippable===true never reaches into a ttsQueueItem because we eject at compilation time instead of runtime / playback:
@@ -410,7 +427,7 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
             return;
         }
 
-        // const documant = element.ownerDocument as Document;
+        const documant = element.ownerDocument as Document;
 
         function isHidden(el: Element): boolean {
 
@@ -418,8 +435,21 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                 return true;
             }
             const lower = el.tagName?.toLowerCase();
-            if (lower === "rt" || lower === "rp") { // ruby child
-                return true;
+
+            // <ruby> children are rb or pure kanji TEXT_NODE, then rp and rt siblings
+            if (documant.documentElement.classList.contains(ROOT_CLASS_NO_RUBY)) {
+                if (lower === "rt" || lower === "rp") {
+                    return true;
+                }
+                // else if (lower === "rb") {
+                //     return false;
+                // }
+            } else {
+                if (true // win.READIUM2.ttsSkippabilityEnabled
+                    && (lower === "rb") // not "ruby" which contains mixed content (element children, maybe "rb", definitely "rp" or "rt")
+                ) {
+                    return true;
+                }
             }
 
             let curEl = el;
