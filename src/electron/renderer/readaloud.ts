@@ -17,6 +17,8 @@ import {
     R2_EVENT_TTS_DO_PREVIOUS, R2_EVENT_TTS_DO_RESUME, R2_EVENT_TTS_DO_STOP, R2_EVENT_TTS_IS_PAUSED,
     R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED, R2_EVENT_TTS_OVERLAY_ENABLE,
     R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_TTS_SENTENCE_DETECT_ENABLE, R2_EVENT_TTS_VOICE,
+    IEventPayload_R2_EVENT_TTS_MEDIAOVERLAYS_MANUAL_PLAY_NEXT,
+    R2_EVENT_TTS_MEDIAOVERLAYS_MANUAL_PLAY_NEXT,
 } from "../common/events";
 import { getCurrentReadingLocation, navPreviousOrNext } from "./location";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
@@ -378,6 +380,26 @@ export function ttsPlaybackRate(speed: number) {
         setTimeout(async () => {
             if (activeWebView.READIUM2?.DOMisReady) {
                 await activeWebView.send(R2_EVENT_TTS_PLAYBACK_RATE, payload);
+            }
+        }, 0);
+    }
+}
+
+export function ttsAndMediaOverlaysManualPlayNext(doEnable: boolean) {
+
+    if (win.READIUM2) {
+        win.READIUM2.ttsAndMediaOverlaysManualPlayNext = doEnable;
+    }
+
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        setTimeout(async () => {
+            const payload: IEventPayload_R2_EVENT_TTS_MEDIAOVERLAYS_MANUAL_PLAY_NEXT = {
+                doEnable,
+            };
+
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_TTS_MEDIAOVERLAYS_MANUAL_PLAY_NEXT, payload);
             }
         }, 0);
     }

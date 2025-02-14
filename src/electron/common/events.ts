@@ -265,6 +265,14 @@ export interface IEventPayload_R2_EVENT_TTS_VOICE {
 
 // in RENDERER: webview.send()
 // in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_TTS_MEDIAOVERLAYS_MANUAL_PLAY_NEXT = "R2_EVENT_TTS_MEDIAOVERLAYS_MANUAL_PLAY_NEXT";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_TTS_MEDIAOVERLAYS_MANUAL_PLAY_NEXT {
+    doEnable: boolean;
+}
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
 export const R2_EVENT_TTS_SKIP_ENABLE = "R2_EVENT_TTS_SKIP_ENABLE";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_TTS_SKIP_ENABLE {

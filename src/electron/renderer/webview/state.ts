@@ -47,6 +47,8 @@ export interface IReadiumElectronWebviewWindowState {
 
     DEBUG_VISUALS: boolean;
 
+    ttsAndMediaOverlaysManualPlayNext: boolean;
+
     ttsSkippabilityEnabled: boolean;
     ttsSentenceDetectionEnabled: boolean;
     ttsClickEnabled: boolean;
@@ -86,6 +88,8 @@ export interface IReadiumElectronBrowserWindow {
     domSlidingViewport: HTMLElement;
 
     DEBUG_VISUALS: boolean;
+
+    ttsAndMediaOverlaysManualPlayNext: boolean;
 
     ttsSkippabilityEnabled: boolean;
     ttsSentenceDetectionEnabled: boolean;

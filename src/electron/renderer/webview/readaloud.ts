@@ -1312,11 +1312,11 @@ function updateTTSInfo(
     return ttsQueueItemText;
 }
 
-const ttsPlayQueueIndexDebounced = debounce((ttsQueueIndex: number) => {
-    ttsPlayQueueIndex(ttsQueueIndex);
+const ttsPlayQueueIndexDebounced = debounce((ttsQueueIndex: number, ttsAndMediaOverlaysManualPlayNext = false) => {
+    ttsPlayQueueIndex(ttsQueueIndex, ttsAndMediaOverlaysManualPlayNext);
 }, 150);
 
-export function ttsPlayQueueIndex(ttsQueueIndex: number) {
+export function ttsPlayQueueIndex(ttsQueueIndex: number, ttsAndMediaOverlaysManualPlayNext = false) {
 
     if (!_dialogState ||
         !_dialogState.ttsRootElement ||
@@ -1329,12 +1329,15 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
         return;
     }
 
-    _dialogState.ttsQueueItem = undefined;
-    _dialogState.ttsUtterance = undefined;
+    if (!ttsAndMediaOverlaysManualPlayNext) {
 
-    if (_dialogState.domSlider) {
-        // _dialogState.domSlider.value = "" + ttsQueueIndex;
-        _dialogState.domSlider.valueAsNumber = ttsQueueIndex;
+        _dialogState.ttsQueueItem = undefined;
+        _dialogState.ttsUtterance = undefined;
+
+        if (_dialogState.domSlider) {
+            // _dialogState.domSlider.value = "" + ttsQueueIndex;
+            _dialogState.domSlider.valueAsNumber = ttsQueueIndex;
+        }
     }
 
     if (ttsQueueIndex < 0) {
@@ -1360,6 +1363,21 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
         ttsStop();
         return;
     }
+
+    if (ttsAndMediaOverlaysManualPlayNext) {
+        _resumableState = {
+            ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable:
+                _dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable,
+            ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable:
+                _dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
+            focusScrollRaw: _dialogState.focusScrollRaw,
+            ttsQueue: _dialogState.ttsQueue,
+            ttsQueueIndex: ttsQueueItem.iGlobal, // _dialogState.ttsQueueItem.iGlobal // ttsQueueIndex
+            ttsRootElement: _dialogState.ttsRootElement,
+        };
+        return;
+    }
+
     _dialogState.ttsQueueItem = ttsQueueItem;
 
     highlights(true);
@@ -1474,8 +1492,16 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number) {
             return;
         }
 
-        highlights(false);
+        if (win.READIUM2.ttsAndMediaOverlaysManualPlayNext) {
 
+            highlights(false);
+            ttsPlayQueueIndexDebounced(ttsQueueIndex + 1, true);
+            ttsPause(true); // calls highlights(false);
+
+            return;
+        }
+
+        highlights(false);
         ttsPlayQueueIndexDebounced(ttsQueueIndex + 1);
     };
     utterance.onend = (_ev: SpeechSynthesisEvent) => {
