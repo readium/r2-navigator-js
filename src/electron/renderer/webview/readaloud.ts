@@ -352,6 +352,7 @@ export function ttsResume() {
         win.READIUM2.ttsClickEnabled = true;
         clearImageZoomOutlineDebounced();
     } else if (_resumableState) {
+        resetState(false);
         setTimeout(() => {
             if (_resumableState) {
                 startTTSSession(
@@ -1365,6 +1366,8 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number, ttsAndMediaOverlaysManu
     }
 
     if (ttsAndMediaOverlaysManualPlayNext) {
+        // _dialogState.ttsQueueItem = undefined;
+        _dialogState.ttsUtterance = undefined;
         _resumableState = {
             ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable:
                 _dialogState.ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable,

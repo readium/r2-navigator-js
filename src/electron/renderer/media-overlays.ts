@@ -210,13 +210,26 @@ const ontimeupdate = async (ev: Event) => {
         (_currentAudioElement as any).__hidden = false;
         _currentAudioElement.style.display = "block";
     }
-    const currentAudioElement = ev.currentTarget as HTMLAudioElement;
+    const currentAudioElement = ev.currentTarget as HTMLAudioElement; // _currentAudioElement
     if (_currentAudioEnd && currentAudioElement.currentTime >= (_currentAudioEnd - 0.05)) {
 
         if (IS_DEV) {
             debug("ontimeupdate - mediaOverlaysNext()");
         }
-        mediaOverlaysNext();
+
+        if (win.READIUM2.ttsAndMediaOverlaysManualPlayNext) {
+            mediaOverlaysPause();
+
+            // mediaOverlaysStop(true);
+            // ==>
+            // _mediaOverlayActive = stayActive ? true : false;
+            // mediaOverlaysPause();
+            // _mediaOverlayRoot = undefined;
+            // _mediaOverlayTextAudioPair = undefined;
+            // _mediaOverlayTextId = undefined;
+        } else {
+            mediaOverlaysNext();
+        }
     }
 };
 const ensureOnTimeUpdate = (remove: boolean) => {
@@ -1552,6 +1565,16 @@ export function mediaOverlaysResume() {
         }
         ensureOnTimeUpdate(false);
         if (_currentAudioElement) {
+            if (_currentAudioEnd && _currentAudioElement.currentTime >= (_currentAudioEnd - 0.05)) {
+
+                if (IS_DEV) {
+                    debug("mediaOverlaysResume --- ontimeupdate - mediaOverlaysNext()");
+                }
+
+                mediaOverlaysNext();
+                return;
+            }
+
             setTimeout(async () => {
                 if (_currentAudioElement) {
                     _currentAudioElement.playbackRate = _mediaOverlaysPlaybackRate;
