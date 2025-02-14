@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.17.3...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.17.4...develop
 
 Changes:
 * TODO
+
+# 1.17.4
+
+> Build environment: NodeJS `22.12.0`, NPM `11.1.0`
+
+Changes:
+* NPM package updates
+* Feature: disable continuous play = do not automatically play the next item, pause immediately after the current item has finished playing.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.17.4/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.17.4/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.17.4
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.17.3...v1.17.4
 
 # 1.17.3
 
