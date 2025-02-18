@@ -171,7 +171,7 @@ win.addEventListener("resize", () => {
             }
         }
 
-    }, 1000);
+    }, 500);
 });
 
 ipcRenderer.on("accessibility-support-changed", (_e, accessibilitySupportEnabled) => {
