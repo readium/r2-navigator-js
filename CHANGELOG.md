@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.17.4...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.17.5...develop
 
 Changes:
 * TODO
+
+# 1.17.5
+
+> Build environment: NodeJS `22.12.0`, NPM `11.1.0`
+
+Changes:
+* NPM package updates
+* Reduced window resize debounce from 1s to 500ms
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.17.5/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.17.5/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.17.5
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.17.4...v1.17.5
 
 # 1.17.4
 
