@@ -2178,6 +2178,199 @@ https://blackorwhite.lloydk.ca
         highlightParent.append(highlightMarginSVG);
     }
 
+    const doDrawMaskBase = false;
+    if (doDrawMaskBase) {
+        let boundingRect: IRect | IRect[] | undefined;
+        const polygonCountourMaskBaseRects: IRect[] = [];
+
+        const bodyRect_: IRect = {
+            left:
+                win.READIUM2.isFixedLayout
+                ?
+                0
+                :
+                (
+                rtl
+                ?
+                (
+                    paginated
+                    ?
+                    (paginatedWidth - paginatedGap - paginatedGap - paginatedGap - bodyRect.width)
+                    :
+                    0
+                )
+                :
+                (
+                paginated
+                ?
+                0 - paginatedGap
+                :
+                0
+                )
+                )
+            ,
+            top: win.READIUM2.isFixedLayout ? 0 : rtl ? 0 : 0,
+            width:
+                win.READIUM2.isFixedLayout
+                ?
+                bodyRect.width * scale
+                :
+                (
+                rtl
+                ?
+                (
+                paginated
+                ?
+                (paginatedGap + paginatedGap + bodyRect.width)
+                :
+                bodyRect.width
+                )
+                :
+                (
+                paginated
+                ?
+                bodyRect.width + paginatedGap + paginatedGap
+                :
+                bodyRect.width
+                )
+                )
+            ,
+            height:
+                win.READIUM2.isFixedLayout
+                ?
+                bodyRect.height * scale
+                :
+                bodyRect.height
+            ,
+            right: 0,
+            bottom: 0,
+        };
+        bodyRect_.right = bodyRect_.left + bodyRect_.width;
+        bodyRect_.bottom = bodyRect_.top + bodyRect_.height;
+
+        boundingRect = boundingRect ? getBoundingRect(boundingRect as IRect, bodyRect_) : bodyRect_;
+
+        polygonCountourMaskBaseRects.push(bodyRect_);
+
+        const useFastBoundingRect = true; // we never union-join the polygons, instead we group possible rectangle bounding boxes together to allow fragmentation across page boundaries
+        let polygonMaskBaseUnionPoly: Polygon | undefined;
+        if (paginated) {
+            const tolerance = 1;
+            const groups: Array<{
+                x: number,
+                boxes: IRect[],
+            }> = [];
+            for (const r of polygonCountourMaskBaseRects) {
+                const group = groups.find((g) => {
+                    return !(r.left < (g.x - tolerance) || r.left > (g.x + tolerance));
+                });
+
+                if (!group) {
+                    groups.push({
+                        x: r.left,
+                        boxes: [r],
+                    });
+                } else {
+                    group.boxes?.push(r);
+                }
+            }
+
+            // console.log("XX RECTS: " + polygonCountourMaskBaseRects.length);
+            // console.log(JSON.stringify(polygonCountourMaskBaseRects, null, 4));
+            // console.log("XX GROUPS: " + groups.length);
+            // groups.forEach((g) => console.log(JSON.stringify(g.boxes, null, 4)));
+
+            boundingRect = groups.map<IRect>((g) => {
+                return g.boxes.reduce((prev, cur) => {
+                    if (prev === cur) {
+                        return cur;
+                    }
+                    return getBoundingRect(prev, cur);
+                }, g.boxes[0]);
+            });
+            if (boundingRect.length === 1) {
+                boundingRect = boundingRect[0];
+            }
+        }
+
+        if (useFastBoundingRect) {
+            if (boundingRect) {
+                polygonMaskBaseUnionPoly = new Polygon();
+                if (Array.isArray(boundingRect)) {
+                    for (const b of boundingRect) {
+                        const f = polygonMaskBaseUnionPoly.addFace(new Box(b.left, b.top, b.right, b.bottom));
+                        if (f.orientation() !== BASE_ORIENTATION) {
+                            console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 6");
+                            f.reverse();
+                        }
+                    }
+                } else {
+                    const f = polygonMaskBaseUnionPoly.addFace(new Box(boundingRect.left, boundingRect.top, boundingRect.right, boundingRect.bottom));
+                    if (f.orientation() !== BASE_ORIENTATION) {
+                        console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 7");
+                        f.reverse();
+                    }
+                }
+            } else {
+                const poly = new Polygon();
+                for (const r of polygonCountourMaskBaseRects) {
+                    const f = poly.addFace(new Box(r.left, r.top, r.right, r.bottom));
+                    if (f.orientation() !== BASE_ORIENTATION) {
+                        console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 8");
+                        f.reverse();
+                    }
+                }
+                polygonMaskBaseUnionPoly = new Polygon();
+                const f = polygonMaskBaseUnionPoly.addFace(poly.box);
+                if (f.orientation() !== BASE_ORIENTATION) {
+                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 9");
+                    f.reverse();
+                }
+            }
+        } else {
+            polygonMaskBaseUnionPoly = polygonCountourMaskBaseRects.reduce((previousPolygon, r) => {
+                const b = new Box(r.left, r.top, r.right, r.bottom);
+                const p = new Polygon();
+                const f = p.addFace(b);
+                if (f.orientation() !== BASE_ORIENTATION) {
+                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 10");
+                    f.reverse();
+                }
+                return unify(previousPolygon, p);
+            }, new Polygon());
+
+            // Array.from(polygonMaskBaseUnionPoly.faces).forEach((face: Face) => {
+            //     if (face.orientation() !== BASE_ORIENTATION) {
+            //         if (DEBUG_RECTS) {
+            //             console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (margin))");
+            //         }
+            //         (polygonMaskBaseUnionPoly as Polygon).deleteFace(face);
+            //     }
+            // });
+        }
+
+        const highlightMaskBaseSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
+        highlightMaskBaseSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON}`); //  ${CLASS_HIGHLIGHT_CONTOUR_MARGIN}
+        highlightMaskBaseSVG.polygon = polygonMaskBaseUnionPoly;
+
+        const svgPath = polygonMaskBaseUnionPoly.svg({
+            // fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+            fill: "yellow",
+            fillRule: "evenodd",
+            // stroke: "transparent",
+            // strokeWidth: 0,
+            // fillOpacity: 1,
+            stroke: "magenta",
+            strokeWidth: 6,
+            fillOpacity: 0.2,
+            className: undefined,
+            // r: 4,
+        });
+        highlightMaskBaseSVG.innerHTML = svgPath;
+
+        highlightParent.append(highlightMaskBaseSVG);
+    }
+
     const doDrawMask = false;
     if (doDrawMask) {
         let boundingRect: IRect | IRect[] | undefined;
