@@ -3057,6 +3057,8 @@ function loaded(forced: boolean) {
         if (_firstWindowResize) {
             debug("Window resize (WEBVIEW), SKIP FIRST");
             _firstWindowResize = false;
+            // recreateAllHighlightsRaw(win);
+            recreateAllHighlights(win);
             return;
         }
 
