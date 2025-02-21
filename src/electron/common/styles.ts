@@ -1067,6 +1067,11 @@ width: 1px !important;
 height: 1px !important;
 }
 
+:root[style].${TTS_CLASS_PLAYING} > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not([data-group="tts"]),
+:root.${TTS_CLASS_PLAYING} > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not([data-group="tts"])
+{
+    display: none;
+}
 :root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not(.${CLASS_HIGHLIGHT_BEHIND}):not(.${CLASS_HIGHLIGHT_MASK}),
 :root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not(.${CLASS_HIGHLIGHT_BEHIND}):not(.${CLASS_HIGHLIGHT_MASK})
 {

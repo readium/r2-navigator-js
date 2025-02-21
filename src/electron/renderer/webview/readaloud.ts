@@ -12,7 +12,7 @@ import {
     R2_EVENT_TTS_DOC_END, R2_EVENT_TTS_DOC_BACK, R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED,
 } from "../../common/events";
 import {
-    HighlightDrawTypeBackground, HighlightDrawTypeRulerMask, HighlightDrawTypeUnderline, IHighlight,
+    HighlightDrawTypeBackground, HighlightDrawTypeOpacityMask, HighlightDrawTypeOpacityMaskRuler, HighlightDrawTypeUnderline, IHighlight,
 } from "../../common/highlight";
 import {
     CSS_CLASS_NO_FOCUS_OUTLINE, POPUP_DIALOG_CLASS, POPUP_DIALOG_CLASS_COLLAPSE, ROOT_CLASS_REDUCE_MOTION,
@@ -42,7 +42,10 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 
 const win = global.window as ReadiumElectronWebviewWindow;
 
-const drawHighlightRulerMask = true;
+const ttsHighlightType: number = HighlightDrawTypeOpacityMask;
+// HighlightDrawTypeBackground
+// HighlightDrawTypeOpacityMask
+// HighlightDrawTypeOpacityMaskRuler
 
 interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
 
@@ -839,7 +842,7 @@ function wrapHighlight(
     if (_ttsQueueItemHighlightsSentence) {
         _ttsQueueItemHighlightsSentence.forEach((highlight) => {
             if (highlight) {
-                if ((doHighlight || expectNext) && highlight.drawType === HighlightDrawTypeRulerMask) {
+                if ((doHighlight || expectNext) && (highlight.drawType === HighlightDrawTypeOpacityMask || highlight.drawType === HighlightDrawTypeOpacityMaskRuler)) {
                     if (!_ttsQueueItemHighlightsSentenceToDestroy) {
                         _ttsQueueItemHighlightsSentenceToDestroy = [];
                     }
@@ -973,8 +976,8 @@ function wrapHighlight(
                         green: 248, // 218,
                         red: 248, // 255,
                     },
-                    drawType: drawHighlightRulerMask ? HighlightDrawTypeRulerMask : HighlightDrawTypeBackground,
-                    expand: drawHighlightRulerMask ? 0 : 4,
+                    drawType: ttsHighlightType,
+                    expand: ttsHighlightType === HighlightDrawTypeOpacityMaskRuler || ttsHighlightType === HighlightDrawTypeOpacityMask ? 0 : ttsHighlightType === HighlightDrawTypeBackground ? 4 : 2,
                     selectionInfo: undefined,
                     group: HIGHLIGHT_GROUP_TTS,
                     range,

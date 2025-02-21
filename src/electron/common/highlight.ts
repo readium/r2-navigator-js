@@ -17,7 +17,8 @@ export const HighlightDrawTypeBackground = 0;
 export const HighlightDrawTypeUnderline = 1;
 export const HighlightDrawTypeStrikethrough = 2;
 export const HighlightDrawTypeOutline = 3;
-export const HighlightDrawTypeRulerMask = 4;
+export const HighlightDrawTypeOpacityMask = 4;
+export const HighlightDrawTypeOpacityMaskRuler = 5;
 
 export interface IHighlight {
     id: string;
