@@ -1771,7 +1771,7 @@ https://blackorwhite.lloydk.ca
     const useFastBoundingRect = true; // we never union-join the polygons, instead we group possible rectangle bounding boxes together to allow fragmentation across page boundaries
     if (drawRulerMask) {
         let boundingRectMaskBase: IRect | IRect[] | undefined;
-        const polygonCountourMaskBaseRects: IRect[] = [];
+        const polygonMaskBaseRects: IRect[] = [];
 
         const bodyRect_: IRect = {
             left:
@@ -1840,7 +1840,7 @@ https://blackorwhite.lloydk.ca
 
         boundingRectMaskBase = boundingRectMaskBase ? getBoundingRect(boundingRectMaskBase as IRect, bodyRect_) : bodyRect_;
 
-        polygonCountourMaskBaseRects.push(bodyRect_);
+        polygonMaskBaseRects.push(bodyRect_);
 
         let polygonMaskBaseUnionPoly: Polygon | undefined;
         if (paginated) {
@@ -1849,7 +1849,7 @@ https://blackorwhite.lloydk.ca
                 x: number,
                 boxes: IRect[],
             }> = [];
-            for (const r of polygonCountourMaskBaseRects) {
+            for (const r of polygonMaskBaseRects) {
                 const group = groups.find((g) => {
                     return !(r.left < (g.x - tolerance) || r.left > (g.x + tolerance));
                 });
@@ -1864,8 +1864,8 @@ https://blackorwhite.lloydk.ca
                 }
             }
 
-            // console.log("XX RECTS: " + polygonCountourMaskBaseRects.length);
-            // console.log(JSON.stringify(polygonCountourMaskBaseRects, null, 4));
+            // console.log("XX RECTS: " + polygonMaskBaseRects.length);
+            // console.log(JSON.stringify(polygonMaskBaseRects, null, 4));
             // console.log("XX GROUPS: " + groups.length);
             // groups.forEach((g) => console.log(JSON.stringify(g.boxes, null, 4)));
 
@@ -1902,7 +1902,7 @@ https://blackorwhite.lloydk.ca
                 }
             } else {
                 const poly = new Polygon();
-                for (const r of polygonCountourMaskBaseRects) {
+                for (const r of polygonMaskBaseRects) {
                     const f = poly.addFace(new Box(r.left, r.top, r.right, r.bottom));
                     if (f.orientation() !== BASE_ORIENTATION) {
                         console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 8");
@@ -1917,7 +1917,7 @@ https://blackorwhite.lloydk.ca
                 }
             }
         } else {
-            polygonMaskBaseUnionPoly = polygonCountourMaskBaseRects.reduce((previousPolygon, r) => {
+            polygonMaskBaseUnionPoly = polygonMaskBaseRects.reduce((previousPolygon, r) => {
                 const b = new Box(r.left, r.top, r.right, r.bottom);
                 const p = new Polygon();
                 const f = p.addFace(b);
@@ -1959,12 +1959,28 @@ https://blackorwhite.lloydk.ca
 
         // highlightParent.append(highlightMaskBaseSVG);
 
+        // let polyToDraw = polygonMaskBaseUnionPoly;
+        // polyToDraw = subtract(polyToDraw,
+        //     paginated ?
+        //     polygonCountourUnionPoly.translate(new Vector(-paginatedGap, 0)) :
+        //     polygonCountourUnionPoly,
+        // );
+
         let boundingRectMask: IRect | IRect[] | undefined;
-        const polygonCountourMaskRects: IRect[] = [];
+        const polygonMaskRects: IRect[] = [];
         for (const f of polygonCountourUnionPoly.faces) {
             const face = f as Face;
-
             const b = face.box;
+
+            // const p = new Polygon();
+            // const bb = new Box(b.xmin - paginatedGap, b.ymin, b.xmax - paginatedGap, b.ymax);
+            // const ff = p.addFace(bb);
+            // if (ff.orientation() !== BASE_ORIENTATION) {
+            //     console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() xx");
+            //     ff.reverse();
+            // }
+            // polyToDraw = subtract(polyToDraw, p);
+
             const left =
                 vertical
                 ?
@@ -2040,7 +2056,7 @@ https://blackorwhite.lloydk.ca
 
             boundingRectMask = boundingRectMask ? getBoundingRect(boundingRectMask as IRect, r) : r;
 
-            polygonCountourMaskRects.push(r);
+            polygonMaskRects.push(r);
         }
 
         let polygonMaskUnionPoly: Polygon | undefined;
@@ -2050,7 +2066,7 @@ https://blackorwhite.lloydk.ca
                 x: number,
                 boxes: IRect[],
             }> = [];
-            for (const r of polygonCountourMaskRects) {
+            for (const r of polygonMaskRects) {
                 const group = groups.find((g) => {
                     return !(r.left < (g.x - tolerance) || r.left > (g.x + tolerance));
                 });
@@ -2065,8 +2081,8 @@ https://blackorwhite.lloydk.ca
                 }
             }
 
-            // console.log("XX RECTS: " + polygonCountourMaskRects.length);
-            // console.log(JSON.stringify(polygonCountourMaskRects, null, 4));
+            // console.log("XX RECTS: " + polygonMaskRects.length);
+            // console.log(JSON.stringify(polygonMaskRects, null, 4));
             // console.log("XX GROUPS: " + groups.length);
             // groups.forEach((g) => console.log(JSON.stringify(g.boxes, null, 4)));
 
@@ -2103,7 +2119,7 @@ https://blackorwhite.lloydk.ca
                 }
             } else {
                 const poly = new Polygon();
-                for (const r of polygonCountourMaskRects) {
+                for (const r of polygonMaskRects) {
                     const f = poly.addFace(new Box(r.left, r.top, r.right, r.bottom));
                     if (f.orientation() !== BASE_ORIENTATION) {
                         console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 8");
@@ -2118,7 +2134,7 @@ https://blackorwhite.lloydk.ca
                 }
             }
         } else {
-            polygonMaskUnionPoly = polygonCountourMaskRects.reduce((previousPolygon, r) => {
+            polygonMaskUnionPoly = polygonMaskRects.reduce((previousPolygon, r) => {
                 const b = new Box(r.left, r.top, r.right, r.bottom);
                 const p = new Polygon();
                 const f = p.addFace(b);
@@ -2140,6 +2156,20 @@ https://blackorwhite.lloydk.ca
         }
 
         const polyToDraw = subtract(polygonMaskBaseUnionPoly, polygonMaskUnionPoly);
+        // const polyToDraw = subtract(polygonMaskBaseUnionPoly, polygonCountourUnionPoly);
+        // const polyToDraw =
+        //     polygonSurface
+        //     ?
+        //         Array.isArray(polygonSurface)
+        //         ?
+        //         polygonSurface.reduce((previousPolygon, p) => {
+        //             return subtract(previousPolygon, p);
+        //         }, polygonMaskBaseUnionPoly)
+        //         :
+        //         subtract(polygonMaskBaseUnionPoly, polygonSurface)
+        //     :
+        //     subtract(polygonMaskBaseUnionPoly, polygonMaskUnionPoly)
+        //     ;
 
         const highlightMaskSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
         highlightMaskSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON_SVG}`); //  ${CLASS_HIGHLIGHT_CONTOUR_MARGIN}
@@ -2161,22 +2191,22 @@ https://blackorwhite.lloydk.ca
         if (rsBackground === "transparent") {
             rsBackground = "";
         }
-        // let rsForeground = bodyComputedStyle.getPropertyValue("--RS__textColor");
-        // if (!rsForeground) {
-        //     if (!docStyle) {
-        //         docStyle = win.getComputedStyle(documant.documentElement);
-        //     }
-        //     rsForeground = docStyle.getPropertyValue("--RS__textColor");
-        // }
+        let rsForeground = bodyComputedStyle.getPropertyValue("--RS__textColor");
+        if (!rsForeground) {
+            if (!docStyle) {
+                docStyle = win.getComputedStyle(documant.documentElement);
+            }
+            rsForeground = docStyle.getPropertyValue("--RS__textColor");
+        }
 
         const svgPathMask = highlightMaskSVG.polygon.svg({
             fillRule: "evenodd",
             // fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
             fill: rsBackground ? rsBackground : "white",
             fillOpacity: 0.9,
-            // stroke: rsForeground ? rsForeground : "black",
-            strokeWidth: 0,
-            stroke: "transparent",
+            stroke: rsForeground ? rsForeground : "black",
+            strokeWidth: 1,
+            // stroke: "transparent",
             // strokeWidth: 0,
             // stroke: `rgb(${r}, ${g}, ${b})`,
             // strokeWidth: 3,
@@ -2248,7 +2278,7 @@ https://blackorwhite.lloydk.ca
             }
         });
 
-        if (drawOutline || drawBackground) {
+        if (drawOutline || drawBackground || drawRulerMask) {
 
             if (DEBUG_RECTS) {
                 console.log("--==========--==========--==========--==========--==========--==========");
