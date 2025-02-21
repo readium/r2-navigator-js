@@ -2931,11 +2931,14 @@ function loaded(forced: boolean) {
                 //     parentElement?.tagName === "FIGURE" || parentElement?.tagName === "figure";
 
                 debug("R2_EVENT_IMAGE_CLICK (ipcRenderer.sendToHost) href: " + href_src + " ___ " + imageCssSelector);
+
                 const payload: IEventPayload_R2_EVENT_IMAGE_CLICK = {
                     href: href_src,
                     imageCssSelector,
                     altAttribute: (imageElement as HTMLImageElement).alt,
                     titleAttribute: (imageElement as HTMLImageElement).title,
+                    imageWidth: (imageElement as HTMLImageElement).naturalWidth,
+                    imageHeight: (imageElement as HTMLImageElement).naturalHeight,
                     // isFigure: isFigure(imageElement.parentElement),
                     // figureCssSelector: isFigure(imageElement.parentElement)
                     //     ? getCssSelector(imageElement.parentElement)

@@ -27,6 +27,8 @@ export interface IEventPayload_R2_EVENT_IMAGE_CLICK {
     imageCssSelector: string;
     altAttribute: string;
     titleAttribute: string;
+    imageWidth: number;
+    imageHeight: number;
     // isFigure: boolean;
     // figureCssSelector: string | undefined;
     // figcaptionCssSelector: string | undefined;
