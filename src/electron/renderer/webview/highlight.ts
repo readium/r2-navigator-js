@@ -25,7 +25,7 @@ import { getScrollingElement, isVerticalWritingMode, isTwoPageSpread } from "./r
 import { convertRangeInfo } from "./selection";
 import { ReadiumElectronWebviewWindow } from "./state";
 
-import { CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CURSOR2, CLASS_HIGHLIGHT_COMMON, CLASS_HIGHLIGHT_MARGIN, CLASS_HIGHLIGHT_HOVER, CLASS_HIGHLIGHT_BEHIND, CLASS_HIGHLIGHT_COMMON_SVG, CLASS_HIGHLIGHT_MASK } from "../../common/styles";
+import { CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CURSOR2, CLASS_HIGHLIGHT_COMMON, CLASS_HIGHLIGHT_MARGIN, CLASS_HIGHLIGHT_HOVER, CLASS_HIGHLIGHT_BEHIND, CLASS_HIGHLIGHT_COMMON_SVG, CLASS_HIGHLIGHT_MASK, CLASS_HIGHLIGHT_SVG } from "../../common/styles";
 
 import { isRTL } from "./readium-css";
 
@@ -1318,7 +1318,7 @@ function createHighlightDom(
     const rtl = isRTL();
     const vertical = isVerticalWritingMode();
 
-    const doDrawMargin = drawMargin(highlight);;
+    const doDrawMargin = drawMargin(highlight);
 
     const underlineThickness = 3;
     const strikeThroughLineThickness = 4;
@@ -1785,7 +1785,7 @@ https://blackorwhite.lloydk.ca
                 (
                     paginated
                     ?
-                    (paginatedWidth - paginatedGap - paginatedGap - paginatedGap - bodyRect.width)
+                    -(paginatedGap + paginatedGap + bodyRect.width - (paginatedWidth * (paginatedTwo ? 2 : 1)))
                     :
                     0
                 )
@@ -1793,7 +1793,7 @@ https://blackorwhite.lloydk.ca
                 (
                 paginated
                 ?
-                0 - paginatedGap
+                0 // - paginatedGap
                 :
                 0
                 )
@@ -1811,7 +1811,7 @@ https://blackorwhite.lloydk.ca
                 (
                 paginated
                 ?
-                (paginatedGap + paginatedGap + bodyRect.width)
+                bodyRect.width + paginatedGap + paginatedGap
                 :
                 bodyRect.width
                 )
@@ -1939,7 +1939,7 @@ https://blackorwhite.lloydk.ca
         }
 
         // const highlightMaskBaseSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
-        // highlightMaskBaseSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON}`); //  ${CLASS_HIGHLIGHT_CONTOUR_MARGIN}
+        // highlightMaskBaseSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON} ${CLASS_HIGHLIGHT_SVG}`);
         // highlightMaskBaseSVG.polygon = polygonMaskBaseUnionPoly;
 
         // const svgPathMaskBase = polygonMaskBaseUnionPoly.svg({
@@ -1992,9 +1992,9 @@ https://blackorwhite.lloydk.ca
                     (
                     rtl
                     ?
-                    (- (paginatedTwo ? paginatedWidth : 0))
+                    paginatedGap // (- (paginatedTwo ? paginatedWidth : 0))
                     :
-                    0
+                    paginatedGap
                     )
                     + Math.floor(b.xmin / paginatedWidth) * paginatedWidth
                 )
@@ -2155,8 +2155,10 @@ https://blackorwhite.lloydk.ca
             // });
         }
 
-        const polyToDraw = subtract(polygonMaskBaseUnionPoly, polygonMaskUnionPoly);
-        // const polyToDraw = subtract(polygonMaskBaseUnionPoly, polygonCountourUnionPoly);
+        // const polyToDraw = polygonMaskBaseUnionPoly;
+        // const polyToDraw = polygonMaskUnionPoly;
+        // const polyToDraw = subtract(polygonMaskBaseUnionPoly, polygonMaskUnionPoly);
+        const polyToDraw = subtract(polygonMaskBaseUnionPoly, polygonCountourUnionPoly);
         // const polyToDraw =
         //     polygonSurface
         //     ?
@@ -2172,7 +2174,7 @@ https://blackorwhite.lloydk.ca
         //     ;
 
         const highlightMaskSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
-        highlightMaskSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON_SVG}`); //  ${CLASS_HIGHLIGHT_CONTOUR_MARGIN}
+        highlightMaskSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON_SVG} ${CLASS_HIGHLIGHT_SVG}`);
         highlightMaskSVG.polygon = polyToDraw;
         // const rgb = Math.round(0xffffff * Math.random());
         // // tslint:disable-next-line:no-bitwise
@@ -2191,23 +2193,24 @@ https://blackorwhite.lloydk.ca
         if (rsBackground === "transparent") {
             rsBackground = "";
         }
-        let rsForeground = bodyComputedStyle.getPropertyValue("--RS__textColor");
-        if (!rsForeground) {
-            if (!docStyle) {
-                docStyle = win.getComputedStyle(documant.documentElement);
-            }
-            rsForeground = docStyle.getPropertyValue("--RS__textColor");
-        }
+        // let rsForeground = bodyComputedStyle.getPropertyValue("--RS__textColor");
+        // if (!rsForeground) {
+        //     if (!docStyle) {
+        //         docStyle = win.getComputedStyle(documant.documentElement);
+        //     }
+        //     rsForeground = docStyle.getPropertyValue("--RS__textColor");
+        // }
 
         const svgPathMask = highlightMaskSVG.polygon.svg({
             fillRule: "evenodd",
             // fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
             fill: rsBackground ? rsBackground : "white",
             fillOpacity: 0.9,
-            stroke: rsForeground ? rsForeground : "black",
-            strokeWidth: 1,
-            // stroke: "transparent",
-            // strokeWidth: 0,
+            // stroke: rsForeground ? rsForeground : "black",
+            // strokeWidth: 4,
+            stroke: "transparent",
+            // stroke: "magenta",
+            strokeWidth: 0,
             // stroke: `rgb(${r}, ${g}, ${b})`,
             // strokeWidth: 3,
             // fill: "silver",
