@@ -322,8 +322,8 @@ export function readiumCssUpdate(rcss: IEventPayload_R2_EVENT_READIUMCSS) {
 let _webview1: IReadiumElectronWebview | undefined;
 let _webview2: IReadiumElectronWebview | undefined;
 
-let _imageClickHandler: ((href: string) => void) | undefined;
-export function setImageClickHandler(cb: (href: string) => void) {
+let _imageClickHandler: ((payload: IEventPayload_R2_EVENT_IMAGE_CLICK) => void) | undefined;
+export function setImageClickHandler(cb: (payload: IEventPayload_R2_EVENT_IMAGE_CLICK) => void) {
     _imageClickHandler = cb;
 };
 
@@ -492,7 +492,7 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             const payload = event.args[0] as IEventPayload_R2_EVENT_IMAGE_CLICK;
             if (_imageClickHandler) {
                 debug("R2_EVENT_IMAGE_CLICK (ipc-message) href [_imageClickHandler]: " + payload.href + " ___ " + payload.imageCssSelector);
-                _imageClickHandler(payload.href);
+                _imageClickHandler({...payload});
             } else {
                 debug("R2_EVENT_IMAGE_CLICK (ipc-message) href [NOT _imageClickHandler => webview.send(R2_EVENT_IMAGE_CLICK]: " + payload.href + " ___ " + payload.imageCssSelector);
                 // webview === event.currentTarget as IReadiumElectronWebview

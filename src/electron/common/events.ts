@@ -25,6 +25,13 @@ export const R2_EVENT_IMAGE_CLICK = "R2_EVENT_IMAGE_CLICK";
 export interface IEventPayload_R2_EVENT_IMAGE_CLICK {
     href: string;
     imageCssSelector: string;
+    altAttribute: string;
+    titleAttribute: string;
+    isFigure: boolean;
+    figureCssSelector: string | undefined;
+    figcaptionCssSelector: string | undefined;
+    ariaDescribedbyAttribute: string | undefined;
+    ariaDetailsAttribute: string | undefined;
 }
 
 // in RENDERER: webview.send()
