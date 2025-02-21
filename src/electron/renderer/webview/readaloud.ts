@@ -773,8 +773,8 @@ function wrapHighlightWord(
         // const rangeInfo = tuple[0];
         // const textInfo = tuple[1];
 
-        const ttsHighlightStyle = win.READIUM2?.ttsHighlightStyle_WORD || HighlightDrawTypeUnderline;
-        const ttsColor: IColor = win.READIUM2?.ttsHighlightColor_WORD || {
+        const ttsHighlightStyle_WORD = typeof win.READIUM2?.ttsHighlightStyle_WORD !== "undefined" ? win.READIUM2.ttsHighlightStyle_WORD : HighlightDrawTypeUnderline;
+        const ttsColor_WORD: IColor = win.READIUM2?.ttsHighlightColor_WORD || {
             blue: 0,
             green: 147,
             red: 255,
@@ -782,8 +782,8 @@ function wrapHighlightWord(
         const highlightDefinitions = [
             {
                 // https://htmlcolorcodes.com/
-                color: ttsColor,
-                drawType: ttsHighlightStyle,
+                color: ttsColor_WORD,
+                drawType: ttsHighlightStyle_WORD,
                 expand: ENABLE_CSS_HIGHLIGHTS ? 0 : 2,
                 selectionInfo: undefined,
                 group: HIGHLIGHT_GROUP_TTS,
@@ -970,7 +970,7 @@ function wrapHighlight(
             // const rangeInfo = tuple[0];
             // const textInfo = tuple[1];
 
-            const ttsHighlightStyle = win.READIUM2?.ttsHighlightStyle || HighlightDrawTypeBackground;
+            const ttsHighlightStyle = typeof win.READIUM2?.ttsHighlightStyle !== "undefined" ? win.READIUM2.ttsHighlightStyle : HighlightDrawTypeBackground;
             const ttsColor: IColor = win.READIUM2?.ttsHighlightColor || {
                 blue: 116, // 204,
                 green: 248, // 218,
