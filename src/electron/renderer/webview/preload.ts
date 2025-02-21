@@ -100,7 +100,7 @@ import {
 import { popoutImage } from "./popoutImages";
 import { popupFootNote } from "./popupFootNotes";
 import {
-    ttsNext, ttsPause, ttsPlay, ttsPlaybackRate, ttsPrevious, ttsResume, ttsStop, ttsVoice,
+    ttsNext, ttsPause, ttsPlay, ttsPlaybackRate, ttsPrevious, ttsResume, ttsStop, ttsVoices,
 } from "./readaloud";
 import {
     calculateColumnDimension, calculateMaxScrollShift, calculateTotalColumns, checkHiddenFootNotes,
@@ -174,7 +174,7 @@ win.READIUM2 = {
     ttsAndMediaOverlaysManualPlayNext: false,
     ttsSkippabilityEnabled: false,
     ttsSentenceDetectionEnabled: true,
-    ttsVoice: null,
+    ttsVoices: null,
     urlQueryParams: win.location.search ? getURLQueryParams(win.location.search) : undefined,
     webViewSlot: WebViewSlotEnum.center,
 };
@@ -2687,7 +2687,7 @@ function loaded(forced: boolean) {
                 if (ev.altKey) {
                     ttsPlay(
                         win.READIUM2.ttsPlaybackRate,
-                        win.READIUM2.ttsVoice,
+                        win.READIUM2.ttsVoices,
                         focusScrollRaw,
                         domPointData.element,
                         undefined,
@@ -2700,7 +2700,7 @@ function loaded(forced: boolean) {
 
                 ttsPlay(
                     win.READIUM2.ttsPlaybackRate,
-                    win.READIUM2.ttsVoice,
+                    win.READIUM2.ttsVoices,
                     focusScrollRaw,
                     (domPointData.element.ownerDocument as Document).body,
                     domPointData.element,
@@ -4653,7 +4653,7 @@ if (!win.READIUM2.isAudio) {
         const startElement = payload.startElement ? win.document.querySelector(payload.startElement) : null;
         ttsPlay(
             payload.speed,
-            payload.voice,
+            payload.voices,
             focusScrollRaw,
             rootElement ? rootElement : undefined,
             startElement ? startElement : undefined,
@@ -4697,7 +4697,7 @@ if (!win.READIUM2.isAudio) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_TTS_VOICE, (_event: any, payload: IEventPayload_R2_EVENT_TTS_VOICE) => {
-        ttsVoice(payload.voice);
+        ttsVoices(payload.voices);
     });
 
     ipcRenderer.on(R2_EVENT_TTS_MEDIAOVERLAYS_MANUAL_PLAY_NEXT,

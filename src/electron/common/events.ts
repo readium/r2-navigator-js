@@ -260,7 +260,7 @@ export interface IEventPayload_R2_EVENT_TTS_PLAYBACK_RATE {
 export const R2_EVENT_TTS_VOICE = "R2_EVENT_TTS_VOICE";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_TTS_VOICE {
-    voice: SpeechSynthesisVoice | null;
+    voices: SpeechSynthesisVoice[] | null;
 }
 
 // in RENDERER: webview.send()
@@ -295,7 +295,7 @@ export interface IEventPayload_R2_EVENT_TTS_DO_PLAY {
     rootElement: string; // CSS selector
     startElement: string | undefined; // CSS selector
     speed: number;
-    voice: SpeechSynthesisVoice | null;
+    voices: SpeechSynthesisVoice[] | null;
 }
 
 // in RENDERER: webview.send()

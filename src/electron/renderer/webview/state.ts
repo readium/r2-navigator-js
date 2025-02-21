@@ -54,7 +54,7 @@ export interface IReadiumElectronWebviewWindowState {
     ttsClickEnabled: boolean;
     ttsOverlayEnabled: boolean;
     ttsPlaybackRate: number;
-    ttsVoice: SpeechSynthesisVoice | null;
+    ttsVoices: SpeechSynthesisVoice[] | null;
 
     isClipboardIntercept: boolean;
 }
@@ -96,7 +96,7 @@ export interface IReadiumElectronBrowserWindow {
     ttsClickEnabled: boolean;
     ttsOverlayEnabled: boolean;
     ttsPlaybackRate: number;
-    ttsVoice: SpeechSynthesisVoice | null;
+    ttsVoices: SpeechSynthesisVoice[] | null;
 
     // stealFocusDisabled: boolean;
 
