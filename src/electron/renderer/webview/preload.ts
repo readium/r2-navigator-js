@@ -2927,8 +2927,8 @@ function loaded(forced: boolean) {
 
                 const imageCssSelector = getCssSelector(imageElement);
 
-                const isFigure = (parentElement: Element | null): parentElement is HTMLElement =>
-                    parentElement?.tagName === "FIGURE" || parentElement?.tagName === "figure";
+                // const isFigure = (parentElement: Element | null): parentElement is HTMLElement =>
+                //     parentElement?.tagName === "FIGURE" || parentElement?.tagName === "figure";
 
                 debug("R2_EVENT_IMAGE_CLICK (ipcRenderer.sendToHost) href: " + href_src + " ___ " + imageCssSelector);
                 const payload: IEventPayload_R2_EVENT_IMAGE_CLICK = {
@@ -2936,15 +2936,15 @@ function loaded(forced: boolean) {
                     imageCssSelector,
                     altAttribute: (imageElement as HTMLImageElement).alt,
                     titleAttribute: (imageElement as HTMLImageElement).title,
-                    isFigure: isFigure(imageElement.parentElement),
-                    figureCssSelector: isFigure(imageElement.parentElement)
-                        ? getCssSelector(imageElement.parentElement)
-                        : undefined,
-                    figcaptionCssSelector: isFigure(imageElement.parentElement)
-                        ? getCssSelector(imageElement.parentElement.getElementsByTagName("figcaption")[0]) // return "" if undefined
-                        : undefined,
-                    ariaDescribedbyAttribute: (imageElement as HTMLImageElement).getAttribute("aria-describedby") || undefined,
-                    ariaDetailsAttribute: (imageElement as HTMLImageElement).getAttribute("aria-details") || undefined, // aria-details from the image is removed in navigator why ? 
+                    // isFigure: isFigure(imageElement.parentElement),
+                    // figureCssSelector: isFigure(imageElement.parentElement)
+                    //     ? getCssSelector(imageElement.parentElement)
+                    //     : undefined,
+                    // figcaptionCssSelector: isFigure(imageElement.parentElement)
+                    //     ? getCssSelector(imageElement.parentElement.getElementsByTagName("figcaption")[0]) // return "" if undefined
+                    //     : undefined,
+                    // ariaDescribedbyAttribute: (imageElement as HTMLImageElement).getAttribute("aria-describedby") || undefined,
+                    // ariaDetailsAttribute: (imageElement as HTMLImageElement).getAttribute("aria-details") || undefined, // aria-details from the image is removed in navigator why ?
                 };
                 ipcRenderer.sendToHost(R2_EVENT_IMAGE_CLICK, payload);
             } else {

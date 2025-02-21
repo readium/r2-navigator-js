@@ -27,11 +27,11 @@ export interface IEventPayload_R2_EVENT_IMAGE_CLICK {
     imageCssSelector: string;
     altAttribute: string;
     titleAttribute: string;
-    isFigure: boolean;
-    figureCssSelector: string | undefined;
-    figcaptionCssSelector: string | undefined;
-    ariaDescribedbyAttribute: string | undefined;
-    ariaDetailsAttribute: string | undefined;
+    // isFigure: boolean;
+    // figureCssSelector: string | undefined;
+    // figcaptionCssSelector: string | undefined;
+    // ariaDescribedbyAttribute: string | undefined;
+    // ariaDetailsAttribute: string | undefined;
 }
 
 // in RENDERER: webview.send()
