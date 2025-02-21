@@ -10,7 +10,7 @@ import { Locator, LocatorLocations } from "./locator";
 import { IAudioPlaybackInfo } from "./audiobook";
 import { IDocInfo } from "./document";
 import { IwidthHeight } from "./fxl";
-import { IHighlight, IHighlightDefinition } from "./highlight";
+import { IColor, IHighlight, IHighlightDefinition } from "./highlight";
 import { IPaginationInfo } from "./pagination";
 import { IReadiumCSS } from "./readium-css-settings";
 import { ISelectionInfo } from "./selection";
@@ -285,6 +285,25 @@ export const R2_EVENT_TTS_SENTENCE_DETECT_ENABLE = "R2_EVENT_TTS_SENTENCE_DETECT
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_TTS_SENTENCE_DETECT_ENABLE {
     doEnable: boolean;
+}
+
+// in RENDERER: webview.send()
+// in WEBVIEW: ipcRenderer.on()
+export const R2_EVENT_TTS_HIGHLIGHT_STYLE = "R2_EVENT_TTS_HIGHLIGHT_STYLE";
+// tslint:disable-next-line:class-name
+export interface IEventPayload_R2_EVENT_TTS_HIGHLIGHT_STYLE {
+    ttsHighlightStyle: number;
+    ttsHighlightColor: IColor | undefined;
+
+    ttsHighlightStyle_WORD: number | undefined;
+    ttsHighlightColor_WORD: IColor | undefined;
+
+    // HighlightDrawTypeBackground
+    // HighlightDrawTypeUnderline
+    // HighlightDrawTypeStrikethrough
+    // HighlightDrawTypeOutline
+    // HighlightDrawTypeOpacityMask
+    // HighlightDrawTypeOpacityMaskRuler
 }
 
 // in RENDERER: webview.send()

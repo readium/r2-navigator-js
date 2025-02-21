@@ -12,7 +12,7 @@ import {
     R2_EVENT_TTS_DOC_END, R2_EVENT_TTS_DOC_BACK, R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED,
 } from "../../common/events";
 import {
-    HighlightDrawTypeBackground, HighlightDrawTypeOpacityMask, HighlightDrawTypeOpacityMaskRuler, HighlightDrawTypeUnderline, IHighlight,
+    HighlightDrawTypeBackground, HighlightDrawTypeOpacityMask, HighlightDrawTypeOpacityMaskRuler, HighlightDrawTypeUnderline, IColor, IHighlight,
 } from "../../common/highlight";
 import {
     CSS_CLASS_NO_FOCUS_OUTLINE, POPUP_DIALOG_CLASS, POPUP_DIALOG_CLASS_COLLAPSE, ROOT_CLASS_REDUCE_MOTION,
@@ -41,11 +41,6 @@ import { ReadiumElectronWebviewWindow } from "./state";
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
 const win = global.window as ReadiumElectronWebviewWindow;
-
-const ttsHighlightType: number = HighlightDrawTypeOpacityMaskRuler;
-// HighlightDrawTypeBackground
-// HighlightDrawTypeOpacityMask
-// HighlightDrawTypeOpacityMaskRuler
 
 interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
 
@@ -778,15 +773,17 @@ function wrapHighlightWord(
         // const rangeInfo = tuple[0];
         // const textInfo = tuple[1];
 
+        const ttsHighlightStyle = win.READIUM2?.ttsHighlightStyle_WORD || HighlightDrawTypeUnderline;
+        const ttsColor: IColor = win.READIUM2?.ttsHighlightColor_WORD || {
+            blue: 0,
+            green: 147,
+            red: 255,
+        };
         const highlightDefinitions = [
             {
                 // https://htmlcolorcodes.com/
-                color: {
-                    blue: 0,
-                    green: 147,
-                    red: 255,
-                },
-                drawType: HighlightDrawTypeUnderline,
+                color: ttsColor,
+                drawType: ttsHighlightStyle,
                 expand: ENABLE_CSS_HIGHLIGHTS ? 0 : 2,
                 selectionInfo: undefined,
                 group: HIGHLIGHT_GROUP_TTS,
@@ -973,16 +970,18 @@ function wrapHighlight(
             // const rangeInfo = tuple[0];
             // const textInfo = tuple[1];
 
+            const ttsHighlightStyle = win.READIUM2?.ttsHighlightStyle || HighlightDrawTypeBackground;
+            const ttsColor: IColor = win.READIUM2?.ttsHighlightColor || {
+                blue: 116, // 204,
+                green: 248, // 218,
+                red: 248, // 255,
+            };
             const highlightDefinitions = [
                 {
                     // https://htmlcolorcodes.com/
-                    color: {
-                        blue: 116, // 204,
-                        green: 248, // 218,
-                        red: 248, // 255,
-                    },
-                    drawType: ttsHighlightType,
-                    expand: ttsHighlightType === HighlightDrawTypeOpacityMaskRuler || ttsHighlightType === HighlightDrawTypeOpacityMask ? 0 : ttsHighlightType === HighlightDrawTypeBackground ? 4 : 2,
+                    color: ttsColor,
+                    drawType: ttsHighlightStyle,
+                    expand: ttsHighlightStyle === HighlightDrawTypeOpacityMaskRuler || ttsHighlightStyle === HighlightDrawTypeOpacityMask ? 0 : ttsHighlightStyle === HighlightDrawTypeBackground ? 4 : 0,
                     selectionInfo: undefined,
                     group: HIGHLIGHT_GROUP_TTS,
                     range,

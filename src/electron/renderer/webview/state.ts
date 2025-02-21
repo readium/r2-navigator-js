@@ -14,7 +14,7 @@ import {
 } from "../../common/events";
 import { WebViewSlotEnum } from "../../common/styles";
 import { IStringMap } from "../common/querystring";
-import { IHighlight } from "src/electron/common/highlight";
+import { IColor, IHighlight } from "src/electron/common/highlight";
 
 export type TWindow = typeof window;
 
@@ -48,6 +48,17 @@ export interface IReadiumElectronWebviewWindowState {
     DEBUG_VISUALS: boolean;
 
     ttsAndMediaOverlaysManualPlayNext: boolean;
+
+    ttsHighlightStyle: number;
+    ttsHighlightColor: IColor | undefined;
+    ttsHighlightStyle_WORD: number | undefined;
+    ttsHighlightColor_WORD: IColor | undefined;
+    // HighlightDrawTypeBackground
+    // HighlightDrawTypeUnderline
+    // HighlightDrawTypeStrikethrough
+    // HighlightDrawTypeOutline
+    // HighlightDrawTypeOpacityMask
+    // HighlightDrawTypeOpacityMaskRuler
 
     ttsSkippabilityEnabled: boolean;
     ttsSentenceDetectionEnabled: boolean;
@@ -90,6 +101,18 @@ export interface IReadiumElectronBrowserWindow {
     DEBUG_VISUALS: boolean;
 
     ttsAndMediaOverlaysManualPlayNext: boolean;
+
+    ttsHighlightStyle: number;
+    ttsHighlightColor: IColor | undefined;
+
+    ttsHighlightStyle_WORD: number | undefined;
+    ttsHighlightColor_WORD: IColor | undefined;
+    // HighlightDrawTypeBackground
+    // HighlightDrawTypeUnderline
+    // HighlightDrawTypeStrikethrough
+    // HighlightDrawTypeOutline
+    // HighlightDrawTypeOpacityMask
+    // HighlightDrawTypeOpacityMaskRuler
 
     ttsSkippabilityEnabled: boolean;
     ttsSentenceDetectionEnabled: boolean;

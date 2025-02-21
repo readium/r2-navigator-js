@@ -19,9 +19,12 @@ import {
     R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_TTS_SENTENCE_DETECT_ENABLE, R2_EVENT_TTS_VOICE,
     IEventPayload_R2_EVENT_TTS_MEDIAOVERLAYS_MANUAL_PLAY_NEXT,
     R2_EVENT_TTS_MEDIAOVERLAYS_MANUAL_PLAY_NEXT,
+    R2_EVENT_TTS_HIGHLIGHT_STYLE,
+    IEventPayload_R2_EVENT_TTS_HIGHLIGHT_STYLE,
 } from "../common/events";
 import { getCurrentReadingLocation, navPreviousOrNext } from "./location";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
+import { IColor } from "../common/highlight";
 
 // import * as debug_ from "debug";
 // const debug = debug_("r2:navigator#electron/renderer/index");
@@ -471,6 +474,29 @@ export function ttsSentenceDetectionEnable(doEnable: boolean) {
 
             if (activeWebView.READIUM2?.DOMisReady) {
                 await activeWebView.send(R2_EVENT_TTS_SENTENCE_DETECT_ENABLE, payload);
+            }
+        }, 0);
+    }
+}
+
+export function ttsHighlightStyle(ttsHighlightStyle: number, ttsHighlightColor: IColor | undefined, ttsHighlightStyle_WORD: number | undefined, ttsHighlightColor_WORD: IColor | undefined) {
+
+    if (win.READIUM2) {
+        win.READIUM2.ttsHighlightStyle = ttsHighlightStyle;
+    }
+
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        setTimeout(async () => {
+            const payload: IEventPayload_R2_EVENT_TTS_HIGHLIGHT_STYLE = {
+                ttsHighlightStyle,
+                ttsHighlightColor,
+                ttsHighlightStyle_WORD,
+                ttsHighlightColor_WORD,
+            };
+
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_TTS_HIGHLIGHT_STYLE, payload);
             }
         }, 0);
     }
