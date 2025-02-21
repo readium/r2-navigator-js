@@ -1239,7 +1239,12 @@ const tempLinkTargetOutline = (element: Element, time: number, alt: boolean) => 
     // if (win.READIUM2.disableTemporaryNavigationTargetOutline) {
     //     return;
     // }
-    if (win.document.documentElement.classList.contains(DISABLE_TEMPORARY_NAV_TARGET_OUTLINE_CLASS)) {
+    if (win.document.documentElement.classList.contains(DISABLE_TEMPORARY_NAV_TARGET_OUTLINE_CLASS)
+        ||
+        win.document.documentElement.classList.contains(TTS_CLASS_PLAYING)
+        ||
+        win.document.documentElement.classList.contains(TTS_CLASS_PAUSED)
+    ) {
         return;
     }
 

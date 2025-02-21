@@ -851,11 +851,13 @@ export const ttsCssStyles = `
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
 export const CLASS_HIGHLIGHT_COMMON = "R2_CLASS_HIGHLIGHT_COMMON";
+export const CLASS_HIGHLIGHT_COMMON_SVG = "R2_CLASS_HIGHLIGHT_COMMON_SVG";
 export const CLASS_HIGHLIGHT_CONTOUR = "R2_CLASS_HIGHLIGHT_CONTOUR";
 export const CLASS_HIGHLIGHT_CONTOUR_MARGIN = "R2_CLASS_HIGHLIGHT_CONTOUR_MARGIN";
 export const CLASS_HIGHLIGHT_CONTAINER = "R2_CLASS_HIGHLIGHT_CONTAINER";
 export const CLASS_HIGHLIGHT_MARGIN = "R2_CLASS_HIGHLIGHT_MARGIN";
 export const CLASS_HIGHLIGHT_BEHIND = "R2_CLASS_HIGHLIGHT_BEHIND";
+export const CLASS_HIGHLIGHT_MASK = "R2_CLASS_HIGHLIGHT_MASK";
 export const CLASS_HIGHLIGHT_HOVER = "R2_CLASS_HIGHLIGHT_HOVER";
 export const CLASS_HIGHLIGHT_CURSOR2 = "R2_CLASS_HIGHLIGHT_CURSOR2";
 // export const CLASS_HIGHLIGHT_CURSOR1 = "R2_CLASS_HIGHLIGHT_CURSOR1";
@@ -1060,8 +1062,8 @@ width: 1px !important;
 height: 1px !important;
 }
 
-:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not(.${CLASS_HIGHLIGHT_BEHIND}),
-:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not(.${CLASS_HIGHLIGHT_BEHIND})
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not(.${CLASS_HIGHLIGHT_BEHIND}):not(.${CLASS_HIGHLIGHT_MASK}),
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}:not(.${CLASS_HIGHLIGHT_BEHIND}):not(.${CLASS_HIGHLIGHT_MASK})
 {
     opacity: 0.8;
 }
@@ -1114,6 +1116,21 @@ z-index: 2;
 :root > body > #${ID_HIGHLIGHTS_CONTAINER} .${CLASS_HIGHLIGHT_COMMON}
 {
 background-color: transparent !important;
+position: absolute !important;
+top: 0 !important;
+left: 0 !important;
+overflow: visible !important;
+margin: 0 !important;
+padding: 0 !important;
+border: 0 !important;
+box-sizing: border-box !important;
+pointer-events: none !important;
+}
+
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} .${CLASS_HIGHLIGHT_COMMON_SVG},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} .${CLASS_HIGHLIGHT_COMMON_SVG}
+{
+/* background-color: transparent !important; */
 position: absolute !important;
 top: 0 !important;
 left: 0 !important;

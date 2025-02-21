@@ -16,6 +16,7 @@ import {
     HighlightDrawTypeStrikethrough, HighlightDrawTypeUnderline, HighlightDrawTypeOutline, IColor, IHighlight,
     IHighlightDefinition,
     HighlightDrawTypeBackground,
+    HighlightDrawTypeRulerMask,
 } from "../../common/highlight";
 import { appendCSSInline, isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";
@@ -24,7 +25,7 @@ import { getScrollingElement, isVerticalWritingMode, isTwoPageSpread } from "./r
 import { convertRangeInfo } from "./selection";
 import { ReadiumElectronWebviewWindow } from "./state";
 
-import { CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CURSOR2, CLASS_HIGHLIGHT_COMMON, CLASS_HIGHLIGHT_MARGIN, CLASS_HIGHLIGHT_HOVER, CLASS_HIGHLIGHT_BEHIND } from "../../common/styles";
+import { CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CURSOR2, CLASS_HIGHLIGHT_COMMON, CLASS_HIGHLIGHT_MARGIN, CLASS_HIGHLIGHT_HOVER, CLASS_HIGHLIGHT_BEHIND, CLASS_HIGHLIGHT_COMMON_SVG, CLASS_HIGHLIGHT_MASK } from "../../common/styles";
 
 import { isRTL } from "./readium-css";
 
@@ -1310,6 +1311,7 @@ function createHighlightDom(
     const drawUnderline = highlight.drawType === HighlightDrawTypeUnderline;
     const drawStrikeThrough = highlight.drawType === HighlightDrawTypeStrikethrough;
     const drawOutline = highlight.drawType === HighlightDrawTypeOutline;
+    const drawRulerMask = highlight.drawType === HighlightDrawTypeRulerMask;
 
     const paginated = isPaginated(documant);
 
@@ -1465,10 +1467,20 @@ https://blackorwhite.lloydk.ca
         //     "-1");
         highlightParent.classList.add(CLASS_HIGHLIGHT_BEHIND);
     }
+    if (drawRulerMask) {
+        highlightParent.classList.add(CLASS_HIGHLIGHT_MASK);
+    }
 
     // TTS solid background highlights don't need SVG polygons,
     // no mouse cursor hit testing, just CSS highlights rendering
-    if (highlight.rangeCssHighlight && !highlight.pointerInteraction) {
+    if (
+        !highlight.pointerInteraction &&
+        (
+            highlight.rangeCssHighlight
+            // ||
+            // (drawRulerMask && highlight.group === HIGHLIGHT_GROUP_TTS)
+        )
+    ) {
         return highlightParent;
     }
 
@@ -1756,6 +1768,440 @@ https://blackorwhite.lloydk.ca
     });
     cleanupPolygon(polygonCountourUnionPoly, gap);
 
+    const useFastBoundingRect = true; // we never union-join the polygons, instead we group possible rectangle bounding boxes together to allow fragmentation across page boundaries
+    if (drawRulerMask) {
+        let boundingRectMaskBase: IRect | IRect[] | undefined;
+        const polygonCountourMaskBaseRects: IRect[] = [];
+
+        const bodyRect_: IRect = {
+            left:
+                win.READIUM2.isFixedLayout
+                ?
+                0
+                :
+                (
+                rtl
+                ?
+                (
+                    paginated
+                    ?
+                    (paginatedWidth - paginatedGap - paginatedGap - paginatedGap - bodyRect.width)
+                    :
+                    0
+                )
+                :
+                (
+                paginated
+                ?
+                0 - paginatedGap
+                :
+                0
+                )
+                )
+            ,
+            top: win.READIUM2.isFixedLayout ? 0 : rtl ? 0 : 0,
+            width:
+                win.READIUM2.isFixedLayout
+                ?
+                bodyRect.width * scale
+                :
+                (
+                rtl
+                ?
+                (
+                paginated
+                ?
+                (paginatedGap + paginatedGap + bodyRect.width)
+                :
+                bodyRect.width
+                )
+                :
+                (
+                paginated
+                ?
+                bodyRect.width + paginatedGap + paginatedGap
+                :
+                bodyRect.width
+                )
+                )
+            ,
+            height:
+                win.READIUM2.isFixedLayout
+                ?
+                bodyRect.height * scale
+                :
+                bodyRect.height
+            ,
+            right: 0,
+            bottom: 0,
+        };
+        bodyRect_.right = bodyRect_.left + bodyRect_.width;
+        bodyRect_.bottom = bodyRect_.top + bodyRect_.height;
+
+        boundingRectMaskBase = boundingRectMaskBase ? getBoundingRect(boundingRectMaskBase as IRect, bodyRect_) : bodyRect_;
+
+        polygonCountourMaskBaseRects.push(bodyRect_);
+
+        let polygonMaskBaseUnionPoly: Polygon | undefined;
+        if (paginated) {
+            const tolerance = 1;
+            const groups: Array<{
+                x: number,
+                boxes: IRect[],
+            }> = [];
+            for (const r of polygonCountourMaskBaseRects) {
+                const group = groups.find((g) => {
+                    return !(r.left < (g.x - tolerance) || r.left > (g.x + tolerance));
+                });
+
+                if (!group) {
+                    groups.push({
+                        x: r.left,
+                        boxes: [r],
+                    });
+                } else {
+                    group.boxes?.push(r);
+                }
+            }
+
+            // console.log("XX RECTS: " + polygonCountourMaskBaseRects.length);
+            // console.log(JSON.stringify(polygonCountourMaskBaseRects, null, 4));
+            // console.log("XX GROUPS: " + groups.length);
+            // groups.forEach((g) => console.log(JSON.stringify(g.boxes, null, 4)));
+
+            boundingRectMaskBase = groups.map<IRect>((g) => {
+                return g.boxes.reduce((prev, cur) => {
+                    if (prev === cur) {
+                        return cur;
+                    }
+                    return getBoundingRect(prev, cur);
+                }, g.boxes[0]);
+            });
+            if (boundingRectMaskBase.length === 1) {
+                boundingRectMaskBase = boundingRectMaskBase[0];
+            }
+        }
+
+        if (useFastBoundingRect) {
+            if (boundingRectMaskBase) {
+                polygonMaskBaseUnionPoly = new Polygon();
+                if (Array.isArray(boundingRectMaskBase)) {
+                    for (const b of boundingRectMaskBase) {
+                        const f = polygonMaskBaseUnionPoly.addFace(new Box(b.left, b.top, b.right, b.bottom));
+                        if (f.orientation() !== BASE_ORIENTATION) {
+                            console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 6");
+                            f.reverse();
+                        }
+                    }
+                } else {
+                    const f = polygonMaskBaseUnionPoly.addFace(new Box(boundingRectMaskBase.left, boundingRectMaskBase.top, boundingRectMaskBase.right, boundingRectMaskBase.bottom));
+                    if (f.orientation() !== BASE_ORIENTATION) {
+                        console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 7");
+                        f.reverse();
+                    }
+                }
+            } else {
+                const poly = new Polygon();
+                for (const r of polygonCountourMaskBaseRects) {
+                    const f = poly.addFace(new Box(r.left, r.top, r.right, r.bottom));
+                    if (f.orientation() !== BASE_ORIENTATION) {
+                        console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 8");
+                        f.reverse();
+                    }
+                }
+                polygonMaskBaseUnionPoly = new Polygon();
+                const f = polygonMaskBaseUnionPoly.addFace(poly.box);
+                if (f.orientation() !== BASE_ORIENTATION) {
+                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 9");
+                    f.reverse();
+                }
+            }
+        } else {
+            polygonMaskBaseUnionPoly = polygonCountourMaskBaseRects.reduce((previousPolygon, r) => {
+                const b = new Box(r.left, r.top, r.right, r.bottom);
+                const p = new Polygon();
+                const f = p.addFace(b);
+                if (f.orientation() !== BASE_ORIENTATION) {
+                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 10");
+                    f.reverse();
+                }
+                return unify(previousPolygon, p);
+            }, new Polygon());
+
+            // Array.from(polygonMaskBaseUnionPoly.faces).forEach((face: Face) => {
+            //     if (face.orientation() !== BASE_ORIENTATION) {
+            //         if (DEBUG_RECTS) {
+            //             console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (margin))");
+            //         }
+            //         (polygonMaskBaseUnionPoly as Polygon).deleteFace(face);
+            //     }
+            // });
+        }
+
+        // const highlightMaskBaseSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
+        // highlightMaskBaseSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON}`); //  ${CLASS_HIGHLIGHT_CONTOUR_MARGIN}
+        // highlightMaskBaseSVG.polygon = polygonMaskBaseUnionPoly;
+
+        // const svgPathMaskBase = polygonMaskBaseUnionPoly.svg({
+        //     // fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+        //     fill: "yellow",
+        //     fillRule: "evenodd",
+        //     // stroke: "transparent",
+        //     // strokeWidth: 0,
+        //     // fillOpacity: 1,
+        //     stroke: "magenta",
+        //     strokeWidth: 6,
+        //     fillOpacity: 0.2,
+        //     className: undefined,
+        //     // r: 4,
+        // });
+        // highlightMaskBaseSVG.innerHTML = svgPathMaskBase;
+
+        // highlightParent.append(highlightMaskBaseSVG);
+
+        let boundingRectMask: IRect | IRect[] | undefined;
+        const polygonCountourMaskRects: IRect[] = [];
+        for (const f of polygonCountourUnionPoly.faces) {
+            const face = f as Face;
+
+            const b = face.box;
+            const left =
+                vertical
+                ?
+                b.xmin
+                :
+                paginated
+                ?
+                (
+                    (
+                    rtl
+                    ?
+                    (- (paginatedTwo ? paginatedWidth : 0))
+                    :
+                    0
+                    )
+                    + Math.floor(b.xmin / paginatedWidth) * paginatedWidth
+                )
+                : // scroll (!paginated)
+                (
+                rtl
+                ?
+                0
+                :
+                win.READIUM2.isFixedLayout
+                ?
+                0
+                :
+                0
+                );
+            const top =
+                vertical
+                ?
+                0
+                :
+                b.ymin
+            ;
+            const width =
+                vertical
+                ?
+                b.width
+                :
+                paginated
+                    ?
+                    (
+                    rtl
+                    ?
+                    bodyWidth
+                    :
+                    bodyWidth
+                    )
+                    : // !paginated(scroll)
+                    bodyWidth
+            ;
+            const height =
+                vertical
+                ?
+                bodyHeight
+                :
+                b.height
+            ;
+
+            const extra = 0;
+            // const extra = paginated ? 2 : 0; // useful to union-join small gaps, but here we are able to compute groups of bounding boxes so that in column-paginated mode when crossing over page boundaries there is no gigantic bounding box.
+
+            const r: IRect = {
+                left: left - (vertical ? extra : 0),
+                top: top - (vertical ? 0 : extra),
+                right: left + width + (vertical ? extra : 0),
+                bottom: top + height + (vertical ? 0 : extra),
+                width: width + extra * 2,
+                height: height + extra * 2,
+            };
+
+            boundingRectMask = boundingRectMask ? getBoundingRect(boundingRectMask as IRect, r) : r;
+
+            polygonCountourMaskRects.push(r);
+        }
+
+        let polygonMaskUnionPoly: Polygon | undefined;
+        if (paginated) {
+            const tolerance = 1;
+            const groups: Array<{
+                x: number,
+                boxes: IRect[],
+            }> = [];
+            for (const r of polygonCountourMaskRects) {
+                const group = groups.find((g) => {
+                    return !(r.left < (g.x - tolerance) || r.left > (g.x + tolerance));
+                });
+
+                if (!group) {
+                    groups.push({
+                        x: r.left,
+                        boxes: [r],
+                    });
+                } else {
+                    group.boxes?.push(r);
+                }
+            }
+
+            // console.log("XX RECTS: " + polygonCountourMaskRects.length);
+            // console.log(JSON.stringify(polygonCountourMaskRects, null, 4));
+            // console.log("XX GROUPS: " + groups.length);
+            // groups.forEach((g) => console.log(JSON.stringify(g.boxes, null, 4)));
+
+            boundingRectMask = groups.map<IRect>((g) => {
+                return g.boxes.reduce((prev, cur) => {
+                    if (prev === cur) {
+                        return cur;
+                    }
+                    return getBoundingRect(prev, cur);
+                }, g.boxes[0]);
+            });
+            if (boundingRectMask.length === 1) {
+                boundingRectMask = boundingRectMask[0];
+            }
+        }
+
+        if (useFastBoundingRect) {
+            if (boundingRectMask) {
+                polygonMaskUnionPoly = new Polygon();
+                if (Array.isArray(boundingRectMask)) {
+                    for (const b of boundingRectMask) {
+                        const f = polygonMaskUnionPoly.addFace(new Box(b.left, b.top, b.right, b.bottom));
+                        if (f.orientation() !== BASE_ORIENTATION) {
+                            console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 6");
+                            f.reverse();
+                        }
+                    }
+                } else {
+                    const f = polygonMaskUnionPoly.addFace(new Box(boundingRectMask.left, boundingRectMask.top, boundingRectMask.right, boundingRectMask.bottom));
+                    if (f.orientation() !== BASE_ORIENTATION) {
+                        console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 7");
+                        f.reverse();
+                    }
+                }
+            } else {
+                const poly = new Polygon();
+                for (const r of polygonCountourMaskRects) {
+                    const f = poly.addFace(new Box(r.left, r.top, r.right, r.bottom));
+                    if (f.orientation() !== BASE_ORIENTATION) {
+                        console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 8");
+                        f.reverse();
+                    }
+                }
+                polygonMaskUnionPoly = new Polygon();
+                const f = polygonMaskUnionPoly.addFace(poly.box);
+                if (f.orientation() !== BASE_ORIENTATION) {
+                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 9");
+                    f.reverse();
+                }
+            }
+        } else {
+            polygonMaskUnionPoly = polygonCountourMaskRects.reduce((previousPolygon, r) => {
+                const b = new Box(r.left, r.top, r.right, r.bottom);
+                const p = new Polygon();
+                const f = p.addFace(b);
+                if (f.orientation() !== BASE_ORIENTATION) {
+                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 10");
+                    f.reverse();
+                }
+                return unify(previousPolygon, p);
+            }, new Polygon());
+
+            // Array.from(polygonMaskUnionPoly.faces).forEach((face: Face) => {
+            //     if (face.orientation() !== BASE_ORIENTATION) {
+            //         if (DEBUG_RECTS) {
+            //             console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (margin))");
+            //         }
+            //         (polygonMaskUnionPoly as Polygon).deleteFace(face);
+            //     }
+            // });
+        }
+
+        const polyToDraw = subtract(polygonMaskBaseUnionPoly, polygonMaskUnionPoly);
+
+        const highlightMaskSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
+        highlightMaskSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON_SVG}`); //  ${CLASS_HIGHLIGHT_CONTOUR_MARGIN}
+        highlightMaskSVG.polygon = polyToDraw;
+        // const rgb = Math.round(0xffffff * Math.random());
+        // // tslint:disable-next-line:no-bitwise
+        // const r = rgb >> 16;
+        // // tslint:disable-next-line:no-bitwise
+        // const g = rgb >> 8 & 255;
+        // // tslint:disable-next-line:no-bitwise
+        // const b = rgb & 255;
+
+        let docStyle: CSSStyleDeclaration | undefined;
+        let rsBackground = bodyComputedStyle.getPropertyValue("--RS__backgroundColor");
+        if (!rsBackground) {
+            docStyle = win.getComputedStyle(documant.documentElement);
+            rsBackground = docStyle.getPropertyValue("--RS__backgroundColor");
+        }
+        if (rsBackground === "transparent") {
+            rsBackground = "";
+        }
+        // let rsForeground = bodyComputedStyle.getPropertyValue("--RS__textColor");
+        // if (!rsForeground) {
+        //     if (!docStyle) {
+        //         docStyle = win.getComputedStyle(documant.documentElement);
+        //     }
+        //     rsForeground = docStyle.getPropertyValue("--RS__textColor");
+        // }
+
+        const svgPathMask = highlightMaskSVG.polygon.svg({
+            fillRule: "evenodd",
+            // fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
+            fill: rsBackground ? rsBackground : "white",
+            fillOpacity: 0.9,
+            // stroke: rsForeground ? rsForeground : "black",
+            strokeWidth: 0,
+            stroke: "transparent",
+            // strokeWidth: 0,
+            // stroke: `rgb(${r}, ${g}, ${b})`,
+            // strokeWidth: 3,
+            // fill: "silver",
+            // fillOpacity: 0.4,
+            className: undefined,
+            // r: 4,
+        });
+        highlightMaskSVG.innerHTML = svgPathMask;
+
+        highlightParent.append(highlightMaskSVG);
+    }
+
+    // TTS
+    if (
+        !highlight.pointerInteraction &&
+        (
+            // highlight.rangeCssHighlight
+            // ||
+            (drawRulerMask && highlight.group === HIGHLIGHT_GROUP_TTS)
+        )
+    ) {
+        return highlightParent;
+    }
+
     let polygonSurface: Polygon | Polygon[] | undefined;
     if (highlight.rangeCssHighlight) {
         polygonSurface = undefined;
@@ -1983,7 +2429,7 @@ https://blackorwhite.lloydk.ca
         const MARGIN_MARKER_THICKNESS = 14 * (win.READIUM2.isFixedLayout ? scale : 1);
         const MARGIN_MARKER_OFFSET = 6 * (win.READIUM2.isFixedLayout ? scale : 1);
 
-        let boundingRect: IRect | IRect[] | undefined;
+        let boundingRectCountourMargin: IRect | IRect[] | undefined;
         const polygonCountourMarginRects: IRect[] = [];
         for (const f of polygonCountourUnionPoly.faces) {
             const face = f as Face;
@@ -2042,12 +2488,11 @@ https://blackorwhite.lloydk.ca
                 height: height + extra * 2,
             };
 
-            boundingRect = boundingRect ? getBoundingRect(boundingRect as IRect, r) : r;
+            boundingRectCountourMargin = boundingRectCountourMargin ? getBoundingRect(boundingRectCountourMargin as IRect, r) : r;
 
             polygonCountourMarginRects.push(r);
         }
 
-        const useFastBoundingRect = true; // we never union-join the polygons, instead we group possible rectangle bounding boxes together to allow fragmentation across page boundaries
         let polygonMarginUnionPoly: Polygon | undefined;
         if (paginated) {
             const tolerance = 1;
@@ -2075,7 +2520,7 @@ https://blackorwhite.lloydk.ca
             // console.log("XX GROUPS: " + groups.length);
             // groups.forEach((g) => console.log(JSON.stringify(g.boxes, null, 4)));
 
-            boundingRect = groups.map<IRect>((g) => {
+            boundingRectCountourMargin = groups.map<IRect>((g) => {
                 return g.boxes.reduce((prev, cur) => {
                     if (prev === cur) {
                         return cur;
@@ -2083,16 +2528,16 @@ https://blackorwhite.lloydk.ca
                     return getBoundingRect(prev, cur);
                 }, g.boxes[0]);
             });
-            if (boundingRect.length === 1) {
-                boundingRect = boundingRect[0];
+            if (boundingRectCountourMargin.length === 1) {
+                boundingRectCountourMargin = boundingRectCountourMargin[0];
             }
         }
 
         if (useFastBoundingRect) {
-            if (boundingRect) {
+            if (boundingRectCountourMargin) {
                 polygonMarginUnionPoly = new Polygon();
-                if (Array.isArray(boundingRect)) {
-                    for (const b of boundingRect) {
+                if (Array.isArray(boundingRectCountourMargin)) {
+                    for (const b of boundingRectCountourMargin) {
                         const f = polygonMarginUnionPoly.addFace(new Box(b.left, b.top, b.right, b.bottom));
                         if (f.orientation() !== BASE_ORIENTATION) {
                             console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 6");
@@ -2100,7 +2545,7 @@ https://blackorwhite.lloydk.ca
                         }
                     }
                 } else {
-                    const f = polygonMarginUnionPoly.addFace(new Box(boundingRect.left, boundingRect.top, boundingRect.right, boundingRect.bottom));
+                    const f = polygonMarginUnionPoly.addFace(new Box(boundingRectCountourMargin.left, boundingRectCountourMargin.top, boundingRectCountourMargin.right, boundingRectCountourMargin.bottom));
                     if (f.orientation() !== BASE_ORIENTATION) {
                         console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 7");
                         f.reverse();
@@ -2176,410 +2621,6 @@ https://blackorwhite.lloydk.ca
         }
 
         highlightParent.append(highlightMarginSVG);
-    }
-
-    const doDrawMaskBase = false;
-    if (doDrawMaskBase) {
-        let boundingRect: IRect | IRect[] | undefined;
-        const polygonCountourMaskBaseRects: IRect[] = [];
-
-        const bodyRect_: IRect = {
-            left:
-                win.READIUM2.isFixedLayout
-                ?
-                0
-                :
-                (
-                rtl
-                ?
-                (
-                    paginated
-                    ?
-                    (paginatedWidth - paginatedGap - paginatedGap - paginatedGap - bodyRect.width)
-                    :
-                    0
-                )
-                :
-                (
-                paginated
-                ?
-                0 - paginatedGap
-                :
-                0
-                )
-                )
-            ,
-            top: win.READIUM2.isFixedLayout ? 0 : rtl ? 0 : 0,
-            width:
-                win.READIUM2.isFixedLayout
-                ?
-                bodyRect.width * scale
-                :
-                (
-                rtl
-                ?
-                (
-                paginated
-                ?
-                (paginatedGap + paginatedGap + bodyRect.width)
-                :
-                bodyRect.width
-                )
-                :
-                (
-                paginated
-                ?
-                bodyRect.width + paginatedGap + paginatedGap
-                :
-                bodyRect.width
-                )
-                )
-            ,
-            height:
-                win.READIUM2.isFixedLayout
-                ?
-                bodyRect.height * scale
-                :
-                bodyRect.height
-            ,
-            right: 0,
-            bottom: 0,
-        };
-        bodyRect_.right = bodyRect_.left + bodyRect_.width;
-        bodyRect_.bottom = bodyRect_.top + bodyRect_.height;
-
-        boundingRect = boundingRect ? getBoundingRect(boundingRect as IRect, bodyRect_) : bodyRect_;
-
-        polygonCountourMaskBaseRects.push(bodyRect_);
-
-        const useFastBoundingRect = true; // we never union-join the polygons, instead we group possible rectangle bounding boxes together to allow fragmentation across page boundaries
-        let polygonMaskBaseUnionPoly: Polygon | undefined;
-        if (paginated) {
-            const tolerance = 1;
-            const groups: Array<{
-                x: number,
-                boxes: IRect[],
-            }> = [];
-            for (const r of polygonCountourMaskBaseRects) {
-                const group = groups.find((g) => {
-                    return !(r.left < (g.x - tolerance) || r.left > (g.x + tolerance));
-                });
-
-                if (!group) {
-                    groups.push({
-                        x: r.left,
-                        boxes: [r],
-                    });
-                } else {
-                    group.boxes?.push(r);
-                }
-            }
-
-            // console.log("XX RECTS: " + polygonCountourMaskBaseRects.length);
-            // console.log(JSON.stringify(polygonCountourMaskBaseRects, null, 4));
-            // console.log("XX GROUPS: " + groups.length);
-            // groups.forEach((g) => console.log(JSON.stringify(g.boxes, null, 4)));
-
-            boundingRect = groups.map<IRect>((g) => {
-                return g.boxes.reduce((prev, cur) => {
-                    if (prev === cur) {
-                        return cur;
-                    }
-                    return getBoundingRect(prev, cur);
-                }, g.boxes[0]);
-            });
-            if (boundingRect.length === 1) {
-                boundingRect = boundingRect[0];
-            }
-        }
-
-        if (useFastBoundingRect) {
-            if (boundingRect) {
-                polygonMaskBaseUnionPoly = new Polygon();
-                if (Array.isArray(boundingRect)) {
-                    for (const b of boundingRect) {
-                        const f = polygonMaskBaseUnionPoly.addFace(new Box(b.left, b.top, b.right, b.bottom));
-                        if (f.orientation() !== BASE_ORIENTATION) {
-                            console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 6");
-                            f.reverse();
-                        }
-                    }
-                } else {
-                    const f = polygonMaskBaseUnionPoly.addFace(new Box(boundingRect.left, boundingRect.top, boundingRect.right, boundingRect.bottom));
-                    if (f.orientation() !== BASE_ORIENTATION) {
-                        console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 7");
-                        f.reverse();
-                    }
-                }
-            } else {
-                const poly = new Polygon();
-                for (const r of polygonCountourMaskBaseRects) {
-                    const f = poly.addFace(new Box(r.left, r.top, r.right, r.bottom));
-                    if (f.orientation() !== BASE_ORIENTATION) {
-                        console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 8");
-                        f.reverse();
-                    }
-                }
-                polygonMaskBaseUnionPoly = new Polygon();
-                const f = polygonMaskBaseUnionPoly.addFace(poly.box);
-                if (f.orientation() !== BASE_ORIENTATION) {
-                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 9");
-                    f.reverse();
-                }
-            }
-        } else {
-            polygonMaskBaseUnionPoly = polygonCountourMaskBaseRects.reduce((previousPolygon, r) => {
-                const b = new Box(r.left, r.top, r.right, r.bottom);
-                const p = new Polygon();
-                const f = p.addFace(b);
-                if (f.orientation() !== BASE_ORIENTATION) {
-                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 10");
-                    f.reverse();
-                }
-                return unify(previousPolygon, p);
-            }, new Polygon());
-
-            // Array.from(polygonMaskBaseUnionPoly.faces).forEach((face: Face) => {
-            //     if (face.orientation() !== BASE_ORIENTATION) {
-            //         if (DEBUG_RECTS) {
-            //             console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (margin))");
-            //         }
-            //         (polygonMaskBaseUnionPoly as Polygon).deleteFace(face);
-            //     }
-            // });
-        }
-
-        const highlightMaskBaseSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
-        highlightMaskBaseSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON}`); //  ${CLASS_HIGHLIGHT_CONTOUR_MARGIN}
-        highlightMaskBaseSVG.polygon = polygonMaskBaseUnionPoly;
-
-        const svgPath = polygonMaskBaseUnionPoly.svg({
-            // fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
-            fill: "yellow",
-            fillRule: "evenodd",
-            // stroke: "transparent",
-            // strokeWidth: 0,
-            // fillOpacity: 1,
-            stroke: "magenta",
-            strokeWidth: 6,
-            fillOpacity: 0.2,
-            className: undefined,
-            // r: 4,
-        });
-        highlightMaskBaseSVG.innerHTML = svgPath;
-
-        highlightParent.append(highlightMaskBaseSVG);
-    }
-
-    const doDrawMask = false;
-    if (doDrawMask) {
-        let boundingRect: IRect | IRect[] | undefined;
-        const polygonCountourMaskRects: IRect[] = [];
-        for (const f of polygonCountourUnionPoly.faces) {
-            const face = f as Face;
-
-            const b = face.box;
-            const left =
-                vertical
-                ?
-                b.xmin
-                :
-                paginated
-                ?
-                (
-                    (
-                    rtl
-                    ?
-                    (- (paginatedTwo ? paginatedWidth : 0))
-                    :
-                    0
-                    )
-                    + Math.floor(b.xmin / paginatedWidth) * paginatedWidth
-                )
-                : // scroll (!paginated)
-                (
-                rtl
-                ?
-                0
-                :
-                win.READIUM2.isFixedLayout
-                ?
-                0
-                :
-                0
-                );
-            const top =
-                vertical
-                ?
-                0
-                :
-                b.ymin
-            ;
-            const width =
-                vertical
-                ?
-                b.width
-                :
-                paginated
-                    ?
-                    (
-                    rtl
-                    ?
-                    bodyWidth
-                    :
-                    bodyWidth
-                    )
-                    : // !paginated(scroll)
-                    bodyWidth
-            ;
-            const height =
-                vertical
-                ?
-                bodyHeight
-                :
-                b.height
-            ;
-
-            const extra = 0;
-            // const extra = paginated ? 2 : 0; // useful to union-join small gaps, but here we are able to compute groups of bounding boxes so that in column-paginated mode when crossing over page boundaries there is no gigantic bounding box.
-
-            const r: IRect = {
-                left: left - (vertical ? extra : 0),
-                top: top - (vertical ? 0 : extra),
-                right: left + width + (vertical ? extra : 0),
-                bottom: top + height + (vertical ? 0 : extra),
-                width: width + extra * 2,
-                height: height + extra * 2,
-            };
-
-            boundingRect = boundingRect ? getBoundingRect(boundingRect as IRect, r) : r;
-
-            polygonCountourMaskRects.push(r);
-        }
-
-        const useFastBoundingRect = true; // we never union-join the polygons, instead we group possible rectangle bounding boxes together to allow fragmentation across page boundaries
-        let polygonMaskUnionPoly: Polygon | undefined;
-        if (paginated) {
-            const tolerance = 1;
-            const groups: Array<{
-                x: number,
-                boxes: IRect[],
-            }> = [];
-            for (const r of polygonCountourMaskRects) {
-                const group = groups.find((g) => {
-                    return !(r.left < (g.x - tolerance) || r.left > (g.x + tolerance));
-                });
-
-                if (!group) {
-                    groups.push({
-                        x: r.left,
-                        boxes: [r],
-                    });
-                } else {
-                    group.boxes?.push(r);
-                }
-            }
-
-            // console.log("XX RECTS: " + polygonCountourMaskRects.length);
-            // console.log(JSON.stringify(polygonCountourMaskRects, null, 4));
-            // console.log("XX GROUPS: " + groups.length);
-            // groups.forEach((g) => console.log(JSON.stringify(g.boxes, null, 4)));
-
-            boundingRect = groups.map<IRect>((g) => {
-                return g.boxes.reduce((prev, cur) => {
-                    if (prev === cur) {
-                        return cur;
-                    }
-                    return getBoundingRect(prev, cur);
-                }, g.boxes[0]);
-            });
-            if (boundingRect.length === 1) {
-                boundingRect = boundingRect[0];
-            }
-        }
-
-        if (useFastBoundingRect) {
-            if (boundingRect) {
-                polygonMaskUnionPoly = new Polygon();
-                if (Array.isArray(boundingRect)) {
-                    for (const b of boundingRect) {
-                        const f = polygonMaskUnionPoly.addFace(new Box(b.left, b.top, b.right, b.bottom));
-                        if (f.orientation() !== BASE_ORIENTATION) {
-                            console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 6");
-                            f.reverse();
-                        }
-                    }
-                } else {
-                    const f = polygonMaskUnionPoly.addFace(new Box(boundingRect.left, boundingRect.top, boundingRect.right, boundingRect.bottom));
-                    if (f.orientation() !== BASE_ORIENTATION) {
-                        console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 7");
-                        f.reverse();
-                    }
-                }
-            } else {
-                const poly = new Polygon();
-                for (const r of polygonCountourMaskRects) {
-                    const f = poly.addFace(new Box(r.left, r.top, r.right, r.bottom));
-                    if (f.orientation() !== BASE_ORIENTATION) {
-                        console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 8");
-                        f.reverse();
-                    }
-                }
-                polygonMaskUnionPoly = new Polygon();
-                const f = polygonMaskUnionPoly.addFace(poly.box);
-                if (f.orientation() !== BASE_ORIENTATION) {
-                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 9");
-                    f.reverse();
-                }
-            }
-        } else {
-            polygonMaskUnionPoly = polygonCountourMaskRects.reduce((previousPolygon, r) => {
-                const b = new Box(r.left, r.top, r.right, r.bottom);
-                const p = new Polygon();
-                const f = p.addFace(b);
-                if (f.orientation() !== BASE_ORIENTATION) {
-                    console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 10");
-                    f.reverse();
-                }
-                return unify(previousPolygon, p);
-            }, new Polygon());
-
-            // Array.from(polygonMaskUnionPoly.faces).forEach((face: Face) => {
-            //     if (face.orientation() !== BASE_ORIENTATION) {
-            //         if (DEBUG_RECTS) {
-            //             console.log("--HIGH WEBVIEW-- removing polygon orientation face / inner hole (margin))");
-            //         }
-            //         (polygonMaskUnionPoly as Polygon).deleteFace(face);
-            //     }
-            // });
-        }
-
-        const highlightMaskSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
-        highlightMaskSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON}`); //  ${CLASS_HIGHLIGHT_CONTOUR_MARGIN}
-        highlightMaskSVG.polygon = polygonMaskUnionPoly;
-        const rgb = Math.round(0xffffff * Math.random());
-        // tslint:disable-next-line:no-bitwise
-        const r = rgb >> 16;
-        // tslint:disable-next-line:no-bitwise
-        const g = rgb >> 8 & 255;
-        // tslint:disable-next-line:no-bitwise
-        const b = rgb & 255;
-        const svgPath = polygonMaskUnionPoly.svg({
-            // fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
-            fill: "silver",
-            fillRule: "evenodd",
-            // stroke: "transparent",
-            // strokeWidth: 0,
-            // fillOpacity: 1,
-            stroke: `rgb(${r}, ${g}, ${b})`,
-            strokeWidth: 3,
-            fillOpacity: 0.4,
-            className: undefined,
-            // r: 4,
-        });
-        highlightMaskSVG.innerHTML = svgPath;
-
-        highlightParent.append(highlightMaskSVG);
     }
 
     return highlightParent;

@@ -12,7 +12,7 @@ import {
     R2_EVENT_TTS_DOC_END, R2_EVENT_TTS_DOC_BACK, R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED,
 } from "../../common/events";
 import {
-    HighlightDrawTypeBackground, HighlightDrawTypeUnderline, IHighlight,
+    HighlightDrawTypeBackground, HighlightDrawTypeRulerMask, HighlightDrawTypeUnderline, IHighlight,
 } from "../../common/highlight";
 import {
     CSS_CLASS_NO_FOCUS_OUTLINE, POPUP_DIALOG_CLASS, POPUP_DIALOG_CLASS_COLLAPSE, ROOT_CLASS_REDUCE_MOTION,
@@ -41,6 +41,8 @@ import { ReadiumElectronWebviewWindow } from "./state";
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
 const win = global.window as ReadiumElectronWebviewWindow;
+
+const drawHighlightRulerMask = false;
 
 interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
 
@@ -474,6 +476,8 @@ export function ttsNext(skipSentences: boolean, escape = false) {
         }
         if (ttsQueueIndex >= _dialogState.ttsQueueLength || ttsQueueIndex < 0) {
             ttsStop();
+            flushDestroy();
+
             setTimeout(() => {
                 ipcRenderer.sendToHost(R2_EVENT_TTS_DOC_END);
                 // const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
@@ -536,6 +540,8 @@ export function ttsPrevious(skipSentences: boolean, escape = false) {
         }
         if (ttsQueueIndex >= _dialogState.ttsQueueLength || ttsQueueIndex < 0) {
             ttsStop();
+            flushDestroy();
+
             setTimeout(() => {
                 ipcRenderer.sendToHost(R2_EVENT_TTS_DOC_BACK);
                 // const payload: IEventPayload_R2_EVENT_PAGE_TURN = {
@@ -803,9 +809,19 @@ function wrapHighlightWord(
     }
 }
 
+let _ttsQueueItemHighlightsSentenceToDestroy: IHighlight[] | undefined;
+const flushDestroy = () => {
+    if (_ttsQueueItemHighlightsSentenceToDestroy) {
+        _ttsQueueItemHighlightsSentenceToDestroy.forEach((highlight) => {
+            destroyHighlight(win.document, highlight.id);
+        });
+        _ttsQueueItemHighlightsSentenceToDestroy = undefined;
+    }
+};
 function wrapHighlight(
     doHighlight: boolean,
-    ttsQueueItemRef: ITtsQueueItemReference) {
+    ttsQueueItemRef: ITtsQueueItemReference,
+    expectNext?: boolean) {
 
     if (_dialogState && _dialogState.ttsOverlayEnabled) {
         return;
@@ -819,10 +835,18 @@ function wrapHighlight(
         });
         _ttsQueueItemHighlightsWord = undefined;
     }
+
     if (_ttsQueueItemHighlightsSentence) {
         _ttsQueueItemHighlightsSentence.forEach((highlight) => {
             if (highlight) {
-                destroyHighlight(win.document, highlight.id);
+                if ((doHighlight || expectNext) && highlight.drawType === HighlightDrawTypeRulerMask) {
+                    if (!_ttsQueueItemHighlightsSentenceToDestroy) {
+                        _ttsQueueItemHighlightsSentenceToDestroy = [];
+                    }
+                    _ttsQueueItemHighlightsSentenceToDestroy.push(highlight);
+                } else {
+                    destroyHighlight(win.document, highlight.id);
+                }
             }
         });
         _ttsQueueItemHighlightsSentence = undefined;
@@ -910,12 +934,14 @@ function wrapHighlight(
 
             const firstTextNode = ttsQueueItem.textNodes[0];
             if (!firstTextNode.nodeValue && firstTextNode.nodeValue !== "") {
+                flushDestroy();
                 return;
             }
             range.setStart(firstTextNode, isOnlyWhiteSpace(firstTextNode.nodeValue) ? firstTextNode.nodeValue.length - 1 : 0);
 
             const lastTextNode = ttsQueueItem.textNodes[ttsQueueItem.textNodes.length - 1];
             if (!lastTextNode.nodeValue && lastTextNode.nodeValue !== "") {
+                flushDestroy();
                 return;
             }
             range.setEnd(lastTextNode, isOnlyWhiteSpace(lastTextNode.nodeValue) ? 1 : lastTextNode.nodeValue.length);
@@ -947,8 +973,8 @@ function wrapHighlight(
                         green: 248, // 218,
                         red: 248, // 255,
                     },
-                    drawType: HighlightDrawTypeBackground,
-                    expand: 4,
+                    drawType: drawHighlightRulerMask ? HighlightDrawTypeRulerMask : HighlightDrawTypeBackground,
+                    expand: drawHighlightRulerMask ? 0 : 4,
                     selectionInfo: undefined,
                     group: HIGHLIGHT_GROUP_TTS,
                     range,
@@ -972,9 +998,13 @@ function wrapHighlight(
             );
         }
     }
+
+    if (doHighlight) {
+        flushDestroy();
+    }
 }
 
-function highlights(doHighlight: boolean) {
+function highlights(doHighlight: boolean, expectNext?: boolean) {
 
     if (_dialogState && _dialogState.ttsOverlayEnabled) {
         return;
@@ -984,7 +1014,7 @@ function highlights(doHighlight: boolean) {
     }
     if (doHighlight) {
         if (_dialogState.ttsQueueItem) {
-            wrapHighlight(true, _dialogState.ttsQueueItem);
+            wrapHighlight(true, _dialogState.ttsQueueItem, expectNext);
         }
         if (win.READIUM2.DEBUG_VISUALS &&
             _dialogState.ttsRootElement) {
@@ -992,7 +1022,7 @@ function highlights(doHighlight: boolean) {
         }
     } else {
         if (_dialogState.ttsQueueItem) {
-            wrapHighlight(false, _dialogState.ttsQueueItem);
+            wrapHighlight(false, _dialogState.ttsQueueItem, expectNext);
         }
         if (// win.READIUM2.DEBUG_VISUALS &&
             _dialogState.ttsRootElement) {
@@ -1347,6 +1377,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number, ttsAndMediaOverlaysManu
     }
     if (ttsQueueIndex >= _dialogState.ttsQueueLength) {
         ttsStop();
+        flushDestroy();
 
         setTimeout(() => {
             ipcRenderer.sendToHost(R2_EVENT_TTS_DOC_END);
@@ -1504,7 +1535,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number, ttsAndMediaOverlaysManu
             return;
         }
 
-        highlights(false);
+        highlights(false, true);
         ttsPlayQueueIndexDebounced(ttsQueueIndex + 1);
     };
     utterance.onend = (_ev: SpeechSynthesisEvent) => {
