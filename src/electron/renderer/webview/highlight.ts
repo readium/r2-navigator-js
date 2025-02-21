@@ -1615,12 +1615,14 @@ https://blackorwhite.lloydk.ca
 
     // const rangeBoundingClientRect = range.getBoundingClientRect();
 
+    const bodyPaddingLeft = parseInt( bodyComputedStyle.paddingLeft, 10);
+    const bodyPaddingRight = parseInt( bodyComputedStyle.paddingRight, 10);
     const bodyWidth = parseInt(bodyComputedStyle.width, 10);
     const bodyHeight = parseInt(bodyComputedStyle.height, 10);
     const paginatedTwo = paginated && isTwoPageSpread();
     const paginatedWidth = scrollElement.clientWidth / (paginatedTwo ? 2 : 1);
     const paginatedGap = (paginatedWidth - bodyWidth) / 2;
-    const paginatedOffset = paginatedGap + parseInt(bodyComputedStyle.paddingLeft, 10);
+    const paginatedOffset = paginatedGap + bodyPaddingLeft;
 
     const gap = 2;
     const gapX = ((drawOutline || drawBackground) ? gap : 0);
@@ -2000,9 +2002,9 @@ https://blackorwhite.lloydk.ca
                                 (
                                     rtl
                                         ?
-                                        paginatedGap // (- (paginatedTwo ? paginatedWidth : 0))
+                                        paginatedGap + bodyPaddingLeft
                                         :
-                                        paginatedGap
+                                        paginatedGap + bodyPaddingLeft
                                 )
                                 + Math.floor(b.xmin / paginatedWidth) * paginatedWidth
                             )
@@ -2035,9 +2037,9 @@ https://blackorwhite.lloydk.ca
                             (
                                 rtl
                                     ?
-                                    bodyWidth
+                                    bodyWidth - bodyPaddingLeft - bodyPaddingRight
                                     :
-                                    bodyWidth
+                                    bodyWidth - bodyPaddingLeft - bodyPaddingRight
                             )
                             : // !paginated(scroll)
                             bodyWidth
@@ -2497,13 +2499,13 @@ https://blackorwhite.lloydk.ca
                 (
                     rtl
                     ?
-                    MARGIN_MARKER_OFFSET + bodyRect.width - parseInt(bodyComputedStyle.paddingRight, 10)
+                    MARGIN_MARKER_OFFSET + bodyRect.width - bodyPaddingRight
                     :
                     win.READIUM2.isFixedLayout
                     ?
                     MARGIN_MARKER_OFFSET
                     :
-                    parseInt(bodyComputedStyle.paddingLeft, 10) - MARGIN_MARKER_THICKNESS - MARGIN_MARKER_OFFSET
+                    bodyPaddingLeft - MARGIN_MARKER_THICKNESS - MARGIN_MARKER_OFFSET
                 )
             ;
             const top =

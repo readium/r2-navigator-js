@@ -42,7 +42,7 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 
 const win = global.window as ReadiumElectronWebviewWindow;
 
-const ttsHighlightType: number = HighlightDrawTypeBackground;
+const ttsHighlightType: number = HighlightDrawTypeOpacityMaskRuler;
 // HighlightDrawTypeBackground
 // HighlightDrawTypeOpacityMask
 // HighlightDrawTypeOpacityMaskRuler
