@@ -29,8 +29,8 @@ export interface IEventPayload_R2_EVENT_IMAGE_CLICK {
     cssSelectorOf_HTMLImg_SVGImage_SVGFragment: string;
     languageOf_HTMLImg_SVGImage_SVGFragment: string | undefined;
     directionOf_HTMLImg_SVGImage_SVGFragment: string | undefined;
-    naturalWidthOf_HTMLImg_SVGImage: number | undefined; // undefined with isSVGFragment and isSVGImage (HTMLImageElement.naturalWidth/Height exists, not SVGImageElement.naturalWidth/Height)
-    naturalHeightOf_HTMLImg_SVGImage: number | undefined; // undefined with isSVGFragment and isSVGImage (same comment as above)
+    naturalWidthOf_HTMLImg_SVGImage: number | undefined; // undefined with isSVGFragment and normally undefined with isSVGImage (HTMLImageElement.naturalWidth/Height exists, not SVGImageElement.naturalWidth/Height) ... but, we load the image href into an HTML image in order to extract the natural dimensions
+    naturalHeightOf_HTMLImg_SVGImage: number | undefined; // (same comment as above)
     altAttributeOf_HTMLImg_SVGImage_SVGFragment: string | null;
     titleAttributeOf_HTMLImg_SVGImage_SVGFragment: string | null;
     ariaLabelAttributeOf_HTMLImg_SVGImage_SVGFragment: string | null;
