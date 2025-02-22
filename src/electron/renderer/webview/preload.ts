@@ -4435,64 +4435,79 @@ let _elementsWithID: Array<Element> | undefined;
 const findFollowingDescendantSiblingElementsWithID = (el: Element): string[] | undefined => {
     let followingElementIDs: string[] | undefined;
     if (win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING) || win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED) || win.document.documentElement.classList.contains(R2_MO_CLASS_STOPPED)) {
-        followingElementIDs = [];
-
         if (!_elementsWithID) {
+            const elHighlightsContainer = win.document.getElementById(ID_HIGHLIGHTS_CONTAINER);
+            const elPopupDialog = win.document.getElementById(POPUP_DIALOG_CLASS);
+            const elSkipLink = ENABLE_SKIP_LINK ? win.document.getElementById(SKIP_LINK_ID) : null;
+            const elPad = win.document.getElementById(EXTRA_COLUMN_PAD_ID);
+
             _elementsWithID = Array.from(win.document.querySelectorAll(`*:not(#${ID_HIGHLIGHTS_CONTAINER}):not(#${POPUP_DIALOG_CLASS}):not(#${EXTRA_COLUMN_PAD_ID}):not(#${SKIP_LINK_ID}) *[id]:not(#${ID_HIGHLIGHTS_CONTAINER}):not(#${POPUP_DIALOG_CLASS}):not(#${EXTRA_COLUMN_PAD_ID}):not(#${SKIP_LINK_ID})`));
-        }
 
-        const elHighlightsContainer = win.document.getElementById(ID_HIGHLIGHTS_CONTAINER);
-        const elPopupDialog = win.document.getElementById(POPUP_DIALOG_CLASS);
-        const elSkipLink = ENABLE_SKIP_LINK ? win.document.getElementById(SKIP_LINK_ID) : null;
-        const elPad = win.document.getElementById(EXTRA_COLUMN_PAD_ID);
-
-        // for (let i = _elementsWithID.length - 1; i >= 0; i--) {
-        for (let i = 0; i < _elementsWithID.length; i++) {
-            const elementWithID = _elementsWithID[i];
-            const id = elementWithID.id || elementWithID.getAttribute("id");
-            if (!id) {
-                continue;
-            }
-
-            const c = el.compareDocumentPosition(elementWithID);
-            // tslint:disable-next-line: no-bitwise
-            if (// c === 0 ||
-                (c & Node.DOCUMENT_POSITION_FOLLOWING) || (c & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
-                let doPush = true;
+            for (let i = 0; i < _elementsWithID.length; i++) {
+                const elementWithID = _elementsWithID[i];
+                const id = elementWithID.id || elementWithID.getAttribute("id");
+                if (!id) {
+                    // @ts-expect-error temporary null, to eject later (filter)
+                    _elementsWithID[i] = null;
+                    continue;
+                }
+                let keep = true;
                 if (elHighlightsContainer) {
                     const c1 = elHighlightsContainer.compareDocumentPosition(elementWithID);
                     if (c1 === 0 || (c1 & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
-                        doPush = false;
+                        keep = false;
                         debug("findFollowingDescendantSiblingElementsWithID CSS selector failed? (highlights) " + id);
                     }
                 }
                 if (elPopupDialog) {
                     const c2 = elPopupDialog.compareDocumentPosition(elementWithID);
                     if (c2 === 0 || (c2 & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
-                        doPush = false;
+                        keep = false;
                         debug("findFollowingDescendantSiblingElementsWithID CSS selector failed? (popup dialog) " + id);
                     }
                 }
                 if (elSkipLink) {
                     const c3 = elSkipLink.compareDocumentPosition(elementWithID);
                     if (c3 === 0 || (c3 & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
-                        doPush = false;
+                        keep = false;
                         debug("findFollowingDescendantSiblingElementsWithID CSS selector failed? (skip link) " + id);
                     }
                 }
                 if (elPad) {
                     const c4 = elPad.compareDocumentPosition(elementWithID);
                     if (c4 === 0 || (c4 & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
-                        doPush = false;
+                        keep = false;
                         debug("findFollowingDescendantSiblingElementsWithID CSS selector failed? (extra col pad) " + id);
                     }
                 }
 
-                if (doPush) {
-                    followingElementIDs.push(id);
-                    if (followingElementIDs.length >= MAX_FOLLOWING_ELEMENTS_IDS) {
-                        return followingElementIDs;
-                    }
+                if (!keep) {
+                    // @ts-expect-error temporary null, to eject later (filter)
+                    _elementsWithID[i] = null;
+                }
+            }
+
+            _elementsWithID = _elementsWithID.filter((el) => !!el);
+        }
+
+        followingElementIDs = [];
+
+        // for (let i = _elementsWithID.length - 1; i >= 0; i--) {
+        for (let i = 0; i < _elementsWithID.length; i++) {
+            const elementWithID = _elementsWithID[i];
+            const id = elementWithID.id || elementWithID.getAttribute("id");
+            if (!id) {
+                continue; // should never happen, see filter eject above
+            }
+
+            const c = el.compareDocumentPosition(elementWithID);
+            // tslint:disable-next-line: no-bitwise
+            if (// c === 0 ||
+                (c & Node.DOCUMENT_POSITION_FOLLOWING) || (c & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+
+                followingElementIDs.push(id);
+                if (followingElementIDs.length >= MAX_FOLLOWING_ELEMENTS_IDS) {
+                    return followingElementIDs;
                 }
             }
         }
