@@ -23,8 +23,22 @@ import { ISelectionInfo } from "./selection";
 export const R2_EVENT_IMAGE_CLICK = "R2_EVENT_IMAGE_CLICK";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_IMAGE_CLICK {
-    href: string;
-    imageCssSelector: string;
+    isSVGFragment: boolean;
+    isSVGImage: boolean;
+    HTMLImgSrc_SVGImageHref_SVGFragmentMarkup: string;
+    cssSelectorOf_HTMLImg_SVGImage_SVGFragment: string;
+    languageOf_HTMLImg_SVGImage_SVGFragment: string | undefined;
+    directionOf_HTMLImg_SVGImage_SVGFragment: string | undefined;
+    naturalWidthOf_HTMLImg_SVGImage: number | undefined; // undefined with isSVGFragment and normally undefined with isSVGImage (HTMLImageElement.naturalWidth/Height exists, not SVGImageElement.naturalWidth/Height) ... but, we load the image href into an HTML image in order to extract the natural dimensions
+    naturalHeightOf_HTMLImg_SVGImage: number | undefined; // (same comment as above)
+    altAttributeOf_HTMLImg_SVGImage_SVGFragment: string | null;
+    titleAttributeOf_HTMLImg_SVGImage_SVGFragment: string | null;
+    ariaLabelAttributeOf_HTMLImg_SVGImage_SVGFragment: string | null;
+    // isFigure: boolean;
+    // figureCssSelector: string | undefined;
+    // figcaptionCssSelector: string | undefined;
+    // ariaDescribedbyAttribute: string | undefined;
+    // ariaDetailsAttribute: string | undefined;
 }
 
 // in RENDERER: webview.send()

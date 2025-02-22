@@ -79,7 +79,7 @@ import {
 import { IPropertyAnimationState, animateProperty } from "../common/animateProperty";
 import { uniqueCssSelector } from "../common/cssselector3";
 
-import { normalizeText } from "../common/dom-text-utils";
+import { getDirection, getLanguage, normalizeText } from "../common/dom-text-utils";
 import { easings } from "../common/easings";
 import { closePopupDialogs, isPopupDialogOpen } from "../common/popup-dialog";
 import { getURLQueryParams } from "../common/querystring";
@@ -2734,11 +2734,12 @@ function loaded(forced: boolean) {
         // });
 
         let linkElement: Element | undefined;
-        let imageElement: Element | undefined;
+        let HTMLImg_SVGImage_SVGFragment: Element | undefined;
 
         let href_src: string | SVGAnimatedString | undefined;
         let href_src_image_nested_in_link: string | SVGAnimatedString | undefined;
-        let isSVG = false;
+        let isSVGFragment = false;
+        let isSVGImage = false;
         let globalSVGDefs: NodeListOf<Element> | undefined;
         let currentElement: Element | undefined = ev.target as Element;
         while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
@@ -2746,15 +2747,16 @@ function loaded(forced: boolean) {
             if ((tagName === "img" || tagName === "image" || tagName === "svg")
                 && !currentElement.classList.contains(POPOUTIMAGE_CONTAINER_ID)) {
 
-                isSVG = false;
+                isSVGFragment = false;
                 if (tagName === "svg") {
-                    if (imageElement) {
+                    if (HTMLImg_SVGImage_SVGFragment) {
                         // image inside SVG
                         currentElement = currentElement.parentNode as Element;
+                        isSVGImage = true;
                         continue;
                     }
 
-                    isSVG = true;
+                    isSVGFragment = true;
                     href_src = currentElement.outerHTML;
 
                     const defs = currentElement.querySelectorAll("defs > *[id]");
@@ -2844,7 +2846,7 @@ function loaded(forced: boolean) {
                     }
                     debug(`IMG CLICK: ${href_src} (${href_src_})`);
                 }
-                imageElement = currentElement;
+                HTMLImg_SVGImage_SVGFragment = currentElement;
 
                 // DOM parent / ancestor could be link a@href, so let's continue walking up the tree
                 // break;
@@ -2873,7 +2875,7 @@ function loaded(forced: boolean) {
 
         // at that point, can be both an image and a link! ("img" element descendant of "a" ... clickable image link)
 
-        if (!href_src || (!imageElement && !linkElement)) {
+        if (!href_src || (!HTMLImg_SVGImage_SVGFragment && !linkElement)) {
             clearImageZoomOutline();
             return;
         }
@@ -2909,21 +2911,21 @@ function loaded(forced: boolean) {
 
         debug(`HREF SRC: ${href_src} ${href_src_image_nested_in_link} (${win.location.href})`);
 
-        const has = imageElement?.hasAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
-        if (imageElement && href_src && (has ||
-            ((!linkElement && !win.READIUM2.isFixedLayout && !isSVG) || ev.shiftKey)
+        const has = HTMLImg_SVGImage_SVGFragment?.hasAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`);
+        if (HTMLImg_SVGImage_SVGFragment && href_src && (has ||
+            ((!linkElement && !win.READIUM2.isFixedLayout && !isSVGFragment) || ev.shiftKey)
         )) {
             if (linkElement && href_src_image_nested_in_link) {
                 href_src = href_src_image_nested_in_link;
             }
 
-            clearImageZoomOutline(); // removes imageElement `data-${POPOUTIMAGE_CONTAINER_ID}`
+            clearImageZoomOutline(); // removes HTMLImg_SVGImage_SVGFragment `data-${POPOUTIMAGE_CONTAINER_ID}`
 
             ev.preventDefault();
             ev.stopPropagation();
 
             if (has) {
-                if (!isSVG &&
+                if (!isSVGFragment &&
                     !/^(https?|thoriumhttps):\/\//.test(href_src) &&
                     !href_src.startsWith((READIUM2_ELECTRON_HTTP_PROTOCOL + "://"))) {
 
@@ -2932,17 +2934,61 @@ function loaded(forced: boolean) {
                     debug(`IMG CLICK ABSOLUTE-ized: ${href_src}`);
                 }
 
-                const imageCssSelector = getCssSelector(imageElement);
+                const cssSelectorOf_HTMLImg_SVGImage_SVGFragment = getCssSelector(HTMLImg_SVGImage_SVGFragment);
 
-                debug("R2_EVENT_IMAGE_CLICK (ipcRenderer.sendToHost) href: " + href_src + " ___ " + imageCssSelector);
+                // const isFigure = (parentElement: Element | null): parentElement is HTMLElement =>
+                //     parentElement?.tagName === "FIGURE" || parentElement?.tagName === "figure";
+
+                debug("R2_EVENT_IMAGE_CLICK (ipcRenderer.sendToHost) href: " + href_src + " ___ " + cssSelectorOf_HTMLImg_SVGImage_SVGFragment);
+
                 const payload: IEventPayload_R2_EVENT_IMAGE_CLICK = {
-                    href: href_src,
-                    imageCssSelector,
+                    isSVGFragment,
+                    isSVGImage,
+                    HTMLImgSrc_SVGImageHref_SVGFragmentMarkup: href_src,
+                    cssSelectorOf_HTMLImg_SVGImage_SVGFragment,
+                    languageOf_HTMLImg_SVGImage_SVGFragment: getLanguage(HTMLImg_SVGImage_SVGFragment),
+                    directionOf_HTMLImg_SVGImage_SVGFragment: getDirection(HTMLImg_SVGImage_SVGFragment), // TODO: really, only useful for child title element of SVG, not in the general case
+                    altAttributeOf_HTMLImg_SVGImage_SVGFragment: HTMLImg_SVGImage_SVGFragment.getAttribute("alt"),
+                    titleAttributeOf_HTMLImg_SVGImage_SVGFragment: HTMLImg_SVGImage_SVGFragment.getAttribute("title"),
+                    ariaLabelAttributeOf_HTMLImg_SVGImage_SVGFragment: HTMLImg_SVGImage_SVGFragment.getAttribute("aria-label"),
+                    naturalWidthOf_HTMLImg_SVGImage: isSVGFragment ? undefined :
+                        isSVGImage ? (((HTMLImg_SVGImage_SVGFragment as SVGImageElement) as unknown as HTMLImageElement).naturalWidth || undefined) :
+                        (HTMLImg_SVGImage_SVGFragment as HTMLImageElement).naturalWidth,
+                    naturalHeightOf_HTMLImg_SVGImage: isSVGFragment ? undefined :
+                        isSVGImage ? (((HTMLImg_SVGImage_SVGFragment as SVGImageElement) as unknown as HTMLImageElement).naturalHeight || undefined) :
+                        (HTMLImg_SVGImage_SVGFragment as HTMLImageElement).naturalHeight,
+                    // isFigure: isFigure(HTMLImg_SVGImage_SVGFragment.parentElement),
+                    // figureCssSelector: isFigure(HTMLImg_SVGImage_SVGFragment.parentElement)
+                    //     ? getCssSelector(HTMLImg_SVGImage_SVGFragment.parentElement)
+                    //     : undefined,
+                    // figcaptionCssSelector: isFigure(HTMLImg_SVGImage_SVGFragment.parentElement)
+                    //     ? getCssSelector(HTMLImg_SVGImage_SVGFragment.parentElement.getElementsByTagName("figcaption")[0]) // return "" if undefined
+                    //     : undefined,
+                    // ariaDescribedbyAttribute: (HTMLImg_SVGImage_SVGFragment as HTMLImageElement).getAttribute("aria-describedby") || undefined,
+                    // ariaDetailsAttribute: (HTMLImg_SVGImage_SVGFragment as HTMLImageElement).getAttribute("aria-details") || undefined, // aria-details from the image is removed in navigator why ?
                 };
-                ipcRenderer.sendToHost(R2_EVENT_IMAGE_CLICK, payload);
+                payload.naturalWidthOf_HTMLImg_SVGImage = payload.naturalWidthOf_HTMLImg_SVGImage || undefined;
+                payload.naturalHeightOf_HTMLImg_SVGImage = payload.naturalHeightOf_HTMLImg_SVGImage || undefined;
+                if (!isSVGFragment && // isSVGImage or just HTML image
+                    !payload.naturalWidthOf_HTMLImg_SVGImage || !payload.naturalHeightOf_HTMLImg_SVGImage) {
+
+                    const imageObject = new Image();
+                    imageObject.onload = function() {
+                        payload.naturalWidthOf_HTMLImg_SVGImage = imageObject.naturalWidth || undefined;
+                        payload.naturalHeightOf_HTMLImg_SVGImage = imageObject.naturalHeight || undefined;
+                        ipcRenderer.sendToHost(R2_EVENT_IMAGE_CLICK, payload);
+                    };
+                    imageObject.onerror = function() {
+                        ipcRenderer.sendToHost(R2_EVENT_IMAGE_CLICK, payload);
+                    };
+                    imageObject.src = href_src; // HTMLImgSrc_SVGImageHref_SVGFragmentMarkup
+                } else {
+                    ipcRenderer.sendToHost(R2_EVENT_IMAGE_CLICK, payload);
+                }
+
             } else {
                 // removed by clearImageZoomOutline();
-                imageElement.setAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`, "1");
+                HTMLImg_SVGImage_SVGFragment.setAttribute(`data-${POPOUTIMAGE_CONTAINER_ID}`, "1");
             }
 
             return;
@@ -2995,18 +3041,21 @@ function loaded(forced: boolean) {
     }, true);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ipcRenderer.on("R2_EVENT_IMAGE_CLICK", (_event: any, href_src: string, imageCssSelector: string) => {
-        debug("R2_EVENT_IMAGE_CLICK (ipcRenderer.on) href: " + href_src + " ___ " + imageCssSelector);
+    ipcRenderer.on("R2_EVENT_IMAGE_CLICK", (_event: any, payload: IEventPayload_R2_EVENT_IMAGE_CLICK) => {
+        debug("R2_EVENT_IMAGE_CLICK (ipcRenderer.on) href: " + JSON.stringify(payload, null, 4));
         // win.document.querySelectorAll(`img[data-${POPOUTIMAGE_CONTAINER_ID}]`);
         // win.document.querySelectorAll(`image[data-${POPOUTIMAGE_CONTAINER_ID}]`);
         // win.document.querySelectorAll(`svg[data-${POPOUTIMAGE_CONTAINER_ID}]`);
-        // const imageElement = win.document.querySelector(`[data-${POPOUTIMAGE_CONTAINER_ID}]`);
-        const imageElement = win.document.querySelector(imageCssSelector);
-        if (imageElement) {
+        // const HTMLImg_SVGImage_SVGFragment = win.document.querySelector(`[data-${POPOUTIMAGE_CONTAINER_ID}]`);
+        const HTMLImg_SVGImage_SVGFragment = win.document.querySelector(payload.cssSelectorOf_HTMLImg_SVGImage_SVGFragment);
+        if (HTMLImg_SVGImage_SVGFragment) {
             popoutImage(
                 win,
-                imageElement as HTMLImageElement | SVGElement,
-                href_src,
+                payload.cssSelectorOf_HTMLImg_SVGImage_SVGFragment,
+                HTMLImg_SVGImage_SVGFragment as HTMLImageElement | SVGElement,
+                payload.HTMLImgSrc_SVGImageHref_SVGFragmentMarkup,
+                payload.isSVGFragment,
+                payload.isSVGImage,
                 focusScrollRaw,
                 ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
                 ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);

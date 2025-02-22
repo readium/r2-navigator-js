@@ -323,8 +323,8 @@ export function readiumCssUpdate(rcss: IEventPayload_R2_EVENT_READIUMCSS) {
 let _webview1: IReadiumElectronWebview | undefined;
 let _webview2: IReadiumElectronWebview | undefined;
 
-let _imageClickHandler: ((href: string) => void) | undefined;
-export function setImageClickHandler(cb: (href: string) => void) {
+let _imageClickHandler: ((payload: IEventPayload_R2_EVENT_IMAGE_CLICK) => void) | undefined;
+export function setImageClickHandler(cb: (payload: IEventPayload_R2_EVENT_IMAGE_CLICK) => void) {
     _imageClickHandler = cb;
 };
 
@@ -493,13 +493,13 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
         } else if (event.channel === R2_EVENT_IMAGE_CLICK) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_IMAGE_CLICK;
             if (_imageClickHandler) {
-                debug("R2_EVENT_IMAGE_CLICK (ipc-message) href [_imageClickHandler]: " + payload.href + " ___ " + payload.imageCssSelector);
-                _imageClickHandler(payload.href);
+                debug("R2_EVENT_IMAGE_CLICK (ipc-message) href [_imageClickHandler]: " + JSON.stringify(payload, null, 4));
+                _imageClickHandler({...payload});
             } else {
-                debug("R2_EVENT_IMAGE_CLICK (ipc-message) href [NOT _imageClickHandler => webview.send(R2_EVENT_IMAGE_CLICK]: " + payload.href + " ___ " + payload.imageCssSelector);
+                debug("R2_EVENT_IMAGE_CLICK (ipc-message) href [NOT _imageClickHandler => webview.send(R2_EVENT_IMAGE_CLICK]: " + JSON.stringify(payload, null, 4));
                 // webview === event.currentTarget as IReadiumElectronWebview
                 // webview === wv
-                webview.send(R2_EVENT_IMAGE_CLICK, payload.href, payload.imageCssSelector);
+                webview.send(R2_EVENT_IMAGE_CLICK, {...payload});
             }
         } else if (!highlightsHandleIpcMessage(event.channel, event.args, webview) &&
             !ttsHandleIpcMessage(event.channel, event.args, webview) &&
