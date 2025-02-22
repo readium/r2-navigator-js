@@ -13,13 +13,19 @@ import { ReadiumElectronWebviewWindow } from "./state";
 
 export function popoutImage(
     win: ReadiumElectronWebviewWindow,
-    element: HTMLImageElement | SVGElement,
-    href_src: string,
+    _cssSelectorOf_HTMLImg_SVGImage_SVGFragment: string,
+    HTMLImg_SVGImage_SVGFragment: HTMLImageElement | SVGElement,
+    HTMLImgSrc_SVGImageHref_SVGFragmentMarkup: string,
+    isSVGFragment: boolean,
+    _isSVGImage: boolean,
     focusScrollRaw:
         (el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => void,
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: () => number,
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: (val: number) => void,
 ) {
+    const element = HTMLImg_SVGImage_SVGFragment;
+    let href_src = HTMLImgSrc_SVGImageHref_SVGFragmentMarkup;
+
     // https://github.com/jackmoore/wheelzoom/blob/05224659740eea775a779faa62cef0ec0126082/wheelzoom.js
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (win as any).wheelzoom = (img: HTMLImageElement) => {
@@ -420,8 +426,8 @@ export function popoutImage(
     //     return false;
     // }
 
-    const isSVG = href_src.startsWith("<svg");
-    if (isSVG) {
+    // const isSVG = href_src.startsWith("<svg");
+    if (isSVGFragment) {
         // href_src = href_src.replace(/[\r\n]/g, " ").replace(/\s\s+/g, " ").trim();
         href_src = "data:image/svg+xml;base64," + Buffer.from(href_src).toString("base64");
     }
