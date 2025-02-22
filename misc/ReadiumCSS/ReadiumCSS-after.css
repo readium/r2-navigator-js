@@ -1,4 +1,4 @@
-/* Readium CSS 
+/* Readium CSS
    Config module
 
    A file allowing implementers to customize flags for reading modes,
@@ -116,7 +116,8 @@
   /* Column size will depend on this if we want to make it responsive */
   font-size: 100% !important;
 
-  -webkit-text-size-adjust: 100%;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
 
   /* Switch to newer box model (not inherited by authors’ styles) */
   box-sizing: border-box;
@@ -691,8 +692,14 @@ body {
 
    Repo: https://github.com/readium/readium-css */
 
-:root[style*="--USER__fontSize"] {
-  font-size: var(--USER__fontSize) !important;
+:root[style*="--USER__fontSize"] > body {
+  zoom:var(--USER__fontSize) !important;
+}
+
+@supports not (zoom: 1){
+  :root[style*="--USER__fontSize"]{
+    font-size:var(--USER__fontSize) !important;
+  }
 }
 
 /* Readium CSS
@@ -801,6 +808,8 @@ body {
 /* We create a default so that you don’t need to explicitly set one in the DOM.
    Once the “Publisher’s styles” checkbox is unchecked, the normalize is applied automatically */
 
+@supports not (zoom: 1){
+
 :root[style*="readium-advanced-on"] {
   --USER__typeScale: 1.2; /* This is the default type scale you’ll find in most publications */
 }
@@ -859,6 +868,7 @@ body {
 
 :root[style*="readium-advanced-on"][style*="--USER__typeScale"] h3 {
   font-size: calc(1rem * var(--USER__typeScale)) !important;
+}
 }
 
 /* Readium CSS
