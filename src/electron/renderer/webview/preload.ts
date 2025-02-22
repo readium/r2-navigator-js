@@ -2933,21 +2933,13 @@ function loaded(forced: boolean) {
                 debug("R2_EVENT_IMAGE_CLICK (ipcRenderer.sendToHost) href: " + href_src + " ___ " + imageCssSelector);
 
                 const payload: IEventPayload_R2_EVENT_IMAGE_CLICK = {
+                    docHref: "",
                     href: href_src,
                     imageCssSelector,
                     altAttribute: (imageElement as HTMLImageElement).alt,
                     titleAttribute: (imageElement as HTMLImageElement).title,
                     imageWidth: (imageElement as HTMLImageElement).naturalWidth,
                     imageHeight: (imageElement as HTMLImageElement).naturalHeight,
-                    // isFigure: isFigure(imageElement.parentElement),
-                    // figureCssSelector: isFigure(imageElement.parentElement)
-                    //     ? getCssSelector(imageElement.parentElement)
-                    //     : undefined,
-                    // figcaptionCssSelector: isFigure(imageElement.parentElement)
-                    //     ? getCssSelector(imageElement.parentElement.getElementsByTagName("figcaption")[0]) // return "" if undefined
-                    //     : undefined,
-                    // ariaDescribedbyAttribute: (imageElement as HTMLImageElement).getAttribute("aria-describedby") || undefined,
-                    // ariaDetailsAttribute: (imageElement as HTMLImageElement).getAttribute("aria-details") || undefined, // aria-details from the image is removed in navigator why ?
                 };
                 ipcRenderer.sendToHost(R2_EVENT_IMAGE_CLICK, payload);
             } else {

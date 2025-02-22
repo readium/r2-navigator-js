@@ -23,17 +23,13 @@ import { ISelectionInfo } from "./selection";
 export const R2_EVENT_IMAGE_CLICK = "R2_EVENT_IMAGE_CLICK";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_IMAGE_CLICK {
+    docHref: string;
     href: string;
     imageCssSelector: string;
     altAttribute: string;
     titleAttribute: string;
     imageWidth: number;
     imageHeight: number;
-    // isFigure: boolean;
-    // figureCssSelector: string | undefined;
-    // figcaptionCssSelector: string | undefined;
-    // ariaDescribedbyAttribute: string | undefined;
-    // ariaDetailsAttribute: string | undefined;
 }
 
 // in RENDERER: webview.send()

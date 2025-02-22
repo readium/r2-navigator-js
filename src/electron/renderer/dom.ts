@@ -492,7 +492,8 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             const payload = event.args[0] as IEventPayload_R2_EVENT_IMAGE_CLICK;
             if (_imageClickHandler) {
                 debug("R2_EVENT_IMAGE_CLICK (ipc-message) href [_imageClickHandler]: " + payload.href + " ___ " + payload.imageCssSelector);
-                _imageClickHandler({...payload});
+                const docHref = webview.READIUM2.link?.Href || "";
+                _imageClickHandler({...payload, docHref});
             } else {
                 debug("R2_EVENT_IMAGE_CLICK (ipc-message) href [NOT _imageClickHandler => webview.send(R2_EVENT_IMAGE_CLICK]: " + payload.href + " ___ " + payload.imageCssSelector);
                 // webview === event.currentTarget as IReadiumElectronWebview
