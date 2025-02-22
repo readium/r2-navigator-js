@@ -19,9 +19,12 @@ import {
     R2_EVENT_TTS_PLAYBACK_RATE, R2_EVENT_TTS_SENTENCE_DETECT_ENABLE, R2_EVENT_TTS_VOICE,
     IEventPayload_R2_EVENT_TTS_MEDIAOVERLAYS_MANUAL_PLAY_NEXT,
     R2_EVENT_TTS_MEDIAOVERLAYS_MANUAL_PLAY_NEXT,
+    R2_EVENT_TTS_HIGHLIGHT_STYLE,
+    IEventPayload_R2_EVENT_TTS_HIGHLIGHT_STYLE,
 } from "../common/events";
 import { getCurrentReadingLocation, navPreviousOrNext } from "./location";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
+import { IColor } from "../common/highlight";
 
 // import * as debug_ from "debug";
 // const debug = debug_("r2:navigator#electron/renderer/index");
@@ -96,7 +99,10 @@ export function playTtsOnReadingLocation(href: string) {
                 done = true;
                 activeWebView.removeEventListener("ipc-message", cb);
                 if (activeWebView.READIUM2.link?.Href === href) {
-                    ttsPlay(win.READIUM2.ttsPlaybackRate, win.READIUM2.ttsVoice);
+                    ttsPlay(win.READIUM2.ttsPlaybackRate,
+                        undefined,
+                        // win.READIUM2.ttsVoices ? win.READIUM2.ttsVoices[0] : undefined
+                    );
                 }
             }
         };
@@ -113,7 +119,10 @@ export function playTtsOnReadingLocation(href: string) {
                 return webview.READIUM2.link?.Href === href;
             });
             if (activeWebView_) {
-                ttsPlay(win.READIUM2.ttsPlaybackRate, win.READIUM2.ttsVoice);
+                ttsPlay(win.READIUM2.ttsPlaybackRate,
+                    undefined,
+                    // win.READIUM2.ttsVoices ? win.READIUM2.ttsVoices[0] : undefined
+                );
             }
         }, 1000);
         activeWebView.addEventListener("ipc-message", cb);
@@ -194,10 +203,19 @@ export function ttsListen(ttsListener: (ttsState: TTSStateEnum) => void) {
     _ttsListener = ttsListener;
 }
 
-export function ttsPlay(speed: number, voice: SpeechSynthesisVoice | null) {
-    if (win.READIUM2) {
-        win.READIUM2.ttsPlaybackRate = speed;
-        win.READIUM2.ttsVoice = voice;
+export function ttsPlay(speed: number, voice: SpeechSynthesisVoice[] | SpeechSynthesisVoice | null | undefined) {
+    if (!win.READIUM2) {
+        return;
+    }
+
+    win.READIUM2.ttsPlaybackRate = speed;
+
+    if (typeof voice === "undefined") {
+        // ttsVoice(voice); it's a NOOP
+    } else if (voice && Array.isArray(voice)) {
+        ttsVoices(voice);
+    } else {
+        ttsVoice(voice); // when null, same as ttsVoices(null) ==> resets the entire set
     }
 
     let startElementCSSSelector: string | undefined;
@@ -223,7 +241,7 @@ export function ttsPlay(speed: number, voice: SpeechSynthesisVoice | null) {
         rootElement: "html > body", // win.document.body
         speed,
         startElement: startElementCSSSelector,
-        voice,
+        voices: win.READIUM2.ttsVoices,
     };
 
     setTimeout(async () => {
@@ -349,21 +367,37 @@ export function ttsClickEnable(doEnable: boolean) {
     }
 }
 
-export function ttsVoice(voice: SpeechSynthesisVoice | null) {
+export function ttsVoices(voices: SpeechSynthesisVoice[] | null) {
     if (win.READIUM2) {
-        win.READIUM2.ttsVoice = voice;
+        win.READIUM2.ttsVoices = voices;
     }
 
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
         const payload: IEventPayload_R2_EVENT_TTS_VOICE = {
-            voice,
+            voices,
         };
         setTimeout(async () => {
             if (activeWebView.READIUM2?.DOMisReady) {
                 await activeWebView.send(R2_EVENT_TTS_VOICE, payload);
             }
         }, 0);
+    }
+}
+export function ttsVoice(voice: SpeechSynthesisVoice | null) { //  | undefined
+    if (win.READIUM2) {
+        if (voice === null) {
+            win.READIUM2.ttsVoices = null;
+            ttsVoices(win.READIUM2.ttsVoices);
+        } else if (voice) {
+            if (!win.READIUM2.ttsVoices) {
+                win.READIUM2.ttsVoices = [];
+            }
+            win.READIUM2.ttsVoices = win.READIUM2.ttsVoices.filter((v) => v.lang !== voice.lang);
+            win.READIUM2.ttsVoices.push(voice);
+            ttsVoices(win.READIUM2.ttsVoices);
+        }
+        // else: voice === undefined (NOOP)
     }
 }
 
@@ -440,6 +474,29 @@ export function ttsSentenceDetectionEnable(doEnable: boolean) {
 
             if (activeWebView.READIUM2?.DOMisReady) {
                 await activeWebView.send(R2_EVENT_TTS_SENTENCE_DETECT_ENABLE, payload);
+            }
+        }, 0);
+    }
+}
+
+export function ttsHighlightStyle(ttsHighlightStyle: number, ttsHighlightColor: IColor | undefined, ttsHighlightStyle_WORD: number | undefined, ttsHighlightColor_WORD: IColor | undefined) {
+
+    if (win.READIUM2) {
+        win.READIUM2.ttsHighlightStyle = ttsHighlightStyle;
+    }
+
+    const activeWebViews = win.READIUM2.getActiveWebViews();
+    for (const activeWebView of activeWebViews) {
+        setTimeout(async () => {
+            const payload: IEventPayload_R2_EVENT_TTS_HIGHLIGHT_STYLE = {
+                ttsHighlightStyle,
+                ttsHighlightColor,
+                ttsHighlightStyle_WORD,
+                ttsHighlightColor_WORD,
+            };
+
+            if (activeWebView.READIUM2?.DOMisReady) {
+                await activeWebView.send(R2_EVENT_TTS_HIGHLIGHT_STYLE, payload);
             }
         }, 0);
     }

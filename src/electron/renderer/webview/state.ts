@@ -14,7 +14,7 @@ import {
 } from "../../common/events";
 import { WebViewSlotEnum } from "../../common/styles";
 import { IStringMap } from "../common/querystring";
-import { IHighlight } from "src/electron/common/highlight";
+import { IColor, IHighlight } from "src/electron/common/highlight";
 
 export type TWindow = typeof window;
 
@@ -49,12 +49,23 @@ export interface IReadiumElectronWebviewWindowState {
 
     ttsAndMediaOverlaysManualPlayNext: boolean;
 
+    ttsHighlightStyle: number;
+    ttsHighlightColor: IColor | undefined;
+    ttsHighlightStyle_WORD: number | undefined;
+    ttsHighlightColor_WORD: IColor | undefined;
+    // HighlightDrawTypeBackground
+    // HighlightDrawTypeUnderline
+    // HighlightDrawTypeStrikethrough
+    // HighlightDrawTypeOutline
+    // HighlightDrawTypeOpacityMask
+    // HighlightDrawTypeOpacityMaskRuler
+
     ttsSkippabilityEnabled: boolean;
     ttsSentenceDetectionEnabled: boolean;
     ttsClickEnabled: boolean;
     ttsOverlayEnabled: boolean;
     ttsPlaybackRate: number;
-    ttsVoice: SpeechSynthesisVoice | null;
+    ttsVoices: SpeechSynthesisVoice[] | null;
 
     isClipboardIntercept: boolean;
 }
@@ -91,12 +102,24 @@ export interface IReadiumElectronBrowserWindow {
 
     ttsAndMediaOverlaysManualPlayNext: boolean;
 
+    ttsHighlightStyle: number;
+    ttsHighlightColor: IColor | undefined;
+
+    ttsHighlightStyle_WORD: number | undefined;
+    ttsHighlightColor_WORD: IColor | undefined;
+    // HighlightDrawTypeBackground
+    // HighlightDrawTypeUnderline
+    // HighlightDrawTypeStrikethrough
+    // HighlightDrawTypeOutline
+    // HighlightDrawTypeOpacityMask
+    // HighlightDrawTypeOpacityMaskRuler
+
     ttsSkippabilityEnabled: boolean;
     ttsSentenceDetectionEnabled: boolean;
     ttsClickEnabled: boolean;
     ttsOverlayEnabled: boolean;
     ttsPlaybackRate: number;
-    ttsVoice: SpeechSynthesisVoice | null;
+    ttsVoices: SpeechSynthesisVoice[] | null;
 
     // stealFocusDisabled: boolean;
 

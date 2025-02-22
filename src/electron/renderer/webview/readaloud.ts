@@ -12,7 +12,7 @@ import {
     R2_EVENT_TTS_DOC_END, R2_EVENT_TTS_DOC_BACK, R2_EVENT_TTS_IS_PAUSED, R2_EVENT_TTS_IS_PLAYING, R2_EVENT_TTS_IS_STOPPED,
 } from "../../common/events";
 import {
-    HighlightDrawTypeBackground, HighlightDrawTypeOpacityMask, HighlightDrawTypeOpacityMaskRuler, HighlightDrawTypeUnderline, IHighlight,
+    HighlightDrawTypeBackground, HighlightDrawTypeOpacityMask, HighlightDrawTypeOpacityMaskRuler, HighlightDrawTypeUnderline, IColor, IHighlight,
 } from "../../common/highlight";
 import {
     CSS_CLASS_NO_FOCUS_OUTLINE, POPUP_DIALOG_CLASS, POPUP_DIALOG_CLASS_COLLAPSE, ROOT_CLASS_REDUCE_MOTION,
@@ -41,11 +41,6 @@ import { ReadiumElectronWebviewWindow } from "./state";
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
 const win = global.window as ReadiumElectronWebviewWindow;
-
-const ttsHighlightType: number = HighlightDrawTypeOpacityMask;
-// HighlightDrawTypeBackground
-// HighlightDrawTypeOpacityMask
-// HighlightDrawTypeOpacityMaskRuler
 
 interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
 
@@ -137,7 +132,7 @@ function documentForward(node: Node): Node | null {
 
 export function ttsPlay(
     speed: number,
-    voice: SpeechSynthesisVoice | null,
+    voices: SpeechSynthesisVoice[] | null,
     focusScrollRaw:
         (el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => void,
     rootElem: Element | undefined,
@@ -186,7 +181,7 @@ export function ttsPlay(
     setTimeout(() => {
         startTTSSession(
             speed,
-            voice,
+            voices,
             rootEl as Element,
             ttsQueue,
             ttsQueueIndex,
@@ -279,8 +274,8 @@ export function ttsPause(doNotReset = false) {
 //     readonly name: string;
 //     readonly voiceURI: string;
 // }
-export function ttsVoice(voice: SpeechSynthesisVoice | null) {
-    win.READIUM2.ttsVoice = voice;
+export function ttsVoices(voices: SpeechSynthesisVoice[] | null) {
+    win.READIUM2.ttsVoices = voices;
 
     if (_dialogState) {
         const resumableState = _resumableState;
@@ -362,7 +357,7 @@ export function ttsResume() {
             if (_resumableState) {
                 startTTSSession(
                     win.READIUM2.ttsPlaybackRate,
-                    win.READIUM2.ttsVoice,
+                    win.READIUM2.ttsVoices,
                     _resumableState.ttsRootElement,
                     _resumableState.ttsQueue,
                     _resumableState.ttsQueueIndex,
@@ -778,15 +773,17 @@ function wrapHighlightWord(
         // const rangeInfo = tuple[0];
         // const textInfo = tuple[1];
 
+        const ttsHighlightStyle_WORD = typeof win.READIUM2?.ttsHighlightStyle_WORD !== "undefined" ? win.READIUM2.ttsHighlightStyle_WORD : HighlightDrawTypeUnderline;
+        const ttsColor_WORD: IColor = win.READIUM2?.ttsHighlightColor_WORD || {
+            blue: 0,
+            green: 147,
+            red: 255,
+        };
         const highlightDefinitions = [
             {
                 // https://htmlcolorcodes.com/
-                color: {
-                    blue: 0,
-                    green: 147,
-                    red: 255,
-                },
-                drawType: HighlightDrawTypeUnderline,
+                color: ttsColor_WORD,
+                drawType: ttsHighlightStyle_WORD,
                 expand: ENABLE_CSS_HIGHLIGHTS ? 0 : 2,
                 selectionInfo: undefined,
                 group: HIGHLIGHT_GROUP_TTS,
@@ -812,8 +809,13 @@ function wrapHighlightWord(
     }
 }
 
+let _flushDestroyTimeout: NodeJS.Timeout | undefined;
 let _ttsQueueItemHighlightsSentenceToDestroy: IHighlight[] | undefined;
 const flushDestroy = () => {
+    if (_flushDestroyTimeout) {
+        clearTimeout(_flushDestroyTimeout);
+        _flushDestroyTimeout = undefined;
+    }
     if (_ttsQueueItemHighlightsSentenceToDestroy) {
         _ttsQueueItemHighlightsSentenceToDestroy.forEach((highlight) => {
             destroyHighlight(win.document, highlight.id);
@@ -968,16 +970,18 @@ function wrapHighlight(
             // const rangeInfo = tuple[0];
             // const textInfo = tuple[1];
 
+            const ttsHighlightStyle = typeof win.READIUM2?.ttsHighlightStyle !== "undefined" ? win.READIUM2.ttsHighlightStyle : HighlightDrawTypeBackground;
+            const ttsColor: IColor = win.READIUM2?.ttsHighlightColor || {
+                blue: 116, // 204,
+                green: 248, // 218,
+                red: 248, // 255,
+            };
             const highlightDefinitions = [
                 {
                     // https://htmlcolorcodes.com/
-                    color: {
-                        blue: 116, // 204,
-                        green: 248, // 218,
-                        red: 248, // 255,
-                    },
-                    drawType: ttsHighlightType,
-                    expand: ttsHighlightType === HighlightDrawTypeOpacityMaskRuler || ttsHighlightType === HighlightDrawTypeOpacityMask ? 0 : ttsHighlightType === HighlightDrawTypeBackground ? 4 : 2,
+                    color: ttsColor,
+                    drawType: ttsHighlightStyle,
+                    expand: ttsHighlightStyle === HighlightDrawTypeOpacityMaskRuler || ttsHighlightStyle === HighlightDrawTypeOpacityMask ? 0 : ttsHighlightStyle === HighlightDrawTypeBackground ? 4 : 0,
                     selectionInfo: undefined,
                     group: HIGHLIGHT_GROUP_TTS,
                     range,
@@ -1004,6 +1008,15 @@ function wrapHighlight(
 
     if (doHighlight) {
         flushDestroy();
+    } else if (expectNext) {
+        if (_flushDestroyTimeout) {
+            clearTimeout(_flushDestroyTimeout);
+            _flushDestroyTimeout = undefined;
+        }
+        _flushDestroyTimeout = setTimeout(() => {
+            _flushDestroyTimeout = undefined;
+            flushDestroy();
+        }, 1000);
     }
 }
 
@@ -1448,50 +1461,89 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number, ttsAndMediaOverlaysManu
         utterance.rate = win.READIUM2.ttsPlaybackRate;
     }
 
-    utterance.voice = speechSynthesis.getVoices().find((voice) => {
-        // exact match
-        // tslint:disable-next-line:max-line-length
-        return win.READIUM2.ttsVoice && (voice.name === win.READIUM2.ttsVoice.name && voice.lang === win.READIUM2.ttsVoice.lang && voice.voiceURI === win.READIUM2.ttsVoice.voiceURI && voice.default === win.READIUM2.ttsVoice.default && voice.localService === win.READIUM2.ttsVoice.localService);
-    }) || null;
+    const systemVoices = speechSynthesis.getVoices();
+    const userVoices: SpeechSynthesisVoice[] = systemVoices.filter((sysVoice) =>
+        !!win.READIUM2.ttsVoices?.find((userVoice) =>
+            (userVoice.name === sysVoice.name &&
+            userVoice.lang === sysVoice.lang &&
+            userVoice.voiceURI === sysVoice.voiceURI &&
+            // userVoice.default === sysVoice.default &&
+            userVoice.localService === sysVoice.localService)));
+    utterance.voice = null as (SpeechSynthesisVoice | null); // userVoices.find((usrVoice) => usrVoice.default) || null;
 
-    if (utterance.lang // authored lang
-        && utterance.voice?.lang // user-selected voice lang
-    ) {
-        const utteranceLang = utterance.lang.toLowerCase();
-        let utteranceLangShort = utteranceLang;
-        const i = utteranceLangShort.indexOf("-");
-        const utteranceLangIsSpecific = i > 0;
-        if (utteranceLangIsSpecific) {
-            utteranceLangShort = utteranceLangShort.substring(0, i);
-        }
+    // console.log("TTS ****************************************");
+    // console.log("utterance.lang", utterance.lang);
+    // console.log("utterance.voice.lang (default)", utterance.voice?.lang);
 
-        const utteranceVoiceLang = utterance.voice.lang.toLowerCase();
-        let utteranceVoiceLangShort = utteranceVoiceLang;
-        const j = utteranceVoiceLangShort.indexOf("-");
-        const utteranceVoiceLangIsSpecific = j > 0;
-        if (utteranceVoiceLangIsSpecific) {
-            utteranceVoiceLangShort = utteranceVoiceLangShort.substring(0, j);
-        }
+    // console.log("speechSynthesis.getVoices()", systemVoices.length);
+    // console.log("win.READIUM2.ttsVoices", win.READIUM2.ttsVoices?.length, JSON.stringify(win.READIUM2.ttsVoices, null, 4));
+    // console.log("userVoices = win.READIUM2.ttsVoices filtered", userVoices.length, JSON.stringify(userVoices.map((v) => ({
+    //     default: v.default,
+    //     lang: v.lang,
+    //     localService: v.localService,
+    //     name: v.name,
+    //     voiceURI: v.voiceURI,
+    // })), null, 4));
 
-        // is accepting a loose BCP47 match the correct heuristic?
-        // in other words, for example is fr-CA TTS voice suitable for authored fr-FR?
-        // (or en-US vs. en-UK which are somewhat acceptable semi-matches ... but what about locales / dialects with stronger differentiations?)
-        if (utteranceLang !== utteranceVoiceLang) { // strict (mis)match
-            let doReset = false;
-            if (utteranceVoiceLangShort !== utteranceLangShort) { // loose (mis)match
-                // we definitely fallback to system default here (auto lang selection, if there is a matching available TTS voice)
-                doReset = true;
-            } else if (utteranceLangIsSpecific) {
-                // loose langs do match, but authored requested strict ...
-                // at this point, we could force use of available matching TTS voice lang (if any),
-                // but what if the user *really* wanted to listen to fr-FR text with fr-CA?
-                // => yeah, that's a noop (no reset)
+    // TODO: match Greek variants? (etc.) el, grc, gre, ell ....
+
+    if (utterance.lang) { // authored lang
+        const voicesCascade = [userVoices, systemVoices];
+        for (const voices of voicesCascade) {
+            const utteranceLang = utterance.lang.toLowerCase();
+            let utteranceLangShort = utteranceLang;
+            const i = utteranceLangShort.indexOf("-");
+            const utteranceLangIsSpecific = i > 0;
+            if (utteranceLangIsSpecific) {
+                utteranceLangShort = utteranceLangShort.substring(0, i);
             }
-            if (doReset) {
-                // console.log("TTS voice diff, reset to default (utterance.voice.lang !== utterance.lang)", utterance.voice.lang, utterance.lang);
-                // TODO: Mac OS seems to always pick a suitable voice, but we've had reports of mismatch on Windows (SAPI5),
-                // so should we in fact *force* the use of a particular voice lang by finding the first matching one in the available list?
-                utterance.voice = null; // system default, will match an available voice automatically based on utterance.lang (well, we hope!)
+
+            let found = false;
+            for (const usrVoice of voices) {
+                if (!usrVoice.lang) {
+                    continue;
+                }
+                const usrVoiceLang = usrVoice.lang.toLowerCase();
+
+                if (utteranceLang === usrVoiceLang) { // exact match
+                    // console.log("))))) utteranceLang === usrVoiceLang", utteranceLang, JSON.stringify({
+                    //     default: usrVoice.default,
+                    //     lang: usrVoice.lang,
+                    //     localService: usrVoice.localService,
+                    //     name: usrVoice.name,
+                    //     voiceURI: usrVoice.voiceURI,
+                    // }, null, 4));
+                    utterance.voice = usrVoice;
+                    found = true;
+                    break;
+                }
+
+                let usrVoiceLangShort = usrVoiceLang;
+                const j = usrVoiceLangShort.indexOf("-");
+                const usrVoiceLangIsSpecific = j > 0;
+                if (usrVoiceLangIsSpecific) {
+                    usrVoiceLangShort = usrVoiceLangShort.substring(0, j);
+                }
+
+                // is accepting a loose BCP47 match the correct heuristic?
+                // in other words, for example is fr-CA TTS voice suitable for authored fr-FR?
+                // (or en-US vs. en-UK which are somewhat acceptable semi-matches ...
+                // but what about locales / dialects with stronger differentiations?)
+                if (utteranceLangShort === usrVoiceLangShort) { // first loose match wins
+                    // console.log("))))) utteranceLangShort === usrVoiceLangShort", utteranceLangShort, JSON.stringify({
+                    //     default: usrVoice.default,
+                    //     lang: usrVoice.lang,
+                    //     localService: usrVoice.localService,
+                    //     name: usrVoice.name,
+                    //     voiceURI: usrVoice.voiceURI,
+                    // }, null, 4));
+                    utterance.voice = usrVoice;
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                break;
             }
         }
     }
@@ -1580,7 +1632,7 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number, ttsAndMediaOverlaysManu
 
 function startTTSSession(
     speed: number,
-    voice: SpeechSynthesisVoice | null,
+    voices: SpeechSynthesisVoice[] | null,
     ttsRootElement: Element,
     ttsQueue: ITtsQueueItem[],
     ttsQueueIndexStart: number,
@@ -1590,7 +1642,7 @@ function startTTSSession(
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: (val: number) => void,
 ) {
     win.READIUM2.ttsPlaybackRate = speed;
-    win.READIUM2.ttsVoice = voice;
+    win.READIUM2.ttsVoices = voices;
 
     const ttsQueueItemStart = getTtsQueueItemRef(ttsQueue, ttsQueueIndexStart);
     if (!ttsQueueItemStart) {

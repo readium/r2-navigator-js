@@ -41,12 +41,13 @@ import {
 } from "./location";
 import { mediaOverlaysHandleIpcMessage } from "./media-overlays";
 import {
-    checkTtsState, ttsAndMediaOverlaysManualPlayNext, ttsClickEnable, ttsHandleIpcMessage, ttsOverlayEnable, ttsPlaybackRate,
-    ttsSentenceDetectionEnable, ttsSkippabilityEnable, ttsVoice,
+    checkTtsState, ttsAndMediaOverlaysManualPlayNext, ttsClickEnable, ttsHandleIpcMessage, ttsHighlightStyle, ttsOverlayEnable, ttsPlaybackRate,
+    ttsSentenceDetectionEnable, ttsSkippabilityEnable, ttsVoices,
 } from "./readaloud";
 import { adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, obtainReadiumCss } from "./readium-css";
 import { soundtrackHandleIpcMessage } from "./soundtrack";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
+import { HighlightDrawTypeBackground } from "../common/highlight";
 
 const ELEMENT_ID_SLIDING_VIEWPORT = "r2_navigator_sliding_viewport";
 const ELEMENT_ID_CAPTIONS = "r2_navigator_captions_overlay";
@@ -378,7 +379,8 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
         }
 
         if (win.READIUM2) {
-            ttsVoice(win.READIUM2.ttsVoice);
+            ttsVoices(win.READIUM2.ttsVoices);
+            ttsHighlightStyle(win.READIUM2.ttsHighlightStyle, win.READIUM2.ttsHighlightColor, win.READIUM2.ttsHighlightStyle_WORD, win.READIUM2.ttsHighlightColor_WORD);
             ttsPlaybackRate(win.READIUM2.ttsPlaybackRate);
             ttsClickEnable(win.READIUM2.ttsClickEnabled);
             ttsSentenceDetectionEnable(win.READIUM2.ttsSentenceDetectionEnabled);
@@ -680,13 +682,17 @@ export function installNavigatorDOM(
         publication,
         publicationURL,
         sessionInfo,
+        ttsHighlightStyle: HighlightDrawTypeBackground,
+        ttsHighlightColor: undefined,
+        ttsHighlightColor_WORD: undefined,
+        ttsHighlightStyle_WORD: undefined,
         ttsClickEnabled: false,
         ttsOverlayEnabled: false,
         ttsPlaybackRate: 1,
         ttsAndMediaOverlaysManualPlayNext: false,
         ttsSkippabilityEnabled: false,
         ttsSentenceDetectionEnabled: true,
-        ttsVoice: null,
+        ttsVoices: null,
         highlightsDrawMargin: false,
         // stealFocusDisabled: false,
     };
