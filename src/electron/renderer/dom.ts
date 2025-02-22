@@ -81,12 +81,39 @@ const captionsOverlayParaCssStyles = `
 `.replace(/[\r\n]/g, " ").replace(/\s\s+/g, " ").trim();
 // replace "{RCSS_BASE_URL}"
 const readiumCssStyle = `
+/*
 @font-face {
 font-family: AccessibleDfA;
 font-style: normal;
 font-weight: normal;
 src: local("AccessibleDfA"),
 url("{RCSS_BASE_URL}fonts/AccessibleDfA.otf") format("opentype");
+}
+*/
+
+@font-face {
+font-family: AccessibleDfA;
+src: local("AccessibleDfA"),
+url("{RCSS_BASE_URL}fonts/AccessibleDfA-Regular.woff2") format("woff2"),
+url("{RCSS_BASE_URL}fonts/AccessibleDfA-Regular.woff") format("woff");
+font-weight: normal;
+font-style: normal;
+}
+
+@font-face {
+font-family: AccessibleDfA;
+src: local("AccessibleDfA"),
+url("{RCSS_BASE_URL}fonts/AccessibleDfA-Bold.woff2") format("woff2");
+font-weight: bold;
+font-style: normal;
+}
+
+@font-face {
+font-family: AccessibleDfA;
+src: local("AccessibleDfA"),
+url("{RCSS_BASE_URL}fonts/AccessibleDfA-Italic.woff2") format("woff2");
+font-weight: normal;
+font-style: italic;
 }
 
 @font-face {
@@ -492,6 +519,11 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
 
         } else if (event.channel === R2_EVENT_IMAGE_CLICK) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_IMAGE_CLICK;
+            if (webview.READIUM2.link?.Href && webview.READIUM2.link.Href !== payload.hostDocumentURL) {
+                // console.log("R2_EVENT_IMAGE_CLICK: payload.hostDocumentURL !== webview.READIUM2.link?.Href", payload.hostDocumentURL, webview.READIUM2.link?.Href);
+                // webview.READIUM2.link.Href is RELATIVE! (EPUB ZIP / RWPM path, essentially)
+                payload.hostDocumentURL = webview.READIUM2.link.Href;
+            }
             if (_imageClickHandler) {
                 debug("R2_EVENT_IMAGE_CLICK (ipc-message) href [_imageClickHandler]: " + JSON.stringify(payload, null, 4));
                 _imageClickHandler({...payload});

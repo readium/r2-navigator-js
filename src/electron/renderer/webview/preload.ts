@@ -18,7 +18,7 @@ import { LocatorLocations, LocatorText } from "../../common/locator";
 
 import { encodeURIComponent_RFC3986 } from "@r2-utils-js/_utils/http/UrlUtils";
 
-import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../../common/sessions";
+import { convertCustomSchemeToHttpUrl, READIUM2_ELECTRON_HTTP_PROTOCOL } from "../../common/sessions";
 
 import {
     IEventPayload_R2_EVENT_AUDIO_SOUNDTRACK, IEventPayload_R2_EVENT_CAPTIONS,
@@ -2941,7 +2941,19 @@ function loaded(forced: boolean) {
 
                 debug("R2_EVENT_IMAGE_CLICK (ipcRenderer.sendToHost) href: " + href_src + " ___ " + cssSelectorOf_HTMLImg_SVGImage_SVGFragment);
 
+                // console.log("R2_EVENT_IMAGE_CLICK win.document.location.href", win.document.location.href);
+                let hostDocumentURL = `${win.document.location.protocol}//${win.document.location.host}${win.document.location.pathname}`;
+                // console.log("R2_EVENT_IMAGE_CLICK win.document.location.protocol+host+pathname", hostDocumentURL);
+                if (hostDocumentURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL)) {
+                    hostDocumentURL = convertCustomSchemeToHttpUrl(hostDocumentURL);
+                    // console.log("R2_EVENT_IMAGE_CLICK convertCustomSchemeToHttpUrl", hostDocumentURL);
+                    const u = new URL(hostDocumentURL);
+                    hostDocumentURL = u.pathname.replace("/pub/", "");
+                    hostDocumentURL = hostDocumentURL.substring(hostDocumentURL.indexOf("/") + 1);
+                    // console.log("R2_EVENT_IMAGE_CLICK hostDocumentURL", hostDocumentURL);
+                }
                 const payload: IEventPayload_R2_EVENT_IMAGE_CLICK = {
+                    hostDocumentURL,
                     isSVGFragment,
                     isSVGImage,
                     HTMLImgSrc_SVGImageHref_SVGFragmentMarkup: href_src,

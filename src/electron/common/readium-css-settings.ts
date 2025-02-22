@@ -82,7 +82,7 @@ export enum textAlignEnum {
 export enum fontEnum {
     DEFAULT = "DEFAULT",
     DUO = "DUO", // "IA Writer Duospace"
-    DYS = "DYS", // "AccessibleDfa"
+    DYS = "DYS", // "AccessibleDfA"
     OLD = "OLD", // "oldStyleTf"
     MODERN = "MODERN", // "modernTf"
     SANS = "SANS", // "sansTf"

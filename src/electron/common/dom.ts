@@ -10,7 +10,7 @@ import * as xmldom from "@xmldom/xmldom";
 export function serializeDOM(documant: Document | xmldom.Document): string {
 
     const isWeb = typeof window !== "undefined" && documant instanceof window.Document;
-    console.log("--DOMDOM: SERIALIZE--", isWeb);
+    // console.log("--DOMDOM: SERIALIZE--", isWeb);
     const serialized = isWeb
         ? new XMLSerializer().serializeToString(documant)
         : new xmldom.XMLSerializer().serializeToString(documant as xmldom.Document);
@@ -39,7 +39,7 @@ export function parseDOM(htmlStrToParse: string, mediaType: string | undefined):
 
     // type DOMParserSupportedType = "application/xhtml+xml" | "application/xml" | "image/svg+xml" | "text/html" | "text/xml"
     const isWeb = typeof window !== "undefined" && (mediaType === "application/xhtml+xml" || mediaType === "application/xml" || mediaType === "image/svg+xml" || mediaType === "text/html" || mediaType === "text/xml");
-    console.log("--DOMDOM: PARSE--", isWeb);
+    // console.log("--DOMDOM: PARSE--", isWeb);
     const documant = isWeb
         ? new DOMParser().parseFromString(htmlStrToParse, mediaType as DOMParserSupportedType)
         : new xmldom.DOMParser().parseFromString(htmlStrToParse, mediaType);

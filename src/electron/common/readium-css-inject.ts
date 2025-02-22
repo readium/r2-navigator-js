@@ -505,8 +505,8 @@ export function readiumCSSSet(
         let fontValue = "";
         if (font === "DUO" || font === "IA Writer Duospace") {
             fontValue = "IA Writer Duospace";
-        } else if (font === "DYS" || font === "AccessibleDfa") {
-            fontValue = "AccessibleDfa";
+        } else if (font === "DYS" || font === "AccessibleDfa" || font === "AccessibleDfA") {
+            fontValue = "AccessibleDfA";
         } else if (font === "OLD" || font === "oldStyleTf") {
             fontValue = "var(--RS__oldStyleTf)";
         } else if (font === "MODERN" || font === "modernTf") {

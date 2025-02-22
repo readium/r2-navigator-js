@@ -23,6 +23,7 @@ import { ISelectionInfo } from "./selection";
 export const R2_EVENT_IMAGE_CLICK = "R2_EVENT_IMAGE_CLICK";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_IMAGE_CLICK {
+    hostDocumentURL: string;
     isSVGFragment: boolean;
     isSVGImage: boolean;
     HTMLImgSrc_SVGImageHref_SVGFragmentMarkup: string;
