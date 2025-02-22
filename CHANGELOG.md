@@ -1,10 +1,30 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.17.5...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.18.0...develop
 
 Changes:
 * TODO
+
+# 1.18.0
+
+> Build environment: NodeJS `22.12.0`, NPM `11.1.0`
+
+Changes:
+* NPM package updates
+* Image zoom/pan API improvements
+* TTS highlights based on annotations engine now with additional opacity mask and ruler styles
+* TTS voice now handled with language mapping to reflect user preferences
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.18.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.18.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.18.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.17.5...v1.18.0
 
 # 1.17.5
 
