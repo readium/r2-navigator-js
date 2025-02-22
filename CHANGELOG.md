@@ -1,10 +1,30 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.18.0...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.19.0...develop
 
 Changes:
 * TODO
+
+# 1.19.0
+
+> Build environment: NodeJS `22.12.0`, NPM `11.1.0`
+
+Changes:
+* Updated AccessibleDfA typeface (dyslexic)
+* Fix font sizing issues by adopting zoom technique from ReadiumCSS v2
+* Fix following element IDs blacklist logic
+* Added document relative path (RWPM / EPUB zip) to image zoom/pan click event
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.19.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.19.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.19.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.18.0...v1.19.0
 
 # 1.18.0
 
