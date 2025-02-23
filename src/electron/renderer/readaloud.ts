@@ -483,6 +483,9 @@ export function ttsHighlightStyle(ttsHighlightStyle: number, ttsHighlightColor: 
 
     if (win.READIUM2) {
         win.READIUM2.ttsHighlightStyle = ttsHighlightStyle;
+        win.READIUM2.ttsHighlightColor = ttsHighlightColor;
+        win.READIUM2.ttsHighlightStyle_WORD = ttsHighlightStyle_WORD;
+        win.READIUM2.ttsHighlightColor_WORD = ttsHighlightColor_WORD;
     }
 
     const activeWebViews = win.READIUM2.getActiveWebViews();
