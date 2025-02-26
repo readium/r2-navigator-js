@@ -1,3 +1,4 @@
+
 // ==LICENSE-BEGIN==
 // Copyright 2017 European Digital Reading Lab. All rights reserved.
 // Licensed to the Readium Foundation under one or more contributor license agreements.
@@ -20,7 +21,11 @@ export function combineTextNodes(textNodes: Node[], skipNormalize?: boolean): st
         let str = "";
         for (const textNode of textNodes) {
             let txt = textNode.nodeValue;
-            if (txt) { // does not exclude purely-whitespace text nodes
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if ((textNode as any).__RUBY) {
+                // exxslint-disable-next-line @typescript-eslint/no-explicit-any
+                // str += " (SKIP) ";
+            } else if (txt) { // does not exclude purely-whitespace text nodes
                 // normalizeText() preserves prefix/suffix whitespace (collapsed to single), no trim()
                 // if (str.length) {
                 //     str += " ";
@@ -198,6 +203,10 @@ export function findTtsQueueItemIndex(
                         if (!txtNode.nodeValue && txtNode.nodeValue !== "") {
                             continue;
                         }
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        if ((txtNode as any).__RUBY) {
+                            continue;
+                        }
                         if (txtNode === startTextNode) {
                             offset += startTextNodeOffset;
                             break;
@@ -249,6 +258,10 @@ export function findTtsQueueItemIndex(
                 let offset = 0;
                 for (const txtNode of ttsQueueItem.textNodes) {
                     if (!txtNode.nodeValue && txtNode.nodeValue !== "") {
+                        continue;
+                    }
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    if ((txtNode as any).__RUBY) {
                         continue;
                     }
                     if (txtNode === startTextNode) {
@@ -367,18 +380,24 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
 
         const documant = (textNode.parentElement || parentElement).ownerDocument as Document;
 
-        const lower = (textNode.parentElement || parentElement).tagName?.toLowerCase();
+        // const lowerTagName = (textNode.parentElement || parentElement).tagName?.toLowerCase();
+        const lowerTagName = textNode.parentElement?.tagName?.toLowerCase();
 
         // <ruby> children are rb or pure kanji TEXT_NODE, then rp and rt siblings
         if (documant.documentElement.classList.contains(ROOT_CLASS_NO_RUBY)) {
-            if (lower === "rp" || lower === "rt") {
+            if (lowerTagName === "rp" || lowerTagName === "rt") {
                 return;
             }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if ((lowerTagName === "ruby" || lowerTagName === "rb") && (textNode as any).__RUBY) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (textNode as any).__RUBY = false;
+            }
         } else {
-            if (true // win.READIUM2.ttsSkippabilityEnabled
-                && (lower === "ruby" || lower === "rb")
-            ) {
-                return;
+            if (lowerTagName === "ruby" || lowerTagName === "rb") {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (textNode as any).__RUBY = true;
+                // return;
             }
         }
 
@@ -448,7 +467,8 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
                 if (true // win.READIUM2.ttsSkippabilityEnabled
                     && (lower === "rb") // not "ruby" which contains mixed content (element children, maybe "rb", definitely "rp" or "rt")
                 ) {
-                    return true;
+                    // SEE: (textNode as any).__RUBY
+                    // return true;
                 }
             }
 
@@ -988,8 +1008,11 @@ export function generateTtsQueue(rootElement: Element, splitSentences: boolean):
         }
         if (splitSentences && !skipSplitSentences) {
             try {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // (textNode as any).__RUBY
                 const txt = ttsQueueItem.combinedText; // no further transforms?
                 ttsQueueItem.combinedTextSentences = undefined;
+                // console.log("---- combinedText", txt);
                 const sentences = split(txt);
                 ttsQueueItem.combinedTextSentences = [];
                 ttsQueueItem.combinedTextSentencesRangeBegin = [];

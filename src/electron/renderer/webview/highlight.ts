@@ -1555,7 +1555,10 @@ https://blackorwhite.lloydk.ca
 
         // Japanese Ruby ... ugly hack, TODO extract logic elsewhere!? TODO only TTS? (annotations and search could be problematic if only Ruby RT/RP match? ... but search already excludes Ruby, and mouse text selection makes it hard/impossible to select Ruby upperscript, so...)
         // highlight.group === HIGHLIGHT_GROUP_TTS ? JAPANESE_RUBY_TO_SKIP : undefined
-        const textClientRects = getTextClientRects(range, JAPANESE_RUBY_TO_SKIP);
+        const textClientRects = getTextClientRects(range,
+            // highlight.group === HIGHLIGHT_GROUP_TTS ? undefined : JAPANESE_RUBY_TO_SKIP
+            JAPANESE_RUBY_TO_SKIP,
+        );
 
         const textReducedClientRects = getClientRectsNoOverlap(textClientRects, true, vertical, highlight.expand ? highlight.expand : 0);
 
@@ -1647,7 +1650,7 @@ https://blackorwhite.lloydk.ca
     // const rangeBoundingClientRect = range.getBoundingClientRect();
 
     const gap = 2;
-    const gapX = ((drawOutline || drawBackground) ? gap : 0);
+    const gapX = ((drawOutline || drawBackground) ? 4 : 0);
 
     const boxesNoGapExpanded = [];
     const boxesGapExpanded = [];
@@ -1736,7 +1739,7 @@ https://blackorwhite.lloydk.ca
                     ?
                     rect.left
                     :
-                    (rect.left - (thickness / 2))
+                    (rect.left - (thickness + thickness / 2))
                 )
                 :
                 rect.left

@@ -733,17 +733,22 @@ function wrapHighlightWord(
         if (!txtNode.nodeValue && txtNode.nodeValue !== "") {
             continue;
         }
-        const l = isOnlyWhiteSpace(txtNode.nodeValue) ? 1 : txtNode.nodeValue.length;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const isRUBY = (txtNode as any).__RUBY;
+
+        const l = isRUBY ? 0 : isOnlyWhiteSpace(txtNode.nodeValue) ? 1 : txtNode.nodeValue.length;
         acc += l;
         if (!rangeStartNode) {
-            if (charIndexAdjusted < acc) {
+            if (isRUBY && charIndexAdjusted <= acc
+                || charIndexAdjusted < acc) {
                 rangeStartNode = txtNode;
-                rangeStartOffset = l - (acc - charIndexAdjusted);
+                rangeStartOffset = isRUBY ? 0 : l - (acc - charIndexAdjusted);
             }
         }
         if (rangeStartNode && charIndexEnd <= acc) {
             rangeEndNode = txtNode;
-            rangeEndOffset = l - (acc - charIndexEnd);
+            rangeEndOffset = isRUBY ? (txtNode.nodeValue.length - 1) : l - (acc - charIndexEnd);
             break;
         }
     }
@@ -900,17 +905,22 @@ function wrapHighlight(
                 if (!txtNode.nodeValue && txtNode.nodeValue !== "") {
                     continue;
                 }
-                const l = isOnlyWhiteSpace(txtNode.nodeValue) ? 1 : txtNode.nodeValue.length;
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const isRUBY = (txtNode as any).__RUBY;
+
+                const l = isRUBY ? 0 : isOnlyWhiteSpace(txtNode.nodeValue) ? 1 : txtNode.nodeValue.length;
                 acc += l;
                 if (!rangeStartNode) {
-                    if (sentBegin < acc) {
+                    if (isRUBY && sentBegin <= acc
+                        || sentBegin < acc) {
                         rangeStartNode = txtNode;
-                        rangeStartOffset = l - (acc - sentBegin);
+                        rangeStartOffset = isRUBY ? 0 : l - (acc - sentBegin);
                     }
                 }
                 if (rangeStartNode && sentEnd <= acc) {
                     rangeEndNode = txtNode;
-                    rangeEndOffset = l - (acc - sentEnd);
+                    rangeEndOffset = isRUBY ? (txtNode.nodeValue.length - 1) : l - (acc - sentEnd);
                     break;
                 }
             }
@@ -942,6 +952,11 @@ function wrapHighlight(
                 flushDestroy();
                 return;
             }
+            // exxxslint-disable-next-line @typescript-eslint/no-explicit-any
+            // if ((firstTextNode as any).__RUBY) {
+            //     flushDestroy();
+            //     return;
+            // }
             range.setStart(firstTextNode, isOnlyWhiteSpace(firstTextNode.nodeValue) ? firstTextNode.nodeValue.length - 1 : 0);
 
             const lastTextNode = ttsQueueItem.textNodes[ttsQueueItem.textNodes.length - 1];
@@ -949,6 +964,11 @@ function wrapHighlight(
                 flushDestroy();
                 return;
             }
+            // exxxslint-disable-next-line @typescript-eslint/no-explicit-any
+            // if ((lastTextNode as any).__RUBY) {
+            //     flushDestroy();
+            //     return;
+            // }
             range.setEnd(lastTextNode, isOnlyWhiteSpace(lastTextNode.nodeValue) ? 1 : lastTextNode.nodeValue.length);
         }
 
