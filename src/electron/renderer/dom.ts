@@ -209,7 +209,7 @@ ipcRenderer.on("accessibility-support-changed", (_e, accessibilitySupportEnabled
     }
 
     debug("accessibility-support-changed event received in WebView ", accessibilitySupportEnabled);
-    win.READIUM2.isScreenReaderMounted = accessibilitySupportEnabled;
+    win.READIUM2.accessibilitySupportEnabled = accessibilitySupportEnabled;
 });
 
 // const queryParams = getURLQueryParams();
@@ -709,7 +709,7 @@ export function installNavigatorDOM(
             return _webview2;
         },
         // See "accessibility-support-changed" event cycles in MAIN and RENDERER (this BrowserWindow) processes
-        isScreenReaderMounted: false,
+        accessibilitySupportEnabled: false,
         preloadScriptPath,
         publication,
         publicationURL,

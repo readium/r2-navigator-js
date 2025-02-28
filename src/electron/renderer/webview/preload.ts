@@ -90,6 +90,7 @@ import {
     URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_GOTO_DOM_RANGE, URL_PARAM_PREVIOUS,
     URL_PARAM_SECOND_WEBVIEW, URL_PARAM_WEBVIEW_SLOT,
     FRAG_ID_CSS_SELECTOR,
+    URL_PARAM_A11Y_SUPPORT_ENABLED,
 } from "../common/url-params";
 import { setupAudioBook } from "./audiobook";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
@@ -146,6 +147,7 @@ win.READIUM2 = {
     hashElement: null,
     isAudio: false,
     ignorekeyDownUpEvents: false,
+    accessibilitySupportEnabled: false,
     isClipboardIntercept: false,
     isFixedLayout: false,
     locationHashOverride: undefined,
@@ -224,6 +226,7 @@ const CSS_PIXEL_TOLERANCE = 5;
 // }, 2000);
 
 setSelectionChangeAction(win, () => {
+    // CONTEXT: setSelectionChangeAction
     notifyReadingLocationDebounced(true); // userInteract assumed (not programmatic)
 });
 
@@ -408,6 +411,7 @@ if (win.READIUM2.urlQueryParams) {
     }
     win.READIUM2.DEBUG_VISUALS = win.READIUM2.urlQueryParams[URL_PARAM_DEBUG_VISUALS] === "true";
 
+    win.READIUM2.accessibilitySupportEnabled = win.READIUM2.urlQueryParams[URL_PARAM_A11Y_SUPPORT_ENABLED] === "true";
     win.READIUM2.isClipboardIntercept = win.READIUM2.urlQueryParams[URL_PARAM_CLIPBOARD_INTERCEPT] === "true";
 
     win.READIUM2.webViewSlot =
@@ -676,8 +680,9 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
 
         debug("processXYRaw BODY");
         const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
-        processXYRaw(x, 0, false);
-
+        // CONTEXT: R2_EVENT_SCROLLTO
+        processXYRaw(x, 0, false, false);
+        // CONTEXT: R2_EVENT_SCROLLTO
         notifyReadingLocationDebounced();
         return;
     }
@@ -721,10 +726,12 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
     if (delayScrollIntoView) {
         setTimeout(() => {
             debug("++++ scrollToHashRaw FROM DELAYED SCROLL_TO");
+            // CONTEXT: R2_EVENT_SCROLLTO
             scrollToHashRaw(false, true);
         }, 100);
     } else {
         debug("++++ scrollToHashRaw FROM SCROLL_TO");
+        // CONTEXT: R2_EVENT_SCROLLTO
         scrollToHashRaw(false, true);
     }
 });
@@ -1020,6 +1027,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                         (_cancelled: boolean) => {
                             // debug(cancelled);
                             _ignoreScrollEvent = false;
+                            // CONTEXT: onEventPageTurn()
                             onScrollDebounced();
                         },
                         targetProp,
@@ -1055,6 +1063,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                         (_cancelled: boolean) => {
                             // debug(cancelled);
                             _ignoreScrollEvent = false;
+                            // CONTEXT: onEventPageTurn()
                             onScrollDebounced();
                         },
                         targetProp,
@@ -1121,6 +1130,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                         (_cancelled: boolean) => {
                             // debug(cancelled);
                             _ignoreScrollEvent = false;
+                            // CONTEXT: onEventPageTurn()
                             onScrollDebounced();
                         },
                         targetProp,
@@ -1156,6 +1166,7 @@ function onEventPageTurn(payload: IEventPayload_R2_EVENT_PAGE_TURN) {
                         (_cancelled: boolean) => {
                             // debug(cancelled);
                             _ignoreScrollEvent = false;
+                            // CONTEXT: onEventPageTurn()
                             onScrollDebounced();
                         },
                         targetProp,
@@ -1222,9 +1233,11 @@ function focusElement(element: Element, preventScroll: boolean /*, focusHost: bo
         //     }
         // }
         debug("KEYBOARD FOCUS REQUEST (1) --> BODY");
+        // CONTEXT: focusElement()
         (element as HTMLElement).focus({preventScroll: true});
     } else {
         debug("KEYBOARD FOCUS REQUEST (1) --> not BODY", preventScroll);
+        // CONTEXT: focusElement()
         (element as HTMLElement).focus({preventScroll});
     }
 
@@ -1326,9 +1339,7 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
     if (doFocus) {
         tempLinkTargetOutline(element, 2000, false);
 
-        // CONTEXT: scrollToHashRaw() ==> scrollElementIntoView()
-        // CONTEXT: focusScrollRaw() ==> scrollElementIntoView()
-        // CONTEXT: R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT ==> scrollElementIntoView()
+        // CONTEXT: scrollElementIntoView()
         focusElement(element, !!domRect /*, focusHost */);
     }
 
@@ -1408,6 +1419,7 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
                             (_cancelled: boolean) => {
                                 // debug(cancelled);
                                 _ignoreScrollEvent = false;
+                                // CONTEXT: scrollElementIntoView()
                                 onScrollDebounced();
                             },
                             targetProp,
@@ -1513,16 +1525,20 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
         //     return;
         // }
         // _ignoreScrollEvent = true;
+        // CONTEXT: scrollToHashRaw()
         scrollElementIntoView(win.READIUM2.locationHashOverride, true, animate, undefined /*, false */);
 
+        // CONTEXT: scrollToHashRaw()
         notifyReadingLocationDebounced();
         return;
     } else if (win.READIUM2.hashElement) {
         win.READIUM2.locationHashOverride = win.READIUM2.hashElement;
 
         // _ignoreScrollEvent = true;
+        // CONTEXT: scrollToHashRaw()
         scrollElementIntoView(win.READIUM2.hashElement, true, animate, undefined /*, false */);
 
+        // CONTEXT: scrollToHashRaw()
         notifyReadingLocationDebounced();
         return;
     } else {
@@ -1573,11 +1589,13 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
                     // - 1;
                     // processXYRaw(0, y, true);
                     const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
-                    processXYRaw(x, 0, false);
+                    // CONTEXT: scrollToHashRaw
+                    processXYRaw(x, 0, false, false);
 
                     showHideContentMask(false, win.READIUM2.isFixedLayout);
 
                     if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
+                        // CONTEXT: scrollToHashRaw()
                         notifyReadingLocationDebounced();
                     }
 
@@ -1636,8 +1654,10 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
                     }
 
                     // _ignoreScrollEvent = true;
+                    // CONTEXT: scrollToHashRaw()
                     scrollElementIntoView(selected, true, animate, domRect /*, false */);
 
+                    // CONTEXT: scrollToHashRaw()
                     notifyReadingLocationDebounced();
 
                     return;
@@ -1683,9 +1703,11 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
                     focusElement(win.READIUM2.locationHashOverride, false /*, false */);
 
                     const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
-                    processXYRaw(x, 0, false);
+                    // CONTEXT: scrollToHashRaw
+                    processXYRaw(x, 0, false, false);
 
                     if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
+                        // CONTEXT: scrollToHashRaw()
                         notifyReadingLocationDebounced();
                     }
                     return;
@@ -1717,9 +1739,11 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
                 // maxScrollShift === scrollElement.scrollWidth - win.document.documentElement.clientWidth
                 // * gotoProgression ?
                 const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
-                processXYRaw(x, 0, false);
+                // CONTEXT: scrollToHashRaw
+                processXYRaw(x, 0, false, false);
 
                 if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
+                    // CONTEXT: scrollToHashRaw()
                     notifyReadingLocationDebounced();
                 }
                 return;
@@ -1740,7 +1764,8 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
 
         debug("processXYRaw BODY");
         const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
-        processXYRaw(x, 0, false);
+        // CONTEXT: scrollToHashRaw
+        processXYRaw(x, 0, false, false);
 
         // if (!win.READIUM2.locationHashOverride) { // already in processXYRaw()
         //     notifyReadingLocationDebounced();
@@ -1748,11 +1773,13 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
         // }
     }
 
+    // CONTEXT: scrollToHashRaw()
     notifyReadingLocationDebounced();
 };
 
 const scrollToHashDebounced = debounce((animate: boolean) => {
     debug("++++ scrollToHashRaw FROM DEBOUNCED");
+    // CONTEXT: scrollToHashDebounced()
     scrollToHashRaw(animate);
 }, 100);
 
@@ -1804,6 +1831,7 @@ function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean, animate: boolean
         // !isPaginated(win.document) &&
         !isVisible(false, el as HTMLElement, domRect)) {
 
+        // CONTEXT: focusScrollRaw()
         scrollElementIntoView(el as HTMLElement, doFocus, animate, domRect /*, false */);
     }
 
@@ -1820,11 +1848,14 @@ function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean, animate: boolean
     // underscore special link will prioritise hashElement!
     win.READIUM2.hashElement = doFocus ? el as HTMLElement : win.READIUM2.hashElement;
     win.READIUM2.locationHashOverride = el as HTMLElement;
+
+    // CONTEXT: focusScrollRaw()
     notifyReadingLocationDebounced();
 }
 const focusScrollDebounced =
     debounce((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => {
 
+        // CONTEXT: focusScrollDebounced()
         focusScrollRaw(el, doFocus, animate, domRect);
     }, 100);
 
@@ -1838,6 +1869,7 @@ const focusScrollDebounced =
 //         ((win.document.body as any).tabbables = tabbable(win.document.body) as HTMLElement[]);
 // }
 const handleFocusInDebounced = debounce((target: HTMLElement, tabKeyDownEvent: KeyboardEvent | undefined) => {
+    // CONTEXT: handleFocusInDebounced()
     handleFocusInRaw(target, tabKeyDownEvent);
 }, 100);
 function handleFocusInRaw(target: HTMLElement, _tabKeyDownEvent: KeyboardEvent | undefined) {
@@ -1848,6 +1880,7 @@ function handleFocusInRaw(target: HTMLElement, _tabKeyDownEvent: KeyboardEvent |
 
     // doFocus is false (important, as otherwise
     // underscore special link will prioritise hashElement)
+    // CONTEXT: handleFocusInRaw()
     focusScrollRaw(target, false, false, undefined);
 }
 // function handleTabRaw(target: HTMLElement, tabKeyDownEvent: KeyboardEvent | undefined) {
@@ -2226,9 +2259,11 @@ const onScrollRaw = () => {
     }
 
     const x = (isRTL() ? win.document.documentElement.offsetWidth - 1 : 0);
-    processXYRaw(x, 0, false);
+    // CONTEXT: onScrollRaw
+    processXYRaw(x, 0, false, false, true);
 };
 const onScrollDebounced = debounce(() => {
+    // CONTEXT: onScrollDebounced
     onScrollRaw();
 }, 300);
 
@@ -2316,6 +2351,7 @@ function focusCurrentReadingLocationElement(invert: boolean) {
         (win.READIUM2.locationHashOverride || win.READIUM2.hashElement) :
         (win.READIUM2.hashElement || win.READIUM2.locationHashOverride);
     if (el) {
+        // CONTEXT: focusCurrentReadingLocationElement()
         focusScrollDebounced(el as HTMLElement, true, false, undefined);
     }
 }
@@ -2385,6 +2421,7 @@ function loaded(forced: boolean) {
             showHideContentMask(false, win.READIUM2.isFixedLayout);
 
             debug("++++ scrollToHashDebounced FROM LOAD");
+            // CONTEXT: loaded()
             scrollToHashDebounced(false);
 
             if (ENABLE_SKIP_LINK && win.document.body) {
@@ -2411,6 +2448,7 @@ function loaded(forced: boolean) {
                 setTimeout(() => {
                     focusLink.addEventListener("click", (ev) => {
                         ev.preventDefault();
+                        // CONTEXT: click/SKIP_LINK_ID
                         focusCurrentReadingLocationElement(false);
                     });
                 }, 200);
@@ -2457,6 +2495,8 @@ function loaded(forced: boolean) {
             showHideContentMask(false, win.READIUM2.isFixedLayout);
 
             win.READIUM2.locationHashOverride = win.document.body;
+
+            // CONTEXT: loaded()
             notifyReadingLocationDebounced();
         }
 
@@ -2538,6 +2578,7 @@ function loaded(forced: boolean) {
                 }
             }
             if (!ignoreIncomingMouseClickOnFocusable) {
+                // CONTEXT: focusin loaded()
                 handleFocusInDebounced(ev.target as HTMLElement, undefined);
             } else {
                 debug("focusin mouse click --- IGNORE");
@@ -2614,6 +2655,7 @@ function loaded(forced: boolean) {
                 appendExtraColumnPadIfNecessary(false);
 
                 // debug("++++ scrollToHashDebounced from ResizeObserver");
+                // CONTEXT: loaded() - ResizeObserver
                 scrollToHashDebounced(false);
             });
             resizeObserver.observe(win.document.body);
@@ -3123,9 +3165,11 @@ function loaded(forced: boolean) {
             return;
         }
         debug("++++ scrollToHashDebounced FROM RESIZE");
+        // CONTEXT: loaded() - onResizeRaw
         scrollToHashDebounced(false);
     };
     const onResizeDebounced = debounce(() => {
+        // CONTEXT: onResizeDebounced()
         onResizeRaw();
     }, 200);
     let _firstWindowResize = true;
@@ -3143,6 +3187,7 @@ function loaded(forced: boolean) {
         // } else {
         //     onResizeDebounced();
         // }
+        // CONTEXT: event WINDOW "resize"
         onResizeDebounced();
     });
 
@@ -3319,6 +3364,7 @@ function loaded(forced: boolean) {
                 return;
             }
 
+            // CONTEXT: scroll - loaded()
             onScrollDebounced();
         });
     }, 200);
@@ -3357,6 +3403,7 @@ function loaded(forced: boolean) {
         const x = ev.clientX;
         const y = ev.clientY;
 
+        // CONTEXT: handleMouseEvent mouseup
         processXYDebouncedImmediate(x, y, false, true);
 
         // const domPointData = domDataFromPoint(x, y);
@@ -3601,7 +3648,7 @@ const domDataFromPoint = (x: number, y: number): TDOMPointData => {
 };
 
 // relative to fixed window top-left corner
-const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boolean) => {
+const processXYRaw = (x: number, y: number, reverse: boolean, userInteract: boolean, fromViewportScroll?: boolean) => {
 
     debug("processXYRaw ENTRY");
 
@@ -3733,9 +3780,15 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
 
         // TODO: 250ms debounce on the leading edge (immediate) doesn't allow double-click to capture win.getSelection() for bookmark titles and annotations, because the notifyReadingLocation occurs before the DOM selection is ready. Instead of reverting to the debounce trailing edge (which causes a 200ms+ delay), could we detect double-click? Any other unintended side-effects / possible regression bugs from this change??
         if (userInteract && win.READIUM2.DEBUG_VISUALS) {
+            // CONTEXT: processXYRaw()
             notifyReadingLocationDebouncedImmediate(userInteract);
         } else {
-            notifyReadingLocationDebounced(userInteract);
+            if (fromViewportScroll && win.READIUM2.accessibilitySupportEnabled) {
+                // NOOP, we don't want to interfere with screen readers when they are moving their internal virtual buffer cursor which causes layout shifts
+            } else {
+                // CONTEXT: processXYRaw()
+                notifyReadingLocationDebounced(userInteract);
+            }
         }
 
         if (userInteract && win.READIUM2.locationHashOverride) {
@@ -3758,7 +3811,8 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract?: boo
 // const processXYDebounced = debounce((x: number, y: number, reverse: boolean, userInteract?: boolean) => {
 //     processXYRaw(x, y, reverse, userInteract);
 // }, 300);
-const processXYDebouncedImmediate = debounce((x: number, y: number, reverse: boolean, userInteract?: boolean) => {
+const processXYDebouncedImmediate = debounce((x: number, y: number, reverse: boolean, userInteract: boolean) => {
+    // CONTEXT: processXYDebouncedImmediate
     processXYRaw(x, y, reverse, userInteract);
 }, 300, { immediate: true });
 
@@ -4726,9 +4780,11 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
     }
 };
 const notifyReadingLocationDebounced = debounce((userInteract?: boolean, ignoreMediaOverlays?: boolean) => {
+    // CONTEXT: notifyReadingLocationDebounced()
     notifyReadingLocationRaw(userInteract, ignoreMediaOverlays);
 }, 250);
 const notifyReadingLocationDebouncedImmediate = debounce((userInteract?: boolean, ignoreMediaOverlays?: boolean) => {
+    // CONTEXT: notifyReadingLocationDebouncedImmediate()
     notifyReadingLocationRaw(userInteract, ignoreMediaOverlays);
 }, 250, { immediate: true });
 
@@ -4946,10 +5002,12 @@ if (!win.READIUM2.isAudio) {
                         // !isPaginated(win.document) &&
                         !isVisible(false, targetEl, undefined)) {
 
+                        // CONTEXT: R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT()
                         scrollElementIntoView(targetEl, false, true, undefined /*, false */);
                     }
 
                     scrollToHashDebounced.clear();
+                    // CONTEXT: R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT()
                     notifyReadingLocationRaw(false, true);
 
                     if (win.READIUM2.DEBUG_VISUALS) {
@@ -5041,6 +5099,57 @@ if (!win.READIUM2.isAudio) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ipcRenderer.on(R2_EVENT_FOCUS_READING_LOC, (_event: any, _payload: any) => {
+        // CONTEXT: R2_EVENT_FOCUS_READING_LOC
         focusCurrentReadingLocationElement(true);
     });
 }
+
+// -------------------------------------------------
+// https://mermaid.live/edit#pako:eNqtVu9vqjAU_VdM92VLlKiIMj68xAhTMpQFnXl7IWk66JQMWsOP7W2L__srqDwYgs3LMzG29Z7TnnvvKXwBh7oYKCCKUYxVD21CFHTe-jZptSB8oU4SaT4OMImvb1qdzg-2KGSr1zc2uUo_aeQVhJETUt8_xuokpmsPv-eYMlEJsqIzFG0t1BQM4S6kDo6in0-XAgmNvZcPCyPXIxuDOij2KGkCVUVUT1Qj7ojKGJdZCD_I6kNtrS1WcK6p-hiaa80yxk9wpk9nBvuuLpEcj33VMg21BR3fc14FQVje6w_Q0Bf3UFcPG-X73JmTxyW0tLGqL6bQMCcsPDv5JAlDRv4tZXmGTmEHgSp-pglxsFvOZ0H9UZ9qzieUxIzCoMjFLqPx2eD4k-JPxB5hoy0iro_v0rlOCpt8_6tSydLOxVrmwpcTyzSMlVnKaKHGZ2pfVXkGxdM45bY9dCgl1V6pxjHSgCYRTnZ5CubpXHs7VSXH5KfVgwC7HvNxM29dZr4H5wJrXFXNUr35eGiqx2_m43dRE09B5akyBWEHfKlkNW32MJ5qcPVoLVhpmH3SMj2gDV4lIcn1nNmA6_qswfG57EDdxFTUw-VbljwceZ-Y5eOMP6rquEgPlOZzhMM3HP4n3ks0JRNjHztpZzjMbxvMWCIcL0-Lk2xxnI2bG7R6zjrHccLrbhdOeM3ziRPNnWMevpoH-WVowaX_wFC4WWwC2iDAYYA8l732fKWcNoi3zHg2UNjQReGrDWyyZ3EoienygzhAicMEt0FIk80WKC_Ij9gs2bl_35ny1R0ivygNThA2BcoX-A0USRQGtwNJFCVRlnuyOGyDD6D0pJEw6srdoSwPRkNp2Jf2bfCZEXQFeXjbHfUG3X5PEnuyLO7_AEh-OrI
+// -------------------------------------------------
+// stateDiagram-v2
+//   __focusElement() --> __.focus()
+// #####
+//   #__scrollElementIntoView() --> __focusElement()
+//   #__scrollToHashRaw() --> __focusElement()
+//   __processXYRaw() --> __focusElement()
+//   __notifyReadingLocationRaw() --> __focusElement()
+// #####
+//   #__scrollToHashRaw() --> __scrollElementIntoView()
+//   #__focusScrollRaw() --> __scrollElementIntoView()
+//   #__R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT --> __scrollElementIntoView()
+// #####
+// # OLD _click...SKIP_LINK_ID
+//   #_R2_EVENT_FOCUS_READING_LOC...focusCurrentReadingLocationElement()...focusScrollDebounced() --> __focusScrollRaw()
+//   #__DOMContentLoaded...load...loaded()...focusin...handleFocusInDebounced()...handleFocusInRaw() --> __focusScrollRaw()
+// #####
+//   #__R2_EVENT_SCROLLTO --> __scrollToHashRaw()
+//   #__scrollToHashDebounced() --> __scrollToHashRaw()
+// #####
+//   #__scrollToHashRaw() --> __processXYRaw()
+//   __onScrollRaw() --> __processXYRaw()
+//   #__mouseup...handleMouseEvent()...processXYDebouncedImmediate() --> __processXYRaw()
+//   #__R2_EVENT_SCROLLTO --> __processXYRaw()
+// #####
+//   __notifyReadingLocationDebounced() --> __notifyReadingLocationRaw()
+//   __notifyReadingLocationDebouncedImmediate() --> __notifyReadingLocationRaw()
+//   #__R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT --> __notifyReadingLocationRaw()
+// #####
+//   __onScrollDebounced()--> __onScrollRaw()
+// #####
+//   #__R2_EVENT_PAGE_TURN...onEventPageTurn() --> __onScrollDebounced()
+//   #__scrollElementIntoView() --> __onScrollDebounced()
+//   __DOMContentLoaded...load...loaded()..scroll --> __onScrollDebounced()
+// #####
+//   #__DOMContentLoaded...load...loaded()...onResizeRaw --> __scrollToHashDebounced()
+//   #__DOMContentLoaded...load...loaded()...ResizeObserver --> __scrollToHashDebounced()
+//   #__DOMContentLoaded...load...loaded() --> __scrollToHashDebounced()
+// #####
+//   #__selectionchange...setSelectionChangeAction() --> __notifyReadingLocationDebounced()
+//   #__R2_EVENT_SCROLLTO --> __notifyReadingLocationDebounced()
+//   #__scrollToHashRaw() --> __notifyReadingLocationDebounced()
+//   #__focusScrollRaw() --> __notifyReadingLocationDebounced()
+//   #__DOMContentLoaded...load...loaded() --> __notifyReadingLocationDebounced()
+//   __processXYRaw() --> __notifyReadingLocationDebounced()
+// #####
+//   __processXYRaw() --> __notifyReadingLocationDebouncedImmediate()

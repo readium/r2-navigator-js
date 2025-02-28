@@ -26,6 +26,7 @@ import {
     convertHttpUrlToCustomScheme,
 } from "../common/sessions";
 import {
+    URL_PARAM_A11Y_SUPPORT_ENABLED,
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
     URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_IS_IFRAME, URL_PARAM_SECOND_WEBVIEW,
     URL_PARAM_SESSION_INFO, URL_PARAM_WEBVIEW_SLOT,
@@ -686,6 +687,7 @@ const transformerHttpBaseIframes: TTransformFunction = (
     const r2CSS = url_.searchParams.get(URL_PARAM_CSS);
     const r2ERS = url_.searchParams.get(URL_PARAM_EPUBREADINGSYSTEM);
     const r2DEBUG = url_.searchParams.get(URL_PARAM_DEBUG_VISUALS);
+    const r2A11YSUPPORTENABLED = url_.searchParams.get(URL_PARAM_A11Y_SUPPORT_ENABLED);
     const r2CLIPBOARDINTERCEPT = url_.searchParams.get(URL_PARAM_CLIPBOARD_INTERCEPT);
     const r2SESSIONINFO = url_.searchParams.get(URL_PARAM_SESSION_INFO);
     const r2WEBVIEWSLOT = url_.searchParams.get(URL_PARAM_WEBVIEW_SLOT);
@@ -709,6 +711,9 @@ const transformerHttpBaseIframes: TTransformFunction = (
         src_ = `${urlStr}/../${src_}`;
         const iframeUrl = new URL(src_);
 
+        if (r2A11YSUPPORTENABLED) {
+            iframeUrl.searchParams.append(URL_PARAM_A11Y_SUPPORT_ENABLED, r2A11YSUPPORTENABLED);
+        }
         if (r2CLIPBOARDINTERCEPT) {
             iframeUrl.searchParams.append(URL_PARAM_CLIPBOARD_INTERCEPT, r2CLIPBOARDINTERCEPT);
         }

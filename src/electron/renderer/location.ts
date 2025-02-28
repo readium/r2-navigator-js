@@ -51,6 +51,7 @@ import {
     URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_GOTO_DOM_RANGE, URL_PARAM_PREVIOUS,
     URL_PARAM_REFRESH, URL_PARAM_SECOND_WEBVIEW, URL_PARAM_SESSION_INFO, URL_PARAM_WEBVIEW_SLOT,
     FRAG_ID_CSS_SELECTOR,
+    URL_PARAM_A11Y_SUPPORT_ENABLED,
 } from "./common/url-params";
 import { getEpubReadingSystemInfo } from "./epubReadingSystem";
 import { mediaOverlaysInterrupt } from "./media-overlays";
@@ -783,6 +784,7 @@ function loadLink(
                 data[URL_PARAM_CSS] = undefined;
                 data[URL_PARAM_EPUBREADINGSYSTEM] = undefined;
                 data[URL_PARAM_DEBUG_VISUALS] = undefined;
+                data[URL_PARAM_A11Y_SUPPORT_ENABLED] = undefined;
                 data[URL_PARAM_CLIPBOARD_INTERCEPT] = undefined;
                 data[URL_PARAM_REFRESH] = undefined;
                 data[URL_PARAM_WEBVIEW_SLOT] = undefined;
@@ -1089,6 +1091,7 @@ function loadLink(
             data[URL_PARAM_CSS] = undefined;
             data[URL_PARAM_EPUBREADINGSYSTEM] = undefined;
             data[URL_PARAM_DEBUG_VISUALS] = undefined;
+            data[URL_PARAM_A11Y_SUPPORT_ENABLED] = undefined;
             data[URL_PARAM_CLIPBOARD_INTERCEPT] = undefined;
             data[URL_PARAM_REFRESH] = undefined;
             data[URL_PARAM_WEBVIEW_SLOT] = undefined;
@@ -1145,6 +1148,11 @@ function loadLink(
                 "true" : "false";
 
             // tslint:disable-next-line:no-string-literal
+            data[URL_PARAM_A11Y_SUPPORT_ENABLED] =
+                win.READIUM2.accessibilitySupportEnabled ?
+                "true" : "false";
+
+            // tslint:disable-next-line:no-string-literal
             data[URL_PARAM_CLIPBOARD_INTERCEPT] =
                 win.READIUM2.clipboardInterceptor ?
                 "true" : "false";
@@ -1163,7 +1171,7 @@ function loadLink(
     }
     const webviewNeedsHardRefresh = !isAudio &&
         (win.READIUM2.enableScreenReaderAccessibilityWebViewHardRefresh
-        && win.READIUM2.isScreenReaderMounted);
+        && win.READIUM2.accessibilitySupportEnabled);
 
     if (// !secondWebView && !loadingSecondWebView &&
         // !win.READIUM2.getSecondWebView(false) &&
