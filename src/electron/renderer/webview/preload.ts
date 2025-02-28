@@ -227,7 +227,7 @@ const CSS_PIXEL_TOLERANCE = 5;
 
 setSelectionChangeAction(win, () => {
     // CONTEXT: setSelectionChangeAction
-    notifyReadingLocationDebounced(true); // userInteract assumed (not programmatic)
+    notifyReadingLocationDebounced(true, false, true); // userInteract assumed (not programmatic)
 });
 
 const TOUCH_SWIPE_DELTA_MIN = 80;
@@ -3784,7 +3784,9 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract: bool
             notifyReadingLocationDebouncedImmediate(userInteract);
         } else {
             if (fromViewportScroll && win.READIUM2.accessibilitySupportEnabled) {
-                // NOOP, we don't want to interfere with screen readers when they are moving their internal virtual buffer cursor which causes layout shifts
+                // we don't want to interfere with screen readers when they are moving their internal virtual buffer cursor which causes layout shifts
+                // CONTEXT: processXYRaw()
+                notifyReadingLocationDebounced(userInteract, false, true);
             } else {
                 // CONTEXT: processXYRaw()
                 notifyReadingLocationDebounced(userInteract);
@@ -4585,7 +4587,7 @@ const $_namespaceResolver = (prefix: string | null): string | null => {
     return $_htmlNamespaces[prefix] || null;
 };
 
-const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: boolean) => {
+const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: boolean, doNotFocus?: boolean) => {
     if (!win.READIUM2.locationHashOverride) {
         return;
     }
@@ -4607,9 +4609,9 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
 
     let progressionData: IProgressionData | undefined;
 
-    let cssSelector = getCssSelector(win.READIUM2.locationHashOverride);
-    let cfi = computeCFI(win.READIUM2.locationHashOverride);
-    let xpath = computeXPath(win.READIUM2.locationHashOverride);
+    const cssSelector = getCssSelector(win.READIUM2.locationHashOverride);
+    const cfi = computeCFI(win.READIUM2.locationHashOverride);
+    const xpath = computeXPath(win.READIUM2.locationHashOverride);
     if (IS_DEV && xpath) {
         debug(">>> XPATH original: " + xpath);
         // const xpath_ = xpath.replace(/\/([^\[\/]+)/g, "/*[name()=\"$1\"]");
@@ -4671,11 +4673,13 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
 
     // text selections created by screen readers do not trigger mouse click on container element,
     // and this makes sense anyway in the general case (start position of the selection is the location to focus on)
-    if (selInfo) {
-        cssSelector = selInfo.rangeInfo.startContainerElementCssSelector;
-        cfi = selInfo.rangeInfo.startContainerElementCFI;
-        xpath = selInfo.rangeInfo.startContainerElementXPath;
-    }
+    // ... but this only works if win.READIUM2.locationHashOverride is entirely reset so that progressionData, blacklisted, etc. is correctly updated
+    // ... plus, in a scroll view, the selection can remain active while the user-scrolled-to location is distant from the selection, so this would introduce inconsistencies
+    // if (selInfo) {
+    //     cssSelector = selInfo.rangeInfo.startContainerElementCssSelector;
+    //     cfi = selInfo.rangeInfo.startContainerElementCFI;
+    //     xpath = selInfo.rangeInfo.startContainerElementXPath;
+    // }
 
     const text = selInfo ? {
         after: selInfo.cleanAfter,
@@ -4768,8 +4772,10 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
         tempLinkTargetOutline(win.READIUM2.locationHashOverride, 1000, true);
     }
 
-    // CONTEXT: notifyReadingLocationRaw()
-    focusElement(win.READIUM2.locationHashOverride, true /*, focusHost */);
+    if (!doNotFocus) {
+        // CONTEXT: notifyReadingLocationRaw()
+        focusElement(win.READIUM2.locationHashOverride, true /*, focusHost */);
+    }
 
     if (win.READIUM2.DEBUG_VISUALS) {
         const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr4}]`);
@@ -4779,9 +4785,9 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
         win.READIUM2.locationHashOverride.setAttribute(readPosCssStylesAttr4, "notifyReadingLocationRaw");
     }
 };
-const notifyReadingLocationDebounced = debounce((userInteract?: boolean, ignoreMediaOverlays?: boolean) => {
+const notifyReadingLocationDebounced = debounce((userInteract?: boolean, ignoreMediaOverlays?: boolean, doNotFocus?: boolean) => {
     // CONTEXT: notifyReadingLocationDebounced()
-    notifyReadingLocationRaw(userInteract, ignoreMediaOverlays);
+    notifyReadingLocationRaw(userInteract, ignoreMediaOverlays, doNotFocus);
 }, 250);
 const notifyReadingLocationDebouncedImmediate = debounce((userInteract?: boolean, ignoreMediaOverlays?: boolean) => {
     // CONTEXT: notifyReadingLocationDebouncedImmediate()
