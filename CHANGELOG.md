@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.19.2...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.19.3...develop
 
 Changes:
 * TODO
+
+# 1.19.3
+
+> Build environment: NodeJS `22.12.0`, NPM `11.1.0`
+
+Changes:
+* Fixed keyboard focus handling, screen reader scroll trigger (current reading location notification), selection change event
+* NPM package updates
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.19.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.19.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.19.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.19.2...v1.19.3
 
 # 1.19.2
 
