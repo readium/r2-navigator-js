@@ -80,6 +80,7 @@ let _currentAudioEnd: number | undefined;
 let _previousAudioEnd: number | undefined;
 
 let _currentAudioElement: HTMLAudioElement | undefined;
+let _currentTTS: NodeJS.Timeout | undefined;
 
 let _mediaOverlayRoot: MediaOverlayNode | undefined;
 let _mediaOverlayTextAudioPair: MediaOverlayNode | undefined;
@@ -195,6 +196,12 @@ async function playMediaOverlays(
             _mediaOverlayRoot = rootMo;
             await playMediaOverlaysAudio(moTextAudioPair, undefined, undefined);
             mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
+        } else {
+            debug("playMediaOverlays() - moTextAudioPair BUT NOT moTextAudioPair.Audio || moTextAudioPair.Video" + textHref);
+
+            _mediaOverlayRoot = rootMo;
+            await playMediaOverlaysAudio(moTextAudioPair, undefined, undefined);
+            mediaOverlaysStateSet(MediaOverlaysStateEnum_.PLAYING);
         }
     } else {
         if (IS_DEV) {
@@ -233,6 +240,9 @@ const ontimeupdate = async (ev: Event) => {
     }
 };
 const ensureOnTimeUpdate = (remove: boolean) => {
+    if (remove && _currentTTS) {
+        clearTimeout(_currentTTS);
+    }
     if (_currentAudioElement) {
         if (remove) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -413,10 +423,23 @@ async function playMediaOverlaysAudio(
 
     if (!moTextAudioPair.Audio && !moTextAudioPair.Video) {
 
-        if (IS_DEV) {
+        if (true || IS_DEV) {
             debug("playMediaOverlaysAudio - !moTextAudioPair.Audio => mediaOverlaysNext()");
+            debug(moTextAudioPair.Text);
+            debug(moTextAudioPair.TextID);
         }
-        mediaOverlaysNext();
+
+        moHighlight_(moTextAudioPair);
+        if (_currentTTS) {
+            clearTimeout(_currentTTS);
+            _currentTTS = undefined;
+        }
+        _currentTTS = setTimeout(() => {
+            _currentTTS = undefined;
+            mediaOverlaysNext();
+        }, 500);
+
+        // mediaOverlaysNext();
         return; // TODO TTS
     }
 
@@ -1443,7 +1466,7 @@ export function mediaOverlaysPlay(speed: number) {
 
     _mediaOverlaysPlaybackRate = speed;
 
-    if (!_mediaOverlayRoot || !_mediaOverlayTextAudioPair) {
+    if (!_mediaOverlayRoot || !_mediaOverlayTextAudioPair || (!_mediaOverlayTextAudioPair.Audio && !_mediaOverlayTextAudioPair.Video)) {
         if (IS_DEV) {
             debug("mediaOverlaysPlay() - playMediaOverlaysForLink()");
         }
@@ -1559,7 +1582,7 @@ export function mediaOverlaysResume() {
         return;
     }
 
-    if (_mediaOverlayRoot && _mediaOverlayTextAudioPair) {
+    if (_mediaOverlayRoot && _mediaOverlayTextAudioPair && (_mediaOverlayTextAudioPair.Audio || _mediaOverlayTextAudioPair.Video)) {
         if (IS_DEV) {
             debug("mediaOverlaysResume() - _currentAudioElement.play()");
         }
