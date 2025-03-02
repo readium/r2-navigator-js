@@ -103,6 +103,7 @@ import {
 import { popoutImage } from "./popoutImages";
 import { popupFootNote } from "./popupFootNotes";
 import {
+    assignUtteranceVoice,
     ttsNext, ttsPause, ttsPlay, ttsPlaybackRate, ttsPrevious, ttsResume, ttsStop, ttsVoices,
 } from "./readaloud";
 import {
@@ -4892,9 +4893,10 @@ if (!win.READIUM2.isAudio) {
             (payload.state === MediaOverlaysStateEnum.PLAYING ? R2_MO_CLASS_PLAYING : R2_MO_CLASS_STOPPED));
     });
 
+    let _textToSpeechUtterance: SpeechSynthesisUtterance | undefined;
+
     ipcRenderer.on(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (_event: any, payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT) => {
+        (_event: Electron.IpcRendererEvent, payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT) => {
 
             const styleAttr = win.document.documentElement.getAttribute("style");
             const isNight = styleAttr ? styleAttr.indexOf("readium-night-on") > 0 : false;
@@ -4919,6 +4921,25 @@ if (!win.READIUM2.isAudio) {
                 elem.classList.remove(R2_MO_CLASS_ACTIVE);
             });
 
+            if (_textToSpeechUtterance) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const p = (_textToSpeechUtterance as any)._textToSpeechPayload;
+                _textToSpeechUtterance = undefined;
+                if (p) {
+                    p.id = undefined;
+                    // console.log("Cancelling _textToSpeechUtterance payload.");
+                    // console.log(JSON.stringify(p, null, 4));
+                    ipcRenderer.sendToHost(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, p);
+                }
+                try {
+                    if (true || win.speechSynthesis.speaking || win.speechSynthesis.pending || win.speechSynthesis.paused) {
+                        win.speechSynthesis.cancel();
+                    }
+                } catch (_ex) {
+                    // noop
+                }
+            }
+
             let removeCaptionContainer = true;
             if (!payload.id) {
                 win.document.documentElement.classList.remove(R2_MO_CLASS_ACTIVE_PLAYBACK, activeClassPlayback);
@@ -4936,11 +4957,60 @@ if (!win.READIUM2.isAudio) {
                 if (targetEl) {
                     targetEl.classList.add(activeClass);
 
+                    let text: string | null = null;
+                    if (payload.captionsMode || payload.speech) {
+                        text = targetEl.textContent;
+                    }
+                    if (payload.speech) {
+                        if (text) {
+                            const utterance = new SpeechSynthesisUtterance(text);
+                            _textToSpeechUtterance = utterance;
+
+                            const lang = getLanguage(targetEl);
+                            utterance.lang = lang || "en";
+
+                            assignUtteranceVoice(utterance);
+
+                            if (payload.speechRate) {
+                                utterance.rate = payload.speechRate;
+                            } else if (win.READIUM2.ttsPlaybackRate >= 0.1 && win.READIUM2.ttsPlaybackRate <= 10) {
+                                utterance.rate = win.READIUM2.ttsPlaybackRate;
+                            }
+
+                            // utterance.onboundary = (ev: SpeechSynthesisEvent) => {
+                            // };
+
+                            utterance.onend = (_ev: SpeechSynthesisEvent) => {
+                                if (utterance === _textToSpeechUtterance) {
+                                    _textToSpeechUtterance = undefined;
+
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    if ((utterance as any)._textToSpeechPayload?.id) {
+                                        // console.log("utterance end _textToSpeechPayload payload.");
+                                        // // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        // console.log(JSON.stringify((utterance as any)._textToSpeechPayload, null, 4));
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        ipcRenderer.sendToHost(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, (utterance as any)._textToSpeechPayload);
+                                    }
+                                }
+                            };
+
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            (utterance as any)._textToSpeechPayload = payload;
+
+                            // setTimeout(() => {
+                            win.speechSynthesis.speak(utterance);
+                            // }, 0);
+                        } else {
+                            ipcRenderer.sendToHost(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, payload);
+                        }
+                    }
+
                     if (payload.captionsMode) {
-                        let text = targetEl.textContent;
                         if (text) {
                             // text = text.trim().replace(/[\r\n]/g, " ").replace(/\s+/g, " ");
                             text = normalizeText(text).trim();
+
                             if (text) {
                                 removeCaptionContainer = false;
                                 const isUserBackground = styleAttr ?

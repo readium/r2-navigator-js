@@ -1383,6 +1383,97 @@ const ttsPlayQueueIndexDebounced = debounce((ttsQueueIndex: number, ttsAndMediaO
     ttsPlayQueueIndex(ttsQueueIndex, ttsAndMediaOverlaysManualPlayNext);
 }, 150);
 
+export function assignUtteranceVoice(utterance: SpeechSynthesisUtterance) {
+    const systemVoices = speechSynthesis.getVoices();
+    const userVoices: SpeechSynthesisVoice[] = systemVoices.filter((sysVoice) =>
+        !!win.READIUM2.ttsVoices?.find((userVoice) =>
+            (userVoice.name === sysVoice.name &&
+            userVoice.lang === sysVoice.lang &&
+            userVoice.voiceURI === sysVoice.voiceURI &&
+            // userVoice.default === sysVoice.default &&
+            userVoice.localService === sysVoice.localService)));
+    utterance.voice = null as (SpeechSynthesisVoice | null); // userVoices.find((usrVoice) => usrVoice.default) || null;
+
+    // console.log("TTS ****************************************");
+    // console.log("utterance.lang", utterance.lang);
+    // console.log("utterance.voice.lang (default)", utterance.voice?.lang);
+
+    // console.log("speechSynthesis.getVoices()", systemVoices.length);
+    // console.log("win.READIUM2.ttsVoices", win.READIUM2.ttsVoices?.length, JSON.stringify(win.READIUM2.ttsVoices, null, 4));
+    // console.log("userVoices = win.READIUM2.ttsVoices filtered", userVoices.length, JSON.stringify(userVoices.map((v) => ({
+    //     default: v.default,
+    //     lang: v.lang,
+    //     localService: v.localService,
+    //     name: v.name,
+    //     voiceURI: v.voiceURI,
+    // })), null, 4));
+
+    // TODO: match Greek variants? (etc.) el, grc, gre, ell ....
+
+    if (!utterance.lang) { // authored lang
+        return;
+    }
+
+    const voicesCascade = [userVoices, systemVoices];
+    for (const voices of voicesCascade) {
+        const utteranceLang = utterance.lang.toLowerCase();
+        let utteranceLangShort = utteranceLang;
+        const i = utteranceLangShort.indexOf("-");
+        const utteranceLangIsSpecific = i > 0;
+        if (utteranceLangIsSpecific) {
+            utteranceLangShort = utteranceLangShort.substring(0, i);
+        }
+
+        let found = false;
+        for (const usrVoice of voices) {
+            if (!usrVoice.lang) {
+                continue;
+            }
+            const usrVoiceLang = usrVoice.lang.toLowerCase();
+
+            if (utteranceLang === usrVoiceLang) { // exact match
+                // console.log("))))) utteranceLang === usrVoiceLang", utteranceLang, JSON.stringify({
+                //     default: usrVoice.default,
+                //     lang: usrVoice.lang,
+                //     localService: usrVoice.localService,
+                //     name: usrVoice.name,
+                //     voiceURI: usrVoice.voiceURI,
+                // }, null, 4));
+                utterance.voice = usrVoice;
+                found = true;
+                break;
+            }
+
+            let usrVoiceLangShort = usrVoiceLang;
+            const j = usrVoiceLangShort.indexOf("-");
+            const usrVoiceLangIsSpecific = j > 0;
+            if (usrVoiceLangIsSpecific) {
+                usrVoiceLangShort = usrVoiceLangShort.substring(0, j);
+            }
+
+            // is accepting a loose BCP47 match the correct heuristic?
+            // in other words, for example is fr-CA TTS voice suitable for authored fr-FR?
+            // (or en-US vs. en-UK which are somewhat acceptable semi-matches ...
+            // but what about locales / dialects with stronger differentiations?)
+            if (utteranceLangShort === usrVoiceLangShort) { // first loose match wins
+                // console.log("))))) utteranceLangShort === usrVoiceLangShort", utteranceLangShort, JSON.stringify({
+                //     default: usrVoice.default,
+                //     lang: usrVoice.lang,
+                //     localService: usrVoice.localService,
+                //     name: usrVoice.name,
+                //     voiceURI: usrVoice.voiceURI,
+                // }, null, 4));
+                utterance.voice = usrVoice;
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            break;
+        }
+    }
+}
+
 export function ttsPlayQueueIndex(ttsQueueIndex: number, ttsAndMediaOverlaysManualPlayNext = false) {
 
     if (!_dialogState ||
@@ -1477,95 +1568,10 @@ export function ttsPlayQueueIndex(ttsQueueIndex: number, ttsAndMediaOverlaysManu
     if (_dialogState.ttsQueueItem.item.lang) {
         utterance.lang = _dialogState.ttsQueueItem.item.lang;
     }
+    assignUtteranceVoice(utterance);
+
     if (win.READIUM2.ttsPlaybackRate >= 0.1 && win.READIUM2.ttsPlaybackRate <= 10) {
         utterance.rate = win.READIUM2.ttsPlaybackRate;
-    }
-
-    const systemVoices = speechSynthesis.getVoices();
-    const userVoices: SpeechSynthesisVoice[] = systemVoices.filter((sysVoice) =>
-        !!win.READIUM2.ttsVoices?.find((userVoice) =>
-            (userVoice.name === sysVoice.name &&
-            userVoice.lang === sysVoice.lang &&
-            userVoice.voiceURI === sysVoice.voiceURI &&
-            // userVoice.default === sysVoice.default &&
-            userVoice.localService === sysVoice.localService)));
-    utterance.voice = null as (SpeechSynthesisVoice | null); // userVoices.find((usrVoice) => usrVoice.default) || null;
-
-    // console.log("TTS ****************************************");
-    // console.log("utterance.lang", utterance.lang);
-    // console.log("utterance.voice.lang (default)", utterance.voice?.lang);
-
-    // console.log("speechSynthesis.getVoices()", systemVoices.length);
-    // console.log("win.READIUM2.ttsVoices", win.READIUM2.ttsVoices?.length, JSON.stringify(win.READIUM2.ttsVoices, null, 4));
-    // console.log("userVoices = win.READIUM2.ttsVoices filtered", userVoices.length, JSON.stringify(userVoices.map((v) => ({
-    //     default: v.default,
-    //     lang: v.lang,
-    //     localService: v.localService,
-    //     name: v.name,
-    //     voiceURI: v.voiceURI,
-    // })), null, 4));
-
-    // TODO: match Greek variants? (etc.) el, grc, gre, ell ....
-
-    if (utterance.lang) { // authored lang
-        const voicesCascade = [userVoices, systemVoices];
-        for (const voices of voicesCascade) {
-            const utteranceLang = utterance.lang.toLowerCase();
-            let utteranceLangShort = utteranceLang;
-            const i = utteranceLangShort.indexOf("-");
-            const utteranceLangIsSpecific = i > 0;
-            if (utteranceLangIsSpecific) {
-                utteranceLangShort = utteranceLangShort.substring(0, i);
-            }
-
-            let found = false;
-            for (const usrVoice of voices) {
-                if (!usrVoice.lang) {
-                    continue;
-                }
-                const usrVoiceLang = usrVoice.lang.toLowerCase();
-
-                if (utteranceLang === usrVoiceLang) { // exact match
-                    // console.log("))))) utteranceLang === usrVoiceLang", utteranceLang, JSON.stringify({
-                    //     default: usrVoice.default,
-                    //     lang: usrVoice.lang,
-                    //     localService: usrVoice.localService,
-                    //     name: usrVoice.name,
-                    //     voiceURI: usrVoice.voiceURI,
-                    // }, null, 4));
-                    utterance.voice = usrVoice;
-                    found = true;
-                    break;
-                }
-
-                let usrVoiceLangShort = usrVoiceLang;
-                const j = usrVoiceLangShort.indexOf("-");
-                const usrVoiceLangIsSpecific = j > 0;
-                if (usrVoiceLangIsSpecific) {
-                    usrVoiceLangShort = usrVoiceLangShort.substring(0, j);
-                }
-
-                // is accepting a loose BCP47 match the correct heuristic?
-                // in other words, for example is fr-CA TTS voice suitable for authored fr-FR?
-                // (or en-US vs. en-UK which are somewhat acceptable semi-matches ...
-                // but what about locales / dialects with stronger differentiations?)
-                if (utteranceLangShort === usrVoiceLangShort) { // first loose match wins
-                    // console.log("))))) utteranceLangShort === usrVoiceLangShort", utteranceLangShort, JSON.stringify({
-                    //     default: usrVoice.default,
-                    //     lang: usrVoice.lang,
-                    //     localService: usrVoice.localService,
-                    //     name: usrVoice.name,
-                    //     voiceURI: usrVoice.voiceURI,
-                    // }, null, 4));
-                    utterance.voice = usrVoice;
-                    found = true;
-                    break;
-                }
-            }
-            if (found) {
-                break;
-            }
-        }
     }
 
     utterance.onboundary = (ev: SpeechSynthesisEvent) => {

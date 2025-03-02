@@ -80,7 +80,6 @@ let _currentAudioEnd: number | undefined;
 let _previousAudioEnd: number | undefined;
 
 let _currentAudioElement: HTMLAudioElement | undefined;
-let _currentTTS: NodeJS.Timeout | undefined;
 
 let _mediaOverlayRoot: MediaOverlayNode | undefined;
 let _mediaOverlayTextAudioPair: MediaOverlayNode | undefined;
@@ -240,9 +239,6 @@ const ontimeupdate = async (ev: Event) => {
     }
 };
 const ensureOnTimeUpdate = (remove: boolean) => {
-    if (remove && _currentTTS) {
-        clearTimeout(_currentTTS);
-    }
     if (_currentAudioElement) {
         if (remove) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -430,17 +426,7 @@ async function playMediaOverlaysAudio(
         }
 
         moHighlight_(moTextAudioPair);
-        if (_currentTTS) {
-            clearTimeout(_currentTTS);
-            _currentTTS = undefined;
-        }
-        _currentTTS = setTimeout(() => {
-            _currentTTS = undefined;
-            mediaOverlaysNext();
-        }, 500);
-
-        // mediaOverlaysNext();
-        return; // TODO TTS
+        return;
     }
 
     moHighlight_(moTextAudioPair);
@@ -1383,14 +1369,17 @@ function moHighlight_(moTextAudioPair: MediaOverlayNode) {
             if (id) {
                 _mediaOverlayTextId = id;
                 _mediaOverlayTextHref = moTextAudioPair.Text.substr(0, i);
-                moHighlight(_mediaOverlayTextHref, _mediaOverlayTextId);
+
+                const speak = !moTextAudioPair.Audio && !moTextAudioPair.Video;
+                const speech = (speak && _mediaOverlayTextHref && _mediaOverlayTextId) ? `${_mediaOverlayTextHref}#${_mediaOverlayTextId}` : undefined;
+                moHighlight(_mediaOverlayTextHref, _mediaOverlayTextId, speech);
             }
         }
     }
 }
-function moHighlight(href: string | undefined, id: string | undefined) {
+function moHighlight(href: string | undefined, id: string | undefined, speech?: string) {
     if (IS_DEV) {
-        debug("moHighlight: " + href + " ## " + id);
+        debug("moHighlight: " + href + " ## " + id + " (( SPEECH? )) " + speech);
     }
 
     const classActive = win.READIUM2.publication.Metadata?.MediaOverlay?.ActiveClass;
@@ -1401,9 +1390,12 @@ function moHighlight(href: string | undefined, id: string | undefined) {
         classActive: classActive ? classActive : undefined,
         classActivePlayback: classActivePlayback ? classActivePlayback : undefined,
         id,
+        speech,
+        speechRate: _mediaOverlaysPlaybackRate,
     };
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
+
         if (href && activeWebView.READIUM2.link?.Href !== href) {
             continue;
         }
@@ -1423,6 +1415,46 @@ function moHighlight(href: string | undefined, id: string | undefined) {
         }
         setTimeout(async () => {
             if (activeWebView.READIUM2?.DOMisReady) {
+                if (speech) {
+
+                    const cb = (event: Electron.IpcMessageEvent) => {
+                        if (event.channel === R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT) {
+                            const webview = event.currentTarget as IReadiumElectronWebview;
+                            if (webview !== activeWebView) {
+                                console.log("Wrong webview for _currentTTSSpeech?!");
+                                return;
+                            }
+
+                            const payloadBack = event.args[0] as IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT;
+
+                            if (!payloadBack?.speech || payloadBack.speech !== speech) {
+                                // console.log("Incorrect webview _currentTTSSpeech payload?!");
+                                // console.log(speech, JSON.stringify(payloadBack, null, 4));
+                                return;
+                            }
+
+                            try {
+                                activeWebView.removeEventListener("ipc-message", cb);
+                            } catch (_err) {
+                                // noop
+                            }
+
+                            if (!payloadBack.id) {
+                                // console.log("Cancelled webview _currentTTSSpeech payload.");
+                                // console.log(JSON.stringify(payloadBack, null, 4));
+                                return;
+                            }
+
+                            if (win.READIUM2.ttsAndMediaOverlaysManualPlayNext) {
+                                mediaOverlaysPause();
+                            } else {
+                                mediaOverlaysNext();
+                            }
+                        }
+                    };
+                    activeWebView.addEventListener("ipc-message", cb);
+                }
+
                 await activeWebView.send(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, payload);
             }
         }, 0);
