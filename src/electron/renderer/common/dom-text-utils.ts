@@ -43,7 +43,7 @@ export function combineTextNodes(textNodes: Node[], skipNormalize?: boolean): st
     return "";
 }
 
-export function getLanguage(el: Element): string | undefined {
+export function getLanguage(el: Element): string { //  | undefined
 
     let currentElement = el;
 
@@ -63,7 +63,7 @@ export function getLanguage(el: Element): string | undefined {
         currentElement = currentElement.parentNode as Element;
     }
 
-    return undefined;
+    return "en"; // undefined
 }
 
 export function getDirection(el: Element): string | undefined {

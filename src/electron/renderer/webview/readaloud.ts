@@ -1384,7 +1384,16 @@ const ttsPlayQueueIndexDebounced = debounce((ttsQueueIndex: number, ttsAndMediaO
 }, 150);
 
 export function assignUtteranceVoice(utterance: SpeechSynthesisUtterance) {
-    const systemVoices = speechSynthesis.getVoices();
+    // console.log("ttsVoices xx", JSON.stringify(win.READIUM2.ttsVoices, null, 4));
+
+    const systemVoices = win.speechSynthesis.getVoices();
+    // console.log("ttsVoices yy a", JSON.stringify(systemVoices.map(v => ({
+    //     name: v.name,
+    //     lang: v.lang,
+    //     voiceURI: v.voiceURI,
+    //     default: v.default,
+    //     localService: v.localService,
+    //     })), null, 4));
     const userVoices: SpeechSynthesisVoice[] = systemVoices.filter((sysVoice) =>
         !!win.READIUM2.ttsVoices?.find((userVoice) =>
             (userVoice.name === sysVoice.name &&
@@ -1393,6 +1402,14 @@ export function assignUtteranceVoice(utterance: SpeechSynthesisUtterance) {
             // userVoice.default === sysVoice.default &&
             userVoice.localService === sysVoice.localService)));
     utterance.voice = null as (SpeechSynthesisVoice | null); // userVoices.find((usrVoice) => usrVoice.default) || null;
+
+    // console.log("ttsVoices yy b", JSON.stringify(userVoices.map(v => ({
+    //     name: v.name,
+    //     lang: v.lang,
+    //     voiceURI: v.voiceURI,
+    //     default: v.default,
+    //     localService: v.localService,
+    //     })), null, 4));
 
     // console.log("TTS ****************************************");
     // console.log("utterance.lang", utterance.lang);
@@ -1469,6 +1486,7 @@ export function assignUtteranceVoice(utterance: SpeechSynthesisUtterance) {
             }
         }
         if (found) {
+            // console.log("ttsVoices zz", utterance.voice?.name, utterance.voice?.lang, utterance.voice?.voiceURI, utterance.voice?.localService);
             break;
         }
     }

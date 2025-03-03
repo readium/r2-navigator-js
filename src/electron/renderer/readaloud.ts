@@ -368,9 +368,11 @@ export function ttsClickEnable(doEnable: boolean) {
 }
 
 export function ttsVoices(voices: SpeechSynthesisVoice[] | null) {
+    // console.log("ttsVoices1", JSON.stringify(voices, null, 4));
     if (win.READIUM2) {
         win.READIUM2.ttsVoices = voices;
     }
+    // console.log("ttsVoices2", JSON.stringify(win.READIUM2.ttsVoices, null, 4));
 
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
