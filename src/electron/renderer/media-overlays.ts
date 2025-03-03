@@ -425,6 +425,7 @@ async function playMediaOverlaysAudio(
             debug(moTextAudioPair.TextID);
         }
 
+        // TTS
         moHighlight_(moTextAudioPair);
         return;
     }
@@ -1371,6 +1372,11 @@ function moHighlight_(moTextAudioPair: MediaOverlayNode) {
                 _mediaOverlayTextHref = moTextAudioPair.Text.substr(0, i);
 
                 const speak = !moTextAudioPair.Audio && !moTextAudioPair.Video;
+                if (speak) {
+                    if (_currentAudioElement) {
+                        _currentAudioElement.pause();
+                    }
+                }
                 const speech = (speak && _mediaOverlayTextHref && _mediaOverlayTextId) ? `${_mediaOverlayTextHref}#${_mediaOverlayTextId}` : undefined;
                 moHighlight(_mediaOverlayTextHref, _mediaOverlayTextId, speech);
             }
