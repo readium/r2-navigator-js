@@ -2372,14 +2372,18 @@ function loaded(forced: boolean) {
         debug(">>> LOAD EVENT was not forced.");
     }
 
+    // trigger initial fetch (empty array!!)
     const systemVoices = win.speechSynthesis.getVoices();
-    console.log("loaded() -- window.speechSynthesis.getVoices()", JSON.stringify(systemVoices.map(v => ({
-        name: v.name,
-        lang: v.lang,
-        voiceURI: v.voiceURI,
-        default: v.default,
-        localService: v.localService,
-        })), null, 4));
+    if (!!systemVoices?.length && false) {
+        // @ts-expect-error unreachable
+        console.log("loaded() -- window.speechSynthesis.getVoices()", JSON.stringify(systemVoices.map(v => ({
+            name: v.name,
+            lang: v.lang,
+            voiceURI: v.voiceURI,
+            default: v.default,
+            localService: v.localService,
+            })), null, 4));
+    }
 
     _elementsWithID = undefined;
     _allEpubPageBreaks = undefined;
