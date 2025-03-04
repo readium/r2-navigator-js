@@ -959,8 +959,9 @@ function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow, bodyComput
         _highlightsContainer.setAttribute("id", ID_HIGHLIGHTS_CONTAINER);
         _highlightsContainer.setAttribute("class", CLASS_HIGHLIGHT_COMMON);
         _highlightsContainer.setAttribute("style",
-            "width: auto !important; " +
-            "height: auto !important; ");
+            // auto fails in some FXL! (Anna's_Day_of_Gratitude_ePUB3_Audio)
+            `width: ${win.READIUM2.isFixedLayout ? "-webkit-fill-available" : "auto"} !important; ` +
+            `height: ${win.READIUM2.isFixedLayout ? "-webkit-fill-available" : "auto"} !important; `);
         documant.body.append(_highlightsContainer);
     }
 
