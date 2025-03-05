@@ -13,6 +13,7 @@ import {
 } from "../../common/events";
 import {
     HighlightDrawTypeBackground, HighlightDrawTypeOpacityMask, HighlightDrawTypeOpacityMaskRuler, HighlightDrawTypeUnderline, IColor, IHighlight,
+    IHighlightDefinition,
 } from "../../common/highlight";
 import {
     CSS_CLASS_NO_FOCUS_OUTLINE, POPUP_DIALOG_CLASS, POPUP_DIALOG_CLASS_COLLAPSE, ROOT_CLASS_REDUCE_MOTION,
@@ -657,7 +658,6 @@ function wrapHighlightWord(
     // start: number,
     // end: number
 ) {
-
     if (_dialogState && _dialogState.ttsOverlayEnabled) {
         return;
     }
@@ -805,7 +805,7 @@ function wrapHighlightWord(
                 //     rangeInfo,
                 // },
             },
-        ];
+        ] satisfies IHighlightDefinition[];
         _ttsQueueItemHighlightsWord = createHighlights(
             win,
             highlightDefinitions,
@@ -1017,7 +1017,7 @@ function wrapHighlight(
                     //     rangeInfo,
                     // },
                 },
-            ];
+            ] satisfies IHighlightDefinition[];
             _ttsQueueItemHighlightsSentence = createHighlights(
                 win,
                 highlightDefinitions,
