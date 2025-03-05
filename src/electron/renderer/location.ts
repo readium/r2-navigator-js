@@ -1877,6 +1877,8 @@ export function setReadingLocationSaver(func: (locator: LocatorExtended) => void
     _readingLocationSaver = func;
 }
 
+let __eventIDCounter = 0;
+
 export async function isLocatorVisible(locator: Locator): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
         const activeWebViews = win.READIUM2.getActiveWebViews();
@@ -1884,6 +1886,11 @@ export async function isLocatorVisible(locator: Locator): Promise<boolean> {
             if (activeWebView.READIUM2.link?.Href !== locator.href) {
                 continue;
             }
+
+            if (__eventIDCounter >= Number.MAX_SAFE_INTEGER) {
+                __eventIDCounter = 0;
+            }
+            const eventID = __eventIDCounter++;
 
             // const cb = (_event: any, payload: IEventPayload_R2_EVENT_LOCATOR_VISIBLE) => {
             //     debug("R2_EVENT_LOCATOR_VISIBLE");
@@ -1899,14 +1906,17 @@ export async function isLocatorVisible(locator: Locator): Promise<boolean> {
                         return;
                     }
                     const payloadPong = event.args[0] as IEventPayload_R2_EVENT_LOCATOR_VISIBLE;
-                    // debug(`isLocatorVisible: ${payload_.visible}`);
-                    activeWebView.removeEventListener("ipc-message", cb);
-                    resolve(payloadPong.visible);
+                    if (payloadPong.eventID === eventID) {
+
+                        // debug(`isLocatorVisible: ${payload_.visible}`);
+                        activeWebView.removeEventListener("ipc-message", cb);
+                        resolve(payloadPong.visible);
+                    }
                 }
             };
             activeWebView.addEventListener("ipc-message", cb);
 
-            const payloadPing: IEventPayload_R2_EVENT_LOCATOR_VISIBLE = { location: locator.locations, visible: false };
+            const payloadPing: IEventPayload_R2_EVENT_LOCATOR_VISIBLE = { eventID, location: locator.locations, visible: false };
             setTimeout(async () => {
                 if (activeWebView.READIUM2?.DOMisReady) {
                     await activeWebView.send(R2_EVENT_LOCATOR_VISIBLE, payloadPing);
