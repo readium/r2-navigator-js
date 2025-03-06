@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.20.0...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.20.1...develop
 
 Changes:
 * TODO
+
+# 1.20.1
+
+> Build environment: NodeJS `22.12.0`, NPM `11.1.0`
+
+Changes:
+* Fix: Japanese vertical writing mode + right to left was incorrectly hit-testing when scrolling (bad current reading location, EPUB MO and TTS start, etc.)
+* Fix: ping+pong events now guaranteed coupling/matching via ID (concurrency)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.20.1/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.20.1/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.20.1
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.20.0...v1.20.1
 
 # 1.20.0
 
