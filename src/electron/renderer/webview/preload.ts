@@ -616,10 +616,10 @@ function isVisible_(location: LocatorLocations): boolean {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-ipcRenderer.on(R2_EVENT_LOCATOR_VISIBLE, (_event: any, payload: IEventPayload_R2_EVENT_LOCATOR_VISIBLE) => {
+ipcRenderer.on(R2_EVENT_LOCATOR_VISIBLE, (_event: any, payload: IEventPayload_R2_EVENT_LOCATOR_VISIBLE, eventID: number) => {
 
     payload.visible = isVisible_(payload.location);
-    ipcRenderer.sendToHost(R2_EVENT_LOCATOR_VISIBLE, payload);
+    ipcRenderer.sendToHost(R2_EVENT_LOCATOR_VISIBLE, payload, eventID);
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -4909,7 +4909,7 @@ if (!win.READIUM2.isAudio) {
     let _textToSpeechUtterance: SpeechSynthesisUtterance | undefined;
 
     ipcRenderer.on(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT,
-        (_event: Electron.IpcRendererEvent, payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT) => {
+        (_event: Electron.IpcRendererEvent, payload: IEventPayload_R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, eventID: number) => {
 
             const styleAttr = win.document.documentElement.getAttribute("style");
             const isNight = styleAttr ? styleAttr.indexOf("readium-night-on") > 0 : false;
@@ -4942,7 +4942,7 @@ if (!win.READIUM2.isAudio) {
                     p.id = undefined;
                     // console.log("Cancelling _textToSpeechUtterance payload.");
                     // console.log(JSON.stringify(p, null, 4));
-                    ipcRenderer.sendToHost(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, p);
+                    ipcRenderer.sendToHost(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, p, eventID);
                 }
                 try {
                     if (true || win.speechSynthesis.speaking || win.speechSynthesis.pending || win.speechSynthesis.paused) {
@@ -5003,7 +5003,7 @@ if (!win.READIUM2.isAudio) {
                                         // // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         // console.log(JSON.stringify((utterance as any)._textToSpeechPayload, null, 4));
                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        ipcRenderer.sendToHost(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, (utterance as any)._textToSpeechPayload);
+                                        ipcRenderer.sendToHost(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, (utterance as any)._textToSpeechPayload, eventID);
                                     }
                                 }
                             };
@@ -5015,7 +5015,7 @@ if (!win.READIUM2.isAudio) {
                             win.speechSynthesis.speak(utterance);
                             // }, 0);
                         } else {
-                            ipcRenderer.sendToHost(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, payload);
+                            ipcRenderer.sendToHost(R2_EVENT_MEDIA_OVERLAY_HIGHLIGHT, payload, eventID);
                         }
                     }
 
@@ -5121,7 +5121,7 @@ if (!win.READIUM2.isAudio) {
         });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ipcRenderer.on(R2_EVENT_HIGHLIGHT_CREATE, (_event: any, payloadPing: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE) => {
+    ipcRenderer.on(R2_EVENT_HIGHLIGHT_CREATE, (_event: any, payloadPing: IEventPayload_R2_EVENT_HIGHLIGHT_CREATE, eventID: number) => {
 
         if (payloadPing.highlightDefinitions &&
             payloadPing.highlightDefinitions.length === 1 &&
@@ -5155,7 +5155,7 @@ if (!win.READIUM2.isAudio) {
             highlightDefinitions: payloadPing.highlightDefinitions,
             highlights: highlights.length ? highlights : undefined,
         };
-        ipcRenderer.sendToHost(R2_EVENT_HIGHLIGHT_CREATE, payloadPong);
+        ipcRenderer.sendToHost(R2_EVENT_HIGHLIGHT_CREATE, payloadPong, eventID);
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

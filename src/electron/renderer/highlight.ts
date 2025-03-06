@@ -95,6 +95,9 @@ export function highlightsRemove(href: string, highlightIDs: string[]) {
         }, 0);
     }
 }
+
+let __eventIDCounter = 0;
+
 export async function highlightsCreate(
     href: string,
     highlightDefinitions: IHighlightDefinition[] | undefined):
@@ -107,6 +110,11 @@ export async function highlightsCreate(
                 continue;
             }
 
+            if (__eventIDCounter >= Number.MAX_SAFE_INTEGER) {
+                __eventIDCounter = 0;
+            }
+            const eventID = __eventIDCounter++;
+
             const cb = (event: Electron.IpcMessageEvent) => {
                 if (event.channel === R2_EVENT_HIGHLIGHT_CREATE) {
                     const webview = event.currentTarget as IReadiumElectronWebview;
@@ -115,17 +123,19 @@ export async function highlightsCreate(
                         return;
                     }
                     const payloadPong = event.args[0] as IEventPayload_R2_EVENT_HIGHLIGHT_CREATE;
-                    webview.removeEventListener("ipc-message", cb);
-                    if (!payloadPong.highlights) { // includes undefined and empty array
-                        // UNCHANGED webview.READIUM2.highlights = undefined;
-                        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
-                        reject("highlightCreate fail?!");
-                    } else {
-                        if (!webview.READIUM2.highlights) {
-                            webview.READIUM2.highlights = [];
+                    if ((event.args[1] as number) === eventID) {
+                        webview.removeEventListener("ipc-message", cb);
+                        if (!payloadPong.highlights) { // includes undefined and empty array
+                            // UNCHANGED webview.READIUM2.highlights = undefined;
+                            // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+                            reject("highlightCreate fail?!");
+                        } else {
+                            if (!webview.READIUM2.highlights) {
+                                webview.READIUM2.highlights = [];
+                            }
+                            webview.READIUM2.highlights.push(...(payloadPong.highlights.filter((h) => !!h) as IHighlight[]));
+                            resolve(payloadPong.highlights);
                         }
-                        webview.READIUM2.highlights.push(...(payloadPong.highlights.filter((h) => !!h) as IHighlight[]));
-                        resolve(payloadPong.highlights);
                     }
                 }
             };
@@ -137,7 +147,7 @@ export async function highlightsCreate(
 
             setTimeout(async () => {
                 if (activeWebView.READIUM2?.DOMisReady) {
-                    await activeWebView.send(R2_EVENT_HIGHLIGHT_CREATE, payloadPing);
+                    await activeWebView.send(R2_EVENT_HIGHLIGHT_CREATE, payloadPing, eventID);
                 }
             }, 0);
 
