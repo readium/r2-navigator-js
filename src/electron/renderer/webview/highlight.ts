@@ -1348,7 +1348,7 @@ function createHighlightDom(
     const paginated = isPaginated(documant);
 
     const rtl = isRTL();
-    const vertical = isVerticalWritingMode();
+    const isVWM = isVerticalWritingMode();
 
     const doDrawMargin = drawMargin(highlight);
 
@@ -1357,7 +1357,7 @@ function createHighlightDom(
 
     const inverseZoom = computeInverseZoom(bodyComputedStyle, rootComputedStyle);
 
-    if (ENABLE_CSS_HIGHLIGHTS && !doDrawMargin && !rangeHasSVG && (drawBackground || (drawUnderline && !vertical) || (drawStrikeThrough && !vertical))) {
+    if (ENABLE_CSS_HIGHLIGHTS && !doDrawMargin && !rangeHasSVG && (drawBackground || (drawUnderline && !isVWM) || (drawStrikeThrough && !isVWM))) {
         highlight.rangeCssHighlight = range;
 
         const [strRGB, cssHighlightID] = computeCssHighlightRGBID(highlight);
@@ -1561,7 +1561,7 @@ https://blackorwhite.lloydk.ca
             JAPANESE_RUBY_TO_SKIP,
         );
 
-        const textReducedClientRects = getClientRectsNoOverlap(textClientRects, true, vertical, highlight.expand ? highlight.expand : 0);
+        const textReducedClientRects = getClientRectsNoOverlap(textClientRects, true, isVWM, highlight.expand ? highlight.expand : 0);
 
         clientRects = (DEBUG_RECTS && drawStrikeThrough) ? textClientRects : textReducedClientRects;
 
@@ -1643,7 +1643,7 @@ https://blackorwhite.lloydk.ca
         // clientRects = (DEBUG_RECTS && drawStrikeThrough) ? textClientRects : textReducedClientRectsToKeep;
     } else {
         // solid highlight, can merge and reduce/simplify client rectangles as much as possible
-        clientRects = getClientRectsNoOverlap(rangeClientRects, false, vertical, highlight.expand ? highlight.expand : 0);
+        clientRects = getClientRectsNoOverlap(rangeClientRects, false, isVWM, highlight.expand ? highlight.expand : 0);
     }
 
     // let highlightAreaSVGDocFrag: DocumentFragment | undefined;
@@ -1685,12 +1685,12 @@ https://blackorwhite.lloydk.ca
 
         if (drawStrikeThrough) {
 
-            const thickness = DEBUG_RECTS ? (vertical ? rect.width : rect.height) : strikeThroughLineThickness;
-            const ww = (vertical ? thickness : rect.width) * scale;
-            const hh = (vertical ? rect.height : thickness) * scale;
+            const thickness = DEBUG_RECTS ? (isVWM ? rect.width : rect.height) : strikeThroughLineThickness;
+            const ww = (isVWM ? thickness : rect.width) * scale;
+            const hh = (isVWM ? rect.height : thickness) * scale;
             const xx =
             (
-            vertical
+            isVWM
             ?
             (
                 DEBUG_RECTS
@@ -1705,7 +1705,7 @@ https://blackorwhite.lloydk.ca
 
             const yy =
             (
-            vertical
+            isVWM
             ?
             rect.top
             :
@@ -1727,13 +1727,13 @@ https://blackorwhite.lloydk.ca
 
         } else { // drawStrikeThrough
 
-            const thickness = DEBUG_RECTS ? (vertical ? rect.width : rect.height) : underlineThickness;
+            const thickness = DEBUG_RECTS ? (isVWM ? rect.width : rect.height) : underlineThickness;
             if (drawUnderline) {
-                const ww = (vertical ? thickness : rect.width) * scale;
-                const hh = (vertical ? rect.height : thickness) * scale;
+                const ww = (isVWM ? thickness : rect.width) * scale;
+                const hh = (isVWM ? rect.height : thickness) * scale;
                 const xx =
                 (
-                vertical
+                isVWM
                 ?
                 (
                     DEBUG_RECTS
@@ -1748,7 +1748,7 @@ https://blackorwhite.lloydk.ca
 
                 const yy =
                 (
-                vertical
+                isVWM
                 ?
                 rect.top
                 :
@@ -2027,7 +2027,7 @@ https://blackorwhite.lloydk.ca
                 // polyToDraw = subtract(polyToDraw, p);
 
                 const left =
-                    vertical
+                    isVWM
                         ?
                         b.xmin
                         :
@@ -2056,14 +2056,14 @@ https://blackorwhite.lloydk.ca
                                         0
                             );
                 const top =
-                    vertical
+                    isVWM
                         ?
                         0
                         :
                         b.ymin
                     ;
                 const width =
-                    vertical
+                    isVWM
                         ?
                         b.width
                         :
@@ -2080,7 +2080,7 @@ https://blackorwhite.lloydk.ca
                             bodyWidth
                     ;
                 const height =
-                    vertical
+                    isVWM
                         ?
                         bodyHeight
                         :
@@ -2091,10 +2091,10 @@ https://blackorwhite.lloydk.ca
                 // const extra = paginated ? 2 : 0; // useful to union-join small gaps, but here we are able to compute groups of bounding boxes so that in column-paginated mode when crossing over page boundaries there is no gigantic bounding box.
 
                 const r: IRect = {
-                    left: left - (vertical ? extra : 0),
-                    top: top - (vertical ? 0 : extra),
-                    right: left + width + (vertical ? extra : 0),
-                    bottom: top + height + (vertical ? 0 : extra),
+                    left: left - (isVWM ? extra : 0),
+                    top: top - (isVWM ? 0 : extra),
+                    right: left + width + (isVWM ? extra : 0),
+                    bottom: top + height + (isVWM ? 0 : extra),
                     width: width + extra * 2,
                     height: height + extra * 2,
                 };
@@ -2508,7 +2508,7 @@ https://blackorwhite.lloydk.ca
 
             const b = face.box;
             const left =
-                vertical
+                isVWM
                 ?
                 b.xmin
                 :
@@ -2539,23 +2539,23 @@ https://blackorwhite.lloydk.ca
                 )
             ;
             const top =
-                vertical
+                isVWM
                 ?
                 parseInt(bodyComputedStyle.paddingTop, 10) - MARGIN_MARKER_THICKNESS - MARGIN_MARKER_OFFSET
                 :
                 b.ymin
             ;
-            const width = vertical ? b.width : MARGIN_MARKER_THICKNESS;
-            const height = vertical ? MARGIN_MARKER_THICKNESS : b.height;
+            const width = isVWM ? b.width : MARGIN_MARKER_THICKNESS;
+            const height = isVWM ? MARGIN_MARKER_THICKNESS : b.height;
 
             const extra = 0;
             // const extra = paginated ? 2 : 0; // useful to union-join small gaps, but here we are able to compute groups of bounding boxes so that in column-paginated mode when crossing over page boundaries there is no gigantic bounding box.
 
             const r: IRect = {
-                left: left - (vertical ? extra : 0),
-                top: top - (vertical ? 0 : extra),
-                right: left + width + (vertical ? extra : 0),
-                bottom: top + height + (vertical ? 0 : extra),
+                left: left - (isVWM ? extra : 0),
+                top: top - (isVWM ? 0 : extra),
+                right: left + width + (isVWM ? extra : 0),
+                bottom: top + height + (isVWM ? 0 : extra),
                 width: width + extra * 2,
                 height: height + extra * 2,
             };

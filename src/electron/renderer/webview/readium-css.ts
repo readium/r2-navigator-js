@@ -23,6 +23,14 @@ const win = global.window as ReadiumElectronWebviewWindow;
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
+// WARNING: CSS zoom property on BODY => in scroll mode (does not seem so in CSS columns)
+// win.document.documentElement.offsetWidth/Height is
+// zoom * win.document.body.offsetWidth/Height
+// the document.scrollingElement / getScrollingElement() is
+// win.document.documentElement in vertical scroll, horizontal scroll (RTL), and paginated pan (RTL and LTR)
+// so .offsetWidth/Height must always be compared against .scrollLeft/Top
+// of the matching referencial!! (body is not ZOOM'ed, only documentElement is multipled by CSS zoom)
+
 export const clearImageZoomOutlineDebounced = debounce(() => {
     if (win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED) ||
         win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING) ||
@@ -81,7 +89,7 @@ const calculateDocumentColumnizedWidthAdjustedForTwoPageSpread = (): number => {
         const columnizedDocWidth = w;
         // console.log(`columnizedDocWidth: ${columnizedDocWidth}`);
 
-        const twoColWidth = win.document.documentElement.offsetWidth;
+        const twoColWidth = (scrollElement as HTMLElement).offsetWidth;
         // console.log(`twoColWidth: ${twoColWidth}`);
 
         const nSpreads = columnizedDocWidth / twoColWidth;
@@ -123,21 +131,21 @@ export const calculateMaxScrollShift = ():
 
     const scrollElement = getScrollingElement(win.document);
 
-    const vwm = isVerticalWritingMode();
+    const isVWM = isVerticalWritingMode();
 
     const maxScrollShift = isPaged ?
-        ((vwm ?
-            (scrollElement.scrollHeight - win.document.documentElement.offsetHeight) :
-            (scrollElement.scrollWidth - win.document.documentElement.offsetWidth))) :
-        ((vwm ?
-            (scrollElement.scrollWidth - win.document.documentElement.clientWidth) :
-            (scrollElement.scrollHeight - win.document.documentElement.clientHeight)));
+        ((isVWM ?
+            (scrollElement.scrollHeight - (scrollElement as HTMLElement).offsetHeight) :
+            (scrollElement.scrollWidth - (scrollElement as HTMLElement).offsetWidth))) :
+        ((isVWM ?
+            (scrollElement.scrollWidth - (scrollElement as HTMLElement).clientWidth) :
+            (scrollElement.scrollHeight - (scrollElement as HTMLElement).clientHeight)));
 
     const maxScrollShiftAdjusted = isPaged ?
-        ((vwm ?
+        ((isVWM ?
             maxScrollShift :
-            (calculateDocumentColumnizedWidthAdjustedForTwoPageSpread() - win.document.documentElement.offsetWidth))) :
-        ((vwm ?
+            (calculateDocumentColumnizedWidthAdjustedForTwoPageSpread() - (scrollElement as HTMLElement).offsetWidth))) :
+        ((isVWM ?
             maxScrollShift :
             maxScrollShift));
 
@@ -187,6 +195,7 @@ export const calculateTotalColumns = (): number => {
     } else {
         totalColumns = Math.ceil(win.document.body.offsetHeight / scrollElement.scrollHeight);
     }
+    console.log("totalColumns", totalColumns);
     return totalColumns;
 };
 export function calculateColumnDimension(): number {
@@ -194,16 +203,18 @@ export function calculateColumnDimension(): number {
         return 0;
     }
 
-    // win.document.body.offsetWidth + left/right margins === win.document.documentElement.offsetWidth
+    // (win.document.body.offsetWidth + left/right margins) * CSS zoom === win.document.documentElement.offsetWidth
     // margins non-zero in single page view
+
+    const scrollElement = getScrollingElement(win.document);
 
     const isTwoPage = isTwoPageSpread();
 
     let columnDimension = 0;
     if (isVerticalWritingMode()) {
-        columnDimension = win.document.documentElement.offsetHeight;
+        columnDimension = (scrollElement as HTMLElement).offsetHeight;
     } else {
-        columnDimension = (win.document.documentElement.offsetWidth * (isTwoPage ? 0.5 : 1));
+        columnDimension = ((scrollElement as HTMLElement).offsetWidth * (isTwoPage ? 0.5 : 1));
     }
     return columnDimension;
 }
