@@ -49,7 +49,6 @@ export interface IEventPayload_R2_EVENT_IMAGE_CLICK {
 export const R2_EVENT_LOCATOR_VISIBLE = "R2_EVENT_LOCATOR_VISIBLE";
 // tslint:disable-next-line:class-name
 export interface IEventPayload_R2_EVENT_LOCATOR_VISIBLE {
-    eventID: number;
     visible: boolean;
     location: LocatorLocations;
 }

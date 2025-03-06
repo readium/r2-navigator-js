@@ -1892,10 +1892,6 @@ export async function isLocatorVisible(locator: Locator): Promise<boolean> {
             }
             const eventID = __eventIDCounter++;
 
-            // const cb = (_event: any, payload: IEventPayload_R2_EVENT_LOCATOR_VISIBLE) => {
-            //     debug("R2_EVENT_LOCATOR_VISIBLE");
-            //     debug(payload.visible);
-            // };
             // ipcRenderer.once(R2_EVENT_LOCATOR_VISIBLE, cb);
 
             const cb = (event: Electron.IpcMessageEvent) => {
@@ -1906,9 +1902,7 @@ export async function isLocatorVisible(locator: Locator): Promise<boolean> {
                         return;
                     }
                     const payloadPong = event.args[0] as IEventPayload_R2_EVENT_LOCATOR_VISIBLE;
-                    if (payloadPong.eventID === eventID) {
-
-                        // debug(`isLocatorVisible: ${payload_.visible}`);
+                    if ((event.args[1] as number) === eventID) {
                         activeWebView.removeEventListener("ipc-message", cb);
                         resolve(payloadPong.visible);
                     }
@@ -1916,10 +1910,10 @@ export async function isLocatorVisible(locator: Locator): Promise<boolean> {
             };
             activeWebView.addEventListener("ipc-message", cb);
 
-            const payloadPing: IEventPayload_R2_EVENT_LOCATOR_VISIBLE = { eventID, location: locator.locations, visible: false };
+            const payloadPing: IEventPayload_R2_EVENT_LOCATOR_VISIBLE = { location: locator.locations, visible: false };
             setTimeout(async () => {
                 if (activeWebView.READIUM2?.DOMisReady) {
-                    await activeWebView.send(R2_EVENT_LOCATOR_VISIBLE, payloadPing);
+                    await activeWebView.send(R2_EVENT_LOCATOR_VISIBLE, payloadPing, eventID);
                 }
             }, 0);
 
