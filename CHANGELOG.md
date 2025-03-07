@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.20.2...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.20.3...develop
 
 Changes:
 * TODO
+
+# 1.20.3
+
+> Build environment: NodeJS `22.12.0`, NPM `11.1.0`
+
+Changes:
+* Fix: RTL (arabic, hebrew, etc.) CSS columns pagination calculation of fragment visibility needed for hit-testing mouse click during TTS readaloud, when paragraph spans across page boundary (previous column)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.20.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.20.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.20.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.20.2...v1.20.3
 
 # 1.20.2
 
