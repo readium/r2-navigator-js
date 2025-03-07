@@ -1509,7 +1509,7 @@ function getScrollOffsetIntoView(element: HTMLElement, domRect: DOMRect | undefi
     const off = (isRTL() ? -1 : 1) * (spreadIndex * (columnDimension * (isTwoPage ? 2 : 1)));
     // debug("getScrollOffsetIntoView off", off);
 
-    const fullOffsetEnd = fullOffset + ((isRTL() ? -1 : 1) * rect.width);
+    const fullOffsetEnd = fullOffset + ((isRTL() ? 1 : 1) * rect.width);
     // debug("getScrollOffsetIntoView fullOffsetEnd", fullOffsetEnd);
 
     const columnIndexEnd = Math.floor(fullOffsetEnd / columnDimension); // 0-based index
