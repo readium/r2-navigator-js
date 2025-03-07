@@ -132,6 +132,8 @@ if (IS_DEV) {
 
 const debug = debug_("r2:navigator#electron/renderer/webview/preload");
 
+let __locEventID = 0;
+
 const INJECTED_LINK_TXT = "__";
 
 const win = global.window as ReadiumElectronWebviewWindow;
@@ -153,6 +155,7 @@ win.READIUM2 = {
     isFixedLayout: false,
     locationHashOverride: undefined,
     locationHashOverrideInfo: {
+        locEventID: undefined,
         audioPlaybackInfo: undefined,
         docInfo: undefined,
         epubPage: undefined,
@@ -474,11 +477,13 @@ function isVisible(allowPartial: boolean, element: Element, domRect: DOMRect | u
         return false;
     }
     if (element === win.document.body || element === win.document.documentElement) {
+        // debug("isVisible element body documentElement");
         return true;
     }
 
     const blacklisted = checkBlacklisted(element);
     if (blacklisted) {
+        // debug("isVisible blacklisted");
         return false;
     }
 
@@ -487,7 +492,7 @@ function isVisible(allowPartial: boolean, element: Element, domRect: DOMRect | u
         const display = elStyle.getPropertyValue("display");
         if (display === "none") {
             if (IS_DEV) {
-                debug("element DISPLAY NONE");
+                debug("isVisible element DISPLAY NONE");
             }
             // console.log(element.outerHTML);
             return false;
@@ -505,7 +510,7 @@ function isVisible(allowPartial: boolean, element: Element, domRect: DOMRect | u
         const opacity = elStyle.getPropertyValue("opacity");
         if (opacity === "0") {
             if (IS_DEV) {
-                debug("element OPACITY ZERO");
+                debug("isVisible element OPACITY ZERO");
             }
             // console.log(element.outerHTML);
             return false;
@@ -517,6 +522,7 @@ function isVisible(allowPartial: boolean, element: Element, domRect: DOMRect | u
     const isVWM = isVerticalWritingMode();
 
     if (!isPaginated(win.document)) { // scroll
+        // debug("isVisible not isPaginated (scroll");
 
         const rect = domRect || element.getBoundingClientRect();
         // debug(rect.top);
@@ -563,8 +569,9 @@ function isVisible(allowPartial: boolean, element: Element, domRect: DOMRect | u
         return false;
     }
 
-    // TODO: vertical writing mode
+    // TODO: vertical writing mode? (paginated)
     if (isVWM) {
+        debug("isVisible FALSE VWM paginated");
         return false;
     }
 
@@ -580,13 +587,22 @@ function isVisible(allowPartial: boolean, element: Element, domRect: DOMRect | u
         currentOffset += (((currentOffset < 0) ? -1 : 1) * extraShift);
     }
 
-    if (scrollLeftPotentiallyExcessive >= (currentOffset - 10) &&
-        scrollLeftPotentiallyExcessive <= (currentOffset + 10)) {
+    if (scrollLeftPotentiallyExcessive[0] >= (currentOffset - 10) &&
+        scrollLeftPotentiallyExcessive[0] <= (currentOffset + 10)) {
+        // debug(`isVisible TRUE: scrollLeftPotentiallyExcessive[0]: ${scrollLeftPotentiallyExcessive[0]} -- currentOffset: ${currentOffset}`);
         return true;
     }
 
+    if (allowPartial) {
+        if (scrollLeftPotentiallyExcessive[1] >= (currentOffset - 10) &&
+            scrollLeftPotentiallyExcessive[1] <= (currentOffset + 10)) {
+            // debug(`isVisible TRUE: scrollLeftPotentiallyExcessive[1]: ${scrollLeftPotentiallyExcessive[1]} -- currentOffset: ${currentOffset}`);
+            return true;
+        }
+    }
+
     // tslint:disable-next-line:max-line-length
-    // debug(`isVisible FALSE: getScrollOffsetIntoView: ${scrollLeftPotentiallyExcessive} -- scrollElement.scrollLeft: ${currentOffset}`);
+    // debug(`isVisible FALSE: scrollLeftPotentiallyExcessive: ${scrollLeftPotentiallyExcessive} -- currentOffset: ${currentOffset}`);
     return false;
 }
 function isVisible_(location: LocatorLocations): boolean {
@@ -741,6 +757,7 @@ ipcRenderer.on(R2_EVENT_SCROLLTO, (_event: any, payload: IEventPayload_R2_EVENT_
 
 function resetLocationHashOverrideInfo() {
     win.READIUM2.locationHashOverrideInfo = {
+        locEventID: undefined,
         audioPlaybackInfo: undefined,
         docInfo: undefined,
         epubPage: undefined,
@@ -1455,31 +1472,56 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
 }
 
 // TODO: vertical writing mode
-function getScrollOffsetIntoView(element: HTMLElement, domRect: DOMRect | undefined): number {
+function getScrollOffsetIntoView(element: HTMLElement, domRect: DOMRect | undefined): [number, number] {
     if (!win.document || !win.document.documentElement || !win.document.body ||
         !isPaginated(win.document) || isVerticalWritingMode()) {
-        return 0;
+        return [0, 0];
     }
 
     const scrollElement = getScrollingElement(win.document);
+    // debug("getScrollOffsetIntoView scrollElement == documentElement?", scrollElement === win.document.documentElement);
 
     const rect = domRect || element.getBoundingClientRect();
+    // debug("getScrollOffsetIntoView RECT", !!domRect, rect.left, rect.width);
 
     const columnDimension = calculateColumnDimension();
+    // debug("getScrollOffsetIntoView columnDimension", columnDimension);
 
     const isTwoPage = isTwoPageSpread();
+    // debug("getScrollOffsetIntoView isTwoPage", isTwoPage);
 
-    const fullOffset = (isRTL() ?
+    const fullOffset =
+        (
+        isRTL() ?
         ((columnDimension * (isTwoPage ? 2 : 1)) - (rect.left + rect.width)) :
-        rect.left) +
+        rect.left
+        )
+        +
         ((isRTL() ? -1 : 1) * scrollElement.scrollLeft);
+    // debug("getScrollOffsetIntoView fullOffset", fullOffset, scrollElement.scrollLeft);
 
     const columnIndex = Math.floor(fullOffset / columnDimension); // 0-based index
+    // debug("getScrollOffsetIntoView columnIndex", columnIndex);
 
     const spreadIndex = isTwoPage ? Math.floor(columnIndex / 2) : columnIndex; // 0-based index
+    // debug("getScrollOffsetIntoView spreadIndex", spreadIndex);
 
-    return (isRTL() ? -1 : 1) *
-        (spreadIndex * (columnDimension * (isTwoPage ? 2 : 1)));
+    const off = (isRTL() ? -1 : 1) * (spreadIndex * (columnDimension * (isTwoPage ? 2 : 1)));
+    // debug("getScrollOffsetIntoView off", off);
+
+    const fullOffsetEnd = fullOffset + ((isRTL() ? -1 : 1) * rect.width);
+    // debug("getScrollOffsetIntoView fullOffsetEnd", fullOffsetEnd);
+
+    const columnIndexEnd = Math.floor(fullOffsetEnd / columnDimension); // 0-based index
+    // debug("getScrollOffsetIntoView columnIndexEnd", columnIndexEnd);
+
+    const spreadIndexEnd = isTwoPage ? Math.floor(columnIndexEnd / 2) : columnIndexEnd; // 0-based index
+    // debug("getScrollOffsetIntoView spreadIndexEnd", spreadIndexEnd);
+
+    const offEnd = (isRTL() ? -1 : 1) * (spreadIndexEnd * (columnDimension * (isTwoPage ? 2 : 1)));
+    // debug("getScrollOffsetIntoView offEnd", offEnd);
+
+    return [off, offEnd];
 }
 
 // TODO: vertical writing mode
@@ -1492,13 +1534,13 @@ function scrollIntoView(element: HTMLElement, domRect: DOMRect | undefined) {
     // if (Math.abs(scrollLeftPotentiallyExcessive) > maxScrollShift) {
     //     console.log("getScrollOffsetIntoView scrollLeft EXCESS");
     // }
-    ensureTwoPageSpreadWithOddColumnsIsOffset(scrollLeftPotentiallyExcessive, maxScrollShift);
+    ensureTwoPageSpreadWithOddColumnsIsOffset(scrollLeftPotentiallyExcessive[0], maxScrollShift);
 
     const scrollElement = getScrollingElement(win.document);
 
     // scrollLeft is capped at maxScrollShift by the browser engine
-    const scrollOffset = (scrollLeftPotentiallyExcessive < 0 ? -1 : 1) *
-        Math.min(Math.abs(scrollLeftPotentiallyExcessive), maxScrollShift);
+    const scrollOffset = (scrollLeftPotentiallyExcessive[0] < 0 ? -1 : 1) *
+        Math.min(Math.abs(scrollLeftPotentiallyExcessive[0]), maxScrollShift);
     scrollElement.scrollLeft = scrollOffset;
 }
 
@@ -2247,7 +2289,7 @@ function mediaOverlaysClickRaw(element: Element | undefined, userInteract: boole
 //     mediaOverlaysClickRaw(element, userInteract);
 // }, 100);
 
-const onScrollRaw = () => {
+const onScrollRaw = (fromScrollEvent?: boolean) => {
     debug("onScrollRaw");
 
     if (!win.document || !win.document.documentElement) {
@@ -2267,6 +2309,12 @@ const onScrollRaw = () => {
         const el = win.READIUM2.locationHashOverride; // || win.READIUM2.hashElement
         if (el && isVisible(false, el, undefined)) {
             debug("onScrollRaw VISIBLE SKIP");
+
+            if (fromScrollEvent && !isPaginated(win.document)) {
+                notifyReadingLocationRaw(true, true, true);
+                // notifyReadingLocationDebounced();
+                // notifyReadingLocationDebouncedImmediate();
+            }
             return;
         }
     }
@@ -2277,9 +2325,9 @@ const onScrollRaw = () => {
     // CONTEXT: onScrollRaw
     processXYRaw(x, y, false, false, true);
 };
-const onScrollDebounced = debounce(() => {
+const onScrollDebounced = debounce((fromScrollEvent?: boolean) => {
     // CONTEXT: onScrollDebounced
-    onScrollRaw();
+    onScrollRaw(fromScrollEvent);
 }, 300);
 
 const appendExtraColumnPadIfNecessary = (skipResizeObserver: boolean) => {
@@ -2756,11 +2804,16 @@ function loaded(forced: boolean) {
             const x = ev.clientX;
             const y = ev.clientY;
 
-            console.log("CLICK ev.clientX/Y", ev.clientX, ev.clientY);
+            debug("CLICK ev.clientX/Y", ev.clientX, ev.clientY, win.READIUM2.ttsClickEnabled);
 
             const domPointData = domDataFromPoint(x, y);
+            if (!domPointData.element) {
+                debug("CLICK !domPointData.element");
+            }
+            const visible = domPointData.element ? isVisible(true, domPointData.element, undefined) : false;
+            debug("CLICK visible " + (visible ? "YES" : "NO"));
 
-            if (domPointData.element && win.READIUM2.ttsClickEnabled && isVisible(true, domPointData.element, undefined)) {
+            if (domPointData.element && win.READIUM2.ttsClickEnabled && visible) {
                 debug("!AUX __CLICK domPointData.element && win.READIUM2.ttsClickEnabled");
 
                 ev.preventDefault();
@@ -3395,7 +3448,7 @@ function loaded(forced: boolean) {
             }
 
             // CONTEXT: scroll - loaded()
-            onScrollDebounced();
+            onScrollDebounced(true);
         });
     }, 200);
 
@@ -3698,9 +3751,9 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract: bool
         return;
     }
 
-    if (userInteract) {
-        win.READIUM2.lastClickedTextChar = undefined;
-    }
+    // if (userInteract) {
+    win.READIUM2.lastClickedTextChar = undefined;
+    // }
 
     const domPointData = domDataFromPoint(x, y);
 
@@ -4766,7 +4819,11 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
         }
     }
 
+    if (__locEventID >= Number.MAX_SAFE_INTEGER) {
+        __locEventID = 0;
+    }
     win.READIUM2.locationHashOverrideInfo = {
+        locEventID: ++__locEventID, // 1-based
         audioPlaybackInfo: undefined,
         docInfo: {
             isFixedLayout: win.READIUM2.isFixedLayout,

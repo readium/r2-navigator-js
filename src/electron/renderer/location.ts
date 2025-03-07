@@ -1739,6 +1739,7 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
 }
 
 export interface LocatorExtended {
+    locEventID?: number, // 1-based
     audioPlaybackInfo: IAudioPlaybackInfo | undefined;
     locator: Locator;
     paginationInfo: IPaginationInfo | undefined;
@@ -1821,6 +1822,7 @@ const _saveReadingLocation = (activeWebView: IReadiumElectronWebview, locator: I
     }
 
     _lastSavedReadingLocation = {
+        locEventID: locator.locEventID,
         audioPlaybackInfo: locator.audioPlaybackInfo,
         docInfo: locator.docInfo,
         epubPage: locator.epubPage,
@@ -1857,6 +1859,7 @@ const _saveReadingLocation = (activeWebView: IReadiumElectronWebview, locator: I
         // debug(">->->", JSON.stringify(_lastSavedReadingLocation, null, "  "));
         debug(">->->");
         debug(_lastSavedReadingLocation);
+        debug(_lastSavedReadingLocation?.locator?.locations?.rangeInfo);
     }
 
     if (_readingLocationSaver) {

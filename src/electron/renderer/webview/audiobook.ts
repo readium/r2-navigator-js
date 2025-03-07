@@ -24,6 +24,8 @@ import { ReadiumElectronWebviewWindow } from "./state";
 
 const win = global.window as ReadiumElectronWebviewWindow;
 
+let __locEventID = 0;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function throttle(fn: (...argz: any[]) => any, time: number) {
     let called = false;
@@ -286,7 +288,11 @@ export function setupAudioBook(_docTitle: string | undefined, audioPlaybackRate:
         sliderElement.valueAsNumber = p;
         sliderElement.style.setProperty("--audiopercent", `${p}%`);
 
+        if (__locEventID >= Number.MAX_SAFE_INTEGER) {
+            __locEventID = 0;
+        }
         win.READIUM2.locationHashOverrideInfo = {
+            locEventID: ++__locEventID, // 1-based
             audioPlaybackInfo: {
                 globalDuration: undefined,
                 globalProgression: undefined,
