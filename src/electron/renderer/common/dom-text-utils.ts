@@ -93,6 +93,8 @@ export function normalizeText(str: string): string {
 }
 
 export interface ITtsQueueItem {
+    lastUtteranceRange?: Range;
+    lastWordRange?: Range;
     dir: string | undefined;
     lang: string | undefined;
     parentElement: Element;

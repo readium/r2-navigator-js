@@ -753,6 +753,7 @@ function wrapHighlightWord(
         }
     }
 
+    ttsQueueItem.lastWordRange = undefined;
     if (rangeStartNode && rangeEndNode) {
         // console.log("HIGHLIGHT WORD");
         // console.log(rangeStartOffset);
@@ -761,6 +762,7 @@ function wrapHighlightWord(
         const range = new Range(); // document.createRange()
         range.setStart(rangeStartNode, rangeStartOffset);
         range.setEnd(rangeEndNode, rangeEndOffset);
+        ttsQueueItem.lastWordRange = range;
 
         if (_dialogState && _dialogState.focusScrollRaw) {
             const domRect = range.getBoundingClientRect();
@@ -972,7 +974,9 @@ function wrapHighlight(
             range.setEnd(lastTextNode, isOnlyWhiteSpace(lastTextNode.nodeValue) ? 1 : lastTextNode.nodeValue.length);
         }
 
+        ttsQueueItem.lastUtteranceRange = undefined;
         if (range) {
+            ttsQueueItem.lastUtteranceRange = range;
 
             if (_dialogState && _dialogState.focusScrollRaw) {
                 const domRect = range.getBoundingClientRect();
@@ -1709,14 +1713,29 @@ function startTTSSession(
     function onDialogClosed(thiz: PopupDialog, el: HTMLOrSVGElement | null) {
         ttsPause(true);
 
+        const clicky = thiz.clickCloseXY.clickX >= 0 && thiz.clickCloseXY.clickY >= 0;
+
         if (_dialogState && _dialogState.focusScrollRaw) {
             let toScrollTo = el;
-            if (_dialogState.ttsQueueItem && _dialogState.ttsQueueItem.item.parentElement) {
+            let domRect: DOMRect | undefined;
+            if (_dialogState.ttsQueue && _dialogState.ttsQueueItem && _dialogState.ttsQueueItem.item.parentElement) {
                 toScrollTo = _dialogState.ttsQueueItem.item.parentElement as HTMLElement;
+
+                // const ttsQueueIndex = ttsQueueCurrentIndex();  // _dialogState.ttsQueueItem?.iGlobal;
+                // const ttsQueueItem = getTtsQueueItemRef(_dialogState.ttsQueue, ttsQueueIndex); // === _dialogState.ttsQueueItem
+                if (_dialogState.ttsQueueItem.item.lastWordRange) {
+                    // console.log("ttsQueueItem.item.lastWordRange");
+                    domRect = _dialogState.ttsQueueItem.item.lastWordRange.getBoundingClientRect();
+                } else if (_dialogState.ttsQueueItem.item.lastUtteranceRange) {
+                    // console.log("ttsQueueItem.item.lastUtteranceRange");
+                    domRect = _dialogState.ttsQueueItem.item.lastUtteranceRange.getBoundingClientRect();
+                }
             }
             if (toScrollTo) { // _dialogState.ttsOverlayEnabled
                 // _dialogState.focusScrollRaw(toScrollTo, false, true, undefined);
-                _dialogState.focusScrollRaw(toScrollTo, true, false, undefined);
+                if (!clicky) {
+                    _dialogState.focusScrollRaw(toScrollTo, true, false, domRect);
+                }
             } else if (typeof val !== "undefined") {
                 ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable(val);
             }
@@ -1728,7 +1747,7 @@ function startTTSSession(
             resetState(false);
         }, 50);
         setTimeout(() => {
-            if (thiz.clickCloseXY.clickX >= 0 && thiz.clickCloseXY.clickY >= 0) {
+            if (clicky) {
                 // const ev = win.document.createEvent("MouseEvents");
                 // ev.initMouseEvent(
                 //     "click", // typeArg
