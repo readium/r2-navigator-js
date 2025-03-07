@@ -1,10 +1,31 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.20.1...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.20.2...develop
 
 Changes:
 * TODO
+
+# 1.20.2
+
+> Build environment: NodeJS `22.12.0`, NPM `11.1.0`
+
+Changes:
+* Fix: scrolling viewport triggers same-locator events so that bookmark visibility can be adjusted, uses sequential event ID numerical value to track changes
+* Fix: TTS fine-grain word/sentence/element focus restoration to avoid page shifting when paragraph spans across page boundary (previous CSS column)
+* Fix: more discrete current reading location outline (dotted now, and gray / silver like the hyperlink target destination which remains solid)
+* Fix: support for partial visibility calculation in paginated mode, helps trigger TTS when click on paragraph that spans across page boundary (previous CSS column)
+* Fix: rangeInfo locator was incorrectly synch'ed (was remembering last click instead of adjusting to current scroll/pan x+y hittest)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.20.2/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.20.2/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.20.2
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.20.1...v1.20.2
 
 # 1.20.1
 
