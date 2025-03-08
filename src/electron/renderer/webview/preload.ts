@@ -1342,7 +1342,7 @@ const tempLinkTargetOutline = (element: Element, time: number, alt: boolean) => 
 let _lastAnimState2: IPropertyAnimationState | undefined;
 const animationTime2 = 400;
 
-function scrollElementIntoView(element: Element, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined /*, focusHost: boolean */) {
+function scrollElementIntoView(element: Element, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined, center?: boolean /*, focusHost: boolean */) {
 
     if (win.READIUM2.DEBUG_VISUALS) {
         const existings = win.document.querySelectorAll(`*[${readPosCssStylesAttr3}]`);
@@ -1372,7 +1372,7 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
             const rect = domRect || element.getBoundingClientRect();
             // calculateMaxScrollShift()
 
-            if (isVisible(false, element, domRect)) {
+            if (!center && isVisible(false, element, domRect)) {
                 console.log("scrollElementIntoView already visible");
             } else {
                 const isVWM = isVerticalWritingMode();
@@ -1381,8 +1381,8 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
                     scrollElement.scrollHeight - win.document.documentElement.clientHeight;
 
                 let offset = isVWM ?
-                    scrollElement.scrollLeft + (rect.left - (win.document.documentElement.clientWidth / 2)) :
-                    scrollElement.scrollTop + (rect.top - (win.document.documentElement.clientHeight / 2));
+                    scrollElement.scrollLeft + (rect.left - (win.document.documentElement.clientWidth / 2) + (rect.width / 2)) :
+                    scrollElement.scrollTop + (rect.top - (win.document.documentElement.clientHeight / 2) + (rect.height / 2));
 
                 if (isVWM && isRTL()) {
                     if (offset < scrollTopMax) {
@@ -1880,14 +1880,14 @@ function showHideContentMask(doHide: boolean, isFixedLayout: boolean | null) {
     }
 }
 
-function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) {
+function focusScrollRaw(el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined, center?: boolean) {
 
     if (
-        // !isPaginated(win.document) &&
+        (!isPaginated(win.document) && !win.READIUM2.isFixedLayout && center) ||
         !isVisible(false, el as HTMLElement, domRect)) {
 
         // CONTEXT: focusScrollRaw()
-        scrollElementIntoView(el as HTMLElement, doFocus, animate, domRect /*, false */);
+        scrollElementIntoView(el as HTMLElement, doFocus, animate, domRect, center /*, false */);
     }
 
     if (win.READIUM2.locationHashOverride === (el as HTMLElement)) {

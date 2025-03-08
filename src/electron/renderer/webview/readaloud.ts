@@ -60,7 +60,7 @@ interface IHTMLDialogElementWithTTSState extends IHTMLDialogElementWithPopup {
     ttsOverlayEnabled: boolean;
 
     focusScrollRaw:
-    ((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => void) | undefined;
+    ((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined, center?: boolean) => void) | undefined;
 
     ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable: (() => number) | undefined;
     ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable: ((val: number) => void) | undefined;
@@ -624,9 +624,9 @@ function throttle(fn: (...argz: any[]) => any, time: number) {
 //         }
 //     }, 500, { immediate: true });
 
-const focusScrollImmediate = throttle((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined) => {
+const focusScrollImmediate = throttle((el: HTMLOrSVGElement, doFocus: boolean, animate: boolean, domRect: DOMRect | undefined, center?: boolean) => {
     if (_dialogState && _dialogState.focusScrollRaw) {
-        _dialogState.focusScrollRaw(el, doFocus, animate, domRect);
+        _dialogState.focusScrollRaw(el, doFocus, animate, domRect, center);
     }
 }, 500);
 
@@ -980,8 +980,8 @@ function wrapHighlight(
 
             if (_dialogState && _dialogState.focusScrollRaw) {
                 const domRect = range.getBoundingClientRect();
-                // _dialogState.focusScrollRaw
-                focusScrollImmediate(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect);
+                // focusScrollImmediate
+                _dialogState.focusScrollRaw(ttsQueueItemRef.item.parentElement as HTMLElement, false, true, domRect, true);
             }
 
             // const tuple = convertRange(
