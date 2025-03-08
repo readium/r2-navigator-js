@@ -2857,12 +2857,12 @@ https://blackorwhite.lloydk.ca
                     }
                 }
                 polygonMarginUnionPoly = new Polygon();
-                console.log(poly.box.xmin);
-                console.log(poly.box.xmax);
-                console.log(poly.box.height);
-                console.log(poly.box.ymin);
-                console.log(poly.box.ymax);
-                console.log(poly.box.width);
+                // console.log(poly.box.xmin);
+                // console.log(poly.box.xmax);
+                // console.log(poly.box.height);
+                // console.log(poly.box.ymin);
+                // console.log(poly.box.ymax);
+                // console.log(poly.box.width);
                 const f = polygonMarginUnionPoly.addFace(poly.box);
                 if (f.orientation() !== BASE_ORIENTATION) {
                     console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 9");
