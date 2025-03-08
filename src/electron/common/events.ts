@@ -322,6 +322,7 @@ export interface IEventPayload_R2_EVENT_TTS_HIGHLIGHT_STYLE {
     // HighlightDrawTypeOutline
     // HighlightDrawTypeOpacityMask
     // HighlightDrawTypeOpacityMaskRuler
+    // HighlightDrawTypeMarginBookmark
 }
 
 // in RENDERER: webview.send()

@@ -18,6 +18,7 @@ import {
     HighlightDrawTypeBackground,
     HighlightDrawTypeOpacityMask,
     HighlightDrawTypeOpacityMaskRuler,
+    HighlightDrawTypeMarginBookmark,
 } from "../../common/highlight";
 import { appendCSSInline, isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";
@@ -688,6 +689,11 @@ const drawMargin = (h: IHighlight) => {
     if (h.group === HIGHLIGHT_GROUP_TTS) {
         return false;
     }
+
+    if (h.drawType === HighlightDrawTypeOpacityMask || h.drawType === HighlightDrawTypeOpacityMaskRuler || h.drawType === HighlightDrawTypeMarginBookmark) {
+        return true;
+    }
+
     if (h.group === HIGHLIGHT_GROUP_PAGEBREAK) {
         return true;
     }
@@ -1222,6 +1228,92 @@ export function createHighlight(
 
     // range = range ? range : selectionInfo ? convertRangeInfo(win.document, selectionInfo.rangeInfo) : undefined;
 
+    if (selectionInfo &&
+        selectionInfo.rangeInfo.startContainerElementCssSelector === selectionInfo.rangeInfo.endContainerElementCssSelector &&
+        selectionInfo.rangeInfo.startContainerChildTextNodeIndex === -1 &&
+        selectionInfo.rangeInfo.startOffset === -1 &&
+        selectionInfo.rangeInfo.endOffset === -1) {
+
+        console.log("createHighlight selectionInfo", JSON.stringify(selectionInfo, null, 4));
+
+        const el = win.document.querySelector(selectionInfo.rangeInfo.startContainerElementCssSelector);
+        if (el) {
+            selectionInfo.rangeInfo = {
+                startContainerElementCssSelector: selectionInfo.rangeInfo.startContainerElementCssSelector,
+                startContainerElementCFI: undefined,
+                startContainerElementXPath: undefined,
+                startContainerChildTextNodeIndex: -1,
+                startOffset: 0,
+                endContainerElementCssSelector: selectionInfo.rangeInfo.startContainerElementCssSelector,
+                endContainerElementCFI: undefined,
+                endContainerElementXPath: undefined,
+                endContainerChildTextNodeIndex: -1,
+                endOffset: 0,
+                cfi: undefined,
+            };
+
+            let _firstTextNode: Node | undefined;
+            let _firstTextNodeIndex: number | undefined;
+            // let _lastTextNode: Node | undefined;
+            // let _lastTextNodeIndex: number | undefined;
+            const scanTextNodes = (elem: Element) => {
+                for (let i = 0; i < elem.childNodes.length; i++) {
+                    const childNode = elem.childNodes[i];
+                    if (childNode.nodeType === 1) { // Node.ELEMENT_NODE
+                        // scanTextNodes(childNode as Element); // SHALLOW!
+                    } else if (childNode.nodeType === 3 && (childNode.nodeValue?.length || -1)  >= 0) { // Node.TEXT_NODE
+                        if (!_firstTextNode) {
+                            _firstTextNode = childNode;
+                            _firstTextNodeIndex = i;
+                        }
+                        // _lastTextNode = childNode;
+                        // _lastTextNodeIndex = i;
+                    }
+                }
+            };
+            scanTextNodes(el);
+            if (_firstTextNode) {
+                selectionInfo.rangeInfo = {
+                    startContainerElementCssSelector: selectionInfo.rangeInfo.startContainerElementCssSelector,
+                    startContainerElementCFI: undefined,
+                    startContainerElementXPath: undefined,
+                    startContainerChildTextNodeIndex: _firstTextNodeIndex!,
+                    startOffset: 0,
+                    endContainerElementCssSelector: selectionInfo.rangeInfo.startContainerElementCssSelector,
+                    endContainerElementCFI: undefined,
+                    endContainerElementXPath: undefined,
+                    endContainerChildTextNodeIndex: _firstTextNodeIndex!,
+                    endOffset: 1,
+                    cfi: undefined,
+                };
+            }
+            // if (_firstTextNode && _lastTextNode) {
+            //     selectionInfo.rangeInfo = {
+            //         startContainerElementCssSelector: selectionInfo.rangeInfo.startContainerElementCssSelector,
+            //         startContainerElementCFI: undefined,
+            //         startContainerElementXPath: undefined,
+            //         startContainerChildTextNodeIndex: _firstTextNodeIndex!,
+            //         startOffset: 0,
+            //         endContainerElementCssSelector: selectionInfo.rangeInfo.startContainerElementCssSelector,
+            //         endContainerElementCFI: undefined,
+            //         endContainerElementXPath: undefined,
+            //         endContainerChildTextNodeIndex: _lastTextNodeIndex!,
+            //         // endOffset: (_lastTextNode.nodeValue?.length || 1) - 1,
+            //         endOffset: _lastTextNode.nodeValue?.length || 0,
+            //         cfi: undefined,
+            //     };
+            // }
+
+            console.log("createHighlight selectionInfo.rangeInfo", JSON.stringify(selectionInfo.rangeInfo, null, 4));
+
+            // const range = new Range(); // document.createRange()
+            // range.setStart(el, 0);
+            // range.setEnd(el, 0);
+            // const rangeInfo = convertRange(range, getCssSelector, computeElementCFI, computeElementXPath)
+            // selectionInfo.rangeInfo = rangeInfo;
+        }
+    }
+
     const uniqueStr = selectionInfo ? `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}` : range ? `${range.startOffset}-${range.endOffset}-${computeCFI(range.startContainer)}-${computeCFI(range.endContainer)}` : "_RANGE_"; // ${selectionInfo.rangeInfo.cfi} useless
 
     // console.log("RANGE uniqueStr: " + uniqueStr + " (( " + range?.toString());
@@ -1344,6 +1436,7 @@ function createHighlightDom(
     const drawOutline = highlight.drawType === HighlightDrawTypeOutline;
     const drawOpacityMask = highlight.drawType === HighlightDrawTypeOpacityMask;
     const drawOpacityMaskRuler = highlight.drawType === HighlightDrawTypeOpacityMaskRuler;
+    const drawMarginBookmark = highlight.drawType === HighlightDrawTypeMarginBookmark;
 
     const paginated = isPaginated(documant);
 
@@ -1501,7 +1594,10 @@ https://blackorwhite.lloydk.ca
         //     "-1");
         highlightParent.classList.add(CLASS_HIGHLIGHT_BEHIND);
     }
-    if (drawOpacityMask || drawOpacityMaskRuler) {
+    if (
+        // !doDrawMargin &&
+        (drawOpacityMask || drawOpacityMaskRuler)
+    ) {
         highlightParent.classList.add(CLASS_HIGHLIGHT_MASK);
     }
 
@@ -1978,7 +2074,11 @@ https://blackorwhite.lloydk.ca
         }
 
         if (drawOpacityMaskRuler) {
-            polygonMaskBaseUnionPoly = offset(polygonMaskBaseUnionPoly, 20, true);
+            try {
+                polygonMaskBaseUnionPoly = offset(polygonMaskBaseUnionPoly, 20, true);
+            } catch (e) {
+                console.log(e);
+            }
         }
 
         // const highlightMaskBaseSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
@@ -2199,7 +2299,11 @@ https://blackorwhite.lloydk.ca
                 // });
             }
 
-            polygonMaskUnionPoly = offset(polygonMaskUnionPoly, 10, false);
+            try {
+                polygonMaskUnionPoly = offset(polygonMaskUnionPoly, 10, false);
+            } catch (e) {
+                console.log(e);
+            }
         }
 
         // const polyToDraw = polygonMaskBaseUnionPoly;
@@ -2222,7 +2326,7 @@ https://blackorwhite.lloydk.ca
         //     ;
 
         const highlightMaskSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
-        highlightMaskSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON_SVG} ${CLASS_HIGHLIGHT_SVG}`);
+        highlightMaskSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON_SVG} ${CLASS_HIGHLIGHT_SVG} ${CLASS_HIGHLIGHT_CONTOUR}`);
         highlightMaskSVG.polygon = polyToDraw;
         // const rgb = Math.round(0xffffff * Math.random());
         // // tslint:disable-next-line:no-bitwise
@@ -2274,6 +2378,7 @@ https://blackorwhite.lloydk.ca
         return highlightParent;
     }
 
+    if (!drawOpacityMask && !drawOpacityMaskRuler && !drawMarginBookmark) {
     let polygonSurface: Polygon | Polygon[] | undefined;
     if (highlight.rangeCssHighlight) {
         polygonSurface = undefined;
@@ -2496,6 +2601,7 @@ https://blackorwhite.lloydk.ca
     ;
 
     highlightParent.append(highlightAreaSVG);
+    }
 
     if (doDrawMargin && highlight.pointerInteraction) {
         const MARGIN_MARKER_THICKNESS = 14 * (win.READIUM2.isFixedLayout ? scale : (1/inverseZoom));
@@ -2674,6 +2780,36 @@ https://blackorwhite.lloydk.ca
             //         (polygonMarginUnionPoly as Polygon).deleteFace(face);
             //     }
             // });
+        }
+
+        if (drawMarginBookmark) {
+            const ratio = 3;
+            const delta = MARGIN_MARKER_THICKNESS / ratio;
+            const polygonMarginUnionPoly_ = polygonMarginUnionPoly.clone(); // backup
+            try {
+                const bbox = polygonMarginUnionPoly.box;
+                const vec = new Vector(bbox.center, new Point(0, 0));
+                polygonMarginUnionPoly = polygonMarginUnionPoly.translate(vec);
+                polygonMarginUnionPoly = polygonMarginUnionPoly.scale(1/ratio, 1/ratio);
+                polygonMarginUnionPoly = polygonMarginUnionPoly.translate(vec.invert());
+                // polygonMarginUnionPoly = offset(polygonMarginUnionPoly, -delta, true);
+                polygonMarginUnionPoly = offset(polygonMarginUnionPoly, delta, false);
+                const p = new Polygon();
+                const triangleInset = MARGIN_MARKER_THICKNESS / 2.5;
+                const f = p.addFace([
+                    new Segment(new Point(polygonMarginUnionPoly.box.xmin, polygonMarginUnionPoly.box.ymax), new Point(polygonMarginUnionPoly.box.xmax, polygonMarginUnionPoly.box.ymax)),
+                    new Segment(new Point(polygonMarginUnionPoly.box.xmax, polygonMarginUnionPoly.box.ymax), new Point(polygonMarginUnionPoly.box.xmin + polygonMarginUnionPoly.box.width / 2, polygonMarginUnionPoly.box.ymax - triangleInset)),
+                    new Segment(new Point(polygonMarginUnionPoly.box.xmin + polygonMarginUnionPoly.box.width / 2, polygonMarginUnionPoly.box.ymax - triangleInset), new Point(polygonMarginUnionPoly.box.xmin, polygonMarginUnionPoly.box.ymax)),
+                ]);
+                if (f.orientation() !== BASE_ORIENTATION) {
+                    console.log("--xPOLYGON FACE ORIENTATION CCW/CW reverse() 10");
+                    f.reverse();
+                }
+                polygonMarginUnionPoly = subtract(polygonMarginUnionPoly, p);
+            } catch (e) {
+                console.log(e);
+                polygonMarginUnionPoly = polygonMarginUnionPoly_;
+            }
         }
 
         const highlightMarginSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
