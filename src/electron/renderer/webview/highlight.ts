@@ -1104,12 +1104,33 @@ export function recreateAllHighlightsRaw(win: ReadiumElectronWebviewWindow, high
 
     const docFrag = documant.createDocumentFragment();
     for (const highlight of _highlights) {
-        const div = createHighlightDom(win, highlight, bodyRect, bodyComputedStyle, rootComputedStyle);
+
+        const r = adjustRangeInfo(win, highlight.range, highlight.selectionInfo);
+        if (r) {
+            highlight.range = r;
+        } else if (r === null) {
+            // NOOP
+        } else if (typeof r === "undefined") {
+            continue;
+        }
+
+        let div: HTMLDivElement | null | undefined;
+        try {
+            div = createHighlightDom(win, highlight, bodyRect, bodyComputedStyle, rootComputedStyle);
+        } catch (err) {
+            console.log("createHighlightDom ERROR:");
+            console.log(err);
+        }
         if (div) {
+            // if (IS_DEV) {
+            //     console.log("--HIGH WEBVIEW-- createHighlightDom DIV done: " + _highlights.length);
+            // }
             docFrag.append(div);
         }
     }
-
+    if (IS_DEV) {
+        console.log("--HIGH WEBVIEW-- createHighlightDom DONE: " + _highlights.length);
+    }
     const highlightsContainer = ensureHighlightsContainer(win, bodyComputedStyle, rootComputedStyle);
     highlightsContainer.append(docFrag);
 }
@@ -1150,7 +1171,7 @@ export function createHighlights(
             highlights.push(null);
             continue;
         }
-        const [high, div] = createHighlight(
+        const hh = createHighlight(
             win,
             highDef.selectionInfo,
             highDef.range,
@@ -1163,10 +1184,11 @@ export function createHighlights(
             bodyRect,
             bodyComputedStyle,
             rootComputedStyle);
-        highlights.push(high);
-
-        if (div) {
-            docFrag.append(div);
+        if (hh) {
+            highlights.push(hh[0]);
+            if (hh[1]) {
+                docFrag.append(hh[1]);
+            }
         }
     }
 
@@ -1209,62 +1231,61 @@ const computeCFI = (node: Node): string | undefined => {
     return "/" + cfi;
 };
 
-export function createHighlight(
-    win: ReadiumElectronWebviewWindow,
-    selectionInfo: ISelectionInfo | undefined,
-    range: Range | undefined,
-    color: IColor | undefined,
-    pointerInteraction: boolean,
-    drawType: number | undefined,
-    expand: number | undefined,
-    group: string | undefined,
-    marginText: string | undefined,
-    bodyRect: DOMRect,
-    bodyComputedStyle: CSSStyleDeclaration,
-    rootComputedStyle: CSSStyleDeclaration): [IHighlight, HTMLDivElement | null] {
+const adjustRangeInfo = (win: ReadiumElectronWebviewWindow, range: Range | undefined, selectionInfo: ISelectionInfo | undefined): Range | null | undefined => {
 
-    // tslint:disable-next-line:no-string-literal
-    // console.log("Chromium: " + process.versions["chrome"]);
-
-    // range = range ? range : selectionInfo ? convertRangeInfo(win.document, selectionInfo.rangeInfo) : undefined;
-
-    if (selectionInfo &&
+    if ((!range || !range.startContainer) && // IPC object destroy??
+        selectionInfo &&
         selectionInfo.rangeInfo.startContainerElementCssSelector === selectionInfo.rangeInfo.endContainerElementCssSelector &&
         selectionInfo.rangeInfo.startContainerChildTextNodeIndex === -1 &&
         selectionInfo.rangeInfo.startOffset === -1 &&
         selectionInfo.rangeInfo.endOffset === -1) {
 
-        console.log("createHighlight selectionInfo", JSON.stringify(selectionInfo, null, 4));
+        console.log("createHighlight EMPTY selectionInfo", JSON.stringify(selectionInfo, null, 4));
 
         const el = win.document.querySelector(selectionInfo.rangeInfo.startContainerElementCssSelector);
         if (el) {
-            selectionInfo.rangeInfo = {
-                startContainerElementCssSelector: selectionInfo.rangeInfo.startContainerElementCssSelector,
-                startContainerElementCFI: undefined,
-                startContainerElementXPath: undefined,
-                startContainerChildTextNodeIndex: -1,
-                startOffset: 0,
-                endContainerElementCssSelector: selectionInfo.rangeInfo.startContainerElementCssSelector,
-                endContainerElementCFI: undefined,
-                endContainerElementXPath: undefined,
-                endContainerChildTextNodeIndex: -1,
-                endOffset: 0,
-                cfi: undefined,
-            };
+            console.log("createHighlight EMPTY selectionInfo: ELEMENT match", selectionInfo.rangeInfo.startContainerElementCssSelector);
+
+            // temporarilySelectElementToExtractVisibleRange(win, el);
+
+            // selectionInfo.rangeInfo = {
+            //     startContainerElementCssSelector: selectionInfo.rangeInfo.startContainerElementCssSelector,
+            //     startContainerElementCFI: undefined,
+            //     startContainerElementXPath: undefined,
+            //     startContainerChildTextNodeIndex: -1,
+            //     startOffset: 0,
+            //     endContainerElementCssSelector: selectionInfo.rangeInfo.startContainerElementCssSelector,
+            //     endContainerElementCFI: undefined,
+            //     endContainerElementXPath: undefined,
+            //     endContainerChildTextNodeIndex: -1,
+            //     endOffset: 0,
+            //     cfi: undefined,
+            // };
 
             let _firstTextNode: Node | undefined;
-            let _firstTextNodeIndex: number | undefined;
+            // let _firstTextNodeIndex: number | undefined;
             // let _lastTextNode: Node | undefined;
             // let _lastTextNodeIndex: number | undefined;
             const scanTextNodes = (elem: Element) => {
+                const lower = elem.tagName.toLowerCase();
+                if (elem.getAttribute("id") === ID_HIGHLIGHTS_CONTAINER ||
+                    lower === "audio" || lower === "img" || lower === "script" || lower === "noscript") {
+                    return;
+                }
                 for (let i = 0; i < elem.childNodes.length; i++) {
                     const childNode = elem.childNodes[i];
                     if (childNode.nodeType === 1) { // Node.ELEMENT_NODE
-                        // scanTextNodes(childNode as Element); // SHALLOW!
-                    } else if (childNode.nodeType === 3 && (childNode.nodeValue?.length || -1)  >= 0) { // Node.TEXT_NODE
                         if (!_firstTextNode) {
+                            scanTextNodes(childNode as Element);
+                        }
+                    } else if (childNode.nodeType === 3 && (childNode.nodeValue?.length || 0) > 0) { // Node.TEXT_NODE
+                        let text = childNode.nodeValue?.replace(/\s\s+/g, " ");
+                        if (text) {
+                            text = text.trim();
+                        }
+                        if (text && !_firstTextNode) {
                             _firstTextNode = childNode;
-                            _firstTextNodeIndex = i;
+                            // _firstTextNodeIndex = i;
                         }
                         // _lastTextNode = childNode;
                         // _lastTextNodeIndex = i;
@@ -1273,19 +1294,63 @@ export function createHighlight(
             };
             scanTextNodes(el);
             if (_firstTextNode) {
-                selectionInfo.rangeInfo = {
-                    startContainerElementCssSelector: selectionInfo.rangeInfo.startContainerElementCssSelector,
-                    startContainerElementCFI: undefined,
-                    startContainerElementXPath: undefined,
-                    startContainerChildTextNodeIndex: _firstTextNodeIndex!,
-                    startOffset: 0,
-                    endContainerElementCssSelector: selectionInfo.rangeInfo.startContainerElementCssSelector,
-                    endContainerElementCFI: undefined,
-                    endContainerElementXPath: undefined,
-                    endContainerChildTextNodeIndex: _firstTextNodeIndex!,
-                    endOffset: 1,
-                    cfi: undefined,
-                };
+                console.log("createHighlight EMPTY selectionInfo: FIRST TEXT NODE found", _firstTextNode.nodeValue);
+
+                range = new Range(); // document.createRange()
+                range.selectNodeContents(_firstTextNode);
+                range.setStart(range.startContainer, range.startOffset);
+                range.setEnd(range.endContainer, range.startOffset + 1); // range.endOffset
+                return range;
+
+                // selectionInfo.rangeInfo = {
+                //     startContainerElementCssSelector: selectionInfo.rangeInfo.startContainerElementCssSelector,
+                //     startContainerElementCFI: undefined,
+                //     startContainerElementXPath: undefined,
+                //     startContainerChildTextNodeIndex: _firstTextNodeIndex!,
+                //     startOffset: 0,
+                //     endContainerElementCssSelector: selectionInfo.rangeInfo.startContainerElementCssSelector,
+                //     endContainerElementCFI: undefined,
+                //     endContainerElementXPath: undefined,
+                //     endContainerChildTextNodeIndex: _firstTextNodeIndex!,
+                //     endOffset: 1,
+                //     cfi: undefined,
+                // };
+            } else {
+                if (el === win.document.documentElement || el === win.document.body) {
+                    console.log("createHighlight EMPTY selectionInfo: FIRST TEXT NODE not found, fallback ELEMENT inside HTML BODY", el.nodeName);
+
+                    let _firstLeafElement: Element | undefined;
+                    const scanElementNodes = (elem: Element) => {
+                        for (let i = 0; i < elem.childNodes.length; i++) {
+                            const childNode = elem.childNodes[i];
+                            if (childNode.nodeType === 1) { // Node.ELEMENT_NODE
+                                if (!_firstLeafElement && !(childNode as Element).childNodes.length) {
+                                    _firstLeafElement = childNode as Element;
+                                }
+                                if (!_firstLeafElement) {
+                                    scanElementNodes(childNode as Element);
+                                }
+                            }
+                        }
+                    };
+                    scanElementNodes(el);
+
+                    range = new Range(); // document.createRange()
+                    if (!win && _firstLeafElement) {
+                        console.log("createHighlight EMPTY selectionInfo: fallback ELEMENT first leaf: ", _firstLeafElement.nodeName);
+                        range.selectNode(_firstLeafElement);
+                    } else {
+                        console.log("createHighlight EMPTY selectionInfo: fallback fail: ", el.nodeName);
+                        range.selectNodeContents(el);
+                    }
+                    return range;
+                } else {
+                    console.log("createHighlight EMPTY selectionInfo: FIRST TEXT NODE not found, fallback ELEMENT", el.nodeName);
+
+                    range = new Range(); // document.createRange()
+                    range.selectNode(el);
+                    return range;
+                }
             }
             // if (_firstTextNode && _lastTextNode) {
             //     selectionInfo.rangeInfo = {
@@ -1304,14 +1369,45 @@ export function createHighlight(
             //     };
             // }
 
-            console.log("createHighlight selectionInfo.rangeInfo", JSON.stringify(selectionInfo.rangeInfo, null, 4));
+            // console.log("createHighlight selectionInfo.rangeInfo", JSON.stringify(selectionInfo.rangeInfo, null, 4));
 
-            // const range = new Range(); // document.createRange()
-            // range.setStart(el, 0);
-            // range.setEnd(el, 0);
             // const rangeInfo = convertRange(range, getCssSelector, computeElementCFI, computeElementXPath)
             // selectionInfo.rangeInfo = rangeInfo;
+        } else {
+            console.log("createHighlight EMPTY selectionInfo: ELEMENT NOT match", selectionInfo.rangeInfo.startContainerElementCssSelector);
+            return undefined;
         }
+    }
+
+    return null;
+};
+
+export function createHighlight(
+    win: ReadiumElectronWebviewWindow,
+    selectionInfo: ISelectionInfo | undefined,
+    range: Range | undefined,
+    color: IColor | undefined,
+    pointerInteraction: boolean,
+    drawType: number | undefined,
+    expand: number | undefined,
+    group: string | undefined,
+    marginText: string | undefined,
+    bodyRect: DOMRect,
+    bodyComputedStyle: CSSStyleDeclaration,
+    rootComputedStyle: CSSStyleDeclaration): [IHighlight, HTMLDivElement | null] | undefined {
+
+    // tslint:disable-next-line:no-string-literal
+    // console.log("Chromium: " + process.versions["chrome"]);
+
+    // range = range ? range : selectionInfo ? convertRangeInfo(win.document, selectionInfo.rangeInfo) : undefined;
+
+    const r = adjustRangeInfo(win, range, selectionInfo);
+    if (r) {
+        range = r;
+    } else if (r === null) {
+        // NOOP
+    } else if (typeof r === "undefined") {
+        return undefined;
     }
 
     const uniqueStr = selectionInfo ? `${selectionInfo.rangeInfo.startContainerElementCssSelector}${selectionInfo.rangeInfo.startContainerChildTextNodeIndex}${selectionInfo.rangeInfo.startOffset}${selectionInfo.rangeInfo.endContainerElementCssSelector}${selectionInfo.rangeInfo.endContainerChildTextNodeIndex}${selectionInfo.rangeInfo.endOffset}` : range ? `${range.startOffset}-${range.endOffset}-${computeCFI(range.startContainer)}-${computeCFI(range.endContainer)}` : "_RANGE_"; // ${selectionInfo.rangeInfo.cfi} useless
@@ -1350,8 +1446,15 @@ export function createHighlight(
     };
     _highlights.push(highlight);
 
-    const div = createHighlightDom(win, highlight, bodyRect, bodyComputedStyle, rootComputedStyle);
-    return [highlight, div];
+    let div: HTMLDivElement | null | undefined;
+    try {
+        div = createHighlightDom(win, highlight, bodyRect, bodyComputedStyle, rootComputedStyle);
+    } catch (err) {
+        console.log("createHighlightDom ERROR:");
+        console.log(err);
+    }
+
+    return [highlight, div || null];
 }
 
 const computeCssHighlightRGBID = (highlight: IHighlight) => {
@@ -2604,8 +2707,8 @@ https://blackorwhite.lloydk.ca
     }
 
     if (doDrawMargin && highlight.pointerInteraction) {
-        const MARGIN_MARKER_THICKNESS = 14 * (win.READIUM2.isFixedLayout ? scale : (1/inverseZoom));
-        const MARGIN_MARKER_OFFSET = 6 * (win.READIUM2.isFixedLayout ? scale : (1/inverseZoom));
+        const MARGIN_MARKER_THICKNESS = 14 * (win.READIUM2.isFixedLayout ? 1 : (1/inverseZoom));
+        const MARGIN_MARKER_OFFSET = 6 * (win.READIUM2.isFixedLayout ? 1 : (1/inverseZoom));
 
         let boundingRectCountourMargin: IRect | IRect[] | undefined;
         const polygonCountourMarginRects: IRect[] = [];
@@ -2754,6 +2857,12 @@ https://blackorwhite.lloydk.ca
                     }
                 }
                 polygonMarginUnionPoly = new Polygon();
+                console.log(poly.box.xmin);
+                console.log(poly.box.xmax);
+                console.log(poly.box.height);
+                console.log(poly.box.ymin);
+                console.log(poly.box.ymax);
+                console.log(poly.box.width);
                 const f = polygonMarginUnionPoly.addFace(poly.box);
                 if (f.orientation() !== BASE_ORIENTATION) {
                     console.log("--POLYGON FACE ORIENTATION CCW/CW reverse() 9");

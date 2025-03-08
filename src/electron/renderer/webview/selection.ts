@@ -87,6 +87,37 @@ export const setSelectionChangeAction = (win: ReadiumElectronWebviewWindow, func
     });
 };
 
+export function temporarilySelectElementToExtractVisibleRange(win: ReadiumElectronWebviewWindow, el: Element) {
+
+    // const selectionDoc = win.document.getSelection();
+    const selection = win.getSelection();
+    // if (selectionDoc !== selection) {
+    //     console.log("selectionDoc !== selection.", selectionDoc, selection);
+    // }
+    if (!selection) {
+        return;
+    }
+    clearCurrentSelection(win);
+
+    const range = new Range(); // document.createRange()
+    range.selectNode(el);
+    // range.setStart(el, 0);
+    // range.setEnd(el, 0);
+
+    _ignoreSelectionChangeEvent = true;
+    _selectionChangeTimeout = win.setTimeout(() => {
+        _selectionChangeTimeout = undefined;
+        _ignoreSelectionChangeEvent = false;
+    }, 200);
+    selection.addRange(range);
+
+    console.log("selection.addRange(range)", el.tagName);
+    console.log("selection.anchorNode", selection.anchorNode?.nodeType === 3 ? selection.anchorNode?.nodeValue : selection.anchorNode?.nodeName);
+    console.log("selection.anchorOffset", selection.anchorOffset);
+    console.log("selection.focusNode", selection.focusNode?.nodeType === 3 ? selection.focusNode?.nodeValue : selection.focusNode?.nodeName);
+    console.log("selection.focusOffset", selection.focusOffset);
+}
+
 export function clearCurrentSelection(win: ReadiumElectronWebviewWindow) {
     const selection = win.getSelection();
     if (!selection) {
