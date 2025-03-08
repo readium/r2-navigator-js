@@ -962,6 +962,7 @@ function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow, bodyComput
         }
 
         _highlightsContainer = documant.createElement("div");
+        _highlightsContainer.setAttribute("aria-hidden", "true");
         _highlightsContainer.setAttribute("id", ID_HIGHLIGHTS_CONTAINER);
         _highlightsContainer.setAttribute("class", CLASS_HIGHLIGHT_COMMON);
         _highlightsContainer.setAttribute("style",
