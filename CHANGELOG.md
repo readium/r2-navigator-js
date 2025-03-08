@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.20.5...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.20.6...develop
 
 Changes:
 * TODO
+
+# 1.20.6
+
+> Build environment: NodeJS `22.12.0`, NPM `11.1.0`
+
+Changes:
+* Hotfix: TTS centered scrolling highlight, making sure to avoid perfect centering with large non-TTS focus / scroll-into-view requests (e.g. images that don't fit the viewport, can cause yoyoing / jitter in edge cases)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.20.6/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.20.6/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.20.6
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.20.5...v1.20.6
 
 # 1.20.5
 

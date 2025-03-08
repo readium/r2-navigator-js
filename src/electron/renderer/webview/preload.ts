@@ -1381,8 +1381,8 @@ function scrollElementIntoView(element: Element, doFocus: boolean, animate: bool
                     scrollElement.scrollHeight - win.document.documentElement.clientHeight;
 
                 let offset = isVWM ?
-                    scrollElement.scrollLeft + (rect.left - (win.document.documentElement.clientWidth / 2) + (rect.width / 2)) :
-                    scrollElement.scrollTop + (rect.top - (win.document.documentElement.clientHeight / 2) + (rect.height / 2));
+                    scrollElement.scrollLeft + (rect.left - (win.document.documentElement.clientWidth / 2) + (center ? (rect.width / 2) : 0)) :
+                    scrollElement.scrollTop + (rect.top - (win.document.documentElement.clientHeight / 2) + (center ? (rect.height / 2) : 0));
 
                 if (isVWM && isRTL()) {
                     if (offset < scrollTopMax) {
