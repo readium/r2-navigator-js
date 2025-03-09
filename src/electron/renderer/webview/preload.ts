@@ -10,7 +10,7 @@ import * as debug_ from "debug";
 import { ipcRenderer } from "electron";
 import { isFocusable } from "tabbable";
 
-import { DISABLE_TEMPORARY_NAV_TARGET_OUTLINE_CLASS, ENABLE_SKIP_LINK } from "../../common/styles";
+import { DISABLE_TEMPORARY_NAV_TARGET_OUTLINE_CLASS, ENABLE_SKIP_LINK, ID_HIGHLIGHTS_FLOATING } from "../../common/styles";
 
 import { IRangeInfo } from "../../common/selection";
 
@@ -4130,11 +4130,11 @@ const computeProgressionData = (): IProgressionData => {
 };
 
 // tslint:disable-next-line:max-line-length
-const _blacklistIdClassForCssSelectors = [EXTRA_COLUMN_PAD_ID, LINK_TARGET_CLASS, LINK_TARGET_ALT_CLASS, CSS_CLASS_NO_FOCUS_OUTLINE, SKIP_LINK_ID, POPUP_DIALOG_CLASS, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN, TTS_ID_SPEAKING_DOC_ELEMENT, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_INVISIBLE_MASK_REMOVED, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_NO_RUBY];
+const _blacklistIdClassForCssSelectors = [EXTRA_COLUMN_PAD_ID, LINK_TARGET_CLASS, LINK_TARGET_ALT_CLASS, CSS_CLASS_NO_FOCUS_OUTLINE, SKIP_LINK_ID, POPUP_DIALOG_CLASS, ID_HIGHLIGHTS_CONTAINER, ID_HIGHLIGHTS_FLOATING, ID_HIGHLIGHTS_FLOATING + "_", CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN, TTS_ID_SPEAKING_DOC_ELEMENT, ROOT_CLASS_KEYBOARD_INTERACT, ROOT_CLASS_INVISIBLE_MASK, ROOT_CLASS_INVISIBLE_MASK_REMOVED, CLASS_PAGINATED, ROOT_CLASS_NO_FOOTNOTES, ROOT_CLASS_NO_RUBY];
 const _blacklistIdClassForCssSelectorsMathJax = ["mathjax", "ctxt", "mjx", "r2-wbr"];
 
 // tslint:disable-next-line:max-line-length
-const _blacklistIdClassForCFI = [EXTRA_COLUMN_PAD_ID, SKIP_LINK_ID, POPUP_DIALOG_CLASS, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN];
+const _blacklistIdClassForCFI = [EXTRA_COLUMN_PAD_ID, SKIP_LINK_ID, POPUP_DIALOG_CLASS, ID_HIGHLIGHTS_CONTAINER, ID_HIGHLIGHTS_FLOATING, ID_HIGHLIGHTS_FLOATING + "_", CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN];
 // "CtxtMenu_MenuFrame", "CtxtMenu_Info", "CtxtMenu_MenuItem", "CtxtMenu_ContextMenu",
 // "CtxtMenu_MenuArrow", "CtxtMenu_Attached_0", "mjx-container", "MathJax"
 const _blacklistIdClassForCFIMathJax = ["mathjax", "ctxt", "mjx", "r2-wbr"];
@@ -4535,6 +4535,7 @@ const findPrecedingAncestorSiblingEpubPageBreak = (element: Element): { epubPage
                         group: HIGHLIGHT_GROUP_PAGEBREAK,
                         range,
                         marginText: pageBreak.text ? pageBreak.text : undefined,
+                        textPopup: undefined,
                     },
                 );
             }
@@ -4593,7 +4594,7 @@ const findFollowingDescendantSiblingElementsWithID = (el: Element): string[] | u
             const elSkipLink = ENABLE_SKIP_LINK ? win.document.getElementById(SKIP_LINK_ID) : null;
             const elPad = win.document.getElementById(EXTRA_COLUMN_PAD_ID);
 
-            _elementsWithID = Array.from(win.document.querySelectorAll(`*:not(#${ID_HIGHLIGHTS_CONTAINER}):not(#${POPUP_DIALOG_CLASS}):not(#${EXTRA_COLUMN_PAD_ID}):not(#${SKIP_LINK_ID}) *[id]:not(#${ID_HIGHLIGHTS_CONTAINER}):not(#${POPUP_DIALOG_CLASS}):not(#${EXTRA_COLUMN_PAD_ID}):not(#${SKIP_LINK_ID})`));
+            _elementsWithID = Array.from(win.document.querySelectorAll(`*:not(#${ID_HIGHLIGHTS_CONTAINER}):not(#${ID_HIGHLIGHTS_FLOATING}):not(#${ID_HIGHLIGHTS_FLOATING}_):not(#${POPUP_DIALOG_CLASS}):not(#${EXTRA_COLUMN_PAD_ID}):not(#${SKIP_LINK_ID}) *[id]:not(#${ID_HIGHLIGHTS_CONTAINER}):not(#${ID_HIGHLIGHTS_FLOATING}):not(#${ID_HIGHLIGHTS_FLOATING}_):not(#${POPUP_DIALOG_CLASS}):not(#${EXTRA_COLUMN_PAD_ID}):not(#${SKIP_LINK_ID})`));
 
             for (let i = 0; i < _elementsWithID.length; i++) {
                 const elementWithID = _elementsWithID[i];

@@ -1013,34 +1013,66 @@ content: ' ';
 }
 
 :root[style].${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
-:root.${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}
+:root.${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
+:root[style].${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}_,
+:root.${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}_
 {
     position: fixed;
 }
 :root[style]:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
-:root:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}
+:root:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
+:root[style]:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}_,
+:root:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}_
 {
     position: absolute;
 }
 :root[style].${CLASS_VWM} > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
 :root.${CLASS_VWM} > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}
-{
-height: max-content !important;
-
-max-width: 200px !important;
-max-height: 300px !important;
-}
-:root[style]:not(.${CLASS_VWM}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
-:root:not(.${CLASS_VWM}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}
+/*
+,
+:root[style].${CLASS_VWM} > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}_,
+:root.${CLASS_VWM} > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}_
+*/
 {
 width: max-content !important;
 
-max-width: 300px !important;
+/* width: 200px !important;
+height: 100px !important; */
+
+max-width: 200px !important;
+max-height: 100px !important;
+/*
+height: max-content !important;
+
+max-width: 100px !important;
 max-height: 200px !important;
+*/
 }
-:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
-:root > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}
+:root[style]:not(.${CLASS_VWM}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
+:root:not(.${CLASS_VWM}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}
+/*
+,
+:root[style]:not(.${CLASS_VWM}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}_,
+:root:not(.${CLASS_VWM}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}_
+*/
 {
+width: max-content !important;
+
+/* width: 200px !important;
+height: 100px !important; */
+
+max-width: 200px !important;
+max-height: 100px !important;
+}
+
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}_,
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}_
+{
+user-select: none !important;
+pointer-events: none !important;
+
 z-index: 999;
 
 display: none;
@@ -1051,7 +1083,7 @@ left: 0;
 overflow-x: clip !important;
 overflow-y: clip !important;
 
-text-overflow: ellipsis;
+text-overflow: ellipsis !important;
 
 background: white !important;
 color: black !important;
@@ -1059,15 +1091,65 @@ color: black !important;
 font-weight: bold !important;
 font-size: 0.8rem !important;
 
+box-sizing: border-box !important;
+
 padding: 0.6rem !important;
 
-border-radius: 0.4rem !important;
-border-width: 1px !important;
-border-color: black !important;
-border-style: solid !important;
-
-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+margin: 0 !important;
 }
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}
+{
+    border-radius: 8px !important;
+    border-width: 1px !important;
+    border-color: black !important;
+    border-style: solid !important;
+    box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 1);
+}
+/*
+:root[style*="--USER__fontFamily"] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}
+{
+    font-family: var(--USER__fontFamily);
+}
+:root[style*="--USER__lineHeight"] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}
+{
+    line-height: var(--USER__lineHeight);
+}
+:root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING} {
+    background: #333333 !important;
+    border-color: white !important;
+}
+*/
+:root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING} {
+    background: var(--RS__backgroundColor) !important;
+    color: var(--RS__textColor) !important;
+    border-color: var(--RS__textColor) !important;
+    box-shadow: 0px 0px 4px 0px var(--RS__textColor);
+}
+:root[style*="readium-sepia-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING} {
+    background: var(--RS__backgroundColor) !important;
+    color: var(--RS__textColor) !important;
+    border-color: var(--RS__textColor) !important;
+    box-shadow: 0px 0px 4px 0px var(--RS__textColor);
+}
+:root[style*="--USER__backgroundColor"] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING} {
+    background: var(--USER__backgroundColor) !important;
+}
+:root[style*="--USER__textColor"] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING} {
+    color: var(--USER__textColor) !important;
+    border-color: var(--USER__textColor) !important;
+    box-shadow: 0px 0px 4px 0px var(--USER__textColor);
+}
+
+/*
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}_,
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}_
+{
+z-index: 1000 !important;
+opacity: 0.5 !important;
+pointer-events: none !important;
+}
+*/
 
 :root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > svg.${CLASS_HIGHLIGHT_CONTOUR},
 :root > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > svg.${CLASS_HIGHLIGHT_CONTOUR}

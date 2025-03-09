@@ -19,6 +19,7 @@ import {
     HighlightDrawTypeOpacityMask,
     HighlightDrawTypeOpacityMaskRuler,
     HighlightDrawTypeMarginBookmark,
+    ITextPopup,
 } from "../../common/highlight";
 import { appendCSSInline, isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";
@@ -49,7 +50,7 @@ Edge,
 } from "@flatten-js/core";
 const { unify, subtract } = BooleanOperations;
 
-import { computePosition, flip, shift, offset as offsetFloat, Middleware } from "@floating-ui/dom";
+import { computePosition, flip, shift, Middleware, offset as offsetFloat } from "@floating-ui/dom";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -57,7 +58,7 @@ const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV =
 (window as any).DEBUG_RECTS = IS_DEV && VERBOSE;
 
 export const ENABLE_FLOATING_UI = true;
-export const ENABLE_CSS_HIGHLIGHTS = false && !!CSS.highlights;
+export const ENABLE_CSS_HIGHLIGHTS = true && !!CSS.highlights;
 export const ENABLE_PAGEBREAK_MARGIN_TEXT_EXPERIMENT = false;
 
 const cleanupPolygon = (polygonAccumulator: Polygon, off: number) => {
@@ -865,6 +866,10 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
             _highlightsFloatingUI.style.display = "none";
             _highlightsFloatingUI.innerHTML = "";
         }
+        // if (_highlightsFloatingUI_) {
+        //     _highlightsFloatingUI_.style.display = "none";
+        //     // _highlightsFloatingUI_.innerHTML = "";
+        // }
 
         // documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR1);
         documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR2);
@@ -883,8 +888,11 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                 documant.documentElement.classList.add(CLASS_HIGHLIGHT_CURSOR2);
             }
 
-            if (_highlightsFloatingUI) {
-                _highlightsFloatingUI.innerHTML = "sadflj ljhbs bdp;fub ;aksudgf\n\n\n ;bbbasd;ckuh ;kjbsabdbv;iugas ;dkjb casd;viug ;kb;ksadbv;u b";
+            const text = foundHighlight.textPopup?.text ? foundHighlight.textPopup.text : undefined;
+            if (text && _highlightsFloatingUI) { // && _highlightsFloatingUI_
+
+                const dir = foundHighlight.textPopup?.dir ? foundHighlight.textPopup.dir : "ltr";
+                const lang = foundHighlight.textPopup?.lang ? foundHighlight.textPopup.lang : "en";
 
                 // const inverseZoom = computeInverseZoom(bodyComputedStyle, rootComputedStyle);
                 // const zoom = _highlightsContainer.style.zoom ?
@@ -892,6 +900,20 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                 //     1;
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const zoom = (foundElement as any).__inverseZoom || 1;
+
+                // _highlightsFloatingUI_.innerHTML = dummytext;
+                // _highlightsFloatingUI_.style.zoom = ""+(zoom);
+
+                if (dir) {
+                    _highlightsFloatingUI.setAttribute("dir", dir);
+                }
+                if (lang) {
+                    _highlightsFloatingUI.setAttribute("lang", lang);
+                    _highlightsFloatingUI.setAttributeNS("http://www.w3.org/XML/1998/", "lang", lang);
+                }
+
+                // _highlightsFloatingUI.innerHTML = text;
+                _highlightsFloatingUI.textContent = text;
 
                 if (!ENABLE_FLOATING_UI) {
                     const xx = (x - xOffset) * scale;
@@ -903,125 +925,219 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                     });
                 } else {
                     const doDrawMargin = drawMargin(foundHighlight);
-                    let anchor = doDrawMargin ?
-                        foundElement.querySelector("svg.R2_CLASS_HIGHLIGHT_CONTOUR_MARGIN > path") :
-                        foundElement.querySelector("svg.R2_CLASS_HIGHLIGHT_CONTOUR > path");
 
-                    if (!anchor && doDrawMargin) {
-                        anchor = foundElement.querySelector("svg.R2_CLASS_HIGHLIGHT_CONTOUR > path");
+                    let anchor: Element | null = null;
+                    if (doDrawMargin) {
+                        anchor = foundElement.querySelector("svg.R2_CLASS_HIGHLIGHT_CONTOUR_MARGIN > path");
+                    } else {
+                        // anchor = foundElement.querySelector("svg.R2_CLASS_HIGHLIGHT_CONTOUR > path");
+                        const all = foundElement.querySelectorAll("svg.R2_CLASS_HIGHLIGHT_CONTOUR > path");
+                        // console.log("querySelectorAll -------- ", all?.length);
+                        if (all?.length > 0) {
+                            anchor = all[all?.length - 1];
+                        }
                     }
                     if (anchor) {
                         const floatingUIMiddleware = {
                             name: "floatingUIMiddleware",
-                            fn({ x, y, rects }) {
-                                console.log(" -------- ");
-                                console.log("zoom", zoom);
-                                console.log("x, y", x, y);
-                                console.log("rects.reference", rects.reference.x, rects.reference.y, rects.reference.width, rects.reference.height);
-                                console.log("rects.floating", rects.floating.x, rects.floating.y, rects.floating.width, rects.floating.height);
-                                console.log(" -------- ");
+                            fn({ x: fuix, y: fuiy }) {
+                                // rects.reference.x *= zoom;
+                                // rects.reference.y *= zoom;
+                                // rects.reference.width *= zoom;
+                                // rects.reference.height *= zoom;
+
+                                // rects.floating.x *= zoom;
+                                // rects.floating.y *= zoom;
+                                // rects.floating.width *= zoom;
+                                // rects.floating.height *= zoom;
+
+                                // rects.reference.x /= zoom;
+                                // rects.reference.y /= zoom;
+                                // rects.reference.width /= zoom;
+                                // rects.reference.height /= zoom;
+
+                                // rects.floating.x /= zoom;
+                                // rects.floating.y /= zoom;
+                                // rects.floating.width /= zoom;
+                                // rects.floating.height /= zoom;
+
+                                // const xx = paginated ? (fuix - xOffset) * zoom : fuix;
+                                // const yy = paginated ? (fuiy - yOffset) * zoom : fuiy;
+
+                                const xx = fuix;
+                                const yy = fuiy;
+
+                                // console.log(" -------- ");
+                                // console.log("zoom", zoom);
+                                // console.log("x, y", x, y);
+                                // console.log("fuix, fuiy", fuix, fuiy);
+                                // console.log("xx, yy", xx, yy);
+                                // console.log("rects.reference", rects.reference.x, rects.reference.y, rects.reference.width, rects.reference.height);
+                                // console.log("rects.floating", rects.floating.x, rects.floating.y, rects.floating.width, rects.floating.height);
+                                // console.log("bodyRect.left", bodyRect.left);
+                                // console.log("bodyRect.top", bodyRect.top);
+                                // console.log("xOffset", xOffset);
+                                // console.log("yOffset", yOffset);
+                                // console.log(" -------- ");
 
                                 return {
-                                    x: paginated ? (x - xOffset * zoom) : x,
-                                    y: paginated ? (y - yOffset * zoom) : y,
+                                    x: xx,
+                                    y: yy,
                                 };
                             },
                         } satisfies Middleware;
 
                         const paginated = isPaginated(documant);
-                        // const virtualElement =
-                        // {
-                        //     getBoundingClientRect() {
-                        //         // const bb = anchor.getBoundingClientRect();
-                        //         // return {
-                        //         //     width: bb.width / z,
-                        //         //     height: bb.height / z,
-                        //         //     x: bb.x / z,
-                        //         //     y: bb.y / z,
-                        //         //     top: bb.top / z,
-                        //         //     left: bb.left / z,
-                        //         //     right: bb.right / z,
-                        //         //     bottom: bb.bottom / z,
-                        //         // };
-                        //         // return {
-                        //         //     width: bb.width * z,
-                        //         //     height: bb.height * z,
-                        //         //     x: bb.x * z,
-                        //         //     y: bb.y * z,
-                        //         //     top: bb.top * z,
-                        //         //     left: bb.left * z,
-                        //         //     right: bb.right * z,
-                        //         //     bottom: bb.bottom * z,
-                        //         // };
-                        //         // return {
-                        //         //     width: bb.width,
-                        //         //     height: bb.height,
-                        //         //     x: bb.x,
-                        //         //     y: bb.y,
-                        //         //     top: bb.top,
-                        //         //     left: bb.left,
-                        //         //     right: bb.right,
-                        //         //     bottom: bb.bottom,
-                        //         // };
-                        //         return {
-                        //             width: 0,
-                        //             height: 0,
-                        //             x: x,
-                        //             y: y,
-                        //             top: y,
-                        //             left: x,
-                        //             right: x,
-                        //             bottom: y,
-                        //         };
-                        //         // return {
-                        //         //     width: 0,
-                        //         //     height: 0,
-                        //         //     x: x / z,
-                        //         //     y: y / z,
-                        //         //     top: y / z,
-                        //         //     left: x / z,
-                        //         //     right: x / z,
-                        //         //     bottom: y / z,
-                        //         // };
-                        //         // return {
-                        //         //     width: 0,
-                        //         //     height: 0,
-                        //         //     x: x * z,
-                        //         //     y: y * z,
-                        //         //     top: y * z,
-                        //         //     left: x * z,
-                        //         //     right: x * z,
-                        //         //     bottom: y * z,
-                        //         // };
+                        const virtualElement =
+                        {
+                            getBoundingClientRect() {
+                                // const bb = anchor.getBoundingClientRect();
+                                // return {
+                                //     width: bb.width / z,
+                                //     height: bb.height / z,
+                                //     x: bb.x / z,
+                                //     y: bb.y / z,
+                                //     top: bb.top / z,
+                                //     left: bb.left / z,
+                                //     right: bb.right / z,
+                                //     bottom: bb.bottom / z,
+                                // };
+                                // return {
+                                //     width: bb.width * z,
+                                //     height: bb.height * z,
+                                //     x: bb.x * z,
+                                //     y: bb.y * z,
+                                //     top: bb.top * z,
+                                //     left: bb.left * z,
+                                //     right: bb.right * z,
+                                //     bottom: bb.bottom * z,
+                                // };
+                                // return {
+                                //     width: bb.width,
+                                //     height: bb.height,
+                                //     x: bb.x,
+                                //     y: bb.y,
+                                //     top: bb.top,
+                                //     left: bb.left,
+                                //     right: bb.right,
+                                //     bottom: bb.bottom,
+                                // };
+                                return {
+                                    width: 0,
+                                    height: 0,
+                                    x: x,
+                                    y: y,
+                                    top: y,
+                                    left: x,
+                                    right: x,
+                                    bottom: y,
+                                };
+                                // return {
+                                //     width: 0,
+                                //     height: 0,
+                                //     x: x / z,
+                                //     y: y / z,
+                                //     top: y / z,
+                                //     left: x / z,
+                                //     right: x / z,
+                                //     bottom: y / z,
+                                // };
+                                // return {
+                                //     width: 0,
+                                //     height: 0,
+                                //     x: x * z,
+                                //     y: y * z,
+                                //     top: y * z,
+                                //     left: x * z,
+                                //     right: x * z,
+                                //     bottom: y * z,
+                                // };
 
-                        //         // const xx = (x - xOffset) * scale;
-                        //         // const yy = (y - yOffset) * scale;
-                        //         // // const xx = (x / z - xOffset) * scale;
-                        //         // // const yy = (y / z - yOffset) * scale;
-                        //         // return {
-                        //         //     width: 0,
-                        //         //     height: 0,
-                        //         //     x: xx,
-                        //         //     y: yy,
-                        //         //     top: yy,
-                        //         //     left: xx,
-                        //         //     right: xx,
-                        //         //     bottom: yy,
-                        //         // };
-                        //     },
-                        //     // getClientRects
-                        //     // contextElement: win.document.body,
-                        //     // contextElement: _highlightsContainer,
-                        // };
-                        computePosition(anchor, _highlightsFloatingUI, {
+                                // const xx = (x - xOffset) * scale;
+                                // const yy = (y - yOffset) * scale;
+                                // // const xx = (x / z - xOffset) * scale;
+                                // // const yy = (y / z - yOffset) * scale;
+                                // return {
+                                //     width: 0,
+                                //     height: 0,
+                                //     x: xx,
+                                //     y: yy,
+                                //     top: yy,
+                                //     left: xx,
+                                //     right: xx,
+                                //     bottom: yy,
+                                // };
+                            },
+                            // getClientRects
+                            // contextElement: win.document.body,
+                            // contextElement: _highlightsContainer,
+                        };
+
+                        let _highlightsFloatingUI_: SVGElement | HTMLElement | undefined;
+                        if (paginated) {
+                            const css = win.getComputedStyle(_highlightsFloatingUI);
+                            // console.log("cssText", css.cssText);
+                            // console.log("width/height", css.width, css.height);
+                            let width = parseFloat(css.width) || 0;
+                            let height = parseFloat(css.height) || 0;
+                            const offsetWidth = _highlightsFloatingUI.offsetWidth;
+                            const offsetHeight = _highlightsFloatingUI.offsetHeight;
+                            // console.log("offsetWidth/offsetHeight", offsetWidth, offsetHeight);
+                            const shouldFallback = Math.round(width) !== offsetWidth || Math.round(height) !== offsetHeight;
+                            if (shouldFallback) {
+                                width = offsetWidth;
+                                height = offsetHeight;
+                            }
+
+                            _highlightsFloatingUI_ = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as SVGElement;
+                            // _highlightsFloatingUI_ = win.document.createElement("div");
+
+                            _highlightsFloatingUI_.setAttribute("id", ID_HIGHLIGHTS_FLOATING + "_");
+
+                            // Object.assign(_highlightsFloatingUI_.style, _highlightsFloatingUI.style);
+                            // _highlightsFloatingUI_.style.cssText = css.cssText;
+
+                            // for (const k of Object.getOwnPropertyNames(css)) {
+                            //     try {
+                            //         // @ts-expect-error index
+                            //         _highlightsFloatingUI_.style[k] = css[k];
+                            //         // @--ts-expect-error index
+                            //         // console.log("CSS OK", k, css[k]);
+                            //     } catch (_err) {
+                            //         // @---ts-expect-error index
+                            //         // console.log("CSS ERR", err, k, css[k]);
+                            //     }
+                            // }
+                            // console.log("zoom", zoom);
+                            Object.assign(_highlightsFloatingUI_.style, {
+                                width: (width / zoom) + "px",
+                                height: (height / zoom) + "px",
+                                // display: "none",
+                            });
+                            // _highlightsFloatingUI_.style.width = (width / zoom) + "px";
+                            // _highlightsFloatingUI_.style.height = (height / zoom) + "px";
+                            // console.log("_highlightsFloatingUI_.style.width", _highlightsFloatingUI_.style.width);
+                            // console.log("_highlightsFloatingUI_.style.height", _highlightsFloatingUI_.style.height);
+
+                            // _highlightsFloatingUI_.setAttribute("width", width+"");
+                            // _highlightsFloatingUI_.setAttribute("height", height+"");
+
+                            _highlightsContainer.append(_highlightsFloatingUI_);
+
+                            // const cssx = win.getComputedStyle(_highlightsFloatingUI_);
+                            // console.log("cssxText", cssx.cssText);
+                            // console.log("width/height", cssx.width, cssx.height);
+                        }
+
+                        computePosition(anchor || virtualElement, paginated ? _highlightsFloatingUI_! as unknown as HTMLElement : _highlightsFloatingUI, {
                             strategy: paginated ? "fixed" : "absolute",
                             // strategy: "absolute",
                             placement: "bottom",
                             // inline({x, y})
                             middleware: paginated ?
-                                [floatingUIMiddleware] :
-                                [floatingUIMiddleware, offsetFloat(6), flip(), shift({padding: 5})],
-                        }).then(({ x, y }) => {
+                                [floatingUIMiddleware, offsetFloat(4), flip(), shift({padding: 4})] :
+                                [floatingUIMiddleware, offsetFloat(4), flip(), shift({padding: 4})],
+                        }).then(({ x: fuix, y: fuiy }) => {
                             // const xx = x / z;
                             // const yy = y / z;
                             // const xx = x * z;
@@ -1030,8 +1146,12 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                             // const xOffset = paginated ? (-scrollElement.scrollLeft) : bodyRect.left;
                             // const yOffset = paginated ? (-scrollElement.scrollTop) : bodyRect.top;
 
-                            const xx = x;
-                            const yy = y;
+                            const xx = paginated ? (fuix - xOffset) * zoom : fuix;
+                            const yy = paginated ? (fuiy - yOffset) * zoom : fuiy;
+
+                            // const xx = fuix;
+                            // const yy = fuiy;
+
                             // const xx = paginated ? (x - xOffset) : x;
                             // const yy = paginated ? (y - yOffset) : y;
                             // const xx = paginated || win.READIUM2.isFixedLayout ?
@@ -1040,12 +1160,31 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                             // const yy = paginated || win.READIUM2.isFixedLayout ?
                             //     (y - yOffset * zoom) * scale :
                             //     y;
+
+                            // console.log(" >>>> ");
+                            // console.log("fuix, fuiy", fuix, fuiy);
+                            // console.log("xx, yy", xx, yy);
+                            // console.log(" >>>> ");
+
                             if (_highlightsFloatingUI) {
                                 Object.assign(_highlightsFloatingUI.style, {
                                     display: "block",
                                     left: `${xx}px`,
                                     top: `${yy}px`,
+                                    // zoom: "1",
                                 });
+                            }
+
+                            // if (_highlightsFloatingUI_) {
+                            //     Object.assign(_highlightsFloatingUI_.style, {
+                            //         display: "block",
+                            //         left: `${xx}px`,
+                            //         top: `${yy}px`,
+                            //     });
+                            // }
+
+                            if (_highlightsFloatingUI_) { // implies paginated
+                                _highlightsFloatingUI_.remove();
                             }
                         });
                     } else {
@@ -1108,6 +1247,7 @@ let lastMouseDownY = -1;
 let bodyEventListenersSet = false;
 let _highlightsContainer: HTMLElement | null;
 let _highlightsFloatingUI: HTMLDivElement | null;
+// let _highlightsFloatingUI_: SVGElement | null;
 function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow, _bodyComputedStyle: CSSStyleDeclaration, _rootComputedStyle: CSSStyleDeclaration): HTMLElement {
     const documant = win.document;
 
@@ -1158,16 +1298,22 @@ function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow, _bodyCompu
 
         _highlightsFloatingUI = documant.createElement("div");
         _highlightsFloatingUI.setAttribute("id", ID_HIGHLIGHTS_FLOATING);
-        // _highlightsFloatingUI.append(documant.createTextNode("sdfi lbaps ifub lkjsbdp ibas lhdvb lbas ;kdv ;kj sad;viuh[iunnnas;dviuh ;kjnnnnasjdvn ;kuh;ouhas dv n;kbuab;isubdv \n isadubv  inbsa kdjv kub  sdv\n\n ibasdv "));
         _highlightsContainer.append(_highlightsFloatingUI);
+
+        // _highlightsFloatingUI_ = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as SVGElement;
+        // // _highlightsFloatingUI_ = win.document.createElement("svg");
+        // _highlightsFloatingUI_.setAttribute("id", ID_HIGHLIGHTS_FLOATING + "_");
+        // _highlightsContainer.append(_highlightsFloatingUI_);
     }
+
+    // const inverseZoom = computeInverseZoom(bodyComputedStyle, rootComputedStyle);
+    // if (_highlightsFloatingUI_) {
+    //     _highlightsFloatingUI_.style.zoom = `${1/inverseZoom}`;
+    // }
 
     // console.log("_highlightsContainer.style.zoom BEFORE", _highlightsContainer.style.zoom);
     // const inverseZoom = computeInverseZoom(bodyComputedStyle, rootComputedStyle);
     // _highlightsContainer.style.zoom = `${inverseZoom}`;
-    // if (_highlightsFloatingUI) {
-    //     _highlightsFloatingUI.style.zoom = `${1/inverseZoom}`;
-    // }
     // console.log("_highlightsContainer.style.zoom AFTER", _highlightsContainer.style.zoom);
     return _highlightsContainer;
 }
@@ -1375,6 +1521,7 @@ export function createHighlights(
             highDef.expand,
             highDef.group,
             highDef.marginText,
+            highDef.textPopup,
             bodyRect,
             bodyComputedStyle,
             rootComputedStyle);
@@ -1586,6 +1733,7 @@ export function createHighlight(
     expand: number | undefined,
     group: string | undefined,
     marginText: string | undefined,
+    textPopup: ITextPopup | undefined,
     bodyRect: DOMRect,
     bodyComputedStyle: CSSStyleDeclaration,
     rootComputedStyle: CSSStyleDeclaration): [IHighlight, HTMLDivElement | null] | undefined {
@@ -1637,6 +1785,7 @@ export function createHighlight(
         range,
         group,
         marginText,
+        textPopup,
     };
     _highlights.push(highlight);
 
