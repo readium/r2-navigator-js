@@ -61,6 +61,15 @@ export const ENABLE_FLOATING_UI = true;
 export const ENABLE_CSS_HIGHLIGHTS = true && !!CSS.highlights;
 export const ENABLE_PAGEBREAK_MARGIN_TEXT_EXPERIMENT = false;
 
+let lastMouseDownX = -1;
+let lastMouseDownY = -1;
+let bodyEventListenersSet = false;
+let _highlightsContainer: HTMLElement | null;
+let _highlightsFloatingUI: HTMLDivElement | null;
+// let _highlightsFloatingUI_: SVGElement | null;
+let _timeoutMouseMove: number | undefined;
+const TIMEOUT_MOUSE_MS = 200;
+
 const cleanupPolygon = (polygonAccumulator: Polygon, off: number) => {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -774,6 +783,11 @@ export function getBoundingClientRectOfDocumentBody(win: ReadiumElectronWebviewW
 
 function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
 
+    if (_timeoutMouseMove) {
+        clearTimeout(_timeoutMouseMove);
+        _timeoutMouseMove = undefined;
+    }
+
     // const highlightsContainer = documant.getElementById(`${ID_HIGHLIGHTS_CONTAINER}`);
     if (!_highlightsContainer) {
         return;
@@ -862,7 +876,7 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
     }
 
     if (!hit) { // !foundHighlight || !foundElement
-        if (_highlightsFloatingUI) {
+        if (_highlightsFloatingUI && _highlightsFloatingUI.style.display !== "none") {
             _highlightsFloatingUI.style.display = "none";
             _highlightsFloatingUI.innerHTML = "";
         }
@@ -890,6 +904,17 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
 
             const text = foundHighlight.textPopup?.text ? foundHighlight.textPopup.text : undefined;
             if (text && _highlightsFloatingUI) { // && _highlightsFloatingUI_
+
+                // if (_timeoutMouseMove) {
+                //     clearTimeout(_timeoutMouseMove);
+                //     _timeoutMouseMove = undefined;
+                // }
+                _timeoutMouseMove = win.setTimeout(() => {
+                    _timeoutMouseMove = undefined;
+                    // win.requestAnimationFrame(() => {
+                    if (!_highlightsFloatingUI || !_highlightsContainer) {
+                        return;
+                    }
 
                 const dir = foundHighlight.textPopup?.dir ? foundHighlight.textPopup.dir : "ltr";
                 const lang = foundHighlight.textPopup?.lang ? foundHighlight.textPopup.lang : "en";
@@ -927,12 +952,34 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                 if (!ENABLE_FLOATING_UI) {
                     const xx = (x - xOffset) * scale;
                     const yy = (y - yOffset) * scale;
+                    // if (_timeoutMouseMove) {
+                    //     clearTimeout(_timeoutMouseMove);
+                    //     _timeoutMouseMove = undefined;
+                    // }
+                    // _timeoutMouseMove = win.setTimeout(() => {
+                    //     _timeoutMouseMove = undefined;
+                    //     if (_highlightsFloatingUI) {
+                            Object.assign(_highlightsFloatingUI.style, {
+                                display: "block",
+                                left: `${xx * zoom}px`,
+                                top: `${yy * zoom}px`,
+                            });
+                    //     }
+                    // }, TIMEOUT_MOUSE_MS);
+                } else {
+                    // win.requestAnimationFrame(() => {
+                    // if (!_highlightsFloatingUI || !_highlightsContainer) {
+                    //     return;
+                    // }
+
+                    // necessary inside timeout() no idea why (tried different methods to trigger layout, offsetWidth/Height are zero)
                     Object.assign(_highlightsFloatingUI.style, {
                         display: "block",
-                        left: `${xx * zoom}px`,
-                        top: `${yy * zoom}px`,
+                        left: "0px",
+                        top: "-999999px",
+                        opacity: "0",
                     });
-                } else {
+
                     const doDrawMargin = drawMargin(foundHighlight);
 
                     let anchor: Element | null = null;
@@ -1084,6 +1131,7 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
 
                         let _highlightsFloatingUI_: SVGElement | HTMLElement | undefined;
                         if (paginated) {
+                            // void _highlightsContainer.offsetWidth; // trigger layout, otherwise max-content not resolved inside timeout!
                             const css = win.getComputedStyle(_highlightsFloatingUI);
                             // console.log("cssText", css.cssText);
                             // console.log("width/height", css.width, css.height);
@@ -1092,6 +1140,16 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                             const offsetWidth = _highlightsFloatingUI.offsetWidth;
                             const offsetHeight = _highlightsFloatingUI.offsetHeight;
                             // console.log("offsetWidth/offsetHeight", offsetWidth, offsetHeight);
+                            // if (!offsetWidth || !offsetHeight) {
+                            //     console.log("RETRY...");
+                            //     // win.requestAnimationFrame(() => {
+                            //         // if (!_timeoutMouseMove) {
+                            //             // console.log("RETRY:");
+                            //             processMouseEvent(win, ev);
+                            //         // }
+                            //     // });
+                            //     return;
+                            // }
                             const shouldFallback = Math.round(width) !== offsetWidth || Math.round(height) !== offsetHeight;
                             if (shouldFallback) {
                                 width = offsetWidth;
@@ -1132,21 +1190,25 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                             // _highlightsFloatingUI_.setAttribute("height", height+"");
 
                             _highlightsContainer.append(_highlightsFloatingUI_);
+                            // void _highlightsContainer.offsetWidth; // trigger layout, otherwise max-content not resolved inside timeout!
 
                             // const cssx = win.getComputedStyle(_highlightsFloatingUI_);
                             // console.log("cssxText", cssx.cssText);
                             // console.log("width/height", cssx.width, cssx.height);
                         }
 
+                        // const { x: fuix, y: fuiy } = await
                         computePosition(anchor || virtualElement, paginated ? _highlightsFloatingUI_! as unknown as HTMLElement : _highlightsFloatingUI, {
                             strategy: paginated ? "fixed" : "absolute",
                             // strategy: "absolute",
                             placement: "bottom",
                             // inline({x, y})
                             middleware: paginated ?
-                                [floatingUIMiddleware, offsetFloat(4), flip(), shift({padding: 4})] :
-                                [floatingUIMiddleware, offsetFloat(4), flip(), shift({padding: 4})],
-                        }).then(({ x: fuix, y: fuiy }) => {
+                                [floatingUIMiddleware, offsetFloat(4), flip(), shift({ padding: 4 })] :
+                                [floatingUIMiddleware, offsetFloat(4), flip(), shift({ padding: 4 })],
+                        })
+                        // ;
+                        .then(({ x: fuix, y: fuiy }) => {
                             // const xx = x / z;
                             // const yy = y / z;
                             // const xx = x * z;
@@ -1175,14 +1237,24 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                             // console.log("xx, yy", xx, yy);
                             // console.log(" >>>> ");
 
+                            // if (_timeoutMouseMove) {
+                            //     clearTimeout(_timeoutMouseMove);
+                            //     _timeoutMouseMove = undefined;
+                            // }
+                            // _timeoutMouseMove = win.setTimeout(() => {
+                            //     _timeoutMouseMove = undefined;
+                            //     win.requestAnimationFrame(() => {
                             if (_highlightsFloatingUI) {
                                 Object.assign(_highlightsFloatingUI.style, {
                                     display: "block",
                                     left: `${xx}px`,
                                     top: `${yy}px`,
+                                    opacity: "1",
                                     // zoom: "1",
                                 });
                             }
+                            //     });
+                            // }, TIMEOUT_MOUSE_MS);
 
                             // if (_highlightsFloatingUI_) {
                             //     Object.assign(_highlightsFloatingUI_.style, {
@@ -1199,19 +1271,34 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                     } else {
                         const xx = (x - xOffset) * scale;
                         const yy = (y - yOffset) * scale;
-                        Object.assign(_highlightsFloatingUI.style, {
-                            display: "block",
-                            left: `${xx * zoom}px`,
-                            top: `${yy * zoom}px`,
-                        });
+
+                        // if (_timeoutMouseMove) {
+                        //     clearTimeout(_timeoutMouseMove);
+                        //     _timeoutMouseMove = undefined;
+                        // }
+                        // _timeoutMouseMove = win.setTimeout(() => {
+                        //     _timeoutMouseMove = undefined;
+                            // if (_highlightsFloatingUI) {
+                                Object.assign(_highlightsFloatingUI.style, {
+                                    display: "block",
+                                    left: `${xx * zoom}px`,
+                                    top: `${yy * zoom}px`,
+                                    opacity: "1",
+                                });
+                            // }
+                        // }, TIMEOUT_MOUSE_MS);
                     }
+                    // });
                 }
+
+                // });
+                }, TIMEOUT_MOUSE_MS);
             }
         } else if ((ev.type === "mouseup" || ev.type === "click") && foundHighlight.group !== HIGHLIGHT_GROUP_PAGEBREAK) {
             // documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR1);
             documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR2);
 
-            if (_highlightsFloatingUI) {
+            if (_highlightsFloatingUI && _highlightsFloatingUI.style.display !== "none") {
                 _highlightsFloatingUI.style.display = "none";
                 _highlightsFloatingUI.innerHTML = "";
             }
@@ -1235,7 +1322,7 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
             ipcRenderer.sendToHost(R2_EVENT_HIGHLIGHT_CLICK, payload);
         }
     } else {
-        if (_highlightsFloatingUI) {
+        if (_highlightsFloatingUI && _highlightsFloatingUI.style.display !== "none") {
             _highlightsFloatingUI.style.display = "none";
             _highlightsFloatingUI.innerHTML = "";
         }
@@ -1261,12 +1348,6 @@ const computeInverseZoom = (bodyComputedStyle: CSSStyleDeclaration, rootComputed
     return 1;
 };
 
-let lastMouseDownX = -1;
-let lastMouseDownY = -1;
-let bodyEventListenersSet = false;
-let _highlightsContainer: HTMLElement | null;
-let _highlightsFloatingUI: HTMLDivElement | null;
-// let _highlightsFloatingUI_: SVGElement | null;
 function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow, _bodyComputedStyle: CSSStyleDeclaration, _rootComputedStyle: CSSStyleDeclaration): HTMLElement {
     const documant = win.document;
 
@@ -1300,7 +1381,21 @@ function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow, _bodyCompu
                 }
             }, false);
             documant.body.addEventListener("mousemove", (ev: MouseEvent) => {
-                processMouseEvent(win, ev);
+
+                // if (_highlightsFloatingUI && _highlightsFloatingUI.style.display !== "none") {
+                //     _highlightsFloatingUI.style.display = "none";
+                //     _highlightsFloatingUI.innerHTML = "";
+                // }
+
+                // if (_timeoutMouseMove) {
+                //     clearTimeout(_timeoutMouseMove);
+                //     _timeoutMouseMove = undefined;
+                // }
+                // _timeoutMouseMove = win.setTimeout(() => {
+                //     _timeoutMouseMove = undefined;
+                    processMouseEvent(win, ev);
+                // }, TIMEOUT_MOUSE_MS);
+
             }, false);
         }
 
