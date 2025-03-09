@@ -38,8 +38,15 @@ export interface IHighlight {
     group: string | undefined;
 
     marginText?: string;
+
+    textPopup?: ITextPopup;
 }
 
+export interface ITextPopup {
+    text: string;
+    dir?: "ltr" | "rtl";
+    lang?: string;
+}
 export interface IHighlightDefinition {
     selectionInfo: ISelectionInfo | undefined;
     range?: Range;
@@ -54,6 +61,8 @@ export interface IHighlightDefinition {
     group: string | undefined;
 
     marginText?: string;
+
+    textPopup?: ITextPopup;
 }
 
 export function convertColorHexadecimalToRGBA(cssHex: string, alpha?: number): string | undefined {

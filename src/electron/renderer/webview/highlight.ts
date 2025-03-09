@@ -19,6 +19,7 @@ import {
     HighlightDrawTypeOpacityMask,
     HighlightDrawTypeOpacityMaskRuler,
     HighlightDrawTypeMarginBookmark,
+    ITextPopup,
 } from "../../common/highlight";
 import { appendCSSInline, isPaginated } from "../../common/readium-css-inject";
 import { ISelectionInfo } from "../../common/selection";
@@ -27,7 +28,7 @@ import { getScrollingElement, isVerticalWritingMode, isTwoPageSpread } from "./r
 import { convertRangeInfo } from "./selection";
 import { ReadiumElectronWebviewWindow } from "./state";
 
-import { CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CURSOR2, CLASS_HIGHLIGHT_COMMON, CLASS_HIGHLIGHT_MARGIN, CLASS_HIGHLIGHT_HOVER, CLASS_HIGHLIGHT_BEHIND, CLASS_HIGHLIGHT_COMMON_SVG, CLASS_HIGHLIGHT_MASK, CLASS_HIGHLIGHT_SVG } from "../../common/styles";
+import { CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CURSOR2, CLASS_HIGHLIGHT_COMMON, CLASS_HIGHLIGHT_MARGIN, CLASS_HIGHLIGHT_HOVER, CLASS_HIGHLIGHT_BEHIND, CLASS_HIGHLIGHT_COMMON_SVG, CLASS_HIGHLIGHT_MASK, CLASS_HIGHLIGHT_SVG, ID_HIGHLIGHTS_FLOATING } from "../../common/styles";
 
 import { isRTL } from "./readium-css";
 
@@ -49,13 +50,25 @@ Edge,
 } from "@flatten-js/core";
 const { unify, subtract } = BooleanOperations;
 
+import { computePosition, flip, shift, Middleware, offset as offsetFloat } from "@floating-ui/dom";
+
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).DEBUG_RECTS = IS_DEV && VERBOSE;
 
+export const ENABLE_FLOATING_UI = true;
 export const ENABLE_CSS_HIGHLIGHTS = true && !!CSS.highlights;
 export const ENABLE_PAGEBREAK_MARGIN_TEXT_EXPERIMENT = false;
+
+let lastMouseDownX = -1;
+let lastMouseDownY = -1;
+let bodyEventListenersSet = false;
+let _highlightsContainer: HTMLElement | null;
+let _highlightsFloatingUI: HTMLDivElement | null;
+// let _highlightsFloatingUI_: SVGElement | null;
+let _timeoutMouseMove: number | undefined;
+const TIMEOUT_MOUSE_MS = 200;
 
 const cleanupPolygon = (polygonAccumulator: Polygon, off: number) => {
 
@@ -770,6 +783,11 @@ export function getBoundingClientRectOfDocumentBody(win: ReadiumElectronWebviewW
 
 function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
 
+    if (_timeoutMouseMove) {
+        clearTimeout(_timeoutMouseMove);
+        _timeoutMouseMove = undefined;
+    }
+
     // const highlightsContainer = documant.getElementById(`${ID_HIGHLIGHTS_CONTAINER}`);
     if (!_highlightsContainer) {
         return;
@@ -858,6 +876,14 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
     }
 
     if (!hit) { // !foundHighlight || !foundElement
+        if (_highlightsFloatingUI && _highlightsFloatingUI.style.display !== "none") {
+            _highlightsFloatingUI.style.display = "none";
+            _highlightsFloatingUI.innerHTML = "";
+        }
+        // if (_highlightsFloatingUI_) {
+        //     _highlightsFloatingUI_.style.display = "none";
+        //     // _highlightsFloatingUI_.innerHTML = "";
+        // }
 
         // documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR1);
         documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR2);
@@ -876,9 +902,406 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                 documant.documentElement.classList.add(CLASS_HIGHLIGHT_CURSOR2);
             }
 
+            const text = foundHighlight.textPopup?.text ? foundHighlight.textPopup.text : undefined;
+            if (text && _highlightsFloatingUI) { // && _highlightsFloatingUI_
+
+                // if (_timeoutMouseMove) {
+                //     clearTimeout(_timeoutMouseMove);
+                //     _timeoutMouseMove = undefined;
+                // }
+                _timeoutMouseMove = win.setTimeout(() => {
+                    _timeoutMouseMove = undefined;
+                    // win.requestAnimationFrame(() => {
+                    if (!_highlightsFloatingUI || !_highlightsContainer) {
+                        return;
+                    }
+
+                const dir = foundHighlight.textPopup?.dir ? foundHighlight.textPopup.dir : "ltr";
+                const lang = foundHighlight.textPopup?.lang ? foundHighlight.textPopup.lang : "en";
+
+                // const inverseZoom = computeInverseZoom(bodyComputedStyle, rootComputedStyle);
+                // const zoom = _highlightsContainer.style.zoom ?
+                //     parseFloat(_highlightsContainer.style.zoom) :
+                //     1;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const zoom = (foundElement as any).__inverseZoom || 1;
+
+                // _highlightsFloatingUI_.innerHTML = dummytext;
+                // _highlightsFloatingUI_.style.zoom = ""+(zoom);
+
+                if (dir) {
+                    _highlightsFloatingUI.setAttribute("dir", dir);
+                } else {
+                    _highlightsFloatingUI.removeAttribute("dir");
+                }
+
+                if (lang) {
+                    _highlightsFloatingUI.setAttribute("lang", lang);
+                    _highlightsFloatingUI.setAttributeNS("http://www.w3.org/XML/1998/", "lang", lang);
+                } else {
+                    _highlightsFloatingUI.removeAttribute("lang");
+                    _highlightsFloatingUI.removeAttributeNS("http://www.w3.org/XML/1998/", "lang");
+                }
+
+                _highlightsFloatingUI.style.writingMode = "horizontal-tb";
+                // _highlightsFloatingUI.setAttribute("style", "writing-mode:horizontal-tb");
+
+                // _highlightsFloatingUI.innerHTML = text;
+                _highlightsFloatingUI.textContent = text;
+
+                if (!ENABLE_FLOATING_UI) {
+                    const xx = (x - xOffset) * scale;
+                    const yy = (y - yOffset) * scale;
+                    // if (_timeoutMouseMove) {
+                    //     clearTimeout(_timeoutMouseMove);
+                    //     _timeoutMouseMove = undefined;
+                    // }
+                    // _timeoutMouseMove = win.setTimeout(() => {
+                    //     _timeoutMouseMove = undefined;
+                    //     if (_highlightsFloatingUI) {
+                            Object.assign(_highlightsFloatingUI.style, {
+                                display: "block",
+                                left: `${xx * zoom}px`,
+                                top: `${yy * zoom}px`,
+                            });
+                    //     }
+                    // }, TIMEOUT_MOUSE_MS);
+                } else {
+                    // win.requestAnimationFrame(() => {
+                    // if (!_highlightsFloatingUI || !_highlightsContainer) {
+                    //     return;
+                    // }
+
+                    // necessary inside timeout() no idea why (tried different methods to trigger layout, offsetWidth/Height are zero)
+                    Object.assign(_highlightsFloatingUI.style, {
+                        display: "block",
+                        left: "0px",
+                        top: "-999999px",
+                        opacity: "0",
+                    });
+
+                    const doDrawMargin = drawMargin(foundHighlight);
+
+                    let anchor: Element | null = null;
+                    if (doDrawMargin) {
+                        anchor = foundElement.querySelector("svg.R2_CLASS_HIGHLIGHT_CONTOUR_MARGIN > path");
+                    } else {
+                        // anchor = foundElement.querySelector("svg.R2_CLASS_HIGHLIGHT_CONTOUR > path");
+                        const all = foundElement.querySelectorAll("svg.R2_CLASS_HIGHLIGHT_CONTOUR > path");
+                        // console.log("querySelectorAll -------- ", all?.length);
+                        if (all?.length > 0) {
+                            anchor = all[all?.length - 1];
+                        }
+                    }
+                    if (anchor) {
+                        const floatingUIMiddleware = {
+                            name: "floatingUIMiddleware",
+                            fn({ x: fuix, y: fuiy }) {
+                                // rects.reference.x *= zoom;
+                                // rects.reference.y *= zoom;
+                                // rects.reference.width *= zoom;
+                                // rects.reference.height *= zoom;
+
+                                // rects.floating.x *= zoom;
+                                // rects.floating.y *= zoom;
+                                // rects.floating.width *= zoom;
+                                // rects.floating.height *= zoom;
+
+                                // rects.reference.x /= zoom;
+                                // rects.reference.y /= zoom;
+                                // rects.reference.width /= zoom;
+                                // rects.reference.height /= zoom;
+
+                                // rects.floating.x /= zoom;
+                                // rects.floating.y /= zoom;
+                                // rects.floating.width /= zoom;
+                                // rects.floating.height /= zoom;
+
+                                // const xx = paginated ? (fuix - xOffset) * zoom : fuix;
+                                // const yy = paginated ? (fuiy - yOffset) * zoom : fuiy;
+
+                                const xx = fuix;
+                                const yy = fuiy;
+
+                                // console.log(" -------- ");
+                                // console.log("zoom", zoom);
+                                // console.log("x, y", x, y);
+                                // console.log("fuix, fuiy", fuix, fuiy);
+                                // console.log("xx, yy", xx, yy);
+                                // console.log("rects.reference", rects.reference.x, rects.reference.y, rects.reference.width, rects.reference.height);
+                                // console.log("rects.floating", rects.floating.x, rects.floating.y, rects.floating.width, rects.floating.height);
+                                // console.log("bodyRect.left", bodyRect.left);
+                                // console.log("bodyRect.top", bodyRect.top);
+                                // console.log("xOffset", xOffset);
+                                // console.log("yOffset", yOffset);
+                                // console.log(" -------- ");
+
+                                return {
+                                    x: xx,
+                                    y: yy,
+                                };
+                            },
+                        } satisfies Middleware;
+
+                        const paginated = isPaginated(documant);
+                        const virtualElement =
+                        {
+                            getBoundingClientRect() {
+                                // const bb = anchor.getBoundingClientRect();
+                                // return {
+                                //     width: bb.width / z,
+                                //     height: bb.height / z,
+                                //     x: bb.x / z,
+                                //     y: bb.y / z,
+                                //     top: bb.top / z,
+                                //     left: bb.left / z,
+                                //     right: bb.right / z,
+                                //     bottom: bb.bottom / z,
+                                // };
+                                // return {
+                                //     width: bb.width * z,
+                                //     height: bb.height * z,
+                                //     x: bb.x * z,
+                                //     y: bb.y * z,
+                                //     top: bb.top * z,
+                                //     left: bb.left * z,
+                                //     right: bb.right * z,
+                                //     bottom: bb.bottom * z,
+                                // };
+                                // return {
+                                //     width: bb.width,
+                                //     height: bb.height,
+                                //     x: bb.x,
+                                //     y: bb.y,
+                                //     top: bb.top,
+                                //     left: bb.left,
+                                //     right: bb.right,
+                                //     bottom: bb.bottom,
+                                // };
+                                return {
+                                    width: 0,
+                                    height: 0,
+                                    x: x,
+                                    y: y,
+                                    top: y,
+                                    left: x,
+                                    right: x,
+                                    bottom: y,
+                                };
+                                // return {
+                                //     width: 0,
+                                //     height: 0,
+                                //     x: x / z,
+                                //     y: y / z,
+                                //     top: y / z,
+                                //     left: x / z,
+                                //     right: x / z,
+                                //     bottom: y / z,
+                                // };
+                                // return {
+                                //     width: 0,
+                                //     height: 0,
+                                //     x: x * z,
+                                //     y: y * z,
+                                //     top: y * z,
+                                //     left: x * z,
+                                //     right: x * z,
+                                //     bottom: y * z,
+                                // };
+
+                                // const xx = (x - xOffset) * scale;
+                                // const yy = (y - yOffset) * scale;
+                                // // const xx = (x / z - xOffset) * scale;
+                                // // const yy = (y / z - yOffset) * scale;
+                                // return {
+                                //     width: 0,
+                                //     height: 0,
+                                //     x: xx,
+                                //     y: yy,
+                                //     top: yy,
+                                //     left: xx,
+                                //     right: xx,
+                                //     bottom: yy,
+                                // };
+                            },
+                            // getClientRects
+                            // contextElement: win.document.body,
+                            // contextElement: _highlightsContainer,
+                        };
+
+                        let _highlightsFloatingUI_: SVGElement | HTMLElement | undefined;
+                        if (paginated) {
+                            // void _highlightsContainer.offsetWidth; // trigger layout, otherwise max-content not resolved inside timeout!
+                            const css = win.getComputedStyle(_highlightsFloatingUI);
+                            // console.log("cssText", css.cssText);
+                            // console.log("width/height", css.width, css.height);
+                            let width = parseFloat(css.width) || 0;
+                            let height = parseFloat(css.height) || 0;
+                            const offsetWidth = _highlightsFloatingUI.offsetWidth;
+                            const offsetHeight = _highlightsFloatingUI.offsetHeight;
+                            // console.log("offsetWidth/offsetHeight", offsetWidth, offsetHeight);
+                            // if (!offsetWidth || !offsetHeight) {
+                            //     console.log("RETRY...");
+                            //     // win.requestAnimationFrame(() => {
+                            //         // if (!_timeoutMouseMove) {
+                            //             // console.log("RETRY:");
+                            //             processMouseEvent(win, ev);
+                            //         // }
+                            //     // });
+                            //     return;
+                            // }
+                            const shouldFallback = Math.round(width) !== offsetWidth || Math.round(height) !== offsetHeight;
+                            if (shouldFallback) {
+                                width = offsetWidth;
+                                height = offsetHeight;
+                            }
+
+                            _highlightsFloatingUI_ = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as SVGElement;
+                            // _highlightsFloatingUI_ = win.document.createElement("div");
+
+                            _highlightsFloatingUI_.setAttribute("id", ID_HIGHLIGHTS_FLOATING + "_");
+
+                            // Object.assign(_highlightsFloatingUI_.style, _highlightsFloatingUI.style);
+                            // _highlightsFloatingUI_.style.cssText = css.cssText;
+
+                            // for (const k of Object.getOwnPropertyNames(css)) {
+                            //     try {
+                            //         // @ts-expect-error index
+                            //         _highlightsFloatingUI_.style[k] = css[k];
+                            //         // @--ts-expect-error index
+                            //         // console.log("CSS OK", k, css[k]);
+                            //     } catch (_err) {
+                            //         // @---ts-expect-error index
+                            //         // console.log("CSS ERR", err, k, css[k]);
+                            //     }
+                            // }
+                            // console.log("zoom", zoom);
+                            Object.assign(_highlightsFloatingUI_.style, {
+                                width: (width / zoom) + "px",
+                                height: (height / zoom) + "px",
+                                // display: "none",
+                            });
+                            // _highlightsFloatingUI_.style.width = (width / zoom) + "px";
+                            // _highlightsFloatingUI_.style.height = (height / zoom) + "px";
+                            // console.log("_highlightsFloatingUI_.style.width", _highlightsFloatingUI_.style.width);
+                            // console.log("_highlightsFloatingUI_.style.height", _highlightsFloatingUI_.style.height);
+
+                            // _highlightsFloatingUI_.setAttribute("width", width+"");
+                            // _highlightsFloatingUI_.setAttribute("height", height+"");
+
+                            _highlightsContainer.append(_highlightsFloatingUI_);
+                            // void _highlightsContainer.offsetWidth; // trigger layout, otherwise max-content not resolved inside timeout!
+
+                            // const cssx = win.getComputedStyle(_highlightsFloatingUI_);
+                            // console.log("cssxText", cssx.cssText);
+                            // console.log("width/height", cssx.width, cssx.height);
+                        }
+
+                        // const { x: fuix, y: fuiy } = await
+                        computePosition(anchor || virtualElement, paginated ? _highlightsFloatingUI_! as unknown as HTMLElement : _highlightsFloatingUI, {
+                            strategy: paginated ? "fixed" : "absolute",
+                            // strategy: "absolute",
+                            placement: "bottom",
+                            // inline({x, y})
+                            middleware: paginated ?
+                                [floatingUIMiddleware, offsetFloat(4), flip(), shift({ padding: 4 })] :
+                                [floatingUIMiddleware, offsetFloat(4), flip(), shift({ padding: 4 })],
+                        })
+                        // ;
+                        .then(({ x: fuix, y: fuiy }) => {
+                            // const xx = x / z;
+                            // const yy = y / z;
+                            // const xx = x * z;
+                            // const yy = y * z;
+
+                            // const xOffset = paginated ? (-scrollElement.scrollLeft) : bodyRect.left;
+                            // const yOffset = paginated ? (-scrollElement.scrollTop) : bodyRect.top;
+
+                            const xx = paginated ? (fuix - xOffset) * zoom : fuix;
+                            const yy = paginated ? (fuiy - yOffset) * zoom : fuiy;
+
+                            // const xx = fuix;
+                            // const yy = fuiy;
+
+                            // const xx = paginated ? (x - xOffset) : x;
+                            // const yy = paginated ? (y - yOffset) : y;
+                            // const xx = paginated || win.READIUM2.isFixedLayout ?
+                            //     (x - xOffset * zoom) * scale :
+                            //     x;
+                            // const yy = paginated || win.READIUM2.isFixedLayout ?
+                            //     (y - yOffset * zoom) * scale :
+                            //     y;
+
+                            // console.log(" >>>> ");
+                            // console.log("fuix, fuiy", fuix, fuiy);
+                            // console.log("xx, yy", xx, yy);
+                            // console.log(" >>>> ");
+
+                            // if (_timeoutMouseMove) {
+                            //     clearTimeout(_timeoutMouseMove);
+                            //     _timeoutMouseMove = undefined;
+                            // }
+                            // _timeoutMouseMove = win.setTimeout(() => {
+                            //     _timeoutMouseMove = undefined;
+                            //     win.requestAnimationFrame(() => {
+                            if (_highlightsFloatingUI) {
+                                Object.assign(_highlightsFloatingUI.style, {
+                                    display: "block",
+                                    left: `${xx}px`,
+                                    top: `${yy}px`,
+                                    opacity: "1",
+                                    // zoom: "1",
+                                });
+                            }
+                            //     });
+                            // }, TIMEOUT_MOUSE_MS);
+
+                            // if (_highlightsFloatingUI_) {
+                            //     Object.assign(_highlightsFloatingUI_.style, {
+                            //         display: "block",
+                            //         left: `${xx}px`,
+                            //         top: `${yy}px`,
+                            //     });
+                            // }
+
+                            if (_highlightsFloatingUI_) { // implies paginated
+                                _highlightsFloatingUI_.remove();
+                            }
+                        });
+                    } else {
+                        const xx = (x - xOffset) * scale;
+                        const yy = (y - yOffset) * scale;
+
+                        // if (_timeoutMouseMove) {
+                        //     clearTimeout(_timeoutMouseMove);
+                        //     _timeoutMouseMove = undefined;
+                        // }
+                        // _timeoutMouseMove = win.setTimeout(() => {
+                        //     _timeoutMouseMove = undefined;
+                            // if (_highlightsFloatingUI) {
+                                Object.assign(_highlightsFloatingUI.style, {
+                                    display: "block",
+                                    left: `${xx * zoom}px`,
+                                    top: `${yy * zoom}px`,
+                                    opacity: "1",
+                                });
+                            // }
+                        // }, TIMEOUT_MOUSE_MS);
+                    }
+                    // });
+                }
+
+                // });
+                }, TIMEOUT_MOUSE_MS);
+            }
         } else if ((ev.type === "mouseup" || ev.type === "click") && foundHighlight.group !== HIGHLIGHT_GROUP_PAGEBREAK) {
             // documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR1);
             documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR2);
+
+            if (_highlightsFloatingUI && _highlightsFloatingUI.style.display !== "none") {
+                _highlightsFloatingUI.style.display = "none";
+                _highlightsFloatingUI.innerHTML = "";
+            }
 
             ev.preventDefault();
             ev.stopPropagation();
@@ -898,13 +1321,18 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
             };
             ipcRenderer.sendToHost(R2_EVENT_HIGHLIGHT_CLICK, payload);
         }
+    } else {
+        if (_highlightsFloatingUI && _highlightsFloatingUI.style.display !== "none") {
+            _highlightsFloatingUI.style.display = "none";
+            _highlightsFloatingUI.innerHTML = "";
+        }
     }
 }
 
 const computeInverseZoom = (bodyComputedStyle: CSSStyleDeclaration, rootComputedStyle: CSSStyleDeclaration): number => {
     let zoomStr = rootComputedStyle.zoom;
     // console.log("rootComputedStyle.zoom", rootComputedStyle.zoom);
-    if (!rootComputedStyle.zoom || rootComputedStyle.zoom === "1") {
+    if (!zoomStr || zoomStr === "1") {
         zoomStr = bodyComputedStyle.zoom;
         // console.log("bodyComputedStyle.zoom", bodyComputedStyle.zoom);
     }
@@ -920,11 +1348,7 @@ const computeInverseZoom = (bodyComputedStyle: CSSStyleDeclaration, rootComputed
     return 1;
 };
 
-let lastMouseDownX = -1;
-let lastMouseDownY = -1;
-let bodyEventListenersSet = false;
-let _highlightsContainer: HTMLElement | null;
-function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow, bodyComputedStyle: CSSStyleDeclaration, rootComputedStyle: CSSStyleDeclaration): HTMLElement {
+function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow, _bodyComputedStyle: CSSStyleDeclaration, _rootComputedStyle: CSSStyleDeclaration): HTMLElement {
     const documant = win.document;
 
     if (!_highlightsContainer) {
@@ -957,7 +1381,21 @@ function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow, bodyComput
                 }
             }, false);
             documant.body.addEventListener("mousemove", (ev: MouseEvent) => {
-                processMouseEvent(win, ev);
+
+                // if (_highlightsFloatingUI && _highlightsFloatingUI.style.display !== "none") {
+                //     _highlightsFloatingUI.style.display = "none";
+                //     _highlightsFloatingUI.innerHTML = "";
+                // }
+
+                // if (_timeoutMouseMove) {
+                //     clearTimeout(_timeoutMouseMove);
+                //     _timeoutMouseMove = undefined;
+                // }
+                // _timeoutMouseMove = win.setTimeout(() => {
+                //     _timeoutMouseMove = undefined;
+                    processMouseEvent(win, ev);
+                // }, TIMEOUT_MOUSE_MS);
+
             }, false);
         }
 
@@ -970,11 +1408,26 @@ function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow, bodyComput
             `width: ${win.READIUM2.isFixedLayout ? "-webkit-fill-available" : "auto"} !important; ` +
             `height: ${win.READIUM2.isFixedLayout ? "-webkit-fill-available" : "auto"} !important; `);
         documant.body.append(_highlightsContainer);
+
+
+        _highlightsFloatingUI = documant.createElement("div");
+        _highlightsFloatingUI.setAttribute("id", ID_HIGHLIGHTS_FLOATING);
+        _highlightsContainer.append(_highlightsFloatingUI);
+
+        // _highlightsFloatingUI_ = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as SVGElement;
+        // // _highlightsFloatingUI_ = win.document.createElement("svg");
+        // _highlightsFloatingUI_.setAttribute("id", ID_HIGHLIGHTS_FLOATING + "_");
+        // _highlightsContainer.append(_highlightsFloatingUI_);
     }
 
+    // const inverseZoom = computeInverseZoom(bodyComputedStyle, rootComputedStyle);
+    // if (_highlightsFloatingUI_) {
+    //     _highlightsFloatingUI_.style.zoom = `${1/inverseZoom}`;
+    // }
+
     // console.log("_highlightsContainer.style.zoom BEFORE", _highlightsContainer.style.zoom);
-    const inverseZoom = computeInverseZoom(bodyComputedStyle, rootComputedStyle);
-    _highlightsContainer.style.zoom = `${inverseZoom}`;
+    // const inverseZoom = computeInverseZoom(bodyComputedStyle, rootComputedStyle);
+    // _highlightsContainer.style.zoom = `${inverseZoom}`;
     // console.log("_highlightsContainer.style.zoom AFTER", _highlightsContainer.style.zoom);
     return _highlightsContainer;
 }
@@ -1182,6 +1635,7 @@ export function createHighlights(
             highDef.expand,
             highDef.group,
             highDef.marginText,
+            highDef.textPopup,
             bodyRect,
             bodyComputedStyle,
             rootComputedStyle);
@@ -1393,6 +1847,7 @@ export function createHighlight(
     expand: number | undefined,
     group: string | undefined,
     marginText: string | undefined,
+    textPopup: ITextPopup | undefined,
     bodyRect: DOMRect,
     bodyComputedStyle: CSSStyleDeclaration,
     rootComputedStyle: CSSStyleDeclaration): [IHighlight, HTMLDivElement | null] | undefined {
@@ -1444,6 +1899,7 @@ export function createHighlight(
         range,
         group,
         marginText,
+        textPopup,
     };
     _highlights.push(highlight);
 
@@ -1549,10 +2005,10 @@ function createHighlightDom(
 
     const doDrawMargin = drawMargin(highlight);
 
-    const underlineThickness = 4;
-    const strikeThroughLineThickness = 4;
-
     const inverseZoom = computeInverseZoom(bodyComputedStyle, rootComputedStyle);
+
+    const underlineThickness = 3 / inverseZoom;
+    const strikeThroughLineThickness = 3 / inverseZoom;
 
     if (ENABLE_CSS_HIGHLIGHTS && !doDrawMargin && !rangeHasSVG && (drawBackground || (drawUnderline && !isVWM) || (drawStrikeThrough && !isVWM))) {
         highlight.rangeCssHighlight = range;
@@ -1678,6 +2134,10 @@ https://blackorwhite.lloydk.ca
         // highlightParent.setAttribute("data-margin", "true");
         highlightParent.classList.add(CLASS_HIGHLIGHT_MARGIN);
     }
+
+    // highlightParent.dataset.zoom
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (highlightParent as any).__inverseZoom = inverseZoom;
 
     // const styleAttr = win.document.documentElement.getAttribute("style");
     // const isNight = styleAttr ? styleAttr.indexOf("readium-night-on") > 0 : false;
@@ -2189,7 +2649,7 @@ https://blackorwhite.lloydk.ca
         // highlightMaskBaseSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON} ${CLASS_HIGHLIGHT_SVG}`);
         // highlightMaskBaseSVG.polygon = polygonMaskBaseUnionPoly;
 
-        // const svgPathMaskBase = polygonMaskBaseUnionPoly.svg({
+        // const svgPathMaskBase = polygonMaskBaseUnionPoly.scale(inverseZoom, inverseZoom).svg({
         //     // fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
         //     fill: "yellow",
         //     fillRule: "evenodd",
@@ -2452,7 +2912,7 @@ https://blackorwhite.lloydk.ca
             rsForeground = rootComputedStyle.getPropertyValue("--RS__textColor");
         }
 
-        const svgPathMask = highlightMaskSVG.polygon.svg({
+        const svgPathMask = highlightMaskSVG.polygon.scale(inverseZoom, inverseZoom).svg({
             fillRule: "evenodd",
             // fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
             fill: rsBackground ? rsBackground : "white",
@@ -2646,17 +3106,17 @@ https://blackorwhite.lloydk.ca
     // highlightAreaSVG.polygon = polygonSurface;
     highlightAreaSVG.polygon = polygonCountourUnionPoly; // TODO: gap expansion too generous for hit testing?
 
-    let outlineThickness = 2;
-    let usrFontSize = bodyComputedStyle.getPropertyValue("--USER__fontSize");
-    if (usrFontSize) {
-        usrFontSize = usrFontSize.replace("%", "");
-        try {
-            const factor = parseInt(usrFontSize, 10) / 100;
-            outlineThickness = outlineThickness * factor;
-        } catch (_e) {
-            // ignore
-        }
-    }
+    const outlineThickness = 2;
+    // let usrFontSize = bodyComputedStyle.getPropertyValue("--USER__fontSize");
+    // if (usrFontSize) {
+    //     usrFontSize = usrFontSize.replace("%", "");
+    //     try {
+    //         const factor = parseInt(usrFontSize, 10) / 100;
+    //         outlineThickness = outlineThickness * factor;
+    //     } catch (_e) {
+    //         // ignore
+    //     }
+    // }
 
     // const styleAttr = win.document.documentElement.getAttribute("style");
     // const isUserFontSize = styleAttr ? styleAttr.indexOf("--USER__fontSize") >= 0 : false;
@@ -2664,14 +3124,14 @@ https://blackorwhite.lloydk.ca
     //     // const docStyle = win.getComputedStyle(win.document.documentElement);
     // }
 
-    // highlightAreaSVG.append((new DOMParser()​​.parseFromString(`<svg xmlns="${SVG_XML_NAMESPACE}">${polys.svg()}</svg>`, "image/svg+xml")).firstChild);
+    // highlightAreaSVG.append((new DOMParser()​​.parseFromString(`<svg xmlns="${SVG_XML_NAMESPACE}">${polys.scale(inverseZoom, inverseZoom).svg()}</svg>`, "image/svg+xml")).firstChild);
     highlightAreaSVG.innerHTML =
     (polygonSurface ?
     (
     Array.isArray(polygonSurface)
     ?
     polygonSurface.reduce((prevSVGPath, currentPolygon) => {
-        return prevSVGPath + currentPolygon.svg({
+        return prevSVGPath + currentPolygon.scale(inverseZoom, inverseZoom).svg({
             fill: DEBUG_RECTS ? "pink" : (drawOutline || highlight.rangeCssHighlight) ? "transparent" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
             fillRule: "evenodd",
             stroke: DEBUG_RECTS ? "magenta" : drawOutline ? `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` : "transparent",
@@ -2682,7 +3142,7 @@ https://blackorwhite.lloydk.ca
         });
     }, "")
     :
-    polygonSurface.svg({
+    polygonSurface.scale(inverseZoom, inverseZoom).svg({
         fill: DEBUG_RECTS ? "yellow" : (drawOutline || highlight.rangeCssHighlight) ? "transparent" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
         fillRule: "evenodd",
         stroke: DEBUG_RECTS ? "green" : drawOutline ? `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` : "transparent",
@@ -2693,7 +3153,7 @@ https://blackorwhite.lloydk.ca
     })
     ) : "")
     +
-    polygonCountourUnionPoly.svg({
+    polygonCountourUnionPoly.scale(inverseZoom, inverseZoom).svg({
         fill: "transparent",
         fillRule: "evenodd",
         stroke: DEBUG_RECTS ? "red" : "transparent",
@@ -2925,7 +3385,7 @@ https://blackorwhite.lloydk.ca
         const highlightMarginSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
         highlightMarginSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON} ${CLASS_HIGHLIGHT_CONTOUR_MARGIN}`);
         highlightMarginSVG.polygon = polygonMarginUnionPoly;
-        const svgPath = polygonMarginUnionPoly.svg({
+        const svgPath = polygonMarginUnionPoly.scale(inverseZoom, inverseZoom).svg({
             fillRule: "evenodd",
             fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
             stroke: "transparent",
