@@ -906,11 +906,20 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
 
                 if (dir) {
                     _highlightsFloatingUI.setAttribute("dir", dir);
+                } else {
+                    _highlightsFloatingUI.removeAttribute("dir");
                 }
+
                 if (lang) {
                     _highlightsFloatingUI.setAttribute("lang", lang);
                     _highlightsFloatingUI.setAttributeNS("http://www.w3.org/XML/1998/", "lang", lang);
+                } else {
+                    _highlightsFloatingUI.removeAttribute("lang");
+                    _highlightsFloatingUI.removeAttributeNS("http://www.w3.org/XML/1998/", "lang");
                 }
+
+                _highlightsFloatingUI.style.writingMode = "horizontal-tb";
+                // _highlightsFloatingUI.setAttribute("style", "writing-mode:horizontal-tb");
 
                 // _highlightsFloatingUI.innerHTML = text;
                 _highlightsFloatingUI.textContent = text;
@@ -1202,6 +1211,11 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
             // documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR1);
             documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR2);
 
+            if (_highlightsFloatingUI) {
+                _highlightsFloatingUI.style.display = "none";
+                _highlightsFloatingUI.innerHTML = "";
+            }
+
             ev.preventDefault();
             ev.stopPropagation();
 
@@ -1219,6 +1233,11 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                 },
             };
             ipcRenderer.sendToHost(R2_EVENT_HIGHLIGHT_CLICK, payload);
+        }
+    } else {
+        if (_highlightsFloatingUI) {
+            _highlightsFloatingUI.style.display = "none";
+            _highlightsFloatingUI.innerHTML = "";
         }
     }
 }
