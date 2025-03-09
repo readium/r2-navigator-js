@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.20.6...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.20.7...develop
 
 Changes:
 * TODO
+
+# 1.20.7
+
+> Build environment: NodeJS `22.12.0`, NPM `11.1.0`
+
+Changes:
+* Feature: annotation and bookmark highlights with floating popup for meta text information on hover
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.20.7/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.20.7/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.20.7
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.20.6...v1.20.7
 
 # 1.20.6
 
