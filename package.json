@@ -46,6 +46,7 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@flatten-js/polygon-offset": "^1.1.4",
+    "@floating-ui/dom": "^1.6.13",
     "@xmldom/xmldom": "^0.9.8",
     "css.escape": "^1.5.1",
     "cssesc": "^3.0.0",
@@ -68,7 +69,7 @@
     "@medv/finder": "^4.0.2",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.0",
-    "@types/node": "^22.13.9",
+    "@types/node": "^22.13.10",
     "@types/request": "^2.48.12",
     "@types/request-promise-native": "^1.0.21",
     "@types/urijs": "^1.19.25",
@@ -155,7 +156,7 @@
       "style": "module"
     }
   },
-  "overrides": {
+  "overrides__": {
     "@typescript-eslint/parser": {
       "typescript": "^5.8.2"
     },

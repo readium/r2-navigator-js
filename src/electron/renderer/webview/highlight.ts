@@ -27,7 +27,7 @@ import { getScrollingElement, isVerticalWritingMode, isTwoPageSpread } from "./r
 import { convertRangeInfo } from "./selection";
 import { ReadiumElectronWebviewWindow } from "./state";
 
-import { CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CURSOR2, CLASS_HIGHLIGHT_COMMON, CLASS_HIGHLIGHT_MARGIN, CLASS_HIGHLIGHT_HOVER, CLASS_HIGHLIGHT_BEHIND, CLASS_HIGHLIGHT_COMMON_SVG, CLASS_HIGHLIGHT_MASK, CLASS_HIGHLIGHT_SVG } from "../../common/styles";
+import { CLASS_HIGHLIGHT_CONTOUR, CLASS_HIGHLIGHT_CONTOUR_MARGIN, ID_HIGHLIGHTS_CONTAINER, CLASS_HIGHLIGHT_CONTAINER, CLASS_HIGHLIGHT_CURSOR2, CLASS_HIGHLIGHT_COMMON, CLASS_HIGHLIGHT_MARGIN, CLASS_HIGHLIGHT_HOVER, CLASS_HIGHLIGHT_BEHIND, CLASS_HIGHLIGHT_COMMON_SVG, CLASS_HIGHLIGHT_MASK, CLASS_HIGHLIGHT_SVG, ID_HIGHLIGHTS_FLOATING } from "../../common/styles";
 
 import { isRTL } from "./readium-css";
 
@@ -49,12 +49,15 @@ Edge,
 } from "@flatten-js/core";
 const { unify, subtract } = BooleanOperations;
 
+import { computePosition, flip, shift, offset as offsetFloat, Middleware } from "@floating-ui/dom";
+
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).DEBUG_RECTS = IS_DEV && VERBOSE;
 
-export const ENABLE_CSS_HIGHLIGHTS = true && !!CSS.highlights;
+export const ENABLE_FLOATING_UI = true;
+export const ENABLE_CSS_HIGHLIGHTS = false && !!CSS.highlights;
 export const ENABLE_PAGEBREAK_MARGIN_TEXT_EXPERIMENT = false;
 
 const cleanupPolygon = (polygonAccumulator: Polygon, off: number) => {
@@ -858,6 +861,10 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
     }
 
     if (!hit) { // !foundHighlight || !foundElement
+        if (_highlightsFloatingUI) {
+            _highlightsFloatingUI.style.display = "none";
+            _highlightsFloatingUI.innerHTML = "";
+        }
 
         // documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR1);
         documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR2);
@@ -876,6 +883,182 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                 documant.documentElement.classList.add(CLASS_HIGHLIGHT_CURSOR2);
             }
 
+            if (_highlightsFloatingUI) {
+                _highlightsFloatingUI.innerHTML = "sadflj ljhbs bdp;fub ;aksudgf\n\n\n ;bbbasd;ckuh ;kjbsabdbv;iugas ;dkjb casd;viug ;kb;ksadbv;u b";
+
+                // const inverseZoom = computeInverseZoom(bodyComputedStyle, rootComputedStyle);
+                // const zoom = _highlightsContainer.style.zoom ?
+                //     parseFloat(_highlightsContainer.style.zoom) :
+                //     1;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const zoom = (foundElement as any).__inverseZoom || 1;
+
+                if (!ENABLE_FLOATING_UI) {
+                    const xx = (x - xOffset) * scale;
+                    const yy = (y - yOffset) * scale;
+                    Object.assign(_highlightsFloatingUI.style, {
+                        display: "block",
+                        left: `${xx * zoom}px`,
+                        top: `${yy * zoom}px`,
+                    });
+                } else {
+                    const doDrawMargin = drawMargin(foundHighlight);
+                    let anchor = doDrawMargin ?
+                        foundElement.querySelector("svg.R2_CLASS_HIGHLIGHT_CONTOUR_MARGIN > path") :
+                        foundElement.querySelector("svg.R2_CLASS_HIGHLIGHT_CONTOUR > path");
+
+                    if (!anchor && doDrawMargin) {
+                        anchor = foundElement.querySelector("svg.R2_CLASS_HIGHLIGHT_CONTOUR > path");
+                    }
+                    if (anchor) {
+                        const floatingUIMiddleware = {
+                            name: "floatingUIMiddleware",
+                            fn({ x, y, rects }) {
+                                console.log(" -------- ");
+                                console.log("zoom", zoom);
+                                console.log("x, y", x, y);
+                                console.log("rects.reference", rects.reference.x, rects.reference.y, rects.reference.width, rects.reference.height);
+                                console.log("rects.floating", rects.floating.x, rects.floating.y, rects.floating.width, rects.floating.height);
+                                console.log(" -------- ");
+
+                                return {
+                                    x: paginated ? (x - xOffset * zoom) : x,
+                                    y: paginated ? (y - yOffset * zoom) : y,
+                                };
+                            },
+                        } satisfies Middleware;
+
+                        const paginated = isPaginated(documant);
+                        // const virtualElement =
+                        // {
+                        //     getBoundingClientRect() {
+                        //         // const bb = anchor.getBoundingClientRect();
+                        //         // return {
+                        //         //     width: bb.width / z,
+                        //         //     height: bb.height / z,
+                        //         //     x: bb.x / z,
+                        //         //     y: bb.y / z,
+                        //         //     top: bb.top / z,
+                        //         //     left: bb.left / z,
+                        //         //     right: bb.right / z,
+                        //         //     bottom: bb.bottom / z,
+                        //         // };
+                        //         // return {
+                        //         //     width: bb.width * z,
+                        //         //     height: bb.height * z,
+                        //         //     x: bb.x * z,
+                        //         //     y: bb.y * z,
+                        //         //     top: bb.top * z,
+                        //         //     left: bb.left * z,
+                        //         //     right: bb.right * z,
+                        //         //     bottom: bb.bottom * z,
+                        //         // };
+                        //         // return {
+                        //         //     width: bb.width,
+                        //         //     height: bb.height,
+                        //         //     x: bb.x,
+                        //         //     y: bb.y,
+                        //         //     top: bb.top,
+                        //         //     left: bb.left,
+                        //         //     right: bb.right,
+                        //         //     bottom: bb.bottom,
+                        //         // };
+                        //         return {
+                        //             width: 0,
+                        //             height: 0,
+                        //             x: x,
+                        //             y: y,
+                        //             top: y,
+                        //             left: x,
+                        //             right: x,
+                        //             bottom: y,
+                        //         };
+                        //         // return {
+                        //         //     width: 0,
+                        //         //     height: 0,
+                        //         //     x: x / z,
+                        //         //     y: y / z,
+                        //         //     top: y / z,
+                        //         //     left: x / z,
+                        //         //     right: x / z,
+                        //         //     bottom: y / z,
+                        //         // };
+                        //         // return {
+                        //         //     width: 0,
+                        //         //     height: 0,
+                        //         //     x: x * z,
+                        //         //     y: y * z,
+                        //         //     top: y * z,
+                        //         //     left: x * z,
+                        //         //     right: x * z,
+                        //         //     bottom: y * z,
+                        //         // };
+
+                        //         // const xx = (x - xOffset) * scale;
+                        //         // const yy = (y - yOffset) * scale;
+                        //         // // const xx = (x / z - xOffset) * scale;
+                        //         // // const yy = (y / z - yOffset) * scale;
+                        //         // return {
+                        //         //     width: 0,
+                        //         //     height: 0,
+                        //         //     x: xx,
+                        //         //     y: yy,
+                        //         //     top: yy,
+                        //         //     left: xx,
+                        //         //     right: xx,
+                        //         //     bottom: yy,
+                        //         // };
+                        //     },
+                        //     // getClientRects
+                        //     // contextElement: win.document.body,
+                        //     // contextElement: _highlightsContainer,
+                        // };
+                        computePosition(anchor, _highlightsFloatingUI, {
+                            strategy: paginated ? "fixed" : "absolute",
+                            // strategy: "absolute",
+                            placement: "bottom",
+                            // inline({x, y})
+                            middleware: paginated ?
+                                [floatingUIMiddleware] :
+                                [floatingUIMiddleware, offsetFloat(6), flip(), shift({padding: 5})],
+                        }).then(({ x, y }) => {
+                            // const xx = x / z;
+                            // const yy = y / z;
+                            // const xx = x * z;
+                            // const yy = y * z;
+
+                            // const xOffset = paginated ? (-scrollElement.scrollLeft) : bodyRect.left;
+                            // const yOffset = paginated ? (-scrollElement.scrollTop) : bodyRect.top;
+
+                            const xx = x;
+                            const yy = y;
+                            // const xx = paginated ? (x - xOffset) : x;
+                            // const yy = paginated ? (y - yOffset) : y;
+                            // const xx = paginated || win.READIUM2.isFixedLayout ?
+                            //     (x - xOffset * zoom) * scale :
+                            //     x;
+                            // const yy = paginated || win.READIUM2.isFixedLayout ?
+                            //     (y - yOffset * zoom) * scale :
+                            //     y;
+                            if (_highlightsFloatingUI) {
+                                Object.assign(_highlightsFloatingUI.style, {
+                                    display: "block",
+                                    left: `${xx}px`,
+                                    top: `${yy}px`,
+                                });
+                            }
+                        });
+                    } else {
+                        const xx = (x - xOffset) * scale;
+                        const yy = (y - yOffset) * scale;
+                        Object.assign(_highlightsFloatingUI.style, {
+                            display: "block",
+                            left: `${xx * zoom}px`,
+                            top: `${yy * zoom}px`,
+                        });
+                    }
+                }
+            }
         } else if ((ev.type === "mouseup" || ev.type === "click") && foundHighlight.group !== HIGHLIGHT_GROUP_PAGEBREAK) {
             // documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR1);
             documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR2);
@@ -904,7 +1087,7 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
 const computeInverseZoom = (bodyComputedStyle: CSSStyleDeclaration, rootComputedStyle: CSSStyleDeclaration): number => {
     let zoomStr = rootComputedStyle.zoom;
     // console.log("rootComputedStyle.zoom", rootComputedStyle.zoom);
-    if (!rootComputedStyle.zoom || rootComputedStyle.zoom === "1") {
+    if (!zoomStr || zoomStr === "1") {
         zoomStr = bodyComputedStyle.zoom;
         // console.log("bodyComputedStyle.zoom", bodyComputedStyle.zoom);
     }
@@ -924,7 +1107,8 @@ let lastMouseDownX = -1;
 let lastMouseDownY = -1;
 let bodyEventListenersSet = false;
 let _highlightsContainer: HTMLElement | null;
-function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow, bodyComputedStyle: CSSStyleDeclaration, rootComputedStyle: CSSStyleDeclaration): HTMLElement {
+let _highlightsFloatingUI: HTMLDivElement | null;
+function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow, _bodyComputedStyle: CSSStyleDeclaration, _rootComputedStyle: CSSStyleDeclaration): HTMLElement {
     const documant = win.document;
 
     if (!_highlightsContainer) {
@@ -970,11 +1154,20 @@ function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow, bodyComput
             `width: ${win.READIUM2.isFixedLayout ? "-webkit-fill-available" : "auto"} !important; ` +
             `height: ${win.READIUM2.isFixedLayout ? "-webkit-fill-available" : "auto"} !important; `);
         documant.body.append(_highlightsContainer);
+
+
+        _highlightsFloatingUI = documant.createElement("div");
+        _highlightsFloatingUI.setAttribute("id", ID_HIGHLIGHTS_FLOATING);
+        // _highlightsFloatingUI.append(documant.createTextNode("sdfi lbaps ifub lkjsbdp ibas lhdvb lbas ;kdv ;kj sad;viuh[iunnnas;dviuh ;kjnnnnasjdvn ;kuh;ouhas dv n;kbuab;isubdv \n isadubv  inbsa kdjv kub  sdv\n\n ibasdv "));
+        _highlightsContainer.append(_highlightsFloatingUI);
     }
 
     // console.log("_highlightsContainer.style.zoom BEFORE", _highlightsContainer.style.zoom);
-    const inverseZoom = computeInverseZoom(bodyComputedStyle, rootComputedStyle);
-    _highlightsContainer.style.zoom = `${inverseZoom}`;
+    // const inverseZoom = computeInverseZoom(bodyComputedStyle, rootComputedStyle);
+    // _highlightsContainer.style.zoom = `${inverseZoom}`;
+    // if (_highlightsFloatingUI) {
+    //     _highlightsFloatingUI.style.zoom = `${1/inverseZoom}`;
+    // }
     // console.log("_highlightsContainer.style.zoom AFTER", _highlightsContainer.style.zoom);
     return _highlightsContainer;
 }
@@ -1549,10 +1742,10 @@ function createHighlightDom(
 
     const doDrawMargin = drawMargin(highlight);
 
-    const underlineThickness = 4;
-    const strikeThroughLineThickness = 4;
-
     const inverseZoom = computeInverseZoom(bodyComputedStyle, rootComputedStyle);
+
+    const underlineThickness = 3 / inverseZoom;
+    const strikeThroughLineThickness = 3 / inverseZoom;
 
     if (ENABLE_CSS_HIGHLIGHTS && !doDrawMargin && !rangeHasSVG && (drawBackground || (drawUnderline && !isVWM) || (drawStrikeThrough && !isVWM))) {
         highlight.rangeCssHighlight = range;
@@ -1678,6 +1871,10 @@ https://blackorwhite.lloydk.ca
         // highlightParent.setAttribute("data-margin", "true");
         highlightParent.classList.add(CLASS_HIGHLIGHT_MARGIN);
     }
+
+    // highlightParent.dataset.zoom
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (highlightParent as any).__inverseZoom = inverseZoom;
 
     // const styleAttr = win.document.documentElement.getAttribute("style");
     // const isNight = styleAttr ? styleAttr.indexOf("readium-night-on") > 0 : false;
@@ -2189,7 +2386,7 @@ https://blackorwhite.lloydk.ca
         // highlightMaskBaseSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON} ${CLASS_HIGHLIGHT_SVG}`);
         // highlightMaskBaseSVG.polygon = polygonMaskBaseUnionPoly;
 
-        // const svgPathMaskBase = polygonMaskBaseUnionPoly.svg({
+        // const svgPathMaskBase = polygonMaskBaseUnionPoly.scale(inverseZoom, inverseZoom).svg({
         //     // fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
         //     fill: "yellow",
         //     fillRule: "evenodd",
@@ -2452,7 +2649,7 @@ https://blackorwhite.lloydk.ca
             rsForeground = rootComputedStyle.getPropertyValue("--RS__textColor");
         }
 
-        const svgPathMask = highlightMaskSVG.polygon.svg({
+        const svgPathMask = highlightMaskSVG.polygon.scale(inverseZoom, inverseZoom).svg({
             fillRule: "evenodd",
             // fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
             fill: rsBackground ? rsBackground : "white",
@@ -2646,17 +2843,17 @@ https://blackorwhite.lloydk.ca
     // highlightAreaSVG.polygon = polygonSurface;
     highlightAreaSVG.polygon = polygonCountourUnionPoly; // TODO: gap expansion too generous for hit testing?
 
-    let outlineThickness = 2;
-    let usrFontSize = bodyComputedStyle.getPropertyValue("--USER__fontSize");
-    if (usrFontSize) {
-        usrFontSize = usrFontSize.replace("%", "");
-        try {
-            const factor = parseInt(usrFontSize, 10) / 100;
-            outlineThickness = outlineThickness * factor;
-        } catch (_e) {
-            // ignore
-        }
-    }
+    const outlineThickness = 2;
+    // let usrFontSize = bodyComputedStyle.getPropertyValue("--USER__fontSize");
+    // if (usrFontSize) {
+    //     usrFontSize = usrFontSize.replace("%", "");
+    //     try {
+    //         const factor = parseInt(usrFontSize, 10) / 100;
+    //         outlineThickness = outlineThickness * factor;
+    //     } catch (_e) {
+    //         // ignore
+    //     }
+    // }
 
     // const styleAttr = win.document.documentElement.getAttribute("style");
     // const isUserFontSize = styleAttr ? styleAttr.indexOf("--USER__fontSize") >= 0 : false;
@@ -2664,14 +2861,14 @@ https://blackorwhite.lloydk.ca
     //     // const docStyle = win.getComputedStyle(win.document.documentElement);
     // }
 
-    // highlightAreaSVG.append((new DOMParser()​​.parseFromString(`<svg xmlns="${SVG_XML_NAMESPACE}">${polys.svg()}</svg>`, "image/svg+xml")).firstChild);
+    // highlightAreaSVG.append((new DOMParser()​​.parseFromString(`<svg xmlns="${SVG_XML_NAMESPACE}">${polys.scale(inverseZoom, inverseZoom).svg()}</svg>`, "image/svg+xml")).firstChild);
     highlightAreaSVG.innerHTML =
     (polygonSurface ?
     (
     Array.isArray(polygonSurface)
     ?
     polygonSurface.reduce((prevSVGPath, currentPolygon) => {
-        return prevSVGPath + currentPolygon.svg({
+        return prevSVGPath + currentPolygon.scale(inverseZoom, inverseZoom).svg({
             fill: DEBUG_RECTS ? "pink" : (drawOutline || highlight.rangeCssHighlight) ? "transparent" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
             fillRule: "evenodd",
             stroke: DEBUG_RECTS ? "magenta" : drawOutline ? `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` : "transparent",
@@ -2682,7 +2879,7 @@ https://blackorwhite.lloydk.ca
         });
     }, "")
     :
-    polygonSurface.svg({
+    polygonSurface.scale(inverseZoom, inverseZoom).svg({
         fill: DEBUG_RECTS ? "yellow" : (drawOutline || highlight.rangeCssHighlight) ? "transparent" : `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
         fillRule: "evenodd",
         stroke: DEBUG_RECTS ? "green" : drawOutline ? `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})` : "transparent",
@@ -2693,7 +2890,7 @@ https://blackorwhite.lloydk.ca
     })
     ) : "")
     +
-    polygonCountourUnionPoly.svg({
+    polygonCountourUnionPoly.scale(inverseZoom, inverseZoom).svg({
         fill: "transparent",
         fillRule: "evenodd",
         stroke: DEBUG_RECTS ? "red" : "transparent",
@@ -2925,7 +3122,7 @@ https://blackorwhite.lloydk.ca
         const highlightMarginSVG = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as ISVGElementWithPolygon;
         highlightMarginSVG.setAttribute("class", `${CLASS_HIGHLIGHT_COMMON} ${CLASS_HIGHLIGHT_CONTOUR_MARGIN}`);
         highlightMarginSVG.polygon = polygonMarginUnionPoly;
-        const svgPath = polygonMarginUnionPoly.svg({
+        const svgPath = polygonMarginUnionPoly.scale(inverseZoom, inverseZoom).svg({
             fillRule: "evenodd",
             fill: `rgb(${highlight.color.red}, ${highlight.color.green}, ${highlight.color.blue})`,
             stroke: "transparent",

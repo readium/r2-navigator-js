@@ -851,6 +851,7 @@ export const ttsCssStyles = `
 `;
 
 export const ID_HIGHLIGHTS_CONTAINER = "R2_ID_HIGHLIGHTS_CONTAINER";
+export const ID_HIGHLIGHTS_FLOATING = "R2_ID_HIGHLIGHTS_FLOATING";
 export const CLASS_HIGHLIGHT_COMMON = "R2_CLASS_HIGHLIGHT_COMMON";
 export const CLASS_HIGHLIGHT_COMMON_SVG = "R2_CLASS_HIGHLIGHT_COMMON_SVG";
 export const CLASS_HIGHLIGHT_SVG = "R2_CLASS_HIGHLIGHT_SVG";
@@ -1009,6 +1010,63 @@ display: inherit;
 r2-wbr::before,
 wbr::before {
 content: ' ';
+}
+
+:root[style].${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
+:root.${CLASS_PAGINATED} > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}
+{
+    position: fixed;
+}
+:root[style]:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
+:root:not(.${CLASS_PAGINATED}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}
+{
+    position: absolute;
+}
+:root[style].${CLASS_VWM} > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
+:root.${CLASS_VWM} > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}
+{
+height: max-content !important;
+
+max-width: 200px !important;
+max-height: 300px !important;
+}
+:root[style]:not(.${CLASS_VWM}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
+:root:not(.${CLASS_VWM}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}
+{
+width: max-content !important;
+
+max-width: 300px !important;
+max-height: 200px !important;
+}
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}
+{
+z-index: 999;
+
+display: none;
+
+top: 0;
+left: 0;
+
+overflow-x: clip !important;
+overflow-y: clip !important;
+
+text-overflow: ellipsis;
+
+background: white !important;
+color: black !important;
+
+font-weight: bold !important;
+font-size: 0.8rem !important;
+
+padding: 0.6rem !important;
+
+border-radius: 0.4rem !important;
+border-width: 1px !important;
+border-color: black !important;
+border-style: solid !important;
+
+box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
 :root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > .${CLASS_HIGHLIGHT_CONTAINER}.${CLASS_HIGHLIGHT_MARGIN}:not(${hover}) > svg.${CLASS_HIGHLIGHT_CONTOUR},
@@ -1244,7 +1302,7 @@ We cannot completely disable "scroll" event (prevent default) because we need to
 
 :root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}),
 :root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) {
-    /* overflow-x: clip !important; */
+    overflow-x: clip !important;
 
     padding: 0 !important;
     margin: 0 !important;
