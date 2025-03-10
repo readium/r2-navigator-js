@@ -1050,13 +1050,15 @@ max-height: 100px !important;
 :root:not(.${CLASS_VWM}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}_
 */
 {
-/* width: max-content !important; */
+width: max-content !important;
+height: max-content !important;
 
-width: 200px !important;
+/* width: 200px !important;
 height: 100px !important;
 
 max-width: 200px !important;
 max-height: 100px !important;
+*/
 }
 
 :root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
@@ -1169,12 +1171,19 @@ border-top: 8px solid var(--USER__textColor) !important;
 :root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING} > div:nth-child(2),
 :root > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING} > div:nth-child(2)
 {
+/*
 position: absolute;
-
 top: 0;
 left: 0;
 bottom: 0;
 right: 0;
+*/
+
+display: grid;
+
+min-width: 40px !important;
+max-width: 200px !important;
+max-height: 100px !important;
 
 padding: 4px;
 

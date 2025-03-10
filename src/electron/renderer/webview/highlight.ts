@@ -50,7 +50,7 @@ Edge,
 } from "@flatten-js/core";
 const { unify, subtract } = BooleanOperations;
 
-import { computePosition, flip, shift, Middleware, offset as offsetFloat, arrow } from "@floating-ui/dom";
+import { computePosition, flip, shift, offset as offsetFloat, arrow } from "@floating-ui/dom";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -921,8 +921,17 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                 if (!_highlightsFloatingUI) {
                     return;
                 }
-                const _highlightsFloatingUI_ARROW = _highlightsFloatingUI.firstElementChild! as HTMLDivElement;
-                const _highlightsFloatingUI_TEXT = _highlightsFloatingUI_ARROW.nextElementSibling! as HTMLDivElement;
+                const _highlightsFloatingUI_ARROW = _highlightsFloatingUI.firstElementChild as HTMLDivElement | null;
+                if (!_highlightsFloatingUI_ARROW) {
+                    return;
+                }
+                const _highlightsFloatingUI_TEXT = _highlightsFloatingUI_ARROW.nextElementSibling as HTMLDivElement | null;
+                if (!_highlightsFloatingUI_TEXT) {
+                    return;
+                }
+
+                const doDrawArrow = foundHighlight.drawType !== HighlightDrawTypeMarginBookmark;
+                _highlightsFloatingUI_ARROW.style.display = doDrawArrow ? "block" : "none";
 
                 const dir = foundHighlight.textPopup?.dir ? foundHighlight.textPopup.dir : "ltr";
                 const lang = foundHighlight.textPopup?.lang ? foundHighlight.textPopup.lang : "en";
@@ -999,54 +1008,54 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                         anchor = foundElement.querySelector("svg.R2_CLASS_HIGHLIGHT_CONTOUR_MARGIN > path");
                     }
                     if (anchor) {
-                        const floatingUIMiddleware = {
-                            name: "floatingUIMiddleware",
-                            fn({ x: fuix, y: fuiy }) {
-                                // rects.reference.x *= zoom;
-                                // rects.reference.y *= zoom;
-                                // rects.reference.width *= zoom;
-                                // rects.reference.height *= zoom;
+                        // const floatingUIMiddleware = {
+                        //     name: "floatingUIMiddleware",
+                        //     fn({ x: fuix, y: fuiy }) {
+                        //         // rects.reference.x *= zoom;
+                        //         // rects.reference.y *= zoom;
+                        //         // rects.reference.width *= zoom;
+                        //         // rects.reference.height *= zoom;
 
-                                // rects.floating.x *= zoom;
-                                // rects.floating.y *= zoom;
-                                // rects.floating.width *= zoom;
-                                // rects.floating.height *= zoom;
+                        //         // rects.floating.x *= zoom;
+                        //         // rects.floating.y *= zoom;
+                        //         // rects.floating.width *= zoom;
+                        //         // rects.floating.height *= zoom;
 
-                                // rects.reference.x /= zoom;
-                                // rects.reference.y /= zoom;
-                                // rects.reference.width /= zoom;
-                                // rects.reference.height /= zoom;
+                        //         // rects.reference.x /= zoom;
+                        //         // rects.reference.y /= zoom;
+                        //         // rects.reference.width /= zoom;
+                        //         // rects.reference.height /= zoom;
 
-                                // rects.floating.x /= zoom;
-                                // rects.floating.y /= zoom;
-                                // rects.floating.width /= zoom;
-                                // rects.floating.height /= zoom;
+                        //         // rects.floating.x /= zoom;
+                        //         // rects.floating.y /= zoom;
+                        //         // rects.floating.width /= zoom;
+                        //         // rects.floating.height /= zoom;
 
-                                // const xx = paginated ? (fuix - xOffset) * zoom : fuix;
-                                // const yy = paginated ? (fuiy - yOffset) * zoom : fuiy;
+                        //         // const xx = paginated ? (fuix - xOffset) * zoom : fuix;
+                        //         // const yy = paginated ? (fuiy - yOffset) * zoom : fuiy;
 
-                                const xx = fuix;
-                                const yy = fuiy;
+                        //         const xx = fuix;
+                        //         const yy = fuiy;
 
-                                // console.log(" -------- ");
-                                // console.log("zoom", zoom);
-                                // console.log("x, y", x, y);
-                                // console.log("fuix, fuiy", fuix, fuiy);
-                                // console.log("xx, yy", xx, yy);
-                                // console.log("rects.reference", rects.reference.x, rects.reference.y, rects.reference.width, rects.reference.height);
-                                // console.log("rects.floating", rects.floating.x, rects.floating.y, rects.floating.width, rects.floating.height);
-                                // console.log("bodyRect.left", bodyRect.left);
-                                // console.log("bodyRect.top", bodyRect.top);
-                                // console.log("xOffset", xOffset);
-                                // console.log("yOffset", yOffset);
-                                // console.log(" -------- ");
+                        //         // console.log(" -------- ");
+                        //         // console.log("zoom", zoom);
+                        //         // console.log("x, y", x, y);
+                        //         // console.log("fuix, fuiy", fuix, fuiy);
+                        //         // console.log("xx, yy", xx, yy);
+                        //         // console.log("rects.reference", rects.reference.x, rects.reference.y, rects.reference.width, rects.reference.height);
+                        //         // console.log("rects.floating", rects.floating.x, rects.floating.y, rects.floating.width, rects.floating.height);
+                        //         // console.log("bodyRect.left", bodyRect.left);
+                        //         // console.log("bodyRect.top", bodyRect.top);
+                        //         // console.log("xOffset", xOffset);
+                        //         // console.log("yOffset", yOffset);
+                        //         // console.log(" -------- ");
 
-                                return {
-                                    x: xx,
-                                    y: yy,
-                                };
-                            },
-                        } satisfies Middleware;
+                        //         return {
+                        //             x: xx,
+                        //             y: yy,
+                        //         };
+                        //     },
+                        // } satisfies Middleware;
 
                         const paginated = isPaginated(documant);
                         const virtualElement =
@@ -1202,8 +1211,8 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                             // console.log("width/height", cssx.width, cssx.height);
                         }
 
-                        const arrowLen = _highlightsFloatingUI_ARROW.offsetWidth;
-                        const floatingOffset = Math.sqrt(2 * arrowLen ** 2) / 2;
+                        const arrowLen = doDrawArrow ? _highlightsFloatingUI_ARROW.offsetWidth : 0;
+                        const floatingOffset = doDrawArrow ? (Math.sqrt(2 * arrowLen ** 2) / 2) : 0;
 
                         // const { x: fuix, y: fuiy } = await
                         computePosition(anchor || virtualElement, paginated ? _highlightsFloatingUI_! as unknown as HTMLElement : _highlightsFloatingUI, {
@@ -1211,14 +1220,21 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                             // strategy: "absolute",
                             placement: "bottom",
                             // inline({x, y})
-                            middleware: [floatingUIMiddleware, offsetFloat(floatingOffset), flip(), shift({ padding: 4 }), arrow({padding: 8, element: _highlightsFloatingUI_ARROW})],
+                            middleware:
+                                [
+                                    // floatingUIMiddleware,
+                                    offsetFloat(floatingOffset),
+                                    flip(),
+                                    shift({ padding: 4 }),
+                                    doDrawArrow ? arrow({padding: 8, element: _highlightsFloatingUI_ARROW}) : undefined,
+                                ].filter((v) => !!v),
                                 // paginated ?
                                 // [floatingUIMiddleware, offsetFloat(floatingOffset), flip(), shift({ padding: 4 }), arrow({padding: 0, element: _highlightsFloatingUI_ARROW})] :
                                 // [floatingUIMiddleware, offsetFloat(floatingOffset), flip(), shift({ padding: 4 }), arrow({padding: 0, element: _highlightsFloatingUI_ARROW})],
                         })
                         // ;
                         .then(({ x: fuix, y: fuiy, middlewareData, placement }) => {
-                            if (middlewareData.arrow && _highlightsFloatingUI_ARROW) {
+                            if (doDrawArrow && middlewareData.arrow && _highlightsFloatingUI_ARROW) {
                                 const side = placement.split("-")[0];
                                 const staticSide = {
                                     top: "bottom",
