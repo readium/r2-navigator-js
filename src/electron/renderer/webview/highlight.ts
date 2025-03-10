@@ -50,7 +50,7 @@ Edge,
 } from "@flatten-js/core";
 const { unify, subtract } = BooleanOperations;
 
-import { computePosition, flip, shift, Middleware, offset as offsetFloat } from "@floating-ui/dom";
+import { computePosition, flip, shift, Middleware, offset as offsetFloat, arrow } from "@floating-ui/dom";
 
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
@@ -64,9 +64,11 @@ export const ENABLE_PAGEBREAK_MARGIN_TEXT_EXPERIMENT = false;
 let lastMouseDownX = -1;
 let lastMouseDownY = -1;
 let bodyEventListenersSet = false;
-let _highlightsContainer: HTMLElement | null;
-let _highlightsFloatingUI: HTMLDivElement | null;
-// let _highlightsFloatingUI_: SVGElement | null;
+let _highlightsContainer: HTMLElement | undefined;
+// let _highlightsFloatingUI: HTMLDivElement | undefined;
+// let _highlightsFloatingUI_ARROW: HTMLDivElement | undefined;
+// let _highlightsFloatingUI_TEXT: HTMLDivElement | undefined;
+// let _highlightsFloatingUI_: SVGElement | undefined;
 let _timeoutMouseMove: number | undefined;
 const TIMEOUT_MOUSE_MS = 200;
 
@@ -876,13 +878,12 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
     }
 
     if (!hit) { // !foundHighlight || !foundElement
+        const _highlightsFloatingUI = win.document.getElementById(ID_HIGHLIGHTS_FLOATING);
         if (_highlightsFloatingUI && _highlightsFloatingUI.style.display !== "none") {
             _highlightsFloatingUI.style.display = "none";
-            _highlightsFloatingUI.innerHTML = "";
         }
         // if (_highlightsFloatingUI_) {
         //     _highlightsFloatingUI_.style.display = "none";
-        //     // _highlightsFloatingUI_.innerHTML = "";
         // }
 
         // documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR1);
@@ -903,7 +904,7 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
             }
 
             const text = foundHighlight.textPopup?.text ? foundHighlight.textPopup.text : undefined;
-            if (text && _highlightsFloatingUI) { // && _highlightsFloatingUI_
+            if (text && _highlightsContainer) {
 
                 // if (_timeoutMouseMove) {
                 //     clearTimeout(_timeoutMouseMove);
@@ -912,9 +913,16 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                 _timeoutMouseMove = win.setTimeout(() => {
                     _timeoutMouseMove = undefined;
                     // win.requestAnimationFrame(() => {
-                    if (!_highlightsFloatingUI || !_highlightsContainer) {
+                    if (!_highlightsContainer) {
                         return;
                     }
+
+                const _highlightsFloatingUI = win.document.getElementById(ID_HIGHLIGHTS_FLOATING);
+                if (!_highlightsFloatingUI) {
+                    return;
+                }
+                const _highlightsFloatingUI_ARROW = _highlightsFloatingUI.firstElementChild! as HTMLDivElement;
+                const _highlightsFloatingUI_TEXT = _highlightsFloatingUI_ARROW.nextElementSibling! as HTMLDivElement;
 
                 const dir = foundHighlight.textPopup?.dir ? foundHighlight.textPopup.dir : "ltr";
                 const lang = foundHighlight.textPopup?.lang ? foundHighlight.textPopup.lang : "en";
@@ -926,28 +934,25 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const zoom = (foundElement as any).__inverseZoom || 1;
 
-                // _highlightsFloatingUI_.innerHTML = dummytext;
-                // _highlightsFloatingUI_.style.zoom = ""+(zoom);
-
                 if (dir) {
-                    _highlightsFloatingUI.setAttribute("dir", dir);
+                    _highlightsFloatingUI_TEXT.setAttribute("dir", dir);
                 } else {
-                    _highlightsFloatingUI.removeAttribute("dir");
+                    _highlightsFloatingUI_TEXT.removeAttribute("dir");
                 }
 
                 if (lang) {
-                    _highlightsFloatingUI.setAttribute("lang", lang);
-                    _highlightsFloatingUI.setAttributeNS("http://www.w3.org/XML/1998/", "lang", lang);
+                    _highlightsFloatingUI_TEXT.setAttribute("lang", lang);
+                    _highlightsFloatingUI_TEXT.setAttributeNS("http://www.w3.org/XML/1998/", "lang", lang);
                 } else {
-                    _highlightsFloatingUI.removeAttribute("lang");
-                    _highlightsFloatingUI.removeAttributeNS("http://www.w3.org/XML/1998/", "lang");
+                    _highlightsFloatingUI_TEXT.removeAttribute("lang");
+                    _highlightsFloatingUI_TEXT.removeAttributeNS("http://www.w3.org/XML/1998/", "lang");
                 }
 
-                _highlightsFloatingUI.style.writingMode = "horizontal-tb";
-                // _highlightsFloatingUI.setAttribute("style", "writing-mode:horizontal-tb");
+                _highlightsFloatingUI_TEXT.style.writingMode = "horizontal-tb";
+                // _highlightsFloatingUI_TEXT.setAttribute("style", "writing-mode:horizontal-tb");
 
-                // _highlightsFloatingUI.innerHTML = text;
-                _highlightsFloatingUI.textContent = text;
+                // _highlightsFloatingUI_TEXT.innerHTML = text;
+                _highlightsFloatingUI_TEXT.textContent = text;
 
                 if (!ENABLE_FLOATING_UI) {
                     const xx = (x - xOffset) * scale;
@@ -983,15 +988,15 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                     const doDrawMargin = drawMargin(foundHighlight);
 
                     let anchor: Element | null = null;
-                    if (doDrawMargin) {
+
+                    // anchor = foundElement.querySelector("svg.R2_CLASS_HIGHLIGHT_CONTOUR > path");
+                    const all = foundElement.querySelectorAll("svg.R2_CLASS_HIGHLIGHT_CONTOUR > path");
+                    // console.log("querySelectorAll -------- ", all?.length);
+                    if (all?.length > 0) {
+                        anchor = all[all?.length - 1];
+                    }
+                    if (!anchor && doDrawMargin) {
                         anchor = foundElement.querySelector("svg.R2_CLASS_HIGHLIGHT_CONTOUR_MARGIN > path");
-                    } else {
-                        // anchor = foundElement.querySelector("svg.R2_CLASS_HIGHLIGHT_CONTOUR > path");
-                        const all = foundElement.querySelectorAll("svg.R2_CLASS_HIGHLIGHT_CONTOUR > path");
-                        // console.log("querySelectorAll -------- ", all?.length);
-                        if (all?.length > 0) {
-                            anchor = all[all?.length - 1];
-                        }
                     }
                     if (anchor) {
                         const floatingUIMiddleware = {
@@ -1197,18 +1202,52 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
                             // console.log("width/height", cssx.width, cssx.height);
                         }
 
+                        const arrowLen = _highlightsFloatingUI_ARROW.offsetWidth;
+                        const floatingOffset = Math.sqrt(2 * arrowLen ** 2) / 2;
+
                         // const { x: fuix, y: fuiy } = await
                         computePosition(anchor || virtualElement, paginated ? _highlightsFloatingUI_! as unknown as HTMLElement : _highlightsFloatingUI, {
                             strategy: paginated ? "fixed" : "absolute",
                             // strategy: "absolute",
                             placement: "bottom",
                             // inline({x, y})
-                            middleware: paginated ?
-                                [floatingUIMiddleware, offsetFloat(4), flip(), shift({ padding: 4 })] :
-                                [floatingUIMiddleware, offsetFloat(4), flip(), shift({ padding: 4 })],
+                            middleware: [floatingUIMiddleware, offsetFloat(floatingOffset), flip(), shift({ padding: 4 }), arrow({padding: 8, element: _highlightsFloatingUI_ARROW})],
+                                // paginated ?
+                                // [floatingUIMiddleware, offsetFloat(floatingOffset), flip(), shift({ padding: 4 }), arrow({padding: 0, element: _highlightsFloatingUI_ARROW})] :
+                                // [floatingUIMiddleware, offsetFloat(floatingOffset), flip(), shift({ padding: 4 }), arrow({padding: 0, element: _highlightsFloatingUI_ARROW})],
                         })
                         // ;
-                        .then(({ x: fuix, y: fuiy }) => {
+                        .then(({ x: fuix, y: fuiy, middlewareData, placement }) => {
+                            if (middlewareData.arrow && _highlightsFloatingUI_ARROW) {
+                                const side = placement.split("-")[0];
+                                const staticSide = {
+                                    top: "bottom",
+                                    right: "left",
+                                    bottom: "top",
+                                    left: "right",
+                                }[side];
+                                console.log("middlewareData.arrow", middlewareData.arrow.x, middlewareData.arrow.y);
+                                const {x: xarrow, y: yarrow} = middlewareData.arrow;
+                                if (xarrow != null || yarrow != null) { // NOT DOUBLE EQUAL! (not just null, undefined too)
+
+                                    // const xxxarrow = xarrow != null ? (paginated ? (xarrow - xOffset) * zoom : xarrow) : null;
+                                    // const yyyarrow = yarrow != null ? (paginated ? (yarrow - yOffset) * zoom : yarrow) : null;
+                                    // Object.assign(_highlightsFloatingUI_ARROW.style, {
+                                    //     left: xxxarrow != null ? `${xxxarrow}px` : undefined,
+                                    //     top: yyyarrow != null ?  `${yyyarrow}px` : undefined,
+                                    // });
+
+                                    Object.assign(_highlightsFloatingUI_ARROW.style, {
+                                        left: xarrow != null ? `${xarrow}px` : "",
+                                        top: yarrow != null ?  `${yarrow}px` : "",
+                                        right: "",
+                                        bottom: "",
+                                        [staticSide!]: `${-arrowLen / 2}px`,
+                                        transform: staticSide === "top" ? "rotate(45deg)" : "rotate(225deg)",
+                                    });
+                                }
+                            }
+
                             // const xx = x / z;
                             // const yy = y / z;
                             // const xx = x * z;
@@ -1298,9 +1337,9 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
             // documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR1);
             documant.documentElement.classList.remove(CLASS_HIGHLIGHT_CURSOR2);
 
+            const _highlightsFloatingUI = win.document.getElementById(ID_HIGHLIGHTS_FLOATING);
             if (_highlightsFloatingUI && _highlightsFloatingUI.style.display !== "none") {
                 _highlightsFloatingUI.style.display = "none";
-                _highlightsFloatingUI.innerHTML = "";
             }
 
             ev.preventDefault();
@@ -1322,9 +1361,9 @@ function processMouseEvent(win: ReadiumElectronWebviewWindow, ev: MouseEvent) {
             ipcRenderer.sendToHost(R2_EVENT_HIGHLIGHT_CLICK, payload);
         }
     } else {
+        const _highlightsFloatingUI = win.document.getElementById(ID_HIGHLIGHTS_FLOATING);
         if (_highlightsFloatingUI && _highlightsFloatingUI.style.display !== "none") {
             _highlightsFloatingUI.style.display = "none";
-            _highlightsFloatingUI.innerHTML = "";
         }
     }
 }
@@ -1384,7 +1423,6 @@ function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow, _bodyCompu
 
                 // if (_highlightsFloatingUI && _highlightsFloatingUI.style.display !== "none") {
                 //     _highlightsFloatingUI.style.display = "none";
-                //     _highlightsFloatingUI.innerHTML = "";
                 // }
 
                 // if (_timeoutMouseMove) {
@@ -1399,20 +1437,30 @@ function ensureHighlightsContainer(win: ReadiumElectronWebviewWindow, _bodyCompu
             }, false);
         }
 
-        _highlightsContainer = documant.createElement("div");
-        _highlightsContainer.setAttribute("aria-hidden", "true");
-        _highlightsContainer.setAttribute("id", ID_HIGHLIGHTS_CONTAINER);
-        _highlightsContainer.setAttribute("class", CLASS_HIGHLIGHT_COMMON);
-        _highlightsContainer.setAttribute("style",
+        const _highlightsContainer_ = documant.createElement("div");
+        _highlightsContainer_.setAttribute("aria-hidden", "true");
+        _highlightsContainer_.setAttribute("id", ID_HIGHLIGHTS_CONTAINER);
+        _highlightsContainer_.setAttribute("class", CLASS_HIGHLIGHT_COMMON);
+        _highlightsContainer_.setAttribute("style",
             // auto fails in some FXL! (Anna's_Day_of_Gratitude_ePUB3_Audio)
             `width: ${win.READIUM2.isFixedLayout ? "-webkit-fill-available" : "auto"} !important; ` +
             `height: ${win.READIUM2.isFixedLayout ? "-webkit-fill-available" : "auto"} !important; `);
-        documant.body.append(_highlightsContainer);
 
-
-        _highlightsFloatingUI = documant.createElement("div");
+        const _highlightsFloatingUI = documant.createElement("div");
         _highlightsFloatingUI.setAttribute("id", ID_HIGHLIGHTS_FLOATING);
-        _highlightsContainer.append(_highlightsFloatingUI);
+
+        const _highlightsFloatingUI_ARROW = documant.createElement("div");
+        // _highlightsFloatingUI_ARROW.style.position = "absolute";
+        _highlightsFloatingUI.append(_highlightsFloatingUI_ARROW);
+
+        const _highlightsFloatingUI_TEXT = documant.createElement("div");
+        _highlightsFloatingUI.append(_highlightsFloatingUI_TEXT);
+
+        _highlightsContainer_.append(_highlightsFloatingUI);
+
+        documant.body.append(_highlightsContainer_);
+
+        _highlightsContainer = _highlightsContainer_;
 
         // _highlightsFloatingUI_ = documant.createElementNS(SVG_XML_NAMESPACE, "svg") as SVGElement;
         // // _highlightsFloatingUI_ = win.document.createElement("svg");
@@ -1443,7 +1491,7 @@ export function hideAllhighlights(_documant: Document) {
 
     if (_highlightsContainer) {
         _highlightsContainer.remove();
-        _highlightsContainer = null;
+        _highlightsContainer = undefined;
         // ensureHighlightsContainer(documant); LAZY
     }
 }

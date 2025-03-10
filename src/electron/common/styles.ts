@@ -1034,19 +1034,13 @@ content: ' ';
 :root.${CLASS_VWM} > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}_
 */
 {
-width: max-content !important;
+/* width: max-content !important; */
 
-/* width: 200px !important;
-height: 100px !important; */
+width: 200px !important;
+height: 100px !important;
 
 max-width: 200px !important;
 max-height: 100px !important;
-/*
-height: max-content !important;
-
-max-width: 100px !important;
-max-height: 200px !important;
-*/
 }
 :root[style]:not(.${CLASS_VWM}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
 :root:not(.${CLASS_VWM}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}
@@ -1056,10 +1050,10 @@ max-height: 200px !important;
 :root:not(.${CLASS_VWM}) > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING}_
 */
 {
-width: max-content !important;
+/* width: max-content !important; */
 
-/* width: 200px !important;
-height: 100px !important; */
+width: 200px !important;
+height: 100px !important;
 
 max-width: 200px !important;
 max-height: 100px !important;
@@ -1073,6 +1067,8 @@ max-height: 100px !important;
 user-select: none !important;
 pointer-events: none !important;
 
+overflow: visible !important;
+
 z-index: 999;
 
 display: none;
@@ -1080,21 +1076,12 @@ display: none;
 top: 0;
 left: 0;
 
-overflow-x: clip !important;
-overflow-y: clip !important;
-
-text-overflow: ellipsis !important;
-
 background: white !important;
 color: black !important;
 
-font-weight: bold !important;
-font-size: 0.8rem !important;
-
 box-sizing: border-box !important;
 
-padding: 0.6rem !important;
-
+padding: 0 !important;
 margin: 0 !important;
 }
 :root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING},
@@ -1139,6 +1126,65 @@ margin: 0 !important;
     color: var(--USER__textColor) !important;
     border-color: var(--USER__textColor) !important;
     box-shadow: 0px 0px 4px 0px var(--USER__textColor);
+}
+
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING} > div:nth-child(1),
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING} > div:nth-child(1)
+{
+/*
+width: 10px;
+height: 10px;
+*/
+width: 0 !important;
+height: 0 !important;
+
+border-left: 8px solid black !important;
+border-top: 8px solid black !important;
+border-right: 8px solid transparent !important;
+border-bottom: 8px solid transparent !important;
+
+box-sizing: border-box !important;
+
+position: absolute;
+padding: 0 !important;
+margin: 0 !important;
+
+/* background-color: red !important; */
+}
+
+:root[style*="readium-night-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING} > div:nth-child(1) {
+border-left: 8px solid var(--RS__textColor) !important;
+border-top: 8px solid var(--RS__textColor) !important;
+}
+:root[style*="readium-sepia-on"] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING} > div:nth-child(1) {
+border-left: 8px solid var(--RS__textColor) !important;
+border-top: 8px solid var(--RS__textColor) !important;
+}
+
+:root[style*="--USER__textColor"] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING} > div:nth-child(1) {
+border-left: 8px solid var(--USER__textColor) !important;
+border-top: 8px solid var(--USER__textColor) !important;
+}
+
+:root[style] > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING} > div:nth-child(2),
+:root > body > #${ID_HIGHLIGHTS_CONTAINER} > #${ID_HIGHLIGHTS_FLOATING} > div:nth-child(2)
+{
+position: absolute;
+
+top: 0;
+left: 0;
+bottom: 0;
+right: 0;
+
+padding: 4px;
+
+text-overflow: ellipsis !important;
+
+overflow-x: clip !important;
+overflow-y: clip !important;
+
+font-weight: bold !important;
+font-size: 0.8rem !important;
 }
 
 /*
