@@ -28,6 +28,7 @@ import {
 import {
     URL_PARAM_A11Y_SUPPORT_ENABLED,
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
+    URL_PARAM_EPUBMEDIAOVERLAYS,
     URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_IS_IFRAME, URL_PARAM_SECOND_WEBVIEW,
     URL_PARAM_SESSION_INFO, URL_PARAM_WEBVIEW_SLOT,
 } from "../renderer/common/url-params";
@@ -685,6 +686,7 @@ const transformerHttpBaseIframes: TTransformFunction = (
     // const r2_GOTO_DOM_RANGE = url_.searchParams.get(URL_PARAM_GOTO_DOM_RANGE);
     // const r2_REFRESH = url_.searchParams.get(URL_PARAM_REFRESH);
     const r2CSS = url_.searchParams.get(URL_PARAM_CSS);
+    const r2isMO = url_.searchParams.get(URL_PARAM_EPUBMEDIAOVERLAYS);
     const r2ERS = url_.searchParams.get(URL_PARAM_EPUBREADINGSYSTEM);
     const r2DEBUG = url_.searchParams.get(URL_PARAM_DEBUG_VISUALS);
     const r2A11YSUPPORTENABLED = url_.searchParams.get(URL_PARAM_A11Y_SUPPORT_ENABLED);
@@ -728,6 +730,9 @@ const transformerHttpBaseIframes: TTransformFunction = (
         }
         if (r2CSS) {
             iframeUrl.searchParams.append(URL_PARAM_CSS, r2CSS);
+        }
+        if (r2isMO) {
+            iframeUrl.searchParams.append(URL_PARAM_EPUBMEDIAOVERLAYS, r2isMO);
         }
         if (r2WEBVIEWSLOT) {
             iframeUrl.searchParams.append(URL_PARAM_WEBVIEW_SLOT, r2WEBVIEWSLOT);

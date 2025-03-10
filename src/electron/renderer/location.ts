@@ -52,9 +52,10 @@ import {
     URL_PARAM_REFRESH, URL_PARAM_SECOND_WEBVIEW, URL_PARAM_SESSION_INFO, URL_PARAM_WEBVIEW_SLOT,
     FRAG_ID_CSS_SELECTOR,
     URL_PARAM_A11Y_SUPPORT_ENABLED,
+    URL_PARAM_EPUBMEDIAOVERLAYS,
 } from "./common/url-params";
 import { getEpubReadingSystemInfo } from "./epubReadingSystem";
-import { mediaOverlaysInterrupt } from "./media-overlays";
+import { mediaOverlaysInterrupt, publicationHasMediaOverlays } from "./media-overlays";
 import {
     adjustReadiumCssJsonMessageForFixedLayout, isFixedLayout, isRTL_PackageMeta, obtainReadiumCss,
 } from "./readium-css";
@@ -782,6 +783,7 @@ function loadLink(
                 data[URL_PARAM_GOTO] = undefined;
                 data[URL_PARAM_GOTO_DOM_RANGE] = undefined;
                 data[URL_PARAM_CSS] = undefined;
+                data[URL_PARAM_EPUBMEDIAOVERLAYS] = undefined;
                 data[URL_PARAM_EPUBREADINGSYSTEM] = undefined;
                 data[URL_PARAM_DEBUG_VISUALS] = undefined;
                 data[URL_PARAM_A11Y_SUPPORT_ENABLED] = undefined;
@@ -1089,6 +1091,7 @@ function loadLink(
             data[URL_PARAM_GOTO] = undefined;
             data[URL_PARAM_GOTO_DOM_RANGE] = undefined;
             data[URL_PARAM_CSS] = undefined;
+            data[URL_PARAM_EPUBMEDIAOVERLAYS] = undefined;
             data[URL_PARAM_EPUBREADINGSYSTEM] = undefined;
             data[URL_PARAM_DEBUG_VISUALS] = undefined;
             data[URL_PARAM_A11Y_SUPPORT_ENABLED] = undefined;
@@ -1138,6 +1141,9 @@ function loadLink(
 
             // tslint:disable-next-line:no-string-literal
             data[URL_PARAM_CSS] = rcssJsonstrBase64;
+
+            // tslint:disable-next-line:no-string-literal
+            data[URL_PARAM_EPUBMEDIAOVERLAYS] = win.READIUM2.publication ? (publicationHasMediaOverlays(win.READIUM2.publication) ? "1" : "0") : "0";
 
             // tslint:disable-next-line:no-string-literal
             data[URL_PARAM_EPUBREADINGSYSTEM] = rersJsonstrBase64;

@@ -91,6 +91,7 @@ import {
     URL_PARAM_SECOND_WEBVIEW, URL_PARAM_WEBVIEW_SLOT,
     FRAG_ID_CSS_SELECTOR,
     URL_PARAM_A11Y_SUPPORT_ENABLED,
+    URL_PARAM_EPUBMEDIAOVERLAYS,
 } from "../common/url-params";
 import { setupAudioBook } from "./audiobook";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
@@ -2082,6 +2083,12 @@ win.addEventListener("DOMContentLoaded", () => {
 
     let readiumcssJson: IEventPayload_R2_EVENT_READIUMCSS | undefined;
     if (win.READIUM2.urlQueryParams) {
+        const publicationHasMediaOverlays = win.READIUM2.urlQueryParams[URL_PARAM_EPUBMEDIAOVERLAYS] === "1";
+        // debug("findFollowingDescendantSiblingElementsWithID publicationHasMediaOverlays", publicationHasMediaOverlays);
+        if (publicationHasMediaOverlays) {
+            win.document.documentElement.classList.add(R2_MO_CLASS_STOPPED);
+        }
+
         // tslint:disable-next-line:no-string-literal
         const base64ReadiumCSS = win.READIUM2.urlQueryParams[URL_PARAM_CSS];
         if (base64ReadiumCSS) {
@@ -4587,7 +4594,13 @@ const MAX_FOLLOWING_ELEMENTS_IDS = 100;
 let _elementsWithID: Array<Element> | undefined;
 const findFollowingDescendantSiblingElementsWithID = (el: Element): string[] | undefined => {
     let followingElementIDs: string[] | undefined;
-    if (win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING) || win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED) || win.document.documentElement.classList.contains(R2_MO_CLASS_STOPPED)) {
+
+    // debug("findFollowingDescendantSiblingElementsWithID 1", win.document.documentElement.classList);
+    // classes missing on very first document load, but see URL_PARAM_EPUBMEDIAOVERLAYS
+    if (win.document.documentElement.classList.contains(R2_MO_CLASS_PLAYING) ||
+        win.document.documentElement.classList.contains(R2_MO_CLASS_PAUSED) ||
+        win.document.documentElement.classList.contains(R2_MO_CLASS_STOPPED)) {
+
         if (!_elementsWithID) {
             const elHighlightsContainer = win.document.getElementById(ID_HIGHLIGHTS_CONTAINER);
             const elPopupDialog = win.document.getElementById(POPUP_DIALOG_CLASS);

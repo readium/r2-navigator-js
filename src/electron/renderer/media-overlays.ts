@@ -172,6 +172,10 @@ async function playMediaOverlays(
             debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE FALLBACK...");
             moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, textFragmentIDChain_, true);
         }
+        if (!moTextAudioPair && !isInteract) {
+            debug("playMediaOverlays() - findDepthFirstTextAudioPair() THIRD CHANCE FALLBACK...");
+            moTextAudioPair = findDepthFirstTextAudioPair(textHref, rootMo, undefined, false);
+        }
         // if (textFragmentIDChain) {
         //     if (IS_DEV) {
         //         debug("playMediaOverlays() - findDepthFirstTextAudioPair() SECOND CHANCE SKIP (jump back to body begin not desirable)");
@@ -1032,7 +1036,7 @@ function findDepthFirstTextAudioPair(
     MediaOverlayNode | undefined | null { // returns null when skipped
 
     if (DEBUG_AUDIO) {
-        debug("findDepthFirstTextAudioPair()");
+        debug("findDepthFirstTextAudioPair()", textFragmentIDChain);
     }
     const isSkip = _mediaOverlaySkippabilityIsEnabled && isSkippable(mo);
 
@@ -1063,10 +1067,10 @@ function findDepthFirstTextAudioPair(
         debug("isFragmentIDMatch: " + isFragmentIDMatch);
         debug("isTextUrlMatch: " + isTextUrlMatch);
     }
-    const isLeaf = mo.Children?.length;
-    if (!isLeaf) { // leaf === text/audio pair (SMIL par)
+    const hasChildren = mo.Children?.length;
+    if (!hasChildren) { // leaf === text/audio pair (SMIL par)
         if (DEBUG_AUDIO) {
-            debug("findDepthFirstTextAudioPair() - leaf text/audio pair");
+            debug("findDepthFirstTextAudioPair() - leaf text/audio pair", isFragmentIDMatch, isTextUrlMatch, textFragmentIDChain);
         }
         if (!isTextUrlMatch) {
             if (DEBUG_AUDIO) {

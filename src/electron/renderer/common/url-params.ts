@@ -10,6 +10,8 @@ export const URL_PARAM_GOTO = "r2_GOTO";
 export const URL_PARAM_GOTO_DOM_RANGE = "r2_GOTO_DOMRANGE";
 
 export const URL_PARAM_CSS = "r2_CSS";
+export const URL_PARAM_EPUBMEDIAOVERLAYS = "r2_isMO";
+
 export const URL_PARAM_EPUBREADINGSYSTEM = "r2_ERS";
 
 export const URL_PARAM_DEBUG_VISUALS = "r2_DEBUG";
