@@ -217,7 +217,15 @@ const ontimeupdate = async (ev: Event) => {
         _currentAudioElement.style.display = "block";
     }
     const currentAudioElement = ev.currentTarget as HTMLAudioElement; // _currentAudioElement
-    if (_currentAudioEnd && currentAudioElement.currentTime >= (_currentAudioEnd - 0.05)) {
+
+    // debug("ontimeupdate - _currentAudioEnd", _currentAudioEnd);
+    // debug("ontimeupdate - currentAudioElement.currentTime", currentAudioElement.currentTime);
+    if (_currentAudioEnd && currentAudioElement.currentTime >= (_currentAudioEnd - 0.05)
+        ||
+        !_currentAudioEnd && ev.type === "ended"
+        // ev.type === "timeupdate"
+        // currentAudioElement.currentTime >= currentAudioElement.duration
+    ) {
 
         if (IS_DEV) {
             debug("ontimeupdate - mediaOverlaysNext()");
@@ -246,6 +254,7 @@ const ensureOnTimeUpdate = (remove: boolean) => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (_currentAudioElement as any).__ontimeupdate = false;
                 _currentAudioElement.removeEventListener("timeupdate", ontimeupdate);
+                _currentAudioElement.removeEventListener("ended", ontimeupdate);
             }
         } else {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -253,6 +262,7 @@ const ensureOnTimeUpdate = (remove: boolean) => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (_currentAudioElement as any).__ontimeupdate = true;
                 _currentAudioElement.addEventListener("timeupdate", ontimeupdate);
+                _currentAudioElement.addEventListener("ended", ontimeupdate);
             }
         }
     }
@@ -408,7 +418,7 @@ async function playMediaOverlaysAudio(
     end: number | undefined) {
 
     if (IS_DEV) {
-        debug("playMediaOverlaysAudio()");
+        debug("playMediaOverlaysAudio()", begin, end, moTextAudioPair.Audio, moTextAudioPair.AudioClipBegin, moTextAudioPair.AudioClipEnd);
     }
 
     ensureKillAutoNextTimeout();
@@ -458,19 +468,32 @@ async function playMediaOverlaysAudio(
     if (!hasBegin && !hasEnd) {
         if (urlObjFull.hash) {
             const matches = urlObjFull.hash.match(/t=([0-9\.]+)(,([0-9\.]+))?/);
+            // debug("playMediaOverlaysAudio() matches", matches?.length);
             if (matches && matches.length >= 1) {
                 const b = matches[1];
-                try {
-                    _currentAudioBegin = parseFloat(b);
-                } catch (err) {
-                    debug(err);
+                // debug("playMediaOverlaysAudio() begin", b);
+                if (b) {
+                    try {
+                        _currentAudioBegin = parseFloat(b);
+                    } catch (err) {
+                        debug(err);
+                    }
+                }
+                if (typeof _currentAudioBegin !== "undefined" && isNaN(_currentAudioBegin)) {
+                    _currentAudioBegin = undefined;
                 }
                 if (matches.length >= 3) {
                     const e = matches[3];
-                    try {
-                        _currentAudioEnd = parseFloat(e);
-                    } catch (err) {
-                        debug(err);
+                    // debug("playMediaOverlaysAudio() end", e);
+                    if (e) {
+                        try {
+                            _currentAudioEnd = parseFloat(e);
+                        } catch (err) {
+                            debug(err);
+                        }
+                    }
+                    if (typeof _currentAudioEnd !== "undefined" && isNaN(_currentAudioEnd)) {
+                        _currentAudioEnd = undefined;
                     }
                 }
             }
@@ -481,7 +504,7 @@ async function playMediaOverlaysAudio(
         _currentAudioEnd = end;
     }
     if (IS_DEV) {
-        debug(`${urlFull} => [${_currentAudioBegin}-${_currentAudioEnd}]`);
+        debug(`playMediaOverlaysAudio() ${urlFull} => [${_currentAudioBegin}-${_currentAudioEnd}]`);
     }
 
     const playClip = async (initial: boolean) => {
