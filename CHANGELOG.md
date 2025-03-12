@@ -1,10 +1,30 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.20.9...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.20.10...develop
 
 Changes:
 * TODO
+
+# 1.20.10
+
+> Build environment: NodeJS `22.12.0`, NPM `11.1.0`
+
+Changes:
+* Fix for empty inline or block page breaks with no content (only title / aria label) causing random layout shifts in CSS column paginated document when located before the initial block element in the DOM
+* Performance improvement: CSS Selector, CFI and XPath computation caching (lifetime = DOM, no invalidation, which is fine for short string attached to elements)
+* Fix: TTS play from element + textnode/char-offset now works not only on user click, but also from current reading location (rangeInfo)
+* Fixed concurrent page turn events and visibility calculations (random edge case hard to reproduce due to debounce timing)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.20.10/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.20.10/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.20.10
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.20.9...v1.20.10
 
 # 1.20.9
 
