@@ -25,6 +25,7 @@ import {
 import { getCurrentReadingLocation, navPreviousOrNext } from "./location";
 import { ReadiumElectronBrowserWindow, IReadiumElectronWebview } from "./webview/state";
 import { IColor } from "../common/highlight";
+import { IRangeInfo } from "../common/selection";
 
 // import * as debug_ from "debug";
 // const debug = debug_("r2:navigator#electron/renderer/index");
@@ -219,6 +220,7 @@ export function ttsPlay(speed: number, voice: SpeechSynthesisVoice[] | SpeechSyn
     }
 
     let startElementCSSSelector: string | undefined;
+    let startElementRangeInfo: IRangeInfo | undefined;
     const loc = getCurrentReadingLocation();
 
     let activeWebView = win.READIUM2.getActiveWebViews().find((webview) => {
@@ -227,6 +229,10 @@ export function ttsPlay(speed: number, voice: SpeechSynthesisVoice[] | SpeechSyn
     if (loc && activeWebView) {
         startElementCSSSelector = loc.locator.locations.cssSelector;
     }
+    if (loc && activeWebView) {
+        startElementRangeInfo = loc.locator.locations.rangeInfo;
+    }
+
     if (!activeWebView) {
         activeWebView = win.READIUM2.getFirstWebView();
     }
@@ -241,6 +247,7 @@ export function ttsPlay(speed: number, voice: SpeechSynthesisVoice[] | SpeechSyn
         rootElement: "html > body", // win.document.body
         speed,
         startElement: startElementCSSSelector,
+        rangeInfo: startElementRangeInfo,
         voices: win.READIUM2.ttsVoices,
     };
 
