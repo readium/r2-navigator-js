@@ -45,7 +45,17 @@ export function uniqueCssSelector(input: Element, doc: Document, options?: Parti
     if (input.nodeType !== Node.ELEMENT_NODE) {
         throw new Error("Can't generate CSS selector for non-element node type.");
     }
+
+    // fast path: static cache
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((input as any).__r2CssSelector) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (input as any).__r2CssSelector;
+    }
+
     if ("html" === input.tagName.toLowerCase()) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (input as any).__r2CssSelector = "html";
         return "html";
     }
     const defaults: Options = {
@@ -74,7 +84,11 @@ export function uniqueCssSelector(input: Element, doc: Document, options?: Parti
         if (optimized.length > 0) {
             path = optimized[0];
         }
-        return selector(path);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (input as any).__r2CssSelector = selector(path);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (input as any).__r2CssSelector;
     } else {
         throw new Error("Selector was not found.");
     }
