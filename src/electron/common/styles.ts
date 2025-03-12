@@ -64,6 +64,18 @@ export const CSS_CLASS_NO_FOCUS_OUTLINE = "r2-no-focus-outline";
 export const footnotesCssStyles = `
 @namespace epub "http://www.idpf.org/2007/ops";
 
+*[epub|type~="pagebreak"]:empty::before {
+    display: contents;
+    /*display: inline-block;*/
+    content: "\\feff" /* zero width nbsp, instead of &#160; &nbsp; */
+}
+
+*[role~="doc-pagebreak"]:empty::before {
+    display: contents;
+    /*display: inline-block;*/
+    content: "\\feff" /* zero width nbsp, instead of &#160; &nbsp; */
+}
+
 :root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="footnote"]:not(.${FOOTNOTE_FORCE_SHOW}),
 :root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="note"]:not(.${FOOTNOTE_FORCE_SHOW}),
 :root:not(.${ROOT_CLASS_NO_FOOTNOTES}) aside[epub|type~="endnote"]:not(.${FOOTNOTE_FORCE_SHOW}),
