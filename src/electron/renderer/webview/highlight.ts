@@ -2366,8 +2366,27 @@ https://blackorwhite.lloydk.ca
 
         // clientRects = (DEBUG_RECTS && drawStrikeThrough) ? textClientRects : textReducedClientRectsToKeep;
     } else {
+        console.log("DEBUGDANIEL1", JSON.stringify(rangeClientRects, null, 4));
+        if (drawMarginBookmark &&
+            rangeClientRects.length === 2 &&
+            Math.floor(rangeClientRects[0].width) === 0 && // rangeClientRects[0].left === rangeClientRects[0].right
+            Math.floor(rangeClientRects[1].width) === 0 // rangeClientRects[1].left === rangeClientRects[1].right
+        ) {
+            console.log("DEBUGDANIEL2", JSON.stringify(rangeClientRects, null, 4));
+
+            // EDGE CASE (literally): click on blank area right hand side of CSS column (for LTR text)
+            rangeClientRects[0].width = 2;
+            rangeClientRects[0].left -= 1;
+            rangeClientRects[0].right += 1;
+
+            rangeClientRects[1].width = 2;
+            rangeClientRects[1].left -= 1;
+            rangeClientRects[1].right += 1;
+        }
         // solid highlight, can merge and reduce/simplify client rectangles as much as possible
         clientRects = getClientRectsNoOverlap(rangeClientRects, false, isVWM, highlight.expand ? highlight.expand : 0);
+
+        console.log("DEBUGDANIEL3", JSON.stringify(clientRects, null, 4));
     }
 
     // let highlightAreaSVGDocFrag: DocumentFragment | undefined;
