@@ -6,6 +6,24 @@ Git diff:
 Changes:
 * TODO
 
+# 1.20.11
+
+> Build environment: NodeJS `22.12.0`, NPM `11.1.0`
+
+Changes:
+* NPM package updates
+* Fix: highlights edge case CSS column width-collapsed caret rectangles
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.20.11/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.20.11/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.20.11
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.20.10...v1.20.11
+
 # 1.20.10
 
 > Build environment: NodeJS `22.12.0`, NPM `11.1.0`
