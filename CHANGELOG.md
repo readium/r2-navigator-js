@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.20.10...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.20.12...develop
 
 Changes:
 * TODO
+
+# 1.20.12
+
+> Build environment: NodeJS `22.12.0`, NPM `11.1.0`
+
+Changes:
+* Removed left-over debug console logging!
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.20.12/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.20.12/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.20.12
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.20.11...v1.20.12
 
 # 1.20.11
 
