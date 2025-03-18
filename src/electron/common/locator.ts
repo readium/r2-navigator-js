@@ -8,7 +8,7 @@
 // MIGRATED FROM r2-shared-js to include IRangeInfo ... makes more sense in navigator anyway, all other "data models" in r2-shared-js https://github.com/readium/r2-shared-js/tree/develop/src/models are publication-specialised and geared towards JSON/TS (un)marshalling (automatic (de)serialisation)
 // https://github.com/readium/r2-shared-js/blob/2a4bf179081364958aa93c7b634c1c14c6f14cd7/src/models/locator.ts#L1C1-L65C2
 
-import { IRangeInfo } from "./selection";
+import { ISelectionInfo } from "./selection";
 
 export interface Locator {
     // tslint:disable-next-line:max-line-length
@@ -70,5 +70,5 @@ export interface LocatorLocations {
     progression?: number;
 
     // different from selectionInfo in LocatorExtended which is for actual DOM selection (this is for bookmark/annotations/search referencing of precise character ranges, to avoid fallback to lowest common denominator cssSelector, which atom / granularity is DOM element that causes content "jumps" to previous page in CSS columns paginated mode)
-    rangeInfo?: IRangeInfo;
+    caretInfo?: ISelectionInfo;
 }

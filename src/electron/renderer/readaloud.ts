@@ -230,7 +230,7 @@ export function ttsPlay(speed: number, voice: SpeechSynthesisVoice[] | SpeechSyn
         startElementCSSSelector = loc.locator.locations.cssSelector;
     }
     if (loc && activeWebView) {
-        startElementRangeInfo = loc.locator.locations.rangeInfo;
+        startElementRangeInfo = loc.locator.locations.caretInfo?.rangeInfo;
     }
 
     if (!activeWebView) {

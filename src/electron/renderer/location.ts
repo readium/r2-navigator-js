@@ -603,7 +603,7 @@ export function handleLinkLocator(
     location: Locator | undefined,
     rcss?: IEventPayload_R2_EVENT_READIUMCSS,
 ) {
-    const rangeInfo = location?.locations?.rangeInfo;
+    const rangeInfo = location?.locations?.caretInfo?.rangeInfo;
 
     const publication = win.READIUM2.publication;
     const publicationURL = win.READIUM2.publicationURL;
@@ -1837,8 +1837,8 @@ const _saveReadingLocation = (activeWebView: IReadiumElectronWebview, locator: I
         locator: {
             href: docHref,
             locations: {
-                rangeInfo: locator.locations.rangeInfo ?
-                    locator.locations.rangeInfo : undefined,
+                caretInfo: locator.locations.caretInfo ?
+                    locator.locations.caretInfo : undefined,
                 cfi: locator.locations.cfi ?
                     locator.locations.cfi : undefined,
                 cssSelector: locator.locations.cssSelector ?
@@ -1865,7 +1865,7 @@ const _saveReadingLocation = (activeWebView: IReadiumElectronWebview, locator: I
         // debug(">->->", JSON.stringify(_lastSavedReadingLocation, null, "  "));
         debug(">->->");
         debug(_lastSavedReadingLocation);
-        debug(_lastSavedReadingLocation?.locator?.locations?.rangeInfo);
+        debug(_lastSavedReadingLocation?.locator?.locations?.caretInfo);
     }
 
     if (_readingLocationSaver) {

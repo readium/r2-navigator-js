@@ -12,7 +12,7 @@ import { isFocusable } from "tabbable";
 
 import { DISABLE_TEMPORARY_NAV_TARGET_OUTLINE_CLASS, ENABLE_SKIP_LINK, ID_HIGHLIGHTS_FLOATING } from "../../common/styles";
 
-import { IRangeInfo } from "../../common/selection";
+import { ISelectionInfo } from "../../common/selection";
 
 import { LocatorLocations, LocatorText } from "../../common/locator";
 
@@ -4990,7 +4990,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
         secondWebViewHref = undefined;
     }
 
-    let rangeInfo: IRangeInfo | undefined;
+    let caretInfo: ISelectionInfo | undefined;
     if (win.READIUM2.lastClickedTextChar && win.READIUM2.lastClickedTextChar.textNode?.nodeValue?.length) {
         const range = win.document.createRange();
         const startOffset = win.READIUM2.lastClickedTextChar.textNodeOffset >= win.READIUM2.lastClickedTextChar.textNode.nodeValue.length ? win.READIUM2.lastClickedTextChar.textNodeOffset - 1 : win.READIUM2.lastClickedTextChar.textNodeOffset;
@@ -4999,8 +4999,23 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
 
         const tuple = convertRange(range, getCssSelector, computeCFI, computeXPath);
         if (tuple) {
-            rangeInfo = tuple[0];
-            // const textInfo = tuple[1];
+            const rangeInfo = tuple[0];
+            const textInfo = tuple[1];
+            if (rangeInfo && textInfo) {
+                caretInfo = {
+                    textFragment: undefined,
+
+                    rangeInfo,
+
+                    cleanBefore: textInfo.cleanBefore,
+                    cleanText: textInfo.cleanText,
+                    cleanAfter: textInfo.cleanAfter,
+
+                    rawBefore: textInfo.rawBefore,
+                    rawText: textInfo.rawText,
+                    rawAfter: textInfo.rawAfter,
+                };
+            }
         }
     }
 
@@ -5024,7 +5039,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
             cssSelector,
             position: undefined, // calculated in host index.js renderer, where publication object is available
             progression,
-            rangeInfo,
+            caretInfo,
             xpath,
         },
         paginationInfo: pinfo,
