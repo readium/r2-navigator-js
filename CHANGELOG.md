@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.20.13...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.20.14...develop
 
 Changes:
 * TODO
+
+# 1.20.14
+
+> Build environment: NodeJS `22.12.0`, NPM `11.1.0`
+
+Changes:
+* Fix: improved fixed-layout (EPUB FXL) rendering performance, opacity mask to blank out the temporary layout reset which is currently necessary to compute adjusted page slot positioning based on zoom level
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.20.14/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.20.14/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.20.14
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.20.13...v1.20.14
 
 # 1.20.13
 
