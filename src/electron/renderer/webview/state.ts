@@ -97,6 +97,8 @@ export interface IReadiumElectronBrowserWindow {
 
     sessionInfo: string | undefined;
 
+    opacityMaskCounter?: number;
+
     domRootElement: HTMLElement;
     domSlidingViewport: HTMLElement;
 

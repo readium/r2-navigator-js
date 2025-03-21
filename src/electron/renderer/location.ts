@@ -701,6 +701,10 @@ function loadLink(
     secondWebView?: boolean,
     ): boolean {
 
+    if (typeof win.READIUM2.opacityMaskCounter === "undefined" || !secondWebView) {
+        win.READIUM2.opacityMaskCounter = 0;
+    }
+
     const publication = win.READIUM2.publication;
     const publicationURL = win.READIUM2.publicationURL;
     if (!publication || !publicationURL) {
@@ -988,6 +992,8 @@ function loadLink(
             }
             if (activeWebView) {
                 debug("loadLink LEFT ... setWebViewStyle");
+                win.READIUM2.domRootElement.style.opacity = "0";
+                win.READIUM2.opacityMaskCounter++;
                 setWebViewStyle(activeWebView, WebViewSlotEnum.left);
             }
         } else if (page === PageEnum.Right) {
@@ -1021,12 +1027,16 @@ function loadLink(
             }
             if (activeWebView) {
                 debug("loadLink RIGHT ... setWebViewStyle");
+                win.READIUM2.domRootElement.style.opacity = "0";
+                win.READIUM2.opacityMaskCounter++;
                 setWebViewStyle(activeWebView, WebViewSlotEnum.right);
             }
         } else {
             webViewSlot = WebViewSlotEnum.center;
             if (activeWebView) {
                 debug("loadLink CENTER ... setWebViewStyle");
+                win.READIUM2.domRootElement.style.opacity = "0";
+                win.READIUM2.opacityMaskCounter++;
                 setWebViewStyle(activeWebView, WebViewSlotEnum.center);
             }
         }
@@ -1668,7 +1678,7 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
                     newActiveWebView.READIUM2.link = pubLink;
                     newActiveWebView.setAttribute("src", uriStr__);
                 }
-            }, highlights ? 500 : win.READIUM2.ttsClickEnabled ? 100 : 10);
+            }, highlights ? 0 : win.READIUM2.ttsClickEnabled ? 100 : 0);
         } else {
             const highlights = activeWebView.READIUM2.link === pubLink ? activeWebView.READIUM2.highlights : undefined;
             setTimeout(async () => {
@@ -1734,7 +1744,7 @@ ${coverLink ? `<img id="${AUDIO_COVER_ID}" src="${coverLink.Href}" alt="" ${cove
                 } else {
                     activeWebView.setAttribute("src", uriStr__);
                 }
-            }, highlights ? 500 : win.READIUM2.ttsClickEnabled ? 100 : 10);
+            }, highlights ? 0 : win.READIUM2.ttsClickEnabled ? 100 : 0);
         }
     }
 

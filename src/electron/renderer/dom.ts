@@ -129,79 +129,6 @@ const debug = debug_("r2:navigator#electron/renderer/index");
 
 const win = global.window as ReadiumElectronBrowserWindow;
 
-let _resizeSkip = 0;
-let _resizeWebviewsNeedReset = true;
-let _resizeTimeout: number | undefined;
-// let _resizeFirst = true;
-win.addEventListener("resize", () => {
-    // Skip non-navigator renderers that import this JS file for installNavigatorDOM() but don't actually use it (e.g. PDF or Divina in Thorium Reader.tsx)
-    if (!win.READIUM2) {
-        return;
-    }
-
-    let atLeastOneFXL = false;
-    const actives = win.READIUM2.getActiveWebViews();
-    for (const activeWebView of actives) {
-        if (isFixedLayout(activeWebView.READIUM2?.link)) {
-            atLeastOneFXL = true;
-            break;
-        }
-    }
-    // win.READIUM2.publication?.Metadata?.Rendition?.Layout !== "fixed"
-    if (!atLeastOneFXL) {
-        debug("Window resize (TOP), !FXL SKIP ...");
-        return;
-    }
-
-    //     debug("Window resize (TOP), SKIP FIRST");
-    //     _resizeFirst = false;
-    //     return;
-    // }
-    if (_resizeSkip > 0) {
-        debug("Window resize (TOP), SKIP ...", _resizeSkip);
-        return;
-    }
-
-    if (_resizeWebviewsNeedReset) {
-        _resizeWebviewsNeedReset = false;
-
-        debug("Window resize (TOP), IMMEDIATE");
-        const activeWebViews = win.READIUM2.getActiveWebViews();
-        for (const activeWebView of activeWebViews) {
-            const wvSlot = activeWebView.getAttribute("data-wv-slot") as WebViewSlotEnum;
-            if (wvSlot) {
-                debug("Window resize (TOP), IMMEDIATE ... setWebViewStyle");
-                setWebViewStyle(activeWebView, wvSlot);
-            }
-        }
-    }
-
-    if (_resizeTimeout) {
-        clearTimeout(_resizeTimeout);
-    }
-    _resizeTimeout = win.setTimeout(async () => {
-        debug("Window resize (TOP), DEFERRED");
-        _resizeTimeout = undefined;
-        _resizeWebviewsNeedReset = true;
-        const activeWebViews = win.READIUM2.getActiveWebViews();
-        _resizeSkip = activeWebViews.length;
-        for (const activeWebView of activeWebViews) {
-            const wvSlot = activeWebView.getAttribute("data-wv-slot") as WebViewSlotEnum;
-            if (wvSlot) {
-                try {
-                    // will trigger R2_EVENT_FXL_CONFIGURE => setWebViewStyle
-                    if (activeWebView.READIUM2?.DOMisReady) {
-                        await activeWebView.send("R2_EVENT_WINDOW_RESIZE", win.READIUM2.fixedLayoutZoomPercent);
-                    }
-                } catch (e) {
-                    debug(e);
-                }
-            }
-        }
-
-    }, 500);
-});
-
 ipcRenderer.on("accessibility-support-changed", (_e, accessibilitySupportEnabled) => {
     // Skip non-navigator renderers that import this JS file for installNavigatorDOM() but don't actually use it (e.g. PDF or Divina in Thorium Reader.tsx)
     if (!win.READIUM2) {
@@ -305,6 +232,7 @@ export function fixedLayoutZoomPercent(zoomPercent: number) {
 
     win.READIUM2.fixedLayoutZoomPercent = zoomPercent;
 
+    win.READIUM2.opacityMaskCounter = 0;
     const activeWebViews = win.READIUM2.getActiveWebViews();
     for (const activeWebView of activeWebViews) {
         if (_fixedLayoutZoomPercentTimers[activeWebView.id] !== undefined) {
@@ -313,8 +241,12 @@ export function fixedLayoutZoomPercent(zoomPercent: number) {
             // delete _fixedLayoutZoomPercentTimers[activeWebView.id];
         }
         const wvSlot = activeWebView.getAttribute("data-wv-slot") as WebViewSlotEnum;
-        if (wvSlot) {
+        if (wvSlot && win.READIUM2.domRootElement) {
             debug("fixedLayoutZoomPercent ... setWebViewStyle");
+
+            // win.READIUM2.domSlidingViewport
+            win.READIUM2.domRootElement.style.opacity = "0";
+            win.READIUM2.opacityMaskCounter++;
             setWebViewStyle(activeWebView, wvSlot);
 
             _fixedLayoutZoomPercentTimers[activeWebView.id] = win.setTimeout(async () => {
@@ -324,11 +256,16 @@ export function fixedLayoutZoomPercent(zoomPercent: number) {
                     // will trigger R2_EVENT_FXL_CONFIGURE => setWebViewStyle
                     if (activeWebView.READIUM2?.DOMisReady) {
                         await activeWebView.send("R2_EVENT_WINDOW_RESIZE", zoomPercent);
+                    } else {
+                        if (win.READIUM2.opacityMaskCounter) {
+                            win.READIUM2.opacityMaskCounter--;
+                        }
+                        win.READIUM2.domRootElement.style.opacity = "1";
                     }
                 } catch (e) {
                     debug(e);
                 }
-            }, 500);
+            }, 100);
         }
     }
 }
@@ -448,7 +385,10 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             } else {
                 setWebViewStyle(webview, WebViewSlotEnum.center, null);
             }
-            _resizeSkip--;
+            if (!win.READIUM2.opacityMaskCounter || --win.READIUM2.opacityMaskCounter <= 0) {
+                win.READIUM2.domRootElement.style.opacity = "1";
+            }
+            // _resizeSkip--;
         } else if (event.channel === R2_EVENT_WEBVIEW_KEYDOWN) {
             const payload = event.args[0] as IEventPayload_R2_EVENT_WEBVIEW_KEYDOWN;
             if (_keyDownEventHandler) {
@@ -653,6 +593,10 @@ export function installNavigatorDOM(
     sessionInfo: string | undefined,
     rcss: IEventPayload_R2_EVENT_READIUMCSS | undefined,
 ) {
+    // let _resizeSkip = 0;
+    let _resizeWebviewsNeedReset = true;
+    let _resizeTimeout: number | undefined;
+    // let _resizeFirst = true;
 
     // debug(JSON.stringify(publication, null, 4));
     // debug(util.inspect(publication,
@@ -816,6 +760,87 @@ export function installNavigatorDOM(
     domRootElement.appendChild(domSlidingViewport);
 
     createWebView();
+
+    const resizeObserver = new win.ResizeObserver((_entries) => {
+        // Skip non-navigator renderers that import this JS file for installNavigatorDOM() but don't actually use it (e.g. PDF or Divina in Thorium Reader.tsx)
+        if (!win.READIUM2) {
+            return;
+        }
+
+        let atLeastOneFXL = false;
+        const actives = win.READIUM2.getActiveWebViews();
+        for (const activeWebView of actives) {
+            if (isFixedLayout(activeWebView.READIUM2?.link)) {
+                atLeastOneFXL = true;
+                break;
+            }
+        }
+        // win.READIUM2.publication?.Metadata?.Rendition?.Layout !== "fixed"
+        if (!atLeastOneFXL) {
+            debug("Window resize (TOP), !FXL SKIP ...");
+            return;
+        }
+
+        //     debug("Window resize (TOP), SKIP FIRST");
+        //     _resizeFirst = false;
+        //     return;
+        // }
+        // if (_resizeSkip > 0) {
+        //     debug("Window resize (TOP), SKIP ...", _resizeSkip);
+        //     return;
+        // }
+
+        if (_resizeWebviewsNeedReset) {
+            _resizeWebviewsNeedReset = false;
+
+            debug("Window resize (TOP), IMMEDIATE");
+            win.READIUM2.opacityMaskCounter = 0;
+            const activeWebViews = win.READIUM2.getActiveWebViews();
+            for (const activeWebView of activeWebViews) {
+                const wvSlot = activeWebView.getAttribute("data-wv-slot") as WebViewSlotEnum;
+                if (wvSlot) {
+                    debug("Window resize (TOP), IMMEDIATE ... setWebViewStyle");
+                    win.READIUM2.domRootElement.style.opacity = "0";
+                    win.READIUM2.opacityMaskCounter++;
+                    setWebViewStyle(activeWebView, wvSlot);
+                }
+            }
+        }
+
+        if (_resizeTimeout) {
+            clearTimeout(_resizeTimeout);
+            _resizeTimeout = undefined;
+        }
+        _resizeTimeout = win.setTimeout(async () => {
+            debug("Window resize (TOP), DEFERRED");
+            _resizeTimeout = undefined;
+            _resizeWebviewsNeedReset = true;
+            const activeWebViews = win.READIUM2.getActiveWebViews();
+            // _resizeSkip = activeWebViews.length;
+            for (const activeWebView of activeWebViews) {
+                const wvSlot = activeWebView.getAttribute("data-wv-slot") as WebViewSlotEnum;
+                if (wvSlot) {
+                    try {
+                        // will trigger R2_EVENT_FXL_CONFIGURE => setWebViewStyle
+                        if (activeWebView.READIUM2?.DOMisReady) {
+                            await activeWebView.send("R2_EVENT_WINDOW_RESIZE", win.READIUM2.fixedLayoutZoomPercent);
+                        } else {
+                            if (win.READIUM2.opacityMaskCounter) {
+                                win.READIUM2.opacityMaskCounter--;
+                            }
+                            win.READIUM2.domRootElement.style.opacity = "1";
+                        }
+                    } catch (e) {
+                        debug(e);
+                    }
+                }
+            }
+
+        }, 100);
+    });
+    resizeObserver.observe(domSlidingViewport); // ELEMENT_ID_SLIDING_VIEWPORT
+    // win.addEventListener("resize", () => {
+    // });
 
     setTimeout(() => {
         debug("installNavigatorDOM -> handleLinkLocator");
