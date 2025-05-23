@@ -14,7 +14,7 @@ import {
 } from "../../common/events";
 import { WebViewSlotEnum } from "../../common/styles";
 import { IStringMap } from "../common/querystring";
-import { IColor, IHighlight } from "src/electron/common/highlight";
+import { IColor, IHighlight } from "../../common/highlight";
 
 export type TWindow = typeof window;
 
