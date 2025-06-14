@@ -953,7 +953,7 @@ export async function clearSession(sess: Electron.Session, str: string): Promise
         origin: "*",
         quotas: [
             "temporary",
-            "syncable",
+            // "syncable",
         ],
         storages: [
             // "cookies",

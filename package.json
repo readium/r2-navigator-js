@@ -1,6 +1,6 @@
 {
   "name": "r2-navigator-js",
-  "version": "1.20.14",
+  "version": "1.21.0",
   "description": "Readium 2 'navigator' for NodeJS (TypeScript)",
   "keywords": [
     "readium",
@@ -20,8 +20,8 @@
     "ECMAScript 8"
   ],
   "engines": {
-    "node": ">=20.0.0",
-    "npm": ">=10.0.0"
+    "node": ">=22.0.0",
+    "npm": ">=11.0.0"
   },
   "repository": {
     "type": "git",
@@ -46,18 +46,18 @@
   "dependencies": {
     "@flatten-js/core": "^1.6.2",
     "@flatten-js/polygon-offset": "^1.1.4",
-    "@floating-ui/dom": "^1.6.13",
+    "@floating-ui/dom": "^1.7.1",
     "@xmldom/xmldom": "^0.9.8",
     "css.escape": "^1.5.1",
     "cssesc": "^3.0.0",
     "debounce": "^2.2.0",
-    "debug": "^4.4.0",
-    "express": "^4.21.2",
+    "debug": "^4.4.1",
+    "express": "^5.1.0",
     "moment": "^2.30.1",
-    "r2-lcp-js": "^1.0.43",
-    "r2-shared-js": "^1.0.82",
-    "r2-streamer-js": "^1.0.50",
-    "r2-utils-js": "^1.0.42",
+    "r2-lcp-js": "^1.0.44",
+    "r2-shared-js": "^1.0.83",
+    "r2-streamer-js": "^1.0.51",
+    "r2-utils-js": "^1.0.43",
     "request": "^2.88.2",
     "sentence-splitter": "^5.0.0",
     "ta-json-x": "^2.5.3",
@@ -68,28 +68,28 @@
   "devDependencies": {
     "@medv/finder": "^4.0.2",
     "@types/debug": "^4.1.12",
-    "@types/express": "^5.0.0",
-    "@types/node": "^22.13.10",
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.15.31",
     "@types/request": "^2.48.12",
     "@types/request-promise-native": "^1.0.21",
     "@types/urijs": "^1.19.25",
-    "@typescript-eslint/eslint-plugin": "^8.26.1",
-    "@typescript-eslint/parser": "^8.26.1",
+    "@typescript-eslint/eslint-plugin": "^8.34.0",
+    "@typescript-eslint/parser": "^8.34.0",
     "cpy-cli": "^5.0.0",
     "cross-env": "^7.0.3",
     "cson": "^8.4.0",
     "eclint": "^2.8.1",
-    "electron": "^35.0.2",
+    "electron": "^36.4.0",
     "eslint": "^8.57.1",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-prettier": "^5.2.3",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.4.1",
     "filehound": "^1.17.6",
     "git-rev-sync": "^3.0.2",
     "json": "^11.0.0",
     "mkdirp": "^3.0.1",
     "prettier": "^3.5.3",
     "rimraf": "^6.0.1",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   },
   "files": [
     "LICENSE",
