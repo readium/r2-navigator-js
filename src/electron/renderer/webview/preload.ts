@@ -4938,7 +4938,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
     const pinfo = (progressionData && progressionData.paginationInfo) ?
         progressionData.paginationInfo : undefined;
 
-    const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI, computeXPath);
+    const selInfo = getCurrentSelectionInfo(win, getCssSelector, /* computeCFI, */ computeXPath);
     // if (IS_DEV) { // && win.READIUM2.DEBUG_VISUALS
     //     if (selInfo) {
     //         createHighlight(win,
@@ -4997,7 +4997,7 @@ const notifyReadingLocationRaw = (userInteract?: boolean, ignoreMediaOverlays?: 
         range.setStart(win.READIUM2.lastClickedTextChar.textNode, startOffset);
         range.setEnd(win.READIUM2.lastClickedTextChar.textNode, startOffset + 1);
 
-        const tuple = convertRange(range, getCssSelector, computeCFI, computeXPath);
+        const tuple = convertRange(range, getCssSelector, /* computeCFI, */ computeXPath);
         if (tuple) {
             const rangeInfo = tuple[0];
             const textInfo = tuple[1];
@@ -5492,7 +5492,7 @@ if (!win.READIUM2.isAudio) {
             ] :
             payloadPing.highlightDefinitions;
 
-        const selInfo = getCurrentSelectionInfo(win, getCssSelector, computeCFI, computeXPath);
+        const selInfo = getCurrentSelectionInfo(win, getCssSelector, /* computeCFI, */ computeXPath);
         for (const highlightDefinition of highlightDefinitions) {
             if (!highlightDefinition.selectionInfo) {
                 highlightDefinition.selectionInfo = selInfo;

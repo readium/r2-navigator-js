@@ -13,6 +13,12 @@ import { ipcRenderer } from "electron";
 
 import { R2_EVENT_READING_LOCATION_CLEAR_SELECTION } from "../../common/events";
 
+import { EpubCfiUtils } from "../../common/colibrio-cfi/EpubCfiUtils";
+import { EpubCfiBuilderHelper } from "../../common/colibrio-cfi/builder/EpubCfiBuilderHelper";
+import { EpubCfiStringifier } from "../../common/colibrio-cfi/stringifier/EpubCfiStringifier";
+import { EpubCfiParser } from "../../common/colibrio-cfi/parser/EpubCfiParser";
+import { EpubCfiResolver } from "../../common/colibrio-cfi/resolver/EpubCfiResolver";
+
 const IS_DEV = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev");
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Selection
@@ -154,7 +160,7 @@ export const cleanupStr = (str: string) => {
 export function getCurrentSelectionInfo(
     win: ReadiumElectronWebviewWindow,
     getCssSelector: (element: Element) => string,
-    computeElementCFI: (node: Node) => string | undefined,
+    // computeElementCFI: (node: Node) => string | undefined,
     computeElementXPath: (node: Node) => string | undefined,
 ):
     ISelectionInfo | undefined {
@@ -218,7 +224,7 @@ export function getCurrentSelectionInfo(
         }
     }
 
-    const tuple = convertRange(range, getCssSelector, computeElementCFI, computeElementXPath);
+    const tuple = convertRange(range, getCssSelector, /* computeElementCFI, */ computeElementXPath);
     if (!tuple) {
         console.log("^^^ SELECTION RANGE INFO FAIL?!");
         return undefined;
@@ -378,7 +384,7 @@ export function createOrderedRange(startNode: Node, startOffset: number, endNode
 export function convertRange(
     range: Range,
     getCssSelector: (element: Element) => string,
-    computeElementCFI: (node: Node) => string | undefined,
+    // computeElementCFI: (node: Node) => string | undefined,
     computeElementXPath: (node: Node) => string | undefined,
 ):
     [IRangeInfo, ISelectedTextInfo] | undefined {
@@ -527,98 +533,140 @@ export function convertRange(
         rawAfter = rawAfter.substring(0, i + 1);
     }
 
-    // -----------------
-    const rootElementCfi = computeElementCFI(commonElementAncestor);
-    // console.log(`ROOT CFI: ${rootElementCfi}`);
-    // console.log(commonElementAncestor.outerHTML);
-
-    const startElementCfi = computeElementCFI(startContainerElement);
-    // console.log(`START CFI: ${startElementCfi}`);
     // console.log(startContainerElement.outerHTML);
     const startElementXPath = computeElementXPath(startContainerElement);
 
-    const endElementCfi = computeElementCFI(endContainerElement);
-    // console.log(`END CFI: ${endElementCfi}`);
     // console.log(endContainerElement.outerHTML);
     const endElementXPath = computeElementXPath(endContainerElement);
 
-    let cfi: string | undefined;
+    // -----------------
 
-    if (rootElementCfi && startElementCfi && endElementCfi) {
-        let startElementOrTextCfi = startElementCfi;
-        if (!startIsElement) {
-            const startContainerChildTextNodeIndexForCfi =
-                getChildTextNodeCfiIndex(startContainerElement, range.startContainer as Text);
-            // startContainerChildTextNodeIndex ===
-            // Array.from(startContainerElement.childNodes).indexOf(range.startContainer as ChildNode)
-            startElementOrTextCfi = startElementCfi + "/" +
-                startContainerChildTextNodeIndexForCfi + ":" + range.startOffset;
-        } else {
-            if (range.startOffset >= 0 && range.startOffset < startContainerElement.childNodes.length) {
-                const childNode = startContainerElement.childNodes[range.startOffset];
-                if (childNode.nodeType === Node.ELEMENT_NODE) {
-                    startElementOrTextCfi = startElementCfi + "/" + ((range.startOffset + 1) * 2);
-                } else {
-                    const cfiTextNodeIndex = getChildTextNodeCfiIndex(startContainerElement, childNode as Text);
-                    startElementOrTextCfi = startElementCfi + "/" + cfiTextNodeIndex; // + ":0";
-                }
-            } else {
-                const cfiIndexOfLastElement = ((startContainerElement.childElementCount) * 2);
-                const lastChildNode = startContainerElement.childNodes[startContainerElement.childNodes.length - 1];
-                if (lastChildNode.nodeType === Node.ELEMENT_NODE) {
-                    startElementOrTextCfi = startElementCfi + "/" + (cfiIndexOfLastElement + 1);
-                } else {
-                    startElementOrTextCfi = startElementCfi + "/" + (cfiIndexOfLastElement + 2);
-                }
-            }
-        }
-        // console.log(`START TEXT CFI: ${startTextCfi}`);
-
-        let endElementOrTextCfi = endElementCfi;
-        if (!endIsElement) {
-            const endContainerChildTextNodeIndexForCfi =
-                getChildTextNodeCfiIndex(endContainerElement, range.endContainer as Text);
-            // endContainerChildTextNodeIndex ===
-            // Array.from(endContainerElement.childNodes).indexOf(range.endContainer as ChildNode)
-            endElementOrTextCfi = endElementCfi + "/" +
-                endContainerChildTextNodeIndexForCfi + ":" + range.endOffset;
-        } else {
-            if (range.endOffset >= 0 && range.endOffset < endContainerElement.childNodes.length) {
-                const childNode = endContainerElement.childNodes[range.endOffset];
-                if (childNode.nodeType === Node.ELEMENT_NODE) {
-                    endElementOrTextCfi = endElementCfi + "/" + ((range.endOffset + 1) * 2);
-                } else {
-                    const cfiTextNodeIndex = getChildTextNodeCfiIndex(endContainerElement, childNode as Text);
-                    endElementOrTextCfi = endElementCfi + "/" + cfiTextNodeIndex; // + ":0";
-                }
-            } else {
-                const cfiIndexOfLastElement = ((endContainerElement.childElementCount) * 2);
-                const lastChildNode = endContainerElement.childNodes[endContainerElement.childNodes.length - 1];
-                if (lastChildNode.nodeType === Node.ELEMENT_NODE) {
-                    endElementOrTextCfi = endElementCfi + "/" + (cfiIndexOfLastElement + 1);
-                } else {
-                    endElementOrTextCfi = endElementCfi + "/" + (cfiIndexOfLastElement + 2);
-                }
-            }
-        }
-        // console.log(`END TEXT CFI: ${endTextCfi}`);
-
-        cfi = rootElementCfi + "," +
-            startElementOrTextCfi.replace(rootElementCfi, "") + "," +
-            endElementOrTextCfi.replace(rootElementCfi, "");
+    const rootNode = EpubCfiUtils.createEmptyRootNode();
+    EpubCfiBuilderHelper.appendTerminalDomRange(range, rootNode);
+    let cfi = EpubCfiStringifier.stringifyRootNode(rootNode);
+    const cfi_ = cfi;
+    if (cfi) {
+        cfi = cfi.replace(/^epubcfi\(/, "").replace(/\)$/, "");
     }
+
+    if (IS_DEV) {
+        const parser = new EpubCfiParser(cfi_);
+        const rootNode_ = parser.parse();
+        const resolver = new EpubCfiResolver(rootNode_);
+        resolver.continueResolving(window.document, new URL("fake://dummy"));
+        const resolved = resolver.getResolvedTarget();
+        if (resolved.hasErrors()) {
+            console.log("Colibrio CFI ERRORS:");
+            console.log(JSON.stringify(resolved.getParserErrors(), null, 4));
+            console.log(JSON.stringify(resolved.getResolverErrors(), null, 4));
+        } else {
+            if (resolved.isDomRange()) {
+                const domRange = resolved.createDomRange();
+                console.log("Colibrio CFI DOM RANGE");
+                console.log(typeof domRange);
+                if (domRange) {
+                    const rangesAreEqual =
+                        domRange.startContainer === range.startContainer
+                        && domRange.endContainer === range.endContainer
+                        && domRange.startOffset === range.startOffset
+                        && domRange.endOffset === range.endOffset;
+                    console.log(rangesAreEqual ? "RANGES ARE EQUAL :)" : "RANGES ARE DIFFERENT :(");
+                }
+            } else if (resolved.isTargetingElement()) {
+                const elem = resolved.getTargetElement();
+                console.log("Colibrio CFI ELEMENT");
+                console.log(elem);
+            }
+        }
+    }
+
+    // let cfi: string | undefined;
+
+    // const rootElementCfi = computeElementCFI(commonElementAncestor);
+    // // console.log(`ROOT CFI: ${rootElementCfi}`);
+    // // console.log(commonElementAncestor.outerHTML);
+
+    // const startElementCfi = computeElementCFI(startContainerElement);
+    // // console.log(`START CFI: ${startElementCfi}`);
+
+    // const endElementCfi = computeElementCFI(endContainerElement);
+    // // console.log(`END CFI: ${endElementCfi}`);
+
+    // if (rootElementCfi && startElementCfi && endElementCfi) {
+    //     let startElementOrTextCfi = startElementCfi;
+    //     if (!startIsElement) {
+    //         const startContainerChildTextNodeIndexForCfi =
+    //             getChildTextNodeCfiIndex(startContainerElement, range.startContainer as Text);
+    //         // startContainerChildTextNodeIndex ===
+    //         // Array.from(startContainerElement.childNodes).indexOf(range.startContainer as ChildNode)
+    //         startElementOrTextCfi = startElementCfi + "/" +
+    //             startContainerChildTextNodeIndexForCfi + ":" + range.startOffset;
+    //     } else {
+    //         if (range.startOffset >= 0 && range.startOffset < startContainerElement.childNodes.length) {
+    //             const childNode = startContainerElement.childNodes[range.startOffset];
+    //             if (childNode.nodeType === Node.ELEMENT_NODE) {
+    //                 startElementOrTextCfi = startElementCfi + "/" + ((range.startOffset + 1) * 2);
+    //             } else {
+    //                 const cfiTextNodeIndex = getChildTextNodeCfiIndex(startContainerElement, childNode as Text);
+    //                 startElementOrTextCfi = startElementCfi + "/" + cfiTextNodeIndex; // + ":0";
+    //             }
+    //         } else {
+    //             const cfiIndexOfLastElement = ((startContainerElement.childElementCount) * 2);
+    //             const lastChildNode = startContainerElement.childNodes[startContainerElement.childNodes.length - 1];
+    //             if (lastChildNode.nodeType === Node.ELEMENT_NODE) {
+    //                 startElementOrTextCfi = startElementCfi + "/" + (cfiIndexOfLastElement + 1);
+    //             } else {
+    //                 startElementOrTextCfi = startElementCfi + "/" + (cfiIndexOfLastElement + 2);
+    //             }
+    //         }
+    //     }
+    //     // console.log(`START TEXT CFI: ${startTextCfi}`);
+
+    //     let endElementOrTextCfi = endElementCfi;
+    //     if (!endIsElement) {
+    //         const endContainerChildTextNodeIndexForCfi =
+    //             getChildTextNodeCfiIndex(endContainerElement, range.endContainer as Text);
+    //         // endContainerChildTextNodeIndex ===
+    //         // Array.from(endContainerElement.childNodes).indexOf(range.endContainer as ChildNode)
+    //         endElementOrTextCfi = endElementCfi + "/" +
+    //             endContainerChildTextNodeIndexForCfi + ":" + range.endOffset;
+    //     } else {
+    //         if (range.endOffset >= 0 && range.endOffset < endContainerElement.childNodes.length) {
+    //             const childNode = endContainerElement.childNodes[range.endOffset];
+    //             if (childNode.nodeType === Node.ELEMENT_NODE) {
+    //                 endElementOrTextCfi = endElementCfi + "/" + ((range.endOffset + 1) * 2);
+    //             } else {
+    //                 const cfiTextNodeIndex = getChildTextNodeCfiIndex(endContainerElement, childNode as Text);
+    //                 endElementOrTextCfi = endElementCfi + "/" + cfiTextNodeIndex; // + ":0";
+    //             }
+    //         } else {
+    //             const cfiIndexOfLastElement = ((endContainerElement.childElementCount) * 2);
+    //             const lastChildNode = endContainerElement.childNodes[endContainerElement.childNodes.length - 1];
+    //             if (lastChildNode.nodeType === Node.ELEMENT_NODE) {
+    //                 endElementOrTextCfi = endElementCfi + "/" + (cfiIndexOfLastElement + 1);
+    //             } else {
+    //                 endElementOrTextCfi = endElementCfi + "/" + (cfiIndexOfLastElement + 2);
+    //             }
+    //         }
+    //     }
+    //     // console.log(`END TEXT CFI: ${endTextCfi}`);
+
+    //     cfi = rootElementCfi + "," +
+    //         startElementOrTextCfi.replace(rootElementCfi, "") + "," +
+    //         endElementOrTextCfi.replace(rootElementCfi, "");
+    // }
     // -----------------
     return [{
         cfi,
 
         endContainerChildTextNodeIndex,
-        endContainerElementCFI: endElementCfi,
+        // endContainerElementCFI: endElementCfi,
         endContainerElementXPath: endElementXPath,
         endContainerElementCssSelector,
         endOffset: range.endOffset,
 
         startContainerChildTextNodeIndex,
-        startContainerElementCFI: startElementCfi,
+        // startContainerElementCFI: startElementCfi,
         startContainerElementXPath: startElementXPath,
         startContainerElementCssSelector,
         startOffset: range.startOffset,
@@ -715,33 +763,33 @@ function getCommonAncestorElement(node1: Node, node2: Node): Element | undefined
     return commonAncestor;
 }
 
-function isCfiTextNode(node: Node) {
-    return node.nodeType !== Node.ELEMENT_NODE;
-    // return node.nodeType === Node.TEXT_NODE ||
-    //     node.nodeType === Node.COMMENT_NODE ||
-    //     node.nodeType === Node.CDATA_SECTION_NODE; // other?
-}
-function getChildTextNodeCfiIndex(element: Element, child: Text): number {
-    let found = -1;
-    let textNodeIndex = -1;
-    let previousWasElement = false;
-    // tslint:disable-next-line:prefer-for-of
-    for (let i = 0; i < element.childNodes.length; i++) {
-        const childNode = element.childNodes[i];
-        const isText = isCfiTextNode(childNode);
-        if (isText || previousWasElement) {
-            textNodeIndex += 2;
-        }
-        if (isText) {
-            if (childNode === child) {
-                found = textNodeIndex;
-                break;
-            }
-        }
-        previousWasElement = childNode.nodeType === Node.ELEMENT_NODE;
-    }
-    return found;
-}
+// function isCfiTextNode(node: Node) {
+//     return node.nodeType !== Node.ELEMENT_NODE;
+//     // return node.nodeType === Node.TEXT_NODE ||
+//     //     node.nodeType === Node.COMMENT_NODE ||
+//     //     node.nodeType === Node.CDATA_SECTION_NODE; // other?
+// }
+// function getChildTextNodeCfiIndex(element: Element, child: Text): number {
+//     let found = -1;
+//     let textNodeIndex = -1;
+//     let previousWasElement = false;
+//     // tslint:disable-next-line:prefer-for-of
+//     for (let i = 0; i < element.childNodes.length; i++) {
+//         const childNode = element.childNodes[i];
+//         const isText = isCfiTextNode(childNode);
+//         if (isText || previousWasElement) {
+//             textNodeIndex += 2;
+//         }
+//         if (isText) {
+//             if (childNode === child) {
+//                 found = textNodeIndex;
+//                 break;
+//             }
+//         }
+//         previousWasElement = childNode.nodeType === Node.ELEMENT_NODE;
+//     }
+//     return found;
+// }
 
 // function getChildTextNode(element: Element, index: number): Text | undefined {
 

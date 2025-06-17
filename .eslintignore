@@ -8,3 +8,4 @@ misc/*
 node_modules/*
 tools/*
 tsconfigs/*
+src/electron/common/colibrio-cfi/**/*

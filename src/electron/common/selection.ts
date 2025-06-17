@@ -22,7 +22,7 @@ export interface IRangeInfo {
     // either Range.startContainer if its nodeType == Node.ELEMENT_NODE
     // or Range.startContainer.parentElement if Range.startContainer.nodeType == Node.TEXT_NODE
     startContainerElementCssSelector: string;
-    startContainerElementCFI: string | undefined;
+    // startContainerElementCFI: string | undefined;
     startContainerElementXPath: string | undefined;
 
     // if i == -1, Range.startContainer is the above element
@@ -42,7 +42,7 @@ export interface IRangeInfo {
     startOffset: number;
 
     endContainerElementCssSelector: string;
-    endContainerElementCFI: string | undefined;
+    // endContainerElementCFI: string | undefined;
     endContainerElementXPath: string | undefined;
     endContainerChildTextNodeIndex: number;
     endOffset: number;
