@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.21.1...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.22.0...develop
 
 Changes:
 * TODO
+
+# 1.22.0
+
+> Build environment: NodeJS `22.14.0`, NPM `11.4.2`
+
+Changes:
+* Fixed Chinese RTL error
+* NPM package updates, notably Electron 37
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.22.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.22.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.22.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.21.1...v1.22.0
 
 # 1.21.1
 
