@@ -114,9 +114,10 @@ export function isDocRTL(documant: Document): boolean {
         if (langAttr &&
             (langAttr === "ar" || langAttr.startsWith("ar-") ||
             langAttr === "he" || langAttr.startsWith("he-") ||
-            langAttr === "fa" || langAttr.startsWith("fa-")) ||
-            langAttr === "zh-Hant" ||
-            langAttr === "zh-TW"
+            langAttr === "fa" || langAttr.startsWith("fa-"))
+
+            // https://github.com/edrlab/thorium-reader/pull/3027
+            // langAttr === "zh-Hant" || langAttr === "zh-TW"
             ) {
             // foundLang = true;
             rtl = true;
