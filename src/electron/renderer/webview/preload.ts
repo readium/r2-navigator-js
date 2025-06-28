@@ -1293,10 +1293,12 @@ function focusElement(element: Element, preventScroll: boolean /*, focusHost: bo
         //     }
         // }
         if (DEBUG_TRACE) debug("focusElement: body, preventScroll");
+        _ignoreFocusInEvent = true;
         // CONTEXT: focusElement()
         (element as HTMLElement).focus({preventScroll: true});
     } else {
         if (DEBUG_TRACE) debug("focusElement: !body, preventScroll?", preventScroll);
+        _ignoreFocusInEvent = true;
         // CONTEXT: focusElement()
         (element as HTMLElement).focus({preventScroll});
     }
@@ -1992,7 +1994,7 @@ const focusScrollDebounced =
         focusScrollRaw(el, doFocus, animate, domRect);
     }, 100);
 
-// let _ignoreFocusInEvent = false;
+let _ignoreFocusInEvent = false;
 
 // function lazyTabbables(): HTMLElement[] {
 //     // cache problem: temporary tabbables? (e.g. HTML5 details/summary element, expand/collapse)
@@ -2390,6 +2392,39 @@ const onScrollRaw = (fromScrollEvent?: boolean) => {
         return;
     }
 
+    // if (fromScrollEvent &&
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     // ((win as any).r2_keysDown as Set<string>).size > 0
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     ((win as any).r2_keysDown as Set<string>).has("ArrowLeft") ||
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     ((win as any).r2_keysDown as Set<string>).has("ArrowRight") ||
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     ((win as any).r2_keysDown as Set<string>).has("ArrowUp") ||
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     ((win as any).r2_keysDown as Set<string>).has("ArrowDown") ||
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     ((win as any).r2_keysDown as Set<string>).has("PageUp") ||
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     ((win as any).r2_keysDown as Set<string>).has("PageDown") ||
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     ((win as any).r2_keysDown as Set<string>).has("Space")
+    // ) {
+    //     debug("onScrollRaw fromScrollEvent and key pressed");
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     ((win as any).r2_keysDown as Set<string>).forEach((v) => { debug(v); });
+    //     return;
+    // }
+
+    // const nowTime = Date.now(); // +new Date()
+    // if (fromScrollEvent &&
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     nowTime > ((win as any).r2_scrollTime as number)
+    // ) {
+    //     debug("onScrollRaw fromScrollEvent debounce time after another scroll");
+    //     return;
+    // }
+
     if (!win.READIUM2.ttsClickEnabled &&
         !win.document.documentElement.classList.contains(TTS_CLASS_PLAYING) &&
         !win.document.documentElement.classList.contains(TTS_CLASS_PAUSED)) {
@@ -2686,10 +2721,19 @@ function loaded(forced: boolean) {
         // }
     }
 
+    // // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // (win as any).r2_keysDown = new Set<string>();
+
     win.document.documentElement.addEventListener("keydown", (ev: KeyboardEvent) => {
         if (win.document && win.document.documentElement) {
             win.document.documentElement.classList.add(ROOT_CLASS_KEYBOARD_INTERACT);
         }
+
+        // if (!ev.repeat) {
+        //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        //     ((win as any).r2_keysDown as Set<string>).add(ev.code);
+        // }
+
         // DEPRECATED
         // if (ev.keyCode === 37 || ev.keyCode === 39) { // left / right
         // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
@@ -2708,6 +2752,11 @@ function loaded(forced: boolean) {
         }
     }, true);
 
+    // win.document.documentElement.addEventListener("keyup", (ev: KeyboardEvent) => {
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     ((win as any).r2_keysDown as Set<string>).delete(ev.code);
+    // }, true);
+
     win.document.documentElement.addEventListener("mousedown", (_ev: MouseEvent) => {
 
         if (win.document && win.document.documentElement) {
@@ -2723,11 +2772,11 @@ function loaded(forced: boolean) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     win.document.body.addEventListener("focusin", (ev: any) => {
 
-        // if (_ignoreFocusInEvent) {
-        //     debug("focusin --- IGNORE");
-        //     _ignoreFocusInEvent = false;
-        //     return;
-        // }
+        if (_ignoreFocusInEvent) {
+            debug("focusin --- IGNORE");
+            _ignoreFocusInEvent = false;
+            return;
+        }
 
         if (isPopupDialogOpen(win.document)) {
             return;
@@ -3558,7 +3607,11 @@ function loaded(forced: boolean) {
                 return;
             }
 
-            if (DEBUG_TRACE) debug("loaded() SCROLL: onScrollDebounced()...");
+            // const nowTime = Date.now(); // +new Date()
+            // // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // ((win as any).r2_scrollTime as number) = nowTime;
+
+            // if (DEBUG_TRACE) debug("loaded() SCROLL: onScrollDebounced()...");
             // CONTEXT: scroll - loaded()
             onScrollDebounced(true);
         });
