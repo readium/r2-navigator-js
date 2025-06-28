@@ -1002,6 +1002,17 @@ opacity: 0.5 !important;
 }
 */
 export const visibilityMaskCssStyles = `
+:root[style],
+:root,
+:root[style] > body,
+:root > body,
+:root[style] > body *,
+:root > body *,
+:root[style] > body *::before,
+:root > body *::after
+{
+scroll-behavior: auto !important;
+}
 
 :root[style].${ROOT_CLASS_NO_RUBY} > body rt,
 :root.${ROOT_CLASS_NO_RUBY} > body rt,
