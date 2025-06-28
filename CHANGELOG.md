@@ -1,10 +1,30 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.22.0...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.22.1...develop
 
 Changes:
 * TODO
+
+# 1.22.1
+
+> Build environment: NodeJS `22.14.0`, NPM `11.4.2`
+
+Changes:
+* Fixed Japanese Ruby removed from selection text DOM Range (annotations, etc.)
+* Fixed scroll behaviour smooth must be forced to auto (fancy authored styles that mess up reading system behaviour)
+* Fixed focus in event which was triggered by programmatic element.focus() calls used internally to redirect keyboard focus and optionally to scroll into view (was interfering with fast scroll using space bar or arrow keys)
+* NPM package updates
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.22.1/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.22.1/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.22.1
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.22.0...v1.22.1
 
 # 1.22.0
 
