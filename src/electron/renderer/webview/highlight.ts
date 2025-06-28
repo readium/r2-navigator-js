@@ -1726,6 +1726,14 @@ const computeCFI = (node: Node): string | undefined => {
         return undefined;
     }
 
+    // TODO: unlike preload.ts, no checkBlacklisted()
+    // // fast path: static cache
+    // // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // if ((node as any).__r2Cfi) {
+    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     return (node as any).__r2Cfi;
+    // }
+
     let cfi = "";
 
     let currentElement = node as Element;
@@ -1747,6 +1755,10 @@ const computeCFI = (node: Node): string | undefined => {
         currentElement = currentElement.parentNode as Element;
     }
 
+    // // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // (node as any).__r2Cfi = "/" + cfi;
+    // // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // return (node as any).__r2Cfi;
     return "/" + cfi;
 };
 
