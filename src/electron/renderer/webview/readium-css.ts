@@ -61,14 +61,6 @@ export const getScrollingElement = (documant: Document): Element => {
     }
     return documant.body;
 
-    // console.log(process.versions);
-    // --
-    // electron: '1.8.8'
-    // chrome: '59.0.3071.115'
-    // ---
-    // electron: '4.1.3'
-    // chrome: '69.0.3497.128'
-    // ===
     // const isBody = win.document.scrollingElement === win.document.body;
     // console.log(isBody); // Electron V1: true, V4: false
     // const isHTML = win.document.scrollingElement === win.document.documentElement;
@@ -189,13 +181,22 @@ export const calculateTotalColumns = (): number => {
 
     const scrollElement = getScrollingElement(win.document);
 
+    // https://github.com/edrlab/thorium-reader/issues/3072
+    // Since Electron v37+ body.offsetWidth/Height started reporting the same as scrollElement.scrollWidth/Height (scrollElement === documentElement === html)
+    // ...causing totalColumns = 1 and other miscalculations!!
+    // Instead, body.scrollWidth/Height or body.clientWidth/Height seem to work the same as body.offsetWidth/Height used to with Electron v36-
+
+    const bodyComputedStyle = win.getComputedStyle(win.document.body);
+    const zoomStr = bodyComputedStyle.zoom || "1";
+    const zoomFactor = parseFloat(zoomStr);
+
     let totalColumns = 0;
     if (isVerticalWritingMode()) {
-        totalColumns = Math.ceil(win.document.body.offsetWidth / scrollElement.scrollWidth);
+        totalColumns = Math.ceil((win.document.body.scrollWidth * zoomFactor) / scrollElement.scrollWidth);
     } else {
-        totalColumns = Math.ceil(win.document.body.offsetHeight / scrollElement.scrollHeight);
+        totalColumns = Math.ceil((win.document.body.scrollHeight * zoomFactor) / scrollElement.scrollHeight);
     }
-    console.log("totalColumns", totalColumns);
+
     return totalColumns;
 };
 export function calculateColumnDimension(): number {

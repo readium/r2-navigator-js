@@ -1590,6 +1590,7 @@ function scrollIntoView(element: HTMLElement, domRect: DOMRect | undefined) {
     const scrollOffset = (scrollLeftPotentiallyExcessive[0] < 0 ? -1 : 1) *
         Math.min(Math.abs(scrollLeftPotentiallyExcessive[0]), maxScrollShift);
     scrollElement.scrollLeft = scrollOffset;
+    scrollElement.scrollTop = 0; // edge-case, see win.location.href = "#" in R2_EVENT_SCROLLTO handler
 }
 
 const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
@@ -1797,11 +1798,22 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
                         Math.min(Math.abs(scrollOffsetPotentiallyExcessive), maxScrollShift);
 
                     debug("gotoProgression, set scroll left/top (paged): ", scrollOffsetPaged);
+                    // debug("gotoProgression", gotoProgression);
+                    // debug("maxScrollShift", maxScrollShift);
+                    // debug("isTwoPage", isTwoPage);
+                    // debug("nColumns", nColumns);
+                    // debug("nUnits", nUnits);
+                    // debug("unitIndex", unitIndex);
+                    // debug("unit", unit);
+                    // debug("scrollOffsetPotentiallyExcessive", scrollOffsetPotentiallyExcessive);
+                    // debug("scrollOffsetPaged", scrollOffsetPaged);
 
                     _ignoreScrollEvent = true;
                     if (isVWM) {
                         scrollElement.scrollTop = scrollOffsetPaged;
+                        scrollElement.scrollLeft = 0;
                     } else {
+                        scrollElement.scrollTop = 0;
                         scrollElement.scrollLeft = scrollOffsetPaged;
                     }
                     setTimeout(() => {
@@ -1841,9 +1853,11 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
 
                 _ignoreScrollEvent = true;
                 if (isVWM) {
+                    scrollElement.scrollTop = 0;
                     scrollElement.scrollLeft = (isRTL() ? -1 : 1) * scrollOffset;
                 } else {
                     scrollElement.scrollTop = scrollOffset;
+                    scrollElement.scrollLeft = 0;
                 }
                 setTimeout(() => {
                     _ignoreScrollEvent = false;
@@ -3914,6 +3928,14 @@ const processXYRaw = (x: number, y: number, reverse: boolean, userInteract: bool
     if (DEBUG_TRACE) debug("document.body.offsetWidth/Height: ", win.document.body.offsetWidth, win.document.body.offsetHeight);
     if (DEBUG_TRACE) debug("document.body.scrollWidth/Height: ", win.document.body.scrollWidth, win.document.body.scrollHeight);
     if (DEBUG_TRACE) debug("document.body.scrollTop/Left: ", win.document.body.scrollTop, win.document.body.scrollLeft);
+    if (DEBUG_TRACE) {
+        const bodyComputedStyle = win.getComputedStyle(win.document.body);
+        const zoomStr = bodyComputedStyle.zoom || "1";
+        const zoomFactor = parseFloat(zoomStr);
+        debug("document.body.style.zoom", zoomFactor);
+    }
+
+
 
     // includes TTS!
     if (isPopupDialogOpen(win.document)) {
