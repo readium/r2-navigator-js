@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.22.2...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.23.0...develop
 
 Changes:
 * TODO
+
+# 1.23.0
+
+> Build environment: NodeJS `22.17.0`, NPM `11.5.2`
+
+Changes:
+* NPM package updates ... unfortunately downgrade to Electron v36 (was v37) due to audio/video streak-seek regression bug
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.23.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.23.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.23.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.22.2...v1.23.0
 
 # 1.22.2
 
