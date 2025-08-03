@@ -762,6 +762,17 @@ export function installNavigatorDOM(
     createWebView();
 
     const resizeObserver = new win.ResizeObserver((_entries) => {
+
+        // if (DEBUG_TRACE) debug("ResizeObserver ...");
+        // for (const entry of entries) {
+        //     const rect = entry.contentRect as DOMRect;
+        //     const element = entry.target as HTMLElement;
+
+        //     if (DEBUG_TRACE) debug("element.id", element.id);
+        //     if (DEBUG_TRACE) debug("element.innerHTML", element.innerHTML.substring(0, 100));
+        //     if (DEBUG_TRACE) debug("rect", rect.x, rect.y, rect.width, rect.height);
+        // }
+
         // Skip non-navigator renderers that import this JS file for installNavigatorDOM() but don't actually use it (e.g. PDF or Divina in Thorium Reader.tsx)
         if (!win.READIUM2) {
             return;
@@ -835,10 +846,17 @@ export function installNavigatorDOM(
                     }
                 }
             }
-
         }, 100);
     });
-    resizeObserver.observe(domSlidingViewport); // ELEMENT_ID_SLIDING_VIEWPORT
+
+    // on MacOS this works because the scrollbars are not permanent by default,
+    // but this fails on Windows (or Mac or Linux with scrollbars always active)
+    // => infinite loop with ~15px toggle!!!
+    // resizeObserver.observe(domSlidingViewport); // ELEMENT_ID_SLIDING_VIEWPORT
+    // ... so instead we observe the parent which does not have scrollbars at all and is exactly the same width/height dimensions
+    // (domSlidingViewport is a 100% w//h fit with exact same aspect ratio)
+    resizeObserver.observe(domRootElement);
+
     // win.addEventListener("resize", () => {
     // });
 
