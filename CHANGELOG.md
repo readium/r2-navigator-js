@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.23.1...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.23.2...develop
 
 Changes:
 * TODO
+
+# 1.23.2
+
+> Build environment: NodeJS `22.17.0`, NPM `11.5.2`
+
+Changes:
+* Fix: popup footnotes trigger navigation history insert not only for originating hyperlink but also for "destination" which is the modal itself (just like when the actual HMTL target is accessed). This way, back/forward can trigger the modal instead of just uselessly landing on the hyperlink and doing nothing
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.23.2/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.23.2/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.23.2
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.23.1...v1.23.2
 
 # 1.23.1
 
