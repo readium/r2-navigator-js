@@ -377,7 +377,7 @@ ipcRenderer.on(R2_EVENT_LINK, (event: Electron.IpcRendererEvent, payload: IEvent
     const pay = (!payload && (event as unknown as IEventPayload_R2_EVENT_LINK).url) ? event as unknown as IEventPayload_R2_EVENT_LINK : payload;
     debug(pay.url);
 
-    if (pay.url.indexOf("#" + FRAG_ID_CSS_SELECTOR) >= 0) {
+    if (pay.url.indexOf("#" + FRAG_ID_CSS_SELECTOR) >= 0) { // includes FRAG_ID_CSS_SELECTOR_ACTIVATE_LINK
         debug("R2_EVENT_LINK (ipcRenderer.on) SKIP link activation [FRAG_ID_CSS_SELECTOR]");
         return;
     }
@@ -1060,9 +1060,12 @@ function loadLink(
     // ... which it is!
     const hrefToLoadHttpUri = new URI(hrefToLoadHttp);
 
-    if (hrefToLoadHttpUri.fragment()?.startsWith(FRAG_ID_CSS_SELECTOR)) {
-        const cssSelector = decodeURIComponent(hrefToLoadHttpUri.fragment().substring(FRAG_ID_CSS_SELECTOR.length));
-        debug("FRAG_ID_CSS_SELECTOR: " + cssSelector);
+    if (hrefToLoadHttpUri.fragment()?.startsWith(FRAG_ID_CSS_SELECTOR)) { // includes FRAG_ID_CSS_SELECTOR_ACTIVATE_LINK
+        const cssSelector = decodeURIComponent(
+            // hrefToLoadHttpUri.fragment().startsWith(FRAG_ID_CSS_SELECTOR_ACTIVATE_LINK) ?
+            // hrefToLoadHttpUri.fragment().substring(FRAG_ID_CSS_SELECTOR_ACTIVATE_LINK.length) :
+            hrefToLoadHttpUri.fragment().substring(FRAG_ID_CSS_SELECTOR.length));
+        debug("FRAG_ID_CSS_SELECTOR: " + cssSelector); // can start with prefix FRAG_ID_CSS_SELECTOR_HYPERLINK
         hrefToLoadHttpUri.hash("").normalizeHash();
 
         // TODO: urijs types broke this! (lib remains unchanged)

@@ -89,9 +89,10 @@ import {
     URL_PARAM_CLIPBOARD_INTERCEPT, URL_PARAM_CSS, URL_PARAM_DEBUG_VISUALS,
     URL_PARAM_EPUBREADINGSYSTEM, URL_PARAM_GOTO, URL_PARAM_GOTO_DOM_RANGE, URL_PARAM_PREVIOUS,
     URL_PARAM_SECOND_WEBVIEW, URL_PARAM_WEBVIEW_SLOT,
-    FRAG_ID_CSS_SELECTOR,
+    FRAG_ID_CSS_SELECTOR, FRAG_ID_CSS_SELECTOR_ACTIVATE_LINK,
     URL_PARAM_A11Y_SUPPORT_ENABLED,
     URL_PARAM_EPUBMEDIAOVERLAYS,
+    FRAG_ID_CSS_SELECTOR_HYPERLINK,
 } from "../common/url-params";
 import { setupAudioBook } from "./audiobook";
 import { INameVersion, setWindowNavigatorEpubReadingSystem } from "./epubReadingSystem";
@@ -1728,6 +1729,13 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
             }
             if (gotoCssSelector) {
                 gotoCssSelector = gotoCssSelector.replace(/\+/g, " ");
+
+                let doHyperlink = false;
+                if (gotoCssSelector.startsWith(FRAG_ID_CSS_SELECTOR_HYPERLINK)) {
+                    doHyperlink = true;
+                    gotoCssSelector = gotoCssSelector.replace(FRAG_ID_CSS_SELECTOR_HYPERLINK, "");
+                }
+
                 let selected: Element | null = null;
                 try {
                     selected = win.document.querySelector(gotoCssSelector);
@@ -1772,6 +1780,13 @@ const scrollToHashRaw = (animate: boolean, skipRedraw?: boolean) => {
                     // CONTEXT: scrollToHashRaw()
                     notifyReadingLocationDebounced();
 
+                    if (doHyperlink && selected.tagName?.toLowerCase() === "a") {
+                        setTimeout(() => {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            (selected as any).__skipHistory = true;
+                            (selected as HTMLLinkElement).click();
+                        }, 100);
+                    }
                     return;
                 }
             } else if (typeof gotoProgression !== "undefined") {
@@ -3320,10 +3335,19 @@ function loaded(forced: boolean) {
         ev.preventDefault();
         ev.stopPropagation();
 
-        const payload: IEventPayload_R2_EVENT_LINK = {
-            url: "#" + FRAG_ID_CSS_SELECTOR + encodeURIComponent_RFC3986(getCssSelector(linkElement)), // see location.ts locationHandleIpcMessage() eventChannel === R2_EVENT_LINK (URL is made absolute if necessary)
-        };
-        ipcRenderer.sendToHost(R2_EVENT_LINK, payload); // this will result in the app registering the element in the navigation history, but is skipped in location.ts ipcRenderer.on(R2_EVENT_LINK)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const skipHistory = !!(linkElement as any).__skipHistory;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (linkElement as any).__skipHistory = undefined;
+
+        const encCssSel = encodeURIComponent_RFC3986(getCssSelector(linkElement));
+
+        if (!skipHistory) {
+            const payload: IEventPayload_R2_EVENT_LINK = {
+                url: "#" + FRAG_ID_CSS_SELECTOR + encCssSel, // see location.ts locationHandleIpcMessage() eventChannel === R2_EVENT_LINK (URL is made absolute if necessary)
+            };
+            ipcRenderer.sendToHost(R2_EVENT_LINK, payload); // this will result in the app registering the element in the navigation history, but is skipped in location.ts ipcRenderer.on(R2_EVENT_LINK)
+        }
 
         const done = await popupFootNote(
             linkElement as HTMLElement,
@@ -3331,7 +3355,15 @@ function loaded(forced: boolean) {
             hrefStr,
             ensureTwoPageSpreadWithOddColumnsIsOffsetTempDisable,
             ensureTwoPageSpreadWithOddColumnsIsOffsetReEnable);
-        if (!done) {
+        if (done) {
+            if (!skipHistory) {
+                // double-insert the hyperlink to trigger the popup programmatically on history.back()/forward()
+                const payload: IEventPayload_R2_EVENT_LINK = {
+                    url: "#" + FRAG_ID_CSS_SELECTOR_ACTIVATE_LINK + encCssSel,
+                };
+                ipcRenderer.sendToHost(R2_EVENT_LINK, payload);
+            }
+        } else {
             focusScrollDebounced.clear();
             // processXYDebounced.clear();
             processXYDebouncedImmediate.clear();
@@ -3343,10 +3375,12 @@ function loaded(forced: boolean) {
             handleFocusInDebounced.clear();
             // mediaOverlaysClickDebounced.clear();
 
-            const payload: IEventPayload_R2_EVENT_LINK = {
-                url: hrefStr,
-            };
-            ipcRenderer.sendToHost(R2_EVENT_LINK, payload);
+            if (!skipHistory) {
+                const payload: IEventPayload_R2_EVENT_LINK = {
+                    url: hrefStr,
+                };
+                ipcRenderer.sendToHost(R2_EVENT_LINK, payload);
+            }
         }
     }, true);
 
