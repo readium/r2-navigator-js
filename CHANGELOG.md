@@ -1,10 +1,29 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.24.0...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.25.0...develop
 
 Changes:
 * TODO
+
+# 1.25.0
+
+> Build environment: NodeJS `22.17.0`, NPM `11.6.0`
+
+Changes:
+* NPM package updates, notably Electron v38
+* Fixed page-break rendering: zero-width whitespace is injected for empty page breaks in order to identify span or div containers with non-nil surface area (outline when navigating from pagelist hyperlinks), now ensures line height zero-ing for empty divs (commonly used to mark a page break)
+* Fixed edge case of resize observer infinite loop due to virtual column recalc (remove + add-if-necessary) ... happened with a test EPUB that somehow triggered multiple resize events in a row for another styling condition in the document
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.25.0/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.25.0/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.25.0
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.24.0...v1.25.0
 
 # 1.24.0
 
