@@ -2867,7 +2867,7 @@ function loaded(forced: boolean) {
     const useResizeObserver = !win.READIUM2.isFixedLayout;
     if (useResizeObserver && win.document.body) {
         setTimeout(() => {
-            const resizeObserver = new win.ResizeObserver((entries: ResizeObserverEntry[]) => {
+            const debouncedResizeObserverCallback = debounce((entries: ResizeObserverEntry[]) => {
                 if (DEBUG_TRACE) debug("ResizeObserver ...");
                 for (const entry of entries) {
                     const rect = entry.contentRect as DOMRect;
@@ -2899,6 +2899,7 @@ function loaded(forced: boolean) {
                     debug("ResizeObserver appendExtraColumnPadIfNecessary EXTRA_COLUMN_PAD_ID will remove...");
                     setTimeout(() => {
                         debug("ResizeObserver appendExtraColumnPadIfNecessary EXTRA_COLUMN_PAD_ID removing");
+                        debouncedResizeObserverCallback.clear();
                         // _firstResizeObserver = true;
                         elPad?.remove(); // will cause another ResizeObserver event!
                         // _firstResizeObserverTimeout = win.setTimeout(() => {
@@ -2918,7 +2919,8 @@ function loaded(forced: boolean) {
                 if (DEBUG_TRACE) debug("ResizeObserver: scrollToHashDebounced()...");
                 // CONTEXT: loaded() - ResizeObserver
                 scrollToHashDebounced(false);
-            });
+            }, 200);
+            const resizeObserver = new win.ResizeObserver(debouncedResizeObserverCallback);
             resizeObserver.observe(win.document.body);
 
             _firstResizeObserverTimeout = win.setTimeout(() => {
