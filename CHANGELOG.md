@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.25.0...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.25.1...develop
 
 Changes:
 * TODO
+
+# 1.25.1
+
+> Build environment: NodeJS `22.19.0`, NPM `11.6.1`
+
+Changes:
+* NPM package updates
+* Fixed security hole: Electron contextIsolation
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.25.1/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.25.1/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.25.1
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.25.0...v1.25.1
 
 # 1.25.0
 
