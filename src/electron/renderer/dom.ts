@@ -295,10 +295,15 @@ export function setImageClickHandler(cb: (payload: IEventPayload_R2_EVENT_IMAGE_
 function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebview {
 
     const wv = document.createElement("webview");
-    // tslint:disable-next-line:max-line-length
-    // https://github.com/electron/electron/blob/master/docs/tutorial/security.md#3-enable-context-isolation-for-remote-content
+    // https://github.com/electron/electron/blob/main/docs/tutorial/security.md
+    //
+    // https://www.electronjs.org/docs/latest/tutorial/sandbox
+    // https://github.com/electron/electron/blob/main/docs/tutorial/sandbox.md
+    //
+    // https://www.electronjs.org/docs/latest/tutorial/context-isolation
+    // https://github.com/electron/electron/blob/main/docs/tutorial/context-isolation.md
     wv.setAttribute("webpreferences",
-        `enableRemoteModule=0, allowRunningInsecureContent=0, backgroundThrottling=0, nodeIntegration=0, contextIsolation=0, nodeIntegrationInWorker=0, sandbox=0, webSecurity=1, webviewTag=0, partition=${R2_SESSION_WEBVIEW}`);
+        `enableRemoteModule=0, allowRunningInsecureContent=0, backgroundThrottling=0, nodeIntegration=0, contextIsolation=1, nodeIntegrationInWorker=0, sandbox=0, webSecurity=1, webviewTag=0, partition=${R2_SESSION_WEBVIEW}`);
 
     wv.setAttribute("partition", R2_SESSION_WEBVIEW);
 

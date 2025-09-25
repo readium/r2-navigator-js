@@ -171,7 +171,7 @@ app.on("web-contents-created", (_evt, wc) => {
         // delete webPreferences.preload;
         // delete webPreferences.preloadURL;
 
-        // webPreferences.contextIsolation = false;
+        // webPreferences.contextIsolation = true;
         // webPreferences.javascript = true;
         // webPreferences.webSecurity = true;
         // webPreferences.nodeIntegration = false;
