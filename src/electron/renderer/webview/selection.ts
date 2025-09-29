@@ -588,11 +588,13 @@ export function convertRange(
         cfi = cfi.replace(/^epubcfi\(/, "").replace(/\)$/, "");
     }
 
-    if (IS_DEV) {
+    const documant = range.startContainer.ownerDocument || range.endContainer.ownerDocument;
+    if (IS_DEV && documant) {
+        console.log("Colibrio CFI:", cfi_);
         const parser = new EpubCfiParser(cfi_);
         const rootNode_ = parser.parse();
         const resolver = new EpubCfiResolver(rootNode_);
-        resolver.continueResolving(window.document, new URL("fake://dummy"));
+        resolver.continueResolving(documant, new URL("fake://dummy"));
         const resolved = resolver.getResolvedTarget();
         if (resolved.hasErrors()) {
             console.log("Colibrio CFI ERRORS:");
