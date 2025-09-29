@@ -16,7 +16,12 @@ export const convertHttpUrlToCustomScheme = (url: string): string => {
     if (matches && matches.length > 1) {
         const idMatch = matches[4];
         const decoded = decodeURIComponent(idMatch);
-        const pubID =  decoded.replace(/([A-Z])/g, "_$1").replace(/=/g, "-").replace(/\//g, ".");
+        const pubID =  decoded.replace(/([A-Z])/g, (match) => {
+            // console.log(match);
+            const ret = "_" + match.toLowerCase();
+            // console.log(ret);
+            return ret;
+        }).replace(/=/g, "-").replace(/\//g, ".");
         const url_ = READIUM2_ELECTRON_HTTP_PROTOCOL + "://" +
             "id" + pubID +
             "/x" + matches[1] +
