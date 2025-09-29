@@ -1,10 +1,30 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.25.1...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.25.2...develop
 
 Changes:
 * TODO
+
+# 1.25.2
+
+> Build environment: NodeJS `22.19.0`, NPM `11.6.1`
+
+Changes:
+* Added shell.openExternal safeguard (https?:// URL protocol only)
+* Hyperlinks in PDF (and some scripted EPUBs) could be clicked with COMMAND or SHIFT which opened a separate orphan Thorium window (ALT / OPTION triggers the download action), now solved with WebContents.setWindowOpenHandler() alongside the will-navigate event
+* The CFI roundtrip checker (only in DEV mode) was using the global window.document instead of the actual parsed document (causing false negatives during text search in Thorium, and even crashes in some cases)
+* The special URL scheme that encodes publication UUID as host using underscores to marks uppercase characters has a converter that was not forcing lowercase syntax.
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.25.2/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.25.2/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.25.2
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.25.1...v1.25.2
 
 # 1.25.1
 
