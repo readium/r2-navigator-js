@@ -6,7 +6,7 @@
 // ==LICENSE-END==
 
 import * as debug_ from "debug";
-import { BrowserWindow, Menu, app, ipcMain, webContents } from "electron";
+import { BrowserWindow, HandlerDetails, Menu, app, ipcMain, shell, webContents } from "electron";
 
 import { CONTEXT_MENU_SETUP } from "../common/context-menu";
 import {
@@ -205,6 +205,22 @@ app.on("web-contents-created", (_evt, wc) => {
     _electronBrowserWindows.forEach((win) => {
         if (wc.hostWebContents.id === win.webContents.id) {
             debug("WEBVIEW web-contents-created");
+
+            wc.setWindowOpenHandler((details: HandlerDetails) => {
+                if (details.url === win.webContents.getURL()) {
+                    debug("WEBVIEW setWindowOpenHandler PASS", details.url);
+                    return { action: "allow" };
+                }
+
+                debug("WEBVIEW setWindowOpenHandler EXTERNAL", details.url);
+                if (details.url && /^https?:\/\//.test(details.url)) { // ignores file: mailto: data: thoriumhttps: httpsr2: thorium: opds: etc.
+                    setTimeout(async () => {
+                        await shell.openExternal(details.url);
+                    }, 0);
+                }
+
+                return { action: "deny" };
+            });
 
             wc.on("will-navigate", (event, url) => {
                 debug("webview.getWebContents().on('will-navigate'");

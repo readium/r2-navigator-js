@@ -574,7 +574,7 @@ export function handleLink(
         if (!okay) {
             if (/^https?:\/\/127\.0\.0\.1/.test(href)) { // href.startsWith("https://127.0.0.1")
                 debug(`Internal link, fails to match publication document: ${href}`);
-            } else {
+            } else if (href && /^https?:\/\//.test(href)) { // ignores mailto: data: thoriumhttps: httpsr2: thorium: opds: etc.
                 debug(`External link: ${href}`);
 
                 // tslint:disable-next-line:no-floating-promises
