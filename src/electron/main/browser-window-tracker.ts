@@ -38,40 +38,40 @@ export function trackBrowserWindow(win: Electron.BrowserWindow, _serverURL?: str
     });
 }
 
-app.on("accessibility-support-changed", (_ev, accessibilitySupportEnabled: boolean) => {
+// app.on("accessibility-support-changed", (_ev, accessibilitySupportEnabled: boolean) => {
 
-    debug("accessibility-support-changed ... ", accessibilitySupportEnabled);
-    if (app.accessibilitySupportEnabled !== accessibilitySupportEnabled) {
-        debug("!!?? app.accessibilitySupportEnabled !== accessibilitySupportEnabled");
-    }
+//     debug("accessibility-support-changed ... ", accessibilitySupportEnabled);
+//     if (app.accessibilitySupportEnabled !== accessibilitySupportEnabled) {
+//         debug("!!?? app.accessibilitySupportEnabled !== accessibilitySupportEnabled");
+//     }
 
-    if (!_electronBrowserWindows || !_electronBrowserWindows.length) {
-        return;
-    }
-    _electronBrowserWindows.forEach((win) => {
-        if (win.webContents) {
-            debug("accessibility-support-changed event to WebViewContents ", accessibilitySupportEnabled);
-            win.webContents.send("accessibility-support-changed", accessibilitySupportEnabled);
-        }
+//     if (!_electronBrowserWindows || !_electronBrowserWindows.length) {
+//         return;
+//     }
+//     _electronBrowserWindows.forEach((win) => {
+//         if (win.webContents) {
+//             debug("accessibility-support-changed event to WebViewContents ", accessibilitySupportEnabled);
+//             win.webContents.send("accessibility-support-changed", accessibilitySupportEnabled);
+//         }
 
-        // const allWebContents = webContents.getAllWebContents();
-        // if (allWebContents && allWebContents.length) {
-        //     for (const wc of allWebContents) {
-        //         if (!wc.hostWebContents) {
-        //             continue;
-        //         }
-        //         if (wc.hostWebContents.id === win.webContents.id) {
-        //             // NOPE
-        //         }
-        //     }
-        // }
-    });
-});
-ipcMain.on("accessibility-support-changed", (ev) => {
-    const accessibilitySupportEnabled = app.accessibilitySupportEnabled;
-    debug("accessibility-support-changed REQUEST, sending to WebViewContents ", accessibilitySupportEnabled);
-    ev.sender.send("accessibility-support-changed", accessibilitySupportEnabled);
-});
+//         // const allWebContents = webContents.getAllWebContents();
+//         // if (allWebContents && allWebContents.length) {
+//         //     for (const wc of allWebContents) {
+//         //         if (!wc.hostWebContents) {
+//         //             continue;
+//         //         }
+//         //         if (wc.hostWebContents.id === win.webContents.id) {
+//         //             // NOPE
+//         //         }
+//         //     }
+//         // }
+//     });
+// });
+// ipcMain.on("accessibility-support-changed", (ev) => {
+//     const accessibilitySupportEnabled = app.accessibilitySupportEnabled;
+//     debug("accessibility-support-changed REQUEST, sending to WebViewContents ", accessibilitySupportEnabled);
+//     ev.sender.send("accessibility-support-changed", accessibilitySupportEnabled);
+// });
 
 export const contextMenuSetup = (webContent: Electron.WebContents, webContentID: number) => {
 

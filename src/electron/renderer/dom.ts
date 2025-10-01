@@ -135,7 +135,7 @@ ipcRenderer.on("accessibility-support-changed", (_e, accessibilitySupportEnabled
         return;
     }
 
-    debug("accessibility-support-changed event received in WebView ", accessibilitySupportEnabled);
+    debug("accessibility-support-changed event received in navigator Electron BrowserWindow", accessibilitySupportEnabled);
     win.READIUM2.accessibilitySupportEnabled = accessibilitySupportEnabled;
 });
 
@@ -677,7 +677,7 @@ export function installNavigatorDOM(
         highlightsDrawMargin: false,
         // stealFocusDisabled: false,
     };
-    ipcRenderer.send("accessibility-support-changed");
+    ipcRenderer.send("accessibility-support-query"); // See "accessibility-support-changed" and app.accessibilitySupportEnabled in the host app (screen reader support is conditional to detection of assistive technology AND user-configured setting
 
     if (IS_DEV) {
         debug("||||||++||||| installNavigatorDOM: ", JSON.stringify(location));
