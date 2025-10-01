@@ -1,10 +1,28 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.25.2...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.25.3...develop
 
 Changes:
 * TODO
+
+# 1.25.3
+
+> Build environment: NodeJS `22.19.0`, NPM `11.6.1`
+
+Changes:
+* Screen reader detection is in fact discovery of attached assistive technology (not necessarily screen reader, for example can be keyboard utility apps) so this is now subject to explicit user approval (app-level configuration)
+* NPM package updates
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.25.3/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.25.3/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.25.3
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.25.2...v1.25.3
 
 # 1.25.2
 
