@@ -713,10 +713,15 @@ function loadLink(
 
     mediaOverlaysInterrupt();
 
-    let hrefToLoadHttp = hrefToLoad;
-    if (hrefToLoadHttp.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
-        hrefToLoadHttp = convertCustomSchemeToHttpUrl(hrefToLoadHttp);
+    if (!hrefToLoad.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+        debug(`LOAD LINK not internal? ${hrefToLoad} ... ${publicationURL}`);
+        return false;
     }
+    const hrefToLoadHttp = convertCustomSchemeToHttpUrl(hrefToLoad);
+    // let hrefToLoadHttp = hrefToLoad;
+    // if (hrefToLoadHttp.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
+    //     hrefToLoadHttp = convertCustomSchemeToHttpUrl(hrefToLoadHttp);
+    // }
 
     const pubIsServedViaSpecialUrlProtocol = publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://");
 

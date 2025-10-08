@@ -3259,7 +3259,7 @@ function loaded(forced: boolean) {
                 // console.log("R2_EVENT_IMAGE_CLICK win.document.location.href", win.document.location.href);
                 let hostDocumentURL = `${win.document.location.protocol}//${win.document.location.host}${win.document.location.pathname}`;
                 // console.log("R2_EVENT_IMAGE_CLICK win.document.location.protocol+host+pathname", hostDocumentURL);
-                if (hostDocumentURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL)) {
+                if (hostDocumentURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://")) {
                     hostDocumentURL = convertCustomSchemeToHttpUrl(hostDocumentURL);
                     // console.log("R2_EVENT_IMAGE_CLICK convertCustomSchemeToHttpUrl", hostDocumentURL);
                     const u = new URL(hostDocumentURL);
@@ -3334,6 +3334,10 @@ function loaded(forced: boolean) {
 
         clearImageZoomOutline();
 
+        // a@href onClick on MacOS with event.altKey (aka option) triggers the download dialog, event.metaKey and event.shiftKey request a new child window
+        // ... but we intercept here (capture) so the native hyperlink event handler is never called anyway...
+        // HOWEVER, some types of programmatic hyperlink activation / window.location redirection (found in Adobe InDesign EPUBs, for example) can bypass this, so:
+        // see webContents.setWindowOpenHandler() and webContents.on("will-navigate") in the main process which delegate to R2_EVENT_LINK
         ev.preventDefault();
         ev.stopPropagation();
 

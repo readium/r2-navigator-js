@@ -6,13 +6,13 @@
 // ==LICENSE-END==
 
 import * as debug_ from "debug";
-import { BrowserWindow, HandlerDetails, Menu, app, ipcMain, shell, webContents } from "electron";
+import { BrowserWindow, HandlerDetails, Menu, WebContentsWillNavigateEventParams, Event as ElectronEvent, app, ipcMain, webContents, shell } from "electron";
 
 import { CONTEXT_MENU_SETUP } from "../common/context-menu";
 import {
     IEventPayload_R2_EVENT_LINK, R2_EVENT_KEYBOARD_FOCUS_REQUEST, R2_EVENT_LINK,
 } from "../common/events";
-import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../common/sessions";
+// import { READIUM2_ELECTRON_HTTP_PROTOCOL } from "../common/sessions";
 
 const debug = debug_("r2:navigator#electron/main/browser-window-tracker");
 
@@ -161,8 +161,11 @@ ipcMain.handle(R2_EVENT_KEYBOARD_FOCUS_REQUEST, (event, webContentsId) => {
 
 // https://github.com/electron/electron/blob/master/docs/tutorial/security.md#how-9
 app.on("web-contents-created", (_evt, wc) => {
+    debug("app.on('web-contents-created')", wc.id);
+
     wc.on("will-attach-webview", (_event, webPreferences, params) => {
-        debug("WEBVIEW will-attach-webview");
+        debug("app.on('web-contents-created') ==> webContents.on('will-attach-webview')");
+
         if (params.src && !params.src.startsWith("data:")) {
             debug(params.src);
         }
@@ -183,7 +186,7 @@ app.on("web-contents-created", (_evt, wc) => {
         // webPreferences.enableRemoteModule = false;
 
         // TODO: prevent loading remote publications?
-        // const fail = !params.src.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL) &&
+        // const fail = !params.src.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") &&
         //     (_serverURL ? !params.src.startsWith(_serverURL) :
         //         !(/^https?:\/\/127\.0\.0\.1/.test(params.src))
         //         // (!params.src.startsWith("https://127.0.0.1") && !params.src.startsWith("http://127.0.0.1"))
@@ -196,36 +199,66 @@ app.on("web-contents-created", (_evt, wc) => {
     });
 
     if (!wc.hostWebContents) {
+        debug("app.on('web-contents-created') ==> !webContents.hostWebContents (skip)");
         return;
     }
 
-    if (!_electronBrowserWindows || !_electronBrowserWindows.length) {
+    if (!_electronBrowserWindows?.length) {
+        debug("app.on('web-contents-created') ==> !_electronBrowserWindows?.length (skip)");
         return;
     }
     _electronBrowserWindows.forEach((win) => {
         if (wc.hostWebContents.id === win.webContents.id) {
-            debug("WEBVIEW web-contents-created");
+            debug("app.on('web-contents-created') ==> webContents.hostWebContents.id === _electronBrowserWindows[x].webContents.id", win.webContents.id);
+
+            const willNavigate = (navUrl: string | undefined | null) => {
+
+                if (!navUrl) {
+                    debug("willNavigate ==> nil: ", navUrl);
+                    return;
+                }
+
+                if (
+                    // (
+                    // win.webContents.getURL().startsWith("thoriumhttps" + "://") PARENT BrowserWindow (reader)
+                    // ||
+                    wc.getURL().startsWith("thoriumhttps" + "://") // CHILD NESTED WebView (PDF is served, not EPUB which is READIUM2_ELECTRON_HTTP_PROTOCOL + "://")
+                    // )
+                    &&
+                    /^https?:\/\//.test(navUrl)) { // ignores file: mailto: data: thoriumhttps: httpsr2: thorium: opds: etc.
+
+                    debug("willNavigate ==> EXTERNAL: ", win.webContents.getURL(), " --- ", wc.getURL(), " *** ", navUrl);
+                    setTimeout(async () => {
+                        await shell.openExternal(navUrl);
+                    }, 0);
+
+                    return;
+                }
+
+                debug("willNavigate ==> R2_EVENT_LINK: ", navUrl);
+                const payload: IEventPayload_R2_EVENT_LINK = {
+                    url: navUrl,
+                };
+                // ipcMain.emit
+                win.webContents.send(R2_EVENT_LINK, payload);
+            };
 
             wc.setWindowOpenHandler((details: HandlerDetails) => {
-                if (details.url === win.webContents.getURL()) {
-                    debug("WEBVIEW setWindowOpenHandler PASS", details.url);
-                    return { action: "allow" };
-                }
+                debug("app.on('web-contents-created') ==> webContents.hostWebContents.id === _electronBrowserWindows[x].webContents.id ==> webContents.setWindowOpenHandler (always DENY): ", win.webContents.id, " --- ", details.url, " === ", win.webContents.getURL(), " +++ ", wc.getURL());
 
-                debug("WEBVIEW setWindowOpenHandler EXTERNAL", details.url);
-                if (details.url && /^https?:\/\//.test(details.url)) { // ignores file: mailto: data: thoriumhttps: httpsr2: thorium: opds: etc.
-                    setTimeout(async () => {
-                        await shell.openExternal(details.url);
-                    }, 0);
-                }
+                // if (details.url === win.webContents.getURL()) {
+                //     return { action: "allow" };
+                // }
+
+                willNavigate(details.url);
 
                 return { action: "deny" };
             });
 
-            wc.on("will-navigate", (event, url) => {
-                debug("webview.getWebContents().on('will-navigate'");
-                debug(url);
-                event.preventDefault();
+            wc.on("will-navigate", (details: ElectronEvent<WebContentsWillNavigateEventParams>, url: string) => {
+                debug("app.on('web-contents-created') ==> webContents.hostWebContents.id === _electronBrowserWindows[x].webContents.id ==> webContents.on('will-navigate') (always PREVENT): ", win.webContents.id, " --- ", details.url, " *** ", url, " === ", win.webContents.getURL(), " +++ ", wc.getURL());
+
+                details.preventDefault();
 
                 // Note that event.stopPropagation() and event.url
                 // only exists on WebView `will-navigate` event,
@@ -240,19 +273,16 @@ app.on("web-contents-created", (_evt, wc) => {
                 // unfortunately 'will-navigate' enters an infinite loop with HTML <base href="HTTP_URL" /> ! :(
                 // so we check for the no-HTTP streamer scheme/custom protocol
                 // (which doesn't transform the HTML base URL)
-                if (!url ||
-                    (!url.startsWith("thoriumhttps") &&
-                    !url.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL))) {
 
-                    debug("'will-navigate' SKIPPED.");
-                    return;
-                }
+                // if (!details.url ||
+                //     (!details.url.startsWith("thoriumhttps" + "://") &&
+                //     !details.url.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://"))) {
 
-                const payload: IEventPayload_R2_EVENT_LINK = {
-                    url,
-                };
-                // ipcMain.emit
-                win.webContents.send(R2_EVENT_LINK, payload);
+                //     debug("willNavigate ==> SKIP: ", details.url);
+                //     return;
+                // }
+
+                willNavigate(details.url);
             });
         }
     });

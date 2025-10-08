@@ -144,7 +144,7 @@ ipcRenderer.on("accessibility-support-changed", (_e, accessibilitySupportEnabled
 // // tslint:disable-next-line:no-string-literal
 // const publicationJsonUrl = queryParams["pub"];
 // debug(publicationJsonUrl);
-// const publicationJsonUrl_ = publicationJsonUrl.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL) ?
+// const publicationJsonUrl_ = publicationJsonUrl.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ?
 //     convertCustomSchemeToHttpUrl(publicationJsonUrl) : publicationJsonUrl;
 // debug(publicationJsonUrl_);
 // const pathBase64 = publicationJsonUrl_.replace(/.*\/pub\/(.*)\/manifest.json/, "$1");
@@ -412,7 +412,7 @@ function createWebViewInternal(preloadScriptPath: string): IReadiumElectronWebvi
             const rootElement = win.document.getElementById(ELEMENT_ID_SLIDING_VIEWPORT);
             if (payload.text && rootElement) {
                 if (!rssStyleElement) {
-                    const urlStr = win.READIUM2.publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL) ?
+                    const urlStr = win.READIUM2.publicationURL.startsWith(READIUM2_ELECTRON_HTTP_PROTOCOL + "://") ?
                         convertCustomSchemeToHttpUrl(win.READIUM2.publicationURL) :
                         win.READIUM2.publicationURL;
                     const rcssUrl = new URL(urlStr);
