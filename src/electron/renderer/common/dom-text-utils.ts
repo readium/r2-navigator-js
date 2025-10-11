@@ -63,7 +63,7 @@ export function getLanguage(el: Element): string { //  | undefined
         currentElement = currentElement.parentNode as Element;
     }
 
-    return "en"; // undefined
+    return "und"; // undefined
 }
 
 export function getDirection(el: Element): string | undefined {

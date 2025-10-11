@@ -1398,14 +1398,15 @@ export function assignUtteranceVoice(utterance: SpeechSynthesisUtterance) {
     //     default: v.default,
     //     localService: v.localService,
     //     })), null, 4));
-    const userVoices: SpeechSynthesisVoice[] = systemVoices.filter((sysVoice) =>
-        !!win.READIUM2.ttsVoices?.find((userVoice) =>
-            (userVoice.name === sysVoice.name &&
+
+    const userVoices: SpeechSynthesisVoice[] = (win.READIUM2.ttsVoices || []).map((userVoice) =>
+        systemVoices.find((sysVoice) =>
+            userVoice.name === sysVoice.name &&
             userVoice.lang === sysVoice.lang &&
             userVoice.voiceURI === sysVoice.voiceURI &&
             // userVoice.default === sysVoice.default &&
-            userVoice.localService === sysVoice.localService)));
-    utterance.voice = null as (SpeechSynthesisVoice | null); // userVoices.find((usrVoice) => usrVoice.default) || null;
+            userVoice.localService === sysVoice.localService),
+    ).filter((v) => !!v);
 
     // console.log("ttsVoices yy b", JSON.stringify(userVoices.map(v => ({
     //     name: v.name,
@@ -1414,6 +1415,8 @@ export function assignUtteranceVoice(utterance: SpeechSynthesisUtterance) {
     //     default: v.default,
     //     localService: v.localService,
     //     })), null, 4));
+
+    utterance.voice = null as (SpeechSynthesisVoice | null); // userVoices.find((usrVoice) => usrVoice.default) || null;
 
     // console.log("TTS ****************************************");
     // console.log("utterance.lang", utterance.lang);
@@ -1435,9 +1438,10 @@ export function assignUtteranceVoice(utterance: SpeechSynthesisUtterance) {
         return;
     }
 
+    const utteranceLang = utterance.lang.toLowerCase();
+
     const voicesCascade = [userVoices, systemVoices];
     for (const voices of voicesCascade) {
-        const utteranceLang = utterance.lang.toLowerCase();
         let utteranceLangShort = utteranceLang;
         const i = utteranceLangShort.indexOf("-");
         const utteranceLangIsSpecific = i > 0;
@@ -1450,6 +1454,14 @@ export function assignUtteranceVoice(utterance: SpeechSynthesisUtterance) {
             if (!usrVoice.lang) {
                 continue;
             }
+
+            if (utterance.lang === "und") {
+                utterance.lang = "";
+                utterance.voice = usrVoice;
+                found = true;
+                break; // pick first one chosen by user
+            }
+
             const usrVoiceLang = usrVoice.lang.toLowerCase();
 
             if (utteranceLang === usrVoiceLang) { // exact match
