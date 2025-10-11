@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.25.4...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.25.5...develop
 
 Changes:
 * TODO
+
+# 1.25.5
+
+> Build environment: NodeJS `22.19.0`, NPM `11.6.1`
+
+Changes:
+* Fixed TTS voice selection based on document language and preferred user voice, now handles und / undefined locale in HTML document (language must be declared in publication metadata so that Thorium's / ReadiumSpeech's voice selector works)
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.25.5/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.25.5/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.25.5
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.25.4...v1.25.5
 
 # 1.25.4
 
