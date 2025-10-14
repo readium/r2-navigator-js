@@ -918,10 +918,17 @@ export function initSessions() {
             }
 
             webViewSession.setPermissionRequestHandler((wc, permission, callback) => {
-                debug("setPermissionRequestHandler");
+                debug("setPermissionRequestHandler webViewSession");
                 debug(wc.getURL());
                 debug(permission);
-                callback(true);
+                callback(false);
+            });
+            webViewSession.setPermissionCheckHandler((wc, permission, origin) => {
+                debug("setPermissionCheckHandler webViewSession");
+                debug(wc?.getURL());
+                debug(permission);
+                debug(origin);
+                return false;
             });
         }
     });
