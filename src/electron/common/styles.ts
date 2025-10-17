@@ -1531,6 +1531,8 @@ We cannot completely disable "scroll" event (prevent default) because we need to
     min-height: 0 !important;
     max-height: none !important;
 }
+
+/*
 :root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body > *:not(#${POPUP_DIALOG_CLASS}) div,
 :root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body > *:not(#${POPUP_DIALOG_CLASS}) div,
 :root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body > div,
@@ -1538,6 +1540,21 @@ We cannot completely disable "scroll" event (prevent default) because we need to
 {
     max-width: none !important;
     max-height: none !important;
+}
+ALLOW HTML CONTENT DOCS TO RETRICT DIMENSIONS:
+*/
+div {
+    max-width: none;
+    max-height: none;
+}
+/*
+https://github.com/edrlab/thorium-reader/issues/3247
+ReadiumCSS fixed size breaks things:
+--RS__baseLineHeight: calc((1em + (2ex - 1ch) - ((1rem - 16px) * 0.1667)) * var(--RS__lineHeightCompensation));
+*/
+:root,
+:root[style] {
+    line-height: normal;
 }
 
 :root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}):not(.${CLASS_VWM}) > body,
@@ -1574,6 +1591,7 @@ We cannot completely disable "scroll" event (prevent default) because we need to
     min-height: 0 !important;
     max-height: none !important;
 }
+
 :root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body > *:not(#${POPUP_DIALOG_CLASS}) div,
 :root:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body > *:not(#${POPUP_DIALOG_CLASS}) div,
 :root[style]:not(.${CLASS_PAGINATED}):not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body > div,
@@ -1581,6 +1599,7 @@ We cannot completely disable "scroll" event (prevent default) because we need to
     max-width: none !important;
     max-height: none !important;
 }
+
 /*
 :root[style]:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body,
 :root:not(.${ROOT_CLASS_FIXED_LAYOUT}).${CLASS_VWM} > body {
