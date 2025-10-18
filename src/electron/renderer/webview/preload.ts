@@ -2486,6 +2486,14 @@ const onScrollDebounced = debounce((fromScrollEvent?: boolean) => {
     onScrollRaw(fromScrollEvent);
 }, 300);
 
+// https://github.com/readium/ts-toolkit/blob/9f3d844347b6df8571128c928f4d8d417979a7f1/navigator-html-injectables/src/helpers/document.ts#L28-L81
+// https://developer.mozilla.org/en-US/docs/Web/API/Window/visualViewport
+// const colCountPerScreen = 2;
+// const documentWidth = win.document.scrollingElement!.scrollWidth;
+// const windowWidth = win.visualViewport!.width;
+// const totalColCount = Math.round((documentWidth / windowWidth) * colCountPerScreen);
+// const lonelyColCount = totalColCount % colCountPerScreen;
+// const needed = colCountPerScreen === 1 || lonelyColCount === 0 ? 0 : colCountPerScreen - lonelyColCount;
 const appendExtraColumnPadIfNecessary = (skipResizeObserver: boolean) => {
     if (ENABLE_EXTRA_COLUMN_SHIFT_METHOD) {
         return;
@@ -2505,8 +2513,20 @@ const appendExtraColumnPadIfNecessary = (skipResizeObserver: boolean) => {
         //     elPad.remove();
         // }
     } else {
-        const { maxScrollShift, maxScrollShiftAdjusted } = calculateMaxScrollShift();
         // const scrollElement = getScrollingElement(win.document);
+        // let calculateDocumentColumnizedWidthAdjustedForTwoPageSpread = scrollElement.scrollWidth;
+        // const columnizedDocWidth = calculateDocumentColumnizedWidthAdjustedForTwoPageSpread;
+        // const twoColWidth = (scrollElement as HTMLElement).offsetWidth;
+        // const nSpreads = columnizedDocWidth / twoColWidth;
+        // const nWholeSpread = Math.floor(nSpreads);
+        // const fractionalSpread = nSpreads - nWholeSpread;
+        // if (fractionalSpread > 0 && (Math.round(fractionalSpread * 10) / 10) <= 0.5) {
+        //     calculateDocumentColumnizedWidthAdjustedForTwoPageSpread = twoColWidth * Math.ceil(nSpreads);
+        // }
+        // const maxScrollShift = scrollElement.scrollWidth - (scrollElement as HTMLElement).offsetWidth));
+        // const maxScrollShiftAdjusted = calculateDocumentColumnizedWidthAdjustedForTwoPageSpread - (scrollElement as HTMLElement).offsetWidth));
+        const { maxScrollShift, maxScrollShiftAdjusted } = calculateMaxScrollShift();
+
         // console.log("<><><> 2");
         // console.log(`maxScrollShift: ${maxScrollShift}`);
         // console.log(`maxScrollShiftAdjusted: ${maxScrollShiftAdjusted}`);
