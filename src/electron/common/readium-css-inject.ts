@@ -539,14 +539,14 @@ export function readiumCSSSet(
     if (fontSizeTrimmed && fontSizeTrimmed !== "0" && fontSizeTrimmed !== "100%") {
         docElement.style.setProperty("--USER__fontSize", fontSizeTrimmed);
         try {
-            docElement.style.setProperty("--USER__fontSizeX", `${fontSizeTrimmed.endsWith("%") ? (parseFloat(fontSizeTrimmed.replace("%", "")) / 100) : parseFloat(fontSizeTrimmed)}`);
+            docElement.style.setProperty("--USER__fontXSizeX", `${fontSizeTrimmed.endsWith("%") ? (parseFloat(fontSizeTrimmed.replace("%", "")) / 100) : parseFloat(fontSizeTrimmed)}`);
         } catch (_e) {
             // ignore
-            docElement.style.setProperty("--USER__fontSizeX", "1.0");
+            docElement.style.setProperty("--USER__fontXSizeX", "1.0");
         }
     } else {
         docElement.style.removeProperty("--USER__fontSize");
-        docElement.style.setProperty("--USER__fontSizeX", "1.0");
+        docElement.style.setProperty("--USER__fontXSizeX", "1.0");
     }
 
     if (setCSS.lineHeight && setCSS.lineHeight.trim() !== "0") {

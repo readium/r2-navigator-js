@@ -371,7 +371,7 @@ export function checkHeightConstrainedTables(documant: Document) {
                                             const vhFactor = parseFloat(maxHeight.replace("vh", ""));
                                             // console.log("vhFactor", vhFactor);
                                             // const val = vhFactor / zoomFactor;
-                                            cssRule.style.maxHeight = `calc(${vhFactor}vh / var(--USER__fontSizeX, 1.0))${hasImportant ? " !important" : ""}`;
+                                            cssRule.style.maxHeight = `calc(${vhFactor}vh / var(--USER__fontXSizeX, 1.0))${hasImportant ? " !important" : ""}`;
                                             return; // abort parent walk, next table (foreach)
                                         }
                                     }
