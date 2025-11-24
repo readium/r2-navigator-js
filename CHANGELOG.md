@@ -1,10 +1,27 @@
 # Next
 
 Git diff:
-* https://github.com/readium/r2-navigator-js/compare/v1.25.6...develop
+* https://github.com/readium/r2-navigator-js/compare/v1.25.7...develop
 
 Changes:
 * TODO
+
+# 1.25.7
+
+> Build environment: NodeJS `22.19.0`, NPM `11.6.3`
+
+Changes:
+* Fixed height-constrained tables relative to viewport height by applying zoom level (see https://github.com/edrlab/thorium-reader/issues/3165 )
+
+Git revision info:
+* https://unpkg.com/r2-navigator-js@1.25.7/dist/gitrev.json
+* https://github.com/edrlab/r2-navigator-js-dist/blob/v1.25.7/dist/gitrev.json
+
+Git commit history:
+* https://github.com/readium/r2-navigator-js/commits/v1.25.7
+
+Git diff:
+* https://github.com/readium/r2-navigator-js/compare/v1.25.6...v1.25.7
 
 # 1.25.6
 
@@ -24,7 +41,6 @@ Git commit history:
 
 Git diff:
 * https://github.com/readium/r2-navigator-js/compare/v1.25.5...v1.25.6
-
 
 # 1.25.5
 
