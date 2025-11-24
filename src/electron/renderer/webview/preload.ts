@@ -112,6 +112,7 @@ import {
     calculateColumnDimension, calculateMaxScrollShift, calculateTotalColumns, checkHiddenFootNotes,
     computeVerticalRTL, getScrollingElement, isRTL, isTwoPageSpread, isVerticalWritingMode,
     readiumCSS, clearImageZoomOutlineDebounced, clearImageZoomOutline,
+    checkHeightConstrainedTables,
 } from "./readium-css";
 import { clearCurrentSelection, convertRangeInfo, getCurrentSelectionInfo, convertRange, setSelectionChangeAction } from "./selection";
 import { ReadiumElectronWebviewWindow } from "./state";
@@ -2310,6 +2311,7 @@ win.addEventListener("DOMContentLoaded", () => {
         if (alreadedInjected) { // because querySelector[All]() is not polyfilled
             checkHiddenFootNotes(win.document);
         }
+        checkHeightConstrainedTables(win.document);
     }
 
     // sometimes the load event does not occur! (some weird FXL edge case?)

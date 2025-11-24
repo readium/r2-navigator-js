@@ -319,6 +319,79 @@ export function computeVerticalRTL() {
     _isRTL = rtl;
 }
 
+let __checkHeightConstrainedTables_DONE = false;
+export function checkHeightConstrainedTables(documant: Document) {
+
+    if (__checkHeightConstrainedTables_DONE) {
+        return;
+    }
+    __checkHeightConstrainedTables_DONE = true;
+
+    if (!documant.querySelectorAll) { // TODO: polyfill querySelector[All]() ?
+        return; // when streamer-injected
+    }
+
+    // const bodyComputedStyle = win.getComputedStyle(win.document.body);
+    // const zoomStr = bodyComputedStyle.zoom || "1";
+    // const zoomFactor = parseFloat(zoomStr);
+    // if (zoomFactor === 1.0) {
+    //     return;
+    // }
+
+    documant.querySelectorAll("table").forEach((table) => {
+        // if (table.nextElementSibling || table.previousElementSibling) {
+        //     return;
+        // }
+        let parent: HTMLElement | null = table;
+        while (parent) {
+            const computedStyle = win.getComputedStyle(parent);
+            // console.log("style.maxHeight", parent.tagName, parent.style.maxHeight, computedStyle.maxHeight);
+            if (!parent.style.maxHeight && computedStyle.maxHeight && computedStyle.maxHeight !== "none") {
+                for (const styleSheet of documant.styleSheets) {
+                    for (const cssRule of styleSheet.cssRules) {
+                        if (cssRule instanceof CSSStyleRule) {
+                            // for (let i = 0; i < cssRule.style.length; i++) {
+                            //     console.log("cssRule.style[i]", i, cssRule.style[i]);
+                            // }
+                            if (cssRule.style?.maxHeight && cssRule.selectorText && !cssRule.selectorText.includes("epub|")) {
+                                try {
+                                    if (parent.matches(cssRule.selectorText)) {
+                                        // console.log("MATCH! cssRule.selectorText + cssRule.style.maxHeight", cssRule.selectorText, cssRule.style.maxHeight);
+                                        const maxHeightTrimmed = cssRule.style.maxHeight.trim();
+                                        const hasImportant = maxHeightTrimmed.endsWith("!important");
+                                        const maxHeight = hasImportant ? maxHeightTrimmed.replace("!important", "").trim() : maxHeightTrimmed;
+                                        // if (maxHeight.endsWith("vh")) {
+                                        //     const val = parseFloat(computedStyle.maxHeight.replace("px", "")) / zoomFactor;
+                                        //     console.log("parent.style.maxHeight PX", val);
+                                        //     const str = `${val}px !important`;
+                                        //     parent.style.maxHeight = str;
+                                        //     parent.setAttribute("data-r2maxheight", str);
+                                        // }
+                                        if (/[0-9]+(\.[0-9]+)?vh/.test(maxHeight)) {
+                                            const vhFactor = parseFloat(maxHeight.replace("vh", ""));
+                                            // console.log("vhFactor", vhFactor);
+                                            // const val = vhFactor / zoomFactor;
+                                            cssRule.style.maxHeight = `calc(${vhFactor}vh / var(--USER__fontSizeX, 1.0))${hasImportant ? " !important" : ""}`;
+                                            return; // abort parent walk, next table (foreach)
+                                        }
+                                    }
+                                } catch (e) {
+                                    // ignore
+                                    console.log(e);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // if (parent.nextElementSibling || parent.previousElementSibling) {
+            //     return;
+            // }
+            parent = parent.parentElement;
+        }
+    });
+}
+
 export function checkHiddenFootNotes(documant: Document) {
     if (documant.documentElement.classList.contains(ROOT_CLASS_NO_FOOTNOTES)) {
         return;
